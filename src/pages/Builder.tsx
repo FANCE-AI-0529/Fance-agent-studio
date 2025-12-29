@@ -1,126 +1,225 @@
-import { useState } from "react";
-import { 
-  Bot, 
-  Puzzle, 
-  Settings, 
-  Rocket, 
-  Search,
-  Brain,
-  FileCode,
-  Database,
-  Image,
-  MessageSquare,
-  Sparkles
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useCallback, useRef, DragEvent } from "react";
+import {
+  ReactFlow,
+  Controls,
+  Background,
+  BackgroundVariant,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Connection,
+  Node,
+  Edge,
+  NodeTypes,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+
+import { Brain } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 
-// Skill categories for the marketplace
-const skillCategories = [
-  { id: "analysis", label: "数据分析", icon: Database },
-  { id: "vision", label: "图像识别", icon: Image },
-  { id: "nlp", label: "自然语言", icon: MessageSquare },
-  { id: "code", label: "代码生成", icon: FileCode },
-];
+import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
+import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
+import { SkillMarketplace, Skill, mockSkills } from "@/components/builder/SkillMarketplace";
+import { AgentConfigPanel } from "@/components/builder/AgentConfigPanel";
+import { ManifestPreview } from "@/components/builder/ManifestPreview";
 
-// Mock skills data
-const mockSkills = [
-  { id: "1", name: "政策查询", category: "nlp", description: "智能解读政策文件", permissions: ["read"] },
-  { id: "2", name: "表单生成", category: "nlp", description: "自动生成申请表单", permissions: ["write", "read"] },
-  { id: "3", name: "OCR识别", category: "vision", description: "图像文字提取", permissions: ["read"] },
-  { id: "4", name: "数据分析", category: "analysis", description: "结构化数据分析", permissions: ["read"] },
-  { id: "5", name: "代码审查", category: "code", description: "代码质量检测", permissions: ["read"] },
-];
+// Custom node types
+const nodeTypes: NodeTypes = {
+  skill: SkillNode,
+  agent: AgentNode,
+};
+
+// Initial agent node in center
+const initialAgentNode: Node<AgentNodeData> = {
+  id: "agent-central",
+  type: "agent",
+  position: { x: 400, y: 200 },
+  data: {
+    name: "",
+    department: "",
+    model: "Claude 3.5",
+    skillCount: 0,
+  },
+  draggable: false,
+};
 
 const Builder = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [agentName, setAgentName] = useState("");
-  const [department, setDepartment] = useState("");
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([initialAgentNode]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
+  const [showManifest, setShowManifest] = useState(false);
+  const [draggingSkill, setDraggingSkill] = useState<Skill | null>(null);
 
-  const filteredSkills = mockSkills.filter(skill => 
-    skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    skill.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const [agentConfig, setAgentConfig] = useState({
+    name: "",
+    department: "",
+    model: "claude-3.5" as "claude-3.5" | "gpt-4",
+  });
+
+  // Get added skills from nodes
+  const addedSkills = nodes
+    .filter((n) => n.type === "skill")
+    .map((n) => {
+      const data = n.data as SkillNodeData;
+      return mockSkills.find((s) => s.id === data.id);
+    })
+    .filter(Boolean) as Skill[];
+
+  const addedSkillIds = addedSkills.map((s) => s.id);
+
+  // Update agent node when config or skills change
+  const updateAgentNode = useCallback(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === "agent-central") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              name: agentConfig.name,
+              department: agentConfig.department,
+              model: agentConfig.model === "claude-3.5" ? "Claude 3.5" : "GPT-4",
+              skillCount: addedSkillIds.length,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, [agentConfig, addedSkillIds.length, setNodes]);
+
+  // Effect to update agent node
+  useState(() => {
+    updateAgentNode();
+  });
+
+  // Handle connections
+  const onConnect = useCallback(
+    (params: Connection) => {
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            animated: true,
+            style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+          },
+          eds
+        )
+      );
+    },
+    [setEdges]
   );
 
-  const handleSkillSelect = (skillId: string) => {
-    setSelectedSkills(prev => 
-      prev.includes(skillId) 
-        ? prev.filter(id => id !== skillId)
-        : [...prev, skillId]
-    );
+  // Remove skill node
+  const handleRemoveSkill = useCallback(
+    (skillId: string) => {
+      setNodes((nds) => nds.filter((n) => n.data?.id !== skillId));
+      setEdges((eds) =>
+        eds.filter(
+          (e) =>
+            !e.source.includes(skillId) && !e.target.includes(skillId)
+        )
+      );
+      toast({
+        title: "技能已移除",
+        description: "已从 Agent 配置中移除该技能",
+      });
+    },
+    [setNodes, setEdges]
+  );
+
+  // Handle drag over
+  const onDragOver = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  // Handle drop
+  const onDrop = useCallback(
+    (event: DragEvent) => {
+      event.preventDefault();
+
+      if (!reactFlowWrapper.current || !reactFlowInstance) return;
+
+      const skillData = event.dataTransfer.getData("application/json");
+      if (!skillData) return;
+
+      const skill: Skill = JSON.parse(skillData);
+
+      // Check if already added
+      if (addedSkillIds.includes(skill.id)) {
+        toast({
+          title: "技能已存在",
+          description: "该技能已添加到 Agent 配置中",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+
+      const newNode: Node<SkillNodeData> = {
+        id: `skill-${skill.id}-${Date.now()}`,
+        type: "skill",
+        position,
+        data: {
+          id: skill.id,
+          name: skill.name,
+          category: skill.category,
+          description: skill.description,
+          permissions: skill.permissions,
+          onRemove: handleRemoveSkill,
+        },
+      };
+
+      setNodes((nds) => [...nds, newNode]);
+
+      // Auto-connect to agent
+      const newEdge: Edge = {
+        id: `edge-${skill.id}-${Date.now()}`,
+        source: newNode.id,
+        target: "agent-central",
+        animated: true,
+        style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+      };
+      setEdges((eds) => [...eds, newEdge]);
+
+      toast({
+        title: "技能已添加",
+        description: `${skill.name} 已成功装载到 Agent`,
+      });
+
+      setDraggingSkill(null);
+    },
+    [reactFlowInstance, addedSkillIds, setNodes, setEdges, handleRemoveSkill]
+  );
+
+  // Handle deploy
+  const handleDeploy = () => {
+    toast({
+      title: "部署成功",
+      description: `${agentConfig.name} 已部署到城市网络`,
+    });
   };
+
+  // Can deploy check
+  const canDeploy = agentConfig.name.trim() !== "" && addedSkills.length > 0;
 
   return (
     <div className="h-full flex">
-      {/* Left Panel - Skill Marketplace */}
-      <div className="w-80 border-r border-border flex flex-col bg-card/50">
-        <div className="panel-header">
-          <div className="flex items-center gap-2">
-            <Puzzle className="h-4 w-4 text-cognitive" />
-            <span className="font-semibold text-sm">技能市场</span>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {mockSkills.length} 可用
-          </Badge>
-        </div>
-        
-        <div className="p-3 border-b border-border">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="搜索技能..." 
-              className="pl-9 bg-background"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
+      {/* Left - Skill Marketplace */}
+      <SkillMarketplace
+        onDragStart={setDraggingSkill}
+        addedSkillIds={addedSkillIds}
+      />
 
-        {/* Category Tabs */}
-        <div className="flex gap-1 p-2 border-b border-border overflow-x-auto">
-          {skillCategories.map(cat => (
-            <button
-              key={cat.id}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-            >
-              <cat.icon className="h-3.5 w-3.5" />
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Skills List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {filteredSkills.map(skill => (
-            <div
-              key={skill.id}
-              onClick={() => handleSkillSelect(skill.id)}
-              className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                selectedSkills.includes(skill.id)
-                  ? "border-primary bg-primary/10 glow-primary"
-                  : "border-border bg-card hover:border-muted-foreground"
-              }`}
-            >
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="font-medium text-sm">{skill.name}</span>
-                <Sparkles className="h-3.5 w-3.5 text-cognitive" />
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">{skill.description}</p>
-              <div className="flex gap-1">
-                {skill.permissions.map(perm => (
-                  <Badge key={perm} variant="outline" className="text-[10px] px-1.5 py-0">
-                    {perm}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Center - Canvas Area */}
+      {/* Center - React Flow Canvas */}
       <div className="flex-1 flex flex-col">
         <div className="panel-header border-b border-border">
           <div className="flex items-center gap-3">
@@ -131,155 +230,72 @@ const Builder = () => {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              已选择 {selectedSkills.length} 个技能
+              已装载 {addedSkills.length} 个技能
             </Badge>
+            {draggingSkill && (
+              <Badge className="text-xs bg-cognitive/10 text-cognitive border-0">
+                拖拽中: {draggingSkill.name}
+              </Badge>
+            )}
           </div>
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 bg-grid-pattern relative overflow-hidden">
-          {/* Central Agent Node */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="node-card text-center rounded-lg">
-              <Bot className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="font-semibold text-sm mb-1">
-                {agentName || "未命名 Agent"}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {department || "选择部门"}
-              </div>
-              {selectedSkills.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1 justify-center">
-                  {selectedSkills.slice(0, 3).map(id => {
-                    const skill = mockSkills.find(s => s.id === id);
-                    return (
-                      <Badge key={id} variant="secondary" className="text-[10px]">
-                        {skill?.name}
-                      </Badge>
-                    );
-                  })}
-                  {selectedSkills.length > 3 && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      +{selectedSkills.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Instructions overlay */}
-          {selectedSkills.length === 0 && (
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
-              <p className="text-sm text-muted-foreground">
-                从左侧技能市场拖拽技能到此画布
-              </p>
-            </div>
-          )}
+        <div
+          ref={reactFlowWrapper}
+          className="flex-1"
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        >
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onInit={setReactFlowInstance}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.5 }}
+            defaultEdgeOptions={{
+              animated: true,
+              style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+            }}
+            proOptions={{ hideAttribution: true }}
+            className="bg-background"
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1}
+              color="hsl(var(--border))"
+            />
+            <Controls
+              className="!bg-card !border-border !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-secondary"
+            />
+          </ReactFlow>
         </div>
       </div>
 
-      {/* Right Panel - Configuration */}
-      <div className="w-80 border-l border-border flex flex-col bg-card/50">
-        <div className="panel-header">
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-governance" />
-            <span className="font-semibold text-sm">Agent 配置</span>
-          </div>
-        </div>
+      {/* Right - Config Panel */}
+      <AgentConfigPanel
+        config={agentConfig}
+        onConfigChange={setAgentConfig}
+        skills={addedSkills}
+        onRemoveSkill={handleRemoveSkill}
+        onDeploy={handleDeploy}
+        onShowManifest={() => setShowManifest(true)}
+        canDeploy={canDeploy}
+      />
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 space-y-4">
-            {/* Basic Info */}
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                基础信息
-              </label>
-              <div className="space-y-2">
-                <Input 
-                  placeholder="智能体名称"
-                  value={agentName}
-                  onChange={(e) => setAgentName(e.target.value)}
-                  className="bg-background"
-                />
-                <Input 
-                  placeholder="所属部门"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="bg-background"
-                />
-              </div>
-            </div>
-
-            {/* Model Selection */}
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                基础模型
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="p-3 rounded-lg border border-primary bg-primary/10 text-sm text-center">
-                  Claude 3.5
-                </button>
-                <button className="p-3 rounded-lg border border-border bg-card hover:border-muted-foreground text-sm text-center transition-colors">
-                  GPT-4
-                </button>
-              </div>
-            </div>
-
-            {/* MPLP Policy */}
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                MPLP 策略
-              </label>
-              <div className="p-3 rounded-lg border border-border bg-secondary/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-governance" />
-                  <span className="text-xs font-medium">治理策略: 默认</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  敏感操作需人工确认，全链路日志记录
-                </p>
-              </div>
-            </div>
-
-            {/* Selected Skills Summary */}
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                已装载技能 ({selectedSkills.length})
-              </label>
-              <div className="space-y-2">
-                {selectedSkills.map(id => {
-                  const skill = mockSkills.find(s => s.id === id);
-                  return (
-                    <div key={id} className="flex items-center justify-between p-2 rounded border border-border bg-card">
-                      <span className="text-sm">{skill?.name}</span>
-                      <button 
-                        onClick={() => handleSkillSelect(id)}
-                        className="text-xs text-destructive hover:underline"
-                      >
-                        移除
-                      </button>
-                    </div>
-                  );
-                })}
-                {selectedSkills.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    尚未选择任何技能
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Deploy Button */}
-        <div className="p-4 border-t border-border">
-          <Button className="w-full gap-2" size="lg" disabled={!agentName || selectedSkills.length === 0}>
-            <Rocket className="h-4 w-4" />
-            部署到城市网络
-          </Button>
-        </div>
-      </div>
+      {/* Manifest Preview Modal */}
+      <ManifestPreview
+        isOpen={showManifest}
+        onClose={() => setShowManifest(false)}
+        agentName={agentConfig.name}
+        department={agentConfig.department}
+        model={agentConfig.model}
+        skills={addedSkills}
+      />
     </div>
   );
 };
