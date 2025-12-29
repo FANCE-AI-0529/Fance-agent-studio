@@ -23,6 +23,7 @@ import { AgentSelector } from "@/components/runtime/AgentSelector";
 import { MPLPStepper, MPLPPhase } from "@/components/runtime/MPLPStepper";
 import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/ThinkingProcess";
 import { ModelSelector, availableModels } from "@/components/runtime/ModelSelector";
+import { SystemPromptEditor } from "@/components/runtime/SystemPromptEditor";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -391,6 +392,7 @@ const Runtime = () => {
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("google/gemini-2.5-flash");
+  const [customSystemPrompt, setCustomSystemPrompt] = useState("");
   const assistantContentRef = useRef("");
   const currentEventsRef = useRef<TraceEvent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -412,14 +414,16 @@ const Runtime = () => {
       }))
     : [];
 
-  const currentAgentConfig = selectedAgent ? {
-    name: selectedAgent.name,
-    systemPrompt: (selectedAgent.manifest as any)?.system_prompt || undefined,
+  // Determine the system prompt to use
+  const effectiveSystemPrompt = customSystemPrompt || 
+    (selectedAgent ? (selectedAgent.manifest as any)?.system_prompt : undefined);
+
+  const currentAgentConfig = {
+    name: selectedAgent?.name,
+    systemPrompt: effectiveSystemPrompt,
     model: selectedModelId,
     skills: agentSkills,
-    mplpPolicy: selectedAgent.mplp_policy,
-  } : {
-    model: selectedModelId,
+    mplpPolicy: selectedAgent?.mplp_policy,
   };
 
   // Sync persisted messages to local state
@@ -974,6 +978,12 @@ const Runtime = () => {
                 {activeSkill}
               </Badge>
             )}
+            <SystemPromptEditor
+              value={customSystemPrompt || effectiveSystemPrompt || ""}
+              onChange={setCustomSystemPrompt}
+              agentName={selectedAgent?.name || "Default Agent"}
+              disabled={currentPhase !== "idle"}
+            />
             <div className="flex items-center gap-1.5">
               <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
               <ModelSelector
