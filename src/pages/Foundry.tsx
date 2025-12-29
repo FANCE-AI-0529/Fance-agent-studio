@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Play,
   Save,
@@ -8,11 +8,21 @@ import {
   Eye,
   Code2,
   Settings,
+  Plus,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { SkillEditor } from "@/components/foundry/SkillEditor";
 import { FileExplorer, FileItem } from "@/components/foundry/FileExplorer";
@@ -22,51 +32,56 @@ import {
   MetadataDisplay,
   ValidationResult,
 } from "@/components/foundry/SkillValidator";
+import {
+  useMySkills,
+  useCreateSkill,
+  useUpdateSkill,
+  usePublishSkill,
+  useDeleteSkill,
+  type Skill,
+} from "@/hooks/useSkills";
 
 const defaultSkillMd = `---
-name: "政策查询"
+name: "新技能"
 version: "1.0.0"
-description: "智能解读政策文件，提供精准的政策咨询服务"
+description: "技能描述"
 author: "Agent OS Studio"
 permissions:
   - read
-  - network
 inputs:
   - name: query
     type: string
-    description: 用户的政策相关问题
+    description: 输入参数描述
 outputs:
   - name: response
     type: string
-    description: 政策解读结果
+    description: 输出参数描述
 ---
 
-# 政策查询技能
+# 技能名称
 
 ## 能力描述
 
-本技能专注于政策文件的智能解读，能够：
+本技能可以：
 
-1. **关键词提取** - 从用户问题中提取政策相关关键词
-2. **政策匹配** - 在知识库中检索最相关的政策条文
-3. **智能解读** - 用通俗易懂的语言解释政策含义
-4. **引用溯源** - 提供原文出处便于核实
+1. **功能一** - 描述功能一
+2. **功能二** - 描述功能二
 
 ## 使用示例
 
 \`\`\`
-用户: 开火锅店需要什么证照？
-助手: 根据《食品安全法》和《个体工商户条例》规定...
+用户: 示例输入
+助手: 示例输出
 \`\`\`
 
 ## 注意事项
 
-- 政策解读仅供参考，以官方发布为准
-- 涉及敏感政策需人工复核
+- 注意事项一
+- 注意事项二
 `;
 
 const handlerPy = `"""
-政策查询技能处理器
+技能处理器
 """
 
 import json
@@ -75,27 +90,21 @@ from typing import Dict, Any
 
 async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
     """
-    处理政策查询请求
+    处理请求
     
     Args:
-        inputs: 包含 query 字段的输入字典
+        inputs: 输入字典
         
     Returns:
-        包含 response 字段的输出字典
+        输出字典
     """
     query = inputs.get("query", "")
     
-    # TODO: 实现实际的政策查询逻辑
-    # 1. 对查询进行向量化
-    # 2. 在知识库中检索相关政策
-    # 3. 使用 LLM 生成解读
-    
-    response = f"正在查询关于 '{query}' 的相关政策..."
+    # TODO: 实现实际逻辑
+    response = f"处理结果: {query}"
     
     return {
-        "response": response,
-        "sources": [],
-        "confidence": 0.85
+        "response": response
     }
 
 
@@ -120,10 +129,10 @@ environment:
 `;
 
 // File structure
-const initialFiles: FileItem[] = [
+const createInitialFiles = (skillName: string): FileItem[] => [
   {
-    id: "folder-policy",
-    name: "policy-query",
+    id: "folder-skill",
+    name: skillName || "new-skill",
     type: "folder",
     children: [
       { id: "file-skill", name: "SKILL.md", type: "file", language: "markdown" },
@@ -133,17 +142,47 @@ const initialFiles: FileItem[] = [
   },
 ];
 
-const fileContents: Record<string, string> = {
+const createFileContents = (): Record<string, string> => ({
   "file-skill": defaultSkillMd,
   "file-handler": handlerPy,
   "file-config": configYaml,
-};
+});
 
 const Foundry = () => {
-  const [files] = useState<FileItem[]>(initialFiles);
+  const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
+  const [files, setFiles] = useState<FileItem[]>(createInitialFiles("new-skill"));
   const [activeFileId, setActiveFileId] = useState("file-skill");
-  const [contents, setContents] = useState<Record<string, string>>(fileContents);
+  const [contents, setContents] = useState<Record<string, string>>(createFileContents());
   const [activeTab, setActiveTab] = useState("edit");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const { data: mySkills = [], isLoading: isLoadingSkills } = useMySkills();
+  const createSkill = useCreateSkill();
+  const updateSkill = useUpdateSkill();
+  const publishSkill = usePublishSkill();
+  const deleteSkill = useDeleteSkill();
+
+  // Load skill data when active skill changes
+  useEffect(() => {
+    if (activeSkillId) {
+      const skill = mySkills.find((s) => s.id === activeSkillId);
+      if (skill) {
+        // Load skill content
+        setContents({
+          "file-skill": skill.content || defaultSkillMd,
+          "file-handler": handlerPy,
+          "file-config": configYaml,
+        });
+        setFiles(createInitialFiles(skill.name));
+        setHasUnsavedChanges(false);
+      }
+    } else {
+      // Reset to defaults for new skill
+      setContents(createFileContents());
+      setFiles(createInitialFiles("new-skill"));
+      setHasUnsavedChanges(false);
+    }
+  }, [activeSkillId, mySkills]);
 
   const activeFile = useMemo(() => {
     const findFile = (items: FileItem[]): FileItem | null => {
@@ -171,6 +210,7 @@ const Foundry = () => {
   const handleContentChange = useCallback(
     (value: string) => {
       setContents((prev) => ({ ...prev, [activeFileId]: value }));
+      setHasUnsavedChanges(true);
     },
     [activeFileId]
   );
@@ -181,11 +221,46 @@ const Foundry = () => {
     }
   }, []);
 
-  const handleSave = () => {
-    toast({
-      title: "保存成功",
-      description: `${activeFile?.name} 已保存`,
-    });
+  const handleNewSkill = () => {
+    setActiveSkillId(null);
+    setContents(createFileContents());
+    setFiles(createInitialFiles("new-skill"));
+    setActiveFileId("file-skill");
+    setHasUnsavedChanges(false);
+  };
+
+  const handleSave = async () => {
+    const skillMdContent = contents["file-skill"];
+    const parsed = parseSkillMd(skillMdContent);
+
+    if (!parsed.isValid || !parsed.metadata) {
+      toast({
+        title: "保存失败",
+        description: "请先修复 SKILL.md 中的错误",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const skillData = {
+      name: parsed.metadata.name,
+      version: parsed.metadata.version,
+      description: parsed.metadata.description || null,
+      permissions: parsed.metadata.permissions || [],
+      category: "nlp", // Default category, could be parsed from metadata
+      content: skillMdContent,
+      inputs: parsed.metadata.inputs || [],
+      outputs: parsed.metadata.outputs || [],
+    };
+
+    if (activeSkillId) {
+      await updateSkill.mutateAsync({ id: activeSkillId, ...skillData });
+    } else {
+      const newSkill = await createSkill.mutateAsync(skillData);
+      setActiveSkillId(newSkill.id);
+    }
+
+    setHasUnsavedChanges(false);
   };
 
   const handleTest = () => {
@@ -195,7 +270,7 @@ const Foundry = () => {
     });
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!validation.isValid) {
       toast({
         title: "无法发布",
@@ -204,10 +279,28 @@ const Foundry = () => {
       });
       return;
     }
-    toast({
-      title: "发布成功",
-      description: `${validation.metadata?.name} 已发布到技能市场`,
-    });
+
+    // Save first if there are unsaved changes
+    if (hasUnsavedChanges) {
+      await handleSave();
+    }
+
+    if (activeSkillId) {
+      await publishSkill.mutateAsync(activeSkillId);
+    } else {
+      toast({
+        title: "请先保存",
+        description: "发布前请先保存技能",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!activeSkillId) return;
+
+    await deleteSkill.mutateAsync(activeSkillId);
+    handleNewSkill();
   };
 
   const getLanguage = () => {
@@ -219,14 +312,52 @@ const Foundry = () => {
     return "markdown";
   };
 
+  const isSaving = createSkill.isPending || updateSkill.isPending;
+  const isPublishing = publishSkill.isPending;
+  const isDeleting = deleteSkill.isPending;
+  const currentSkill = mySkills.find((s) => s.id === activeSkillId);
+
   return (
     <div className="h-full flex">
       {/* Left Panel - File Explorer */}
-      <FileExplorer
-        files={files}
-        activeFileId={activeFileId}
-        onFileSelect={handleFileSelect}
-      />
+      <div className="w-64 border-r border-border flex flex-col bg-card/50">
+        {/* Skill Selector */}
+        <div className="p-3 border-b border-border space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground uppercase">我的技能</span>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleNewSkill}>
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <Select
+            value={activeSkillId || "new"}
+            onValueChange={(value) => setActiveSkillId(value === "new" ? null : value)}
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue placeholder="新建技能" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">+ 新建技能</SelectItem>
+              {mySkills.map((skill) => (
+                <SelectItem key={skill.id} value={skill.id}>
+                  {skill.name}
+                  {skill.is_published && (
+                    <Badge variant="secondary" className="ml-2 text-[10px]">
+                      已发布
+                    </Badge>
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <FileExplorer
+          files={files}
+          activeFileId={activeFileId}
+          onFileSelect={handleFileSelect}
+        />
+      </div>
 
       {/* Center - Editor Area */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -237,6 +368,11 @@ const Foundry = () => {
               <FileText className="h-3 w-3" />
               {activeFile?.name || "未选择文件"}
             </Badge>
+            {hasUnsavedChanges && (
+              <Badge variant="secondary" className="text-xs">
+                未保存
+              </Badge>
+            )}
             {activeFileId === "file-skill" && (
               <div className="flex items-center gap-1.5">
                 {validation.isValid ? (
@@ -273,11 +409,32 @@ const Foundry = () => {
               variant="ghost"
               size="sm"
               onClick={handleSave}
+              disabled={isSaving}
               className="gap-1.5 h-8"
             >
-              <Save className="h-3.5 w-3.5" />
+              {isSaving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
               保存
             </Button>
+            {activeSkillId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="gap-1.5 h-8 text-destructive hover:text-destructive"
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                删除
+              </Button>
+            )}
           </div>
         </div>
 
@@ -403,6 +560,26 @@ const Foundry = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Current Skill Info */}
+          {currentSkill && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                技能状态
+              </label>
+              <div className="p-3 rounded-lg border border-border bg-secondary/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">{currentSkill.name}</span>
+                  <Badge variant={currentSkill.is_published ? "default" : "secondary"}>
+                    {currentSkill.is_published ? "已发布" : "草稿"}
+                  </Badge>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  v{currentSkill.version}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Validation Status */}
           {activeFileId === "file-skill" && (
             <div className="space-y-2">
@@ -429,9 +606,13 @@ const Foundry = () => {
           <Button
             className="w-full gap-2"
             onClick={handlePublish}
-            disabled={!validation.isValid}
+            disabled={!validation.isValid || isPublishing}
           >
-            <Upload className="h-4 w-4" />
+            {isPublishing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
             发布到技能市场
           </Button>
         </div>

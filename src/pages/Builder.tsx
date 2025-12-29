@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, DragEvent } from "react";
+import { useState, useCallback, useRef, DragEvent, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
@@ -14,15 +14,18 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Brain } from "lucide-react";
+import { Brain, Save, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
-import { SkillMarketplace, Skill, mockSkills } from "@/components/builder/SkillMarketplace";
+import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
 import { AgentConfigPanel } from "@/components/builder/AgentConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
+import { useSaveAgentWithSkills, useDeployAgent, useMyAgents } from "@/hooks/useAgents";
+import { usePublishedSkills } from "@/hooks/useSkills";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
@@ -31,26 +34,22 @@ const nodeTypes: NodeTypes = {
 };
 
 // Initial agent node in center
-const initialAgentNode: Node<AgentNodeData> = {
+const createAgentNode = (name = "", department = "", model = "Claude 3.5", skillCount = 0): Node<AgentNodeData> => ({
   id: "agent-central",
   type: "agent",
   position: { x: 400, y: 200 },
-  data: {
-    name: "",
-    department: "",
-    model: "Claude 3.5",
-    skillCount: 0,
-  },
+  data: { name, department, model, skillCount },
   draggable: false,
-};
+});
 
 const Builder = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([initialAgentNode]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([createAgentNode()]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [showManifest, setShowManifest] = useState(false);
   const [draggingSkill, setDraggingSkill] = useState<Skill | null>(null);
+  const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
 
   const [agentConfig, setAgentConfig] = useState({
     name: "",
@@ -58,14 +57,27 @@ const Builder = () => {
     model: "claude-3.5" as "claude-3.5" | "gpt-4",
   });
 
+  const { data: publishedSkills = [] } = usePublishedSkills();
+  const { data: myAgents = [] } = useMyAgents();
+  const saveAgent = useSaveAgentWithSkills();
+  const deployAgent = useDeployAgent();
+
   // Get added skills from nodes
   const addedSkills = nodes
     .filter((n) => n.type === "skill")
     .map((n) => {
       const data = n.data as SkillNodeData;
-      return mockSkills.find((s) => s.id === data.id);
+      return publishedSkills.find((s) => s.id === data.id);
     })
-    .filter(Boolean) as Skill[];
+    .filter(Boolean)
+    .map((s) => ({
+      id: s!.id,
+      name: s!.name,
+      category: s!.category,
+      description: s!.description || "",
+      permissions: s!.permissions || [],
+      version: s!.version,
+    })) as Skill[];
 
   const addedSkillIds = addedSkills.map((s) => s.id);
 
@@ -90,10 +102,10 @@ const Builder = () => {
     );
   }, [agentConfig, addedSkillIds.length, setNodes]);
 
-  // Effect to update agent node
-  useState(() => {
+  // Update agent node on config/skills change
+  useEffect(() => {
     updateAgentNode();
-  });
+  }, [updateAgentNode]);
 
   // Handle connections
   const onConnect = useCallback(
@@ -200,16 +212,79 @@ const Builder = () => {
     [reactFlowInstance, addedSkillIds, setNodes, setEdges, handleRemoveSkill]
   );
 
-  // Handle deploy
-  const handleDeploy = () => {
-    toast({
-      title: "部署成功",
-      description: `${agentConfig.name} 已部署到城市网络`,
+  // Generate manifest
+  const generateManifest = () => {
+    return {
+      version: "1.0.0",
+      metadata: {
+        name: agentConfig.name,
+        department: agentConfig.department,
+        created_at: new Date().toISOString(),
+      },
+      runtime: {
+        model: agentConfig.model,
+        provider: agentConfig.model === "claude-3.5" ? "anthropic" : "openai",
+      },
+      mounts: addedSkills.map((s) => ({ skill_id: s.id, version: s.version })),
+      skills: addedSkills.map((s) => ({
+        id: s.id,
+        name: s.name,
+        permissions: s.permissions,
+      })),
+      mplp: {
+        policy: "default",
+        require_confirm: ["write", "network", "execute"],
+        audit_log: true,
+      },
+    };
+  };
+
+  // Handle save
+  const handleSave = async () => {
+    if (!agentConfig.name.trim()) {
+      toast({ title: "请输入 Agent 名称", variant: "destructive" });
+      return;
+    }
+
+    const manifest = generateManifest();
+
+    await saveAgent.mutateAsync({
+      agent: {
+        id: currentAgentId || undefined,
+        name: agentConfig.name,
+        department: agentConfig.department || null,
+        model: agentConfig.model,
+      },
+      skillIds: addedSkillIds,
+      manifest,
     });
+  };
+
+  // Handle deploy
+  const handleDeploy = async () => {
+    // First save
+    const manifest = generateManifest();
+    
+    const agentId = await saveAgent.mutateAsync({
+      agent: {
+        id: currentAgentId || undefined,
+        name: agentConfig.name,
+        department: agentConfig.department || null,
+        model: agentConfig.model,
+      },
+      skillIds: addedSkillIds,
+      manifest,
+    });
+
+    if (agentId) {
+      setCurrentAgentId(agentId);
+      await deployAgent.mutateAsync(agentId);
+    }
   };
 
   // Can deploy check
   const canDeploy = agentConfig.name.trim() !== "" && addedSkills.length > 0;
+  const isSaving = saveAgent.isPending || deployAgent.isPending;
 
   return (
     <div className="h-full flex">
@@ -237,6 +312,20 @@ const Builder = () => {
                 拖拽中: {draggingSkill.name}
               </Badge>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving || !agentConfig.name.trim()}
+              className="gap-1.5 h-8"
+            >
+              {isSaving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              保存
+            </Button>
           </div>
         </div>
 
