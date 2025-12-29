@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export interface ConfirmAction {
   id: string;
-  type: "write" | "network" | "execute" | "read";
+  type: "write" | "network" | "execute" | "read" | "admin";
   skillName: string;
   description: string;
   permissions: string[];
@@ -25,6 +25,7 @@ const permissionIcons: Record<string, React.ElementType> = {
   network: Network,
   read: Database,
   execute: Shield,
+  admin: AlertTriangle,
 };
 
 const riskColors = {
