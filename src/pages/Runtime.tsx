@@ -981,6 +981,7 @@ const Runtime = () => {
             <SystemPromptEditor
               value={customSystemPrompt || effectiveSystemPrompt || ""}
               onChange={setCustomSystemPrompt}
+              agentId={selectedAgent?.id}
               agentName={selectedAgent?.name || "Default Agent"}
               disabled={currentPhase !== "idle"}
             />
