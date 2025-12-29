@@ -25,7 +25,9 @@ import {
   Loader2,
   Cloud,
   CloudOff,
-  Trash2
+  Trash2,
+  Download,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -227,6 +229,60 @@ export function SystemPromptEditor({
     toast.success("已复制到剪贴板");
   };
 
+  const handleExport = () => {
+    const exportData = {
+      name: promptName,
+      prompt: localValue,
+      agentId: agentId || null,
+      exportedAt: new Date().toISOString(),
+      version: "1.0"
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${promptName.replace(/\s+/g, "-").toLowerCase()}-prompt.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("提示词已导出为 JSON 文件");
+  };
+
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        
+        if (!data.prompt || typeof data.prompt !== "string") {
+          throw new Error("无效的提示词文件格式");
+        }
+        
+        if (data.prompt.length > 4000) {
+          throw new Error("导入的提示词超过4000字符限制");
+        }
+        
+        setLocalValue(data.prompt);
+        if (data.name) {
+          setPromptName(data.name);
+        }
+        setCurrentPromptId(null);
+        toast.success(`已导入「${data.name || "未命名提示词"}」`);
+      } catch (error) {
+        toast.error(`导入失败: ${error instanceof Error ? error.message : "文件格式错误"}`);
+      }
+    };
+    input.click();
+  };
+
   const charCount = localValue.length;
   const isOverLimit = charCount > 4000;
   const isSaving = savePromptMutation.isPending;
@@ -297,24 +353,52 @@ export function SystemPromptEditor({
             </div>
           )}
 
-          {/* Templates */}
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 block">
-              快速模板
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {promptTemplates.map((template) => (
+          {/* Templates & Import/Export */}
+          <div className="flex flex-col gap-3">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">
+                快速模板
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {promptTemplates.map((template) => (
+                  <Button
+                    key={template.id}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => handleApplyTemplate(template)}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {template.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">
+                导入/导出
+              </Label>
+              <div className="flex gap-2">
                 <Button
-                  key={template.id}
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs gap-1"
-                  onClick={() => handleApplyTemplate(template)}
+                  onClick={handleImport}
                 >
-                  <Sparkles className="h-3 w-3" />
-                  {template.name}
+                  <Upload className="h-3 w-3" />
+                  导入 JSON
                 </Button>
-              ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={handleExport}
+                  disabled={!localValue.trim()}
+                >
+                  <Download className="h-3 w-3" />
+                  导出 JSON
+                </Button>
+              </div>
             </div>
           </div>
 
