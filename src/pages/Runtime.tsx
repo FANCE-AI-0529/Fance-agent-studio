@@ -12,7 +12,14 @@ import {
   GitBranch,
   Plus,
   History,
-  Trash2
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Cpu,
+  Database,
+  FileCode,
+  Settings,
+  Key
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +35,7 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type MPLPStatus = "idle" | "planning" | "confirm" | "executing";
 
@@ -39,14 +47,208 @@ interface Message {
   skill?: string;
   status?: MPLPStatus;
   confirmAction?: ConfirmAction;
+  traceEvents?: TraceEvent[];
+}
+
+interface MemoryItem {
+  key: string;
+  value: string;
+  type: "context" | "entity" | "fact";
 }
 
 const statusConfig = {
-  idle: { label: "待命", icon: Clock, className: "text-muted-foreground bg-muted" },
-  planning: { label: "规划中", icon: Brain, className: "text-status-planning bg-status-planning/10" },
-  confirm: { label: "待确认", icon: Shield, className: "text-status-confirm bg-status-confirm/10" },
-  executing: { label: "执行中", icon: Zap, className: "text-status-executing bg-status-executing/10" },
+  idle: { 
+    label: "待命", 
+    icon: Clock, 
+    className: "text-muted-foreground bg-muted",
+    pulse: false
+  },
+  planning: { 
+    label: "规划中", 
+    icon: Brain, 
+    className: "text-status-planning bg-status-planning/10",
+    pulse: true
+  },
+  confirm: { 
+    label: "待确认", 
+    icon: Shield, 
+    className: "text-status-confirm bg-status-confirm/10",
+    pulse: true
+  },
+  executing: { 
+    label: "执行中", 
+    icon: Zap, 
+    className: "text-status-executing bg-status-executing/10",
+    pulse: true
+  },
 };
+
+// Message Trace Panel Component
+function MessageTracePanel({ events }: { events: TraceEvent[] }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!events || events.length === 0) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <GitBranch className="h-3 w-3" />
+        <span>Trace Log ({events.length})</span>
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-2 p-2 rounded-lg bg-secondary/30 border border-border/50 space-y-1.5">
+          {events.map((event, idx) => (
+            <div key={event.id} className="flex items-start gap-2 text-[10px]">
+              <span className="text-muted-foreground w-12 flex-shrink-0">
+                {event.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                {event.type.replace(/_/g, ' ')}
+              </Badge>
+              {event.data.skillName && (
+                <span className="text-cognitive">{event.data.skillName}</span>
+              )}
+              {event.data.result && (
+                <span className={cn(
+                  event.data.result === 'success' ? 'text-status-executing' : 'text-destructive'
+                )}>
+                  {event.data.result}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Context Panel Component
+function ContextPanel({ 
+  agent, 
+  memory 
+}: { 
+  agent: Agent | null; 
+  memory: MemoryItem[];
+}) {
+  const skills = agent ? ((agent.manifest as any)?.skills?.details || []) : [];
+  
+  return (
+    <div className="w-72 border-l border-border bg-card/50 hidden xl:flex flex-col">
+      {/* Header */}
+      <div className="panel-header">
+        <div className="flex items-center gap-2">
+          <Cpu className="h-4 w-4 text-governance" />
+          <span className="font-semibold text-sm">运行上下文</span>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* Agent Info */}
+        <div className="p-3 border-b border-border">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            当前 Agent
+          </label>
+          <div className="mt-2 p-2 rounded-lg bg-secondary/30 border border-border">
+            {agent ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-cognitive" />
+                  <span className="text-sm font-medium">{agent.name}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>{agent.department || '通用'}</span>
+                  <span>•</span>
+                  <span>{agent.model}</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-muted-foreground">使用默认 Demo Agent</div>
+            )}
+          </div>
+        </div>
+
+        {/* Loaded Skills */}
+        <div className="p-3 border-b border-border">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            已加载技能
+          </label>
+          <div className="mt-2 space-y-1.5">
+            {skills.length > 0 ? (
+              skills.map((skill: any) => (
+                <div 
+                  key={skill.id} 
+                  className="flex items-center gap-2 p-1.5 rounded bg-cognitive/5 border border-cognitive/20"
+                >
+                  <FileCode className="h-3 w-3 text-cognitive" />
+                  <span className="text-xs">{skill.name}</span>
+                  {skill.permissions?.length > 0 && (
+                    <div className="flex gap-0.5 ml-auto">
+                      {skill.permissions.slice(0, 2).map((p: string) => (
+                        <Badge key={p} variant="outline" className="text-[8px] px-1 py-0 h-3">
+                          {p}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-muted-foreground text-center py-2">
+                无已加载技能
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Memory / Context (PSG) */}
+        <div className="p-3">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+            <Database className="h-3 w-3" />
+            Memory / Context
+          </label>
+          <div className="mt-2 space-y-1">
+            {memory.length > 0 ? (
+              memory.map((item, idx) => (
+                <div 
+                  key={idx}
+                  className="flex items-start gap-2 p-1.5 rounded bg-secondary/30 border border-border/50"
+                >
+                  <Key className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-medium text-muted-foreground">{item.key}</div>
+                    <div className="text-xs truncate">{item.value}</div>
+                  </div>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "text-[8px] px-1 py-0 h-3",
+                      item.type === 'entity' && 'border-cognitive/50 text-cognitive',
+                      item.type === 'fact' && 'border-governance/50 text-governance',
+                      item.type === 'context' && 'border-primary/50 text-primary'
+                    )}
+                  >
+                    {item.type}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded-lg">
+                <Database className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                对话开始后将显示上下文
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const Runtime = () => {
   const { user } = useAuth();
@@ -74,7 +276,9 @@ const Runtime = () => {
   const [traceSessions, setTraceSessions] = useState<TraceSession[]>([]);
   const [currentTraceSessionId, setCurrentTraceSessionId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const assistantContentRef = useRef("");
+  const currentEventsRef = useRef<TraceEvent[]>([]);
 
   // Get current agent config for AI
   const currentAgentConfig = selectedAgent ? {
@@ -122,7 +326,7 @@ const Runtime = () => {
     setSelectedAgent(agent);
     setLocalMessages([]);
     setTraceSessions([]);
-    // Welcome message will be added by the effect above
+    setContextMemory([]);
   }, []);
 
   const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
@@ -136,14 +340,16 @@ const Runtime = () => {
     onTraceEvent: handleTraceEvent,
   });
 
-  // Add trace event to current session
+  // Add trace event to current session and ref
   const addTraceEvent = useCallback((type: TraceEventType, data: TraceEvent["data"]) => {
     const event: TraceEvent = {
-      id: `event-${Date.now()}`,
+      id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type,
       timestamp: new Date(),
       data,
     };
+
+    currentEventsRef.current = [...currentEventsRef.current, event];
 
     setTraceSessions(prev => prev.map(session => 
       session.id === currentTraceSessionId
@@ -164,6 +370,7 @@ const Runtime = () => {
     };
     setTraceSessions(prev => [newSession, ...prev]);
     setCurrentTraceSessionId(sessionId);
+    currentEventsRef.current = [];
     return sessionId;
   }, []);
 
@@ -175,6 +382,40 @@ const Runtime = () => {
         : session
     ));
   }, [currentTraceSessionId]);
+
+  // Update context memory based on conversation
+  const updateContextMemory = useCallback((userMessage: string, response: string) => {
+    const newMemory: MemoryItem[] = [];
+    
+    // Extract entities from user message
+    if (userMessage.includes("火锅") || userMessage.includes("餐饮")) {
+      newMemory.push({ key: "business_type", value: "餐饮服务", type: "entity" });
+    }
+    if (userMessage.includes("办证") || userMessage.includes("许可")) {
+      newMemory.push({ key: "intent", value: "办理许可证", type: "context" });
+    }
+    if (userMessage.includes("地址") || userMessage.includes("店铺")) {
+      newMemory.push({ key: "has_location", value: "true", type: "fact" });
+    }
+    
+    // Add session context
+    if (contextMemory.length === 0) {
+      newMemory.push({ key: "session_start", value: new Date().toLocaleString('zh-CN'), type: "context" });
+    }
+    
+    setContextMemory(prev => {
+      const updated = [...prev];
+      newMemory.forEach(item => {
+        const existingIdx = updated.findIndex(m => m.key === item.key);
+        if (existingIdx >= 0) {
+          updated[existingIdx] = item;
+        } else {
+          updated.push(item);
+        }
+      });
+      return updated.slice(-10); // Keep last 10 items
+    });
+  }, [contextMemory]);
 
   const sendMessage = async (userMessage: string) => {
     // Start trace session
@@ -247,6 +488,7 @@ const Runtime = () => {
           timestamp: new Date(),
           skill: "AI 对话",
           status: "idle" as const,
+          traceEvents: [],
         }];
       });
     };
@@ -259,9 +501,21 @@ const Runtime = () => {
           skillName: "AI 对话", 
           result: "success" 
         });
+        
+        // Attach trace events to the message
+        const events = [...currentEventsRef.current];
+        setLocalMessages(prev => prev.map((m, i) => 
+          i === prev.length - 1 && m.role === "assistant"
+            ? { ...m, traceEvents: events }
+            : m
+        ));
+
         setCurrentStatus("idle");
         setActiveSkill(null);
         endTraceSession("completed");
+
+        // Update context memory
+        updateContextMemory(userMessage, assistantContentRef.current);
 
         // Save assistant message to DB
         if (chatSession) {
@@ -269,6 +523,7 @@ const Runtime = () => {
             role: "assistant",
             content: assistantContentRef.current,
           }, "AI 对话");
+          toast.success("消息已保存");
         }
       },
     });
@@ -294,6 +549,7 @@ const Runtime = () => {
       result: "success" 
     });
 
+    const events = [...currentEventsRef.current];
     const responseContent = "✅ 申请表已生成完成！\n\n我已为您准备好《餐饮服务许可证申请表》，包含以下信息：\n\n- 申请人信息（待填写）\n- 经营场所信息\n- 经营项目：火锅餐饮\n- 所需材料清单\n\n您可以点击下载或在线编辑。是否需要我帮您预约递交材料的时间？";
 
     const response: Message = {
@@ -302,17 +558,23 @@ const Runtime = () => {
       content: responseContent,
       timestamp: new Date(),
       skill: "表单生成",
-      status: "idle"
+      status: "idle",
+      traceEvents: events,
     };
 
     setLocalMessages(prev => [...prev, response]);
     setCurrentStatus("idle");
     setActiveSkill(null);
     endTraceSession("completed");
+    toast.success("操作已完成");
+
+    // Update context memory
+    setContextMemory(prev => [...prev, { key: "form_generated", value: "餐饮服务许可证申请表", type: "fact" }]);
 
     // Save to DB
     if (chatSession) {
       await addMessage({ role: "assistant", content: responseContent }, "表单生成");
+      toast.success("消息已保存");
     }
   };
 
@@ -329,6 +591,7 @@ const Runtime = () => {
     setCurrentStatus("idle");
     setActiveSkill(null);
 
+    const events = [...currentEventsRef.current];
     const responseContent = "好的，已取消表单生成操作。如果您有其他问题，请随时告诉我。";
 
     const response: Message = {
@@ -336,11 +599,13 @@ const Runtime = () => {
       role: "assistant",
       content: responseContent,
       timestamp: new Date(),
-      status: "idle"
+      status: "idle",
+      traceEvents: events,
     };
 
     setLocalMessages(prev => [...prev, response]);
     endTraceSession("cancelled");
+    toast.info("操作已取消");
 
     if (chatSession) {
       await addMessage({ role: "assistant", content: responseContent });
@@ -362,6 +627,7 @@ const Runtime = () => {
         toast.error("创建会话失败");
         return;
       }
+      toast.success("会话已创建");
     }
 
     const userMessage: Message = {
@@ -388,6 +654,7 @@ const Runtime = () => {
     }
     await createSession();
     setTraceSessions([]);
+    setContextMemory([]);
     toast.success("已创建新会话");
   };
 
@@ -395,6 +662,7 @@ const Runtime = () => {
     await loadSession(sessionId);
     setShowHistory(false);
     setTraceSessions([]);
+    setContextMemory([]);
     toast.success("已加载会话");
   };
 
@@ -408,7 +676,11 @@ const Runtime = () => {
     const Icon = config.icon;
     
     return (
-      <div className={`status-badge ${config.className}`}>
+      <div className={cn(
+        "status-badge",
+        config.className,
+        config.pulse && "animate-pulse"
+      )}>
         <Icon className="h-3 w-3" />
         <span>{config.label}</span>
       </div>
@@ -468,7 +740,7 @@ const Runtime = () => {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header with MPLP Status */}
         <div className="panel-header border-b border-border">
           <div className="flex items-center gap-2">
@@ -519,20 +791,25 @@ const Runtime = () => {
               <span className="text-xs text-muted-foreground">治理引擎在线</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {["Planning", "Confirm", "Executing"].map((phase) => (
-              <div key={phase} className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full transition-colors ${
-                  currentStatus === phase.toLowerCase() 
-                    ? "bg-primary" 
+          <div className="flex items-center gap-3">
+            {(["idle", "planning", "confirm", "executing"] as MPLPStatus[]).map((phase) => (
+              <div key={phase} className="flex items-center gap-1.5">
+                <div className={cn(
+                  "w-2 h-2 rounded-full transition-all",
+                  currentStatus === phase 
+                    ? cn(
+                        statusConfig[phase].className.replace('text-', 'bg-').split(' ')[0].replace('/10', ''),
+                        "scale-125"
+                      )
                     : "bg-muted"
-                }`} />
-                <span className={`text-[10px] transition-colors ${
-                  currentStatus === phase.toLowerCase()
+                )} />
+                <span className={cn(
+                  "text-[10px] transition-colors",
+                  currentStatus === phase
                     ? "text-foreground font-medium"
                     : "text-muted-foreground"
-                }`}>
-                  {phase}
+                )}>
+                  {statusConfig[phase].label}
                 </span>
               </div>
             ))}
@@ -580,17 +857,27 @@ const Runtime = () => {
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
                   
-                  {message.skill && (
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] gap-1">
-                        <CheckCircle2 className="h-2.5 w-2.5" />
-                        {message.skill}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                  )}
+                  <div className={cn(
+                    "mt-1.5",
+                    message.role === "user" ? "flex flex-col items-end" : ""
+                  )}>
+                    {message.skill && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] gap-1">
+                          <CheckCircle2 className="h-2.5 w-2.5" />
+                          {message.skill}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {message.timestamp.toLocaleTimeString()}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Trace Log Panel for assistant messages */}
+                    {message.role === "assistant" && message.traceEvents && (
+                      <MessageTracePanel events={message.traceEvents} />
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -655,6 +942,9 @@ const Runtime = () => {
           />
         </div>
       </div>
+
+      {/* Context Panel */}
+      <ContextPanel agent={selectedAgent} memory={contextMemory} />
     </div>
   );
 };
