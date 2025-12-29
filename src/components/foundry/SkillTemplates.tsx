@@ -14,6 +14,19 @@ import {
   Zap,
   BookOpen,
   Users,
+  Bot,
+  Sparkles,
+  Loader2,
+  Cloud,
+  Lock,
+  Bell,
+  CreditCard,
+  MapPin,
+  Mic,
+  Video,
+  BarChart3,
+  GitBranch,
+  Webhook,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +36,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SkillTemplate {
   id: string;
@@ -1624,11 +1651,1325 @@ limits:
   max_pages: 200
 `,
   },
+  // ============ 新增模版 ============
+  {
+    id: "weather-query",
+    name: "天气查询",
+    description: "查询全球城市的实时天气和预报信息",
+    category: "信息检索",
+    icon: <Cloud className="h-4 w-4" />,
+    difficulty: "beginner",
+    content: `---
+name: "weather-query"
+version: "1.0.0"
+description: "查询城市天气信息，包括实时天气和未来预报"
+author: "Agent OS Studio"
+permissions:
+  - internet_access
+inputs:
+  - name: city
+    type: string
+    description: 城市名称
+    required: true
+  - name: days
+    type: number
+    description: 预报天数（1-7）
+    required: false
+    default: 3
+outputs:
+  - name: current
+    type: object
+    description: 当前天气信息
+  - name: forecast
+    type: array
+    description: 未来天气预报
+---
+
+# 天气查询技能
+
+## 能力描述
+
+查询全球城市的天气信息：
+- 实时温度、湿度、风速
+- 未来1-7天天气预报
+- 空气质量指数
+
+## 使用示例
+
+\`\`\`
+用户: 查询北京今天的天气
+助手: 北京当前天气：晴，温度 25°C，湿度 45%
+\`\`\`
+`,
+    handlerCode: `"""
+天气查询技能处理器
+"""
+
+import os
+import httpx
+from typing import Dict, Any
+
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "")
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    city = inputs.get("city", "")
+    days = min(inputs.get("days", 3), 7)
+    
+    if not city:
+        return {"error": "请提供城市名称"}
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.weatherapi.com/v1/forecast.json",
+                params={
+                    "key": WEATHER_API_KEY,
+                    "q": city,
+                    "days": days,
+                    "lang": "zh"
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+        
+        current = data.get("current", {})
+        forecast = data.get("forecast", {}).get("forecastday", [])
+        
+        return {
+            "current": {
+                "temp_c": current.get("temp_c"),
+                "condition": current.get("condition", {}).get("text"),
+                "humidity": current.get("humidity"),
+                "wind_kph": current.get("wind_kph")
+            },
+            "forecast": [
+                {
+                    "date": day.get("date"),
+                    "max_temp": day.get("day", {}).get("maxtemp_c"),
+                    "min_temp": day.get("day", {}).get("mintemp_c"),
+                    "condition": day.get("day", {}).get("condition", {}).get("text")
+                }
+                for day in forecast
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("city"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 15
+  memory_mb: 128
+
+dependencies:
+  - httpx>=0.24.0
+
+environment:
+  WEATHER_API_KEY: "\${WEATHER_API_KEY}"
+`,
+  },
+  {
+    id: "jwt-auth",
+    name: "JWT 认证",
+    description: "生成和验证 JWT Token 的认证技能",
+    category: "安全",
+    icon: <Lock className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "jwt-auth"
+version: "1.0.0"
+description: "JWT Token 生成与验证，支持自定义过期时间和声明"
+author: "Agent OS Studio"
+permissions:
+  - crypto
+inputs:
+  - name: action
+    type: string
+    description: 操作类型（generate/verify）
+    required: true
+  - name: payload
+    type: object
+    description: Token 载荷（生成时使用）
+    required: false
+  - name: token
+    type: string
+    description: 待验证的 Token
+    required: false
+  - name: expires_in
+    type: number
+    description: 过期时间（秒）
+    required: false
+    default: 3600
+outputs:
+  - name: token
+    type: string
+    description: 生成的 JWT Token
+  - name: valid
+    type: boolean
+    description: Token 是否有效
+  - name: payload
+    type: object
+    description: 解码后的载荷
+---
+
+# JWT 认证技能
+
+## 能力描述
+
+- 生成带过期时间的 JWT Token
+- 验证 Token 有效性
+- 解码 Token 载荷
+
+## 安全说明
+
+- 密钥从环境变量读取
+- 支持 HS256 算法
+`,
+    handlerCode: `"""
+JWT 认证技能处理器
+"""
+
+import os
+import jwt
+from datetime import datetime, timedelta
+from typing import Dict, Any
+
+JWT_SECRET = os.getenv("JWT_SECRET", "")
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    action = inputs.get("action", "")
+    
+    if action == "generate":
+        payload = inputs.get("payload", {})
+        expires_in = inputs.get("expires_in", 3600)
+        
+        payload["exp"] = datetime.utcnow() + timedelta(seconds=expires_in)
+        payload["iat"] = datetime.utcnow()
+        
+        token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+        return {"token": token}
+    
+    elif action == "verify":
+        token = inputs.get("token", "")
+        try:
+            decoded = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            return {"valid": True, "payload": decoded}
+        except jwt.ExpiredSignatureError:
+            return {"valid": False, "error": "Token 已过期"}
+        except jwt.InvalidTokenError as e:
+            return {"valid": False, "error": str(e)}
+    
+    return {"error": "无效的操作类型"}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    action = inputs.get("action")
+    if action == "generate":
+        return bool(inputs.get("payload"))
+    elif action == "verify":
+        return bool(inputs.get("token"))
+    return False
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 5
+  memory_mb: 128
+
+dependencies:
+  - pyjwt>=2.8.0
+
+environment:
+  JWT_SECRET: "\${JWT_SECRET}"
+`,
+  },
+  {
+    id: "push-notification",
+    name: "消息推送",
+    description: "通过多渠道发送推送通知",
+    category: "通知",
+    icon: <Bell className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "push-notification"
+version: "1.0.0"
+description: "多渠道消息推送，支持邮件、短信、微信、钉钉"
+author: "Agent OS Studio"
+permissions:
+  - internet_access
+  - notification
+inputs:
+  - name: channel
+    type: string
+    description: 推送渠道（email/sms/wechat/dingtalk）
+    required: true
+  - name: recipient
+    type: string
+    description: 接收者标识
+    required: true
+  - name: title
+    type: string
+    description: 消息标题
+    required: true
+  - name: content
+    type: string
+    description: 消息内容
+    required: true
+outputs:
+  - name: success
+    type: boolean
+    description: 发送是否成功
+  - name: message_id
+    type: string
+    description: 消息ID
+---
+
+# 消息推送技能
+
+## 支持渠道
+
+- **邮件**: SMTP 发送
+- **短信**: 阿里云/腾讯云短信
+- **微信**: 企业微信机器人
+- **钉钉**: 钉钉机器人
+
+## MPLP 集成
+
+发送消息前会触发确认流程。
+`,
+    handlerCode: `"""
+消息推送技能处理器
+"""
+
+import os
+import uuid
+import httpx
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    channel = inputs.get("channel", "")
+    recipient = inputs.get("recipient", "")
+    title = inputs.get("title", "")
+    content = inputs.get("content", "")
+    
+    if channel == "dingtalk":
+        return await send_dingtalk(recipient, title, content)
+    elif channel == "wechat":
+        return await send_wechat(recipient, title, content)
+    elif channel == "email":
+        return await send_email(recipient, title, content)
+    
+    return {"success": False, "error": "不支持的渠道"}
+
+async def send_dingtalk(webhook: str, title: str, content: str) -> Dict[str, Any]:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(webhook, json={
+            "msgtype": "markdown",
+            "markdown": {"title": title, "text": content}
+        })
+        return {
+            "success": response.status_code == 200,
+            "message_id": str(uuid.uuid4())
+        }
+
+async def send_wechat(webhook: str, title: str, content: str) -> Dict[str, Any]:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(webhook, json={
+            "msgtype": "markdown",
+            "markdown": {"content": f"### {title}\\n{content}"}
+        })
+        return {
+            "success": response.status_code == 200,
+            "message_id": str(uuid.uuid4())
+        }
+
+async def send_email(recipient: str, title: str, content: str) -> Dict[str, Any]:
+    # 使用 SMTP 发送邮件的示例
+    import smtplib
+    from email.mime.text import MIMEText
+    
+    smtp_host = os.getenv("SMTP_HOST", "")
+    smtp_user = os.getenv("SMTP_USER", "")
+    smtp_pass = os.getenv("SMTP_PASS", "")
+    
+    msg = MIMEText(content)
+    msg["Subject"] = title
+    msg["From"] = smtp_user
+    msg["To"] = recipient
+    
+    try:
+        with smtplib.SMTP(smtp_host, 587) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        return {"success": True, "message_id": str(uuid.uuid4())}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return all([
+        inputs.get("channel"),
+        inputs.get("recipient"),
+        inputs.get("title"),
+        inputs.get("content")
+    ])
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 30
+  memory_mb: 256
+
+dependencies:
+  - httpx>=0.24.0
+
+environment:
+  SMTP_HOST: "\${SMTP_HOST}"
+  SMTP_USER: "\${SMTP_USER}"
+  SMTP_PASS: "\${SMTP_PASS}"
+
+mplp:
+  require_confirmation: true
+`,
+  },
+  {
+    id: "payment-stripe",
+    name: "Stripe 支付",
+    description: "集成 Stripe 支付接口，支持创建支付和查询订单",
+    category: "支付",
+    icon: <CreditCard className="h-4 w-4" />,
+    difficulty: "advanced",
+    content: `---
+name: "payment-stripe"
+version: "1.0.0"
+description: "Stripe 支付集成，支持创建支付意图、确认支付、退款"
+author: "Agent OS Studio"
+permissions:
+  - payment
+  - internet_access
+inputs:
+  - name: action
+    type: string
+    description: 操作类型（create_intent/confirm/refund/query）
+    required: true
+  - name: amount
+    type: number
+    description: 金额（分）
+    required: false
+  - name: currency
+    type: string
+    description: 货币代码
+    required: false
+    default: "cny"
+  - name: payment_intent_id
+    type: string
+    description: 支付意图ID
+    required: false
+outputs:
+  - name: client_secret
+    type: string
+    description: 客户端密钥
+  - name: status
+    type: string
+    description: 支付状态
+  - name: payment_intent_id
+    type: string
+    description: 支付意图ID
+---
+
+# Stripe 支付技能
+
+## 支持操作
+
+- 创建支付意图
+- 确认支付
+- 处理退款
+- 查询订单状态
+
+## 安全说明
+
+所有支付操作需要 MPLP 确认。
+`,
+    handlerCode: `"""
+Stripe 支付技能处理器
+"""
+
+import os
+import stripe
+from typing import Dict, Any
+
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    action = inputs.get("action", "")
+    
+    if action == "create_intent":
+        amount = inputs.get("amount", 0)
+        currency = inputs.get("currency", "cny")
+        
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency=currency,
+            automatic_payment_methods={"enabled": True}
+        )
+        return {
+            "payment_intent_id": intent.id,
+            "client_secret": intent.client_secret,
+            "status": intent.status
+        }
+    
+    elif action == "confirm":
+        payment_intent_id = inputs.get("payment_intent_id", "")
+        intent = stripe.PaymentIntent.confirm(payment_intent_id)
+        return {
+            "payment_intent_id": intent.id,
+            "status": intent.status
+        }
+    
+    elif action == "refund":
+        payment_intent_id = inputs.get("payment_intent_id", "")
+        refund = stripe.Refund.create(payment_intent=payment_intent_id)
+        return {
+            "refund_id": refund.id,
+            "status": refund.status
+        }
+    
+    elif action == "query":
+        payment_intent_id = inputs.get("payment_intent_id", "")
+        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        return {
+            "payment_intent_id": intent.id,
+            "status": intent.status,
+            "amount": intent.amount
+        }
+    
+    return {"error": "无效的操作"}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    action = inputs.get("action")
+    if action == "create_intent":
+        return inputs.get("amount", 0) > 0
+    return bool(inputs.get("payment_intent_id"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 30
+  memory_mb: 256
+
+dependencies:
+  - stripe>=7.0.0
+
+environment:
+  STRIPE_SECRET_KEY: "\${STRIPE_SECRET_KEY}"
+
+mplp:
+  require_confirmation: true
+  confirm_message: "确认执行支付操作？"
+`,
+  },
+  {
+    id: "geocoding",
+    name: "地理编码",
+    description: "地址与经纬度的相互转换",
+    category: "地理",
+    icon: <MapPin className="h-4 w-4" />,
+    difficulty: "beginner",
+    content: `---
+name: "geocoding"
+version: "1.0.0"
+description: "地址与经纬度转换，支持正向和逆向地理编码"
+author: "Agent OS Studio"
+permissions:
+  - internet_access
+inputs:
+  - name: action
+    type: string
+    description: 操作类型（geocode/reverse）
+    required: true
+  - name: address
+    type: string
+    description: 地址（正向编码时使用）
+    required: false
+  - name: lat
+    type: number
+    description: 纬度（逆向编码时使用）
+    required: false
+  - name: lng
+    type: number
+    description: 经度（逆向编码时使用）
+    required: false
+outputs:
+  - name: lat
+    type: number
+    description: 纬度
+  - name: lng
+    type: number
+    description: 经度
+  - name: formatted_address
+    type: string
+    description: 格式化地址
+---
+
+# 地理编码技能
+
+## 功能
+
+- 正向编码：地址 → 经纬度
+- 逆向编码：经纬度 → 地址
+`,
+    handlerCode: `"""
+地理编码技能处理器
+"""
+
+import os
+import httpx
+from typing import Dict, Any
+
+GEOCODING_API_KEY = os.getenv("GEOCODING_API_KEY", "")
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    action = inputs.get("action", "")
+    
+    async with httpx.AsyncClient() as client:
+        if action == "geocode":
+            address = inputs.get("address", "")
+            response = await client.get(
+                "https://restapi.amap.com/v3/geocode/geo",
+                params={"key": GEOCODING_API_KEY, "address": address}
+            )
+            data = response.json()
+            if data.get("geocodes"):
+                location = data["geocodes"][0]["location"].split(",")
+                return {
+                    "lng": float(location[0]),
+                    "lat": float(location[1]),
+                    "formatted_address": data["geocodes"][0]["formatted_address"]
+                }
+        
+        elif action == "reverse":
+            lat = inputs.get("lat", 0)
+            lng = inputs.get("lng", 0)
+            response = await client.get(
+                "https://restapi.amap.com/v3/geocode/regeo",
+                params={"key": GEOCODING_API_KEY, "location": f"{lng},{lat}"}
+            )
+            data = response.json()
+            if data.get("regeocode"):
+                return {
+                    "lat": lat,
+                    "lng": lng,
+                    "formatted_address": data["regeocode"]["formatted_address"]
+                }
+    
+    return {"error": "地理编码失败"}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    action = inputs.get("action")
+    if action == "geocode":
+        return bool(inputs.get("address"))
+    elif action == "reverse":
+        return inputs.get("lat") is not None and inputs.get("lng") is not None
+    return False
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 10
+  memory_mb: 128
+
+dependencies:
+  - httpx>=0.24.0
+
+environment:
+  GEOCODING_API_KEY: "\${GEOCODING_API_KEY}"
+`,
+  },
+  {
+    id: "speech-to-text",
+    name: "语音转文字",
+    description: "将音频文件转换为文字",
+    category: "AI",
+    icon: <Mic className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "speech-to-text"
+version: "1.0.0"
+description: "使用 AI 模型将语音转换为文字"
+author: "Agent OS Studio"
+permissions:
+  - ai_inference
+  - file_read
+inputs:
+  - name: audio_url
+    type: string
+    description: 音频文件URL
+    required: true
+  - name: language
+    type: string
+    description: 语言代码
+    required: false
+    default: "zh"
+outputs:
+  - name: text
+    type: string
+    description: 转换后的文字
+  - name: duration
+    type: number
+    description: 音频时长（秒）
+---
+
+# 语音转文字技能
+
+## 支持格式
+
+- MP3, WAV, M4A, FLAC
+- 最大时长：30分钟
+`,
+    handlerCode: `"""
+语音转文字技能处理器
+"""
+
+import os
+import httpx
+from typing import Dict, Any
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    audio_url = inputs.get("audio_url", "")
+    language = inputs.get("language", "zh")
+    
+    # 下载音频文件
+    async with httpx.AsyncClient() as client:
+        audio_response = await client.get(audio_url)
+        audio_data = audio_response.content
+    
+    # 调用 Whisper API
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+            files={"file": ("audio.mp3", audio_data)},
+            data={"model": "whisper-1", "language": language}
+        )
+        data = response.json()
+    
+    return {
+        "text": data.get("text", ""),
+        "duration": data.get("duration", 0)
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("audio_url"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 120
+  memory_mb: 512
+
+dependencies:
+  - httpx>=0.24.0
+
+environment:
+  OPENAI_API_KEY: "\${OPENAI_API_KEY}"
+
+limits:
+  max_audio_duration_seconds: 1800
+`,
+  },
+  {
+    id: "video-thumbnail",
+    name: "视频缩略图",
+    description: "从视频中提取缩略图和关键帧",
+    category: "媒体",
+    icon: <Video className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "video-thumbnail"
+version: "1.0.0"
+description: "从视频提取缩略图、关键帧和元数据"
+author: "Agent OS Studio"
+permissions:
+  - file_read
+  - file_write
+inputs:
+  - name: video_url
+    type: string
+    description: 视频URL
+    required: true
+  - name: timestamp
+    type: number
+    description: 截取时间点（秒）
+    required: false
+    default: 1
+  - name: count
+    type: number
+    description: 截取数量
+    required: false
+    default: 1
+outputs:
+  - name: thumbnails
+    type: array
+    description: 缩略图URL列表
+  - name: duration
+    type: number
+    description: 视频时长
+  - name: resolution
+    type: object
+    description: 视频分辨率
+---
+
+# 视频缩略图技能
+
+## 功能
+
+- 指定时间点截图
+- 批量提取关键帧
+- 获取视频元数据
+`,
+    handlerCode: `"""
+视频缩略图技能处理器
+"""
+
+import os
+import tempfile
+import subprocess
+from typing import Dict, Any, List
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    video_url = inputs.get("video_url", "")
+    timestamp = inputs.get("timestamp", 1)
+    count = inputs.get("count", 1)
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        video_path = f"{tmpdir}/video.mp4"
+        
+        # 下载视频
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.get(video_url)
+            with open(video_path, "wb") as f:
+                f.write(response.content)
+        
+        # 获取视频信息
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", 
+             "-show_format", "-show_streams", video_path],
+            capture_output=True, text=True
+        )
+        import json
+        info = json.loads(probe.stdout)
+        duration = float(info["format"]["duration"])
+        
+        # 提取缩略图
+        thumbnails = []
+        for i in range(count):
+            ts = timestamp + i * (duration / count)
+            output = f"{tmpdir}/thumb_{i}.jpg"
+            subprocess.run([
+                "ffmpeg", "-ss", str(ts), "-i", video_path,
+                "-vframes", "1", "-q:v", "2", output
+            ])
+            # 这里应该上传到存储服务并返回URL
+            thumbnails.append(f"thumbnail_{i}.jpg")
+        
+        return {
+            "thumbnails": thumbnails,
+            "duration": duration,
+            "resolution": {
+                "width": info["streams"][0].get("width", 0),
+                "height": info["streams"][0].get("height", 0)
+            }
+        }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("video_url"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 180
+  memory_mb: 1024
+
+dependencies:
+  - httpx>=0.24.0
+
+system_dependencies:
+  - ffmpeg
+  - ffprobe
+
+limits:
+  max_video_size_mb: 500
+`,
+  },
+  {
+    id: "data-visualization",
+    name: "数据可视化",
+    description: "根据数据生成图表图片",
+    category: "数据分析",
+    icon: <BarChart3 className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "data-visualization"
+version: "1.0.0"
+description: "根据数据生成柱状图、折线图、饼图等可视化图表"
+author: "Agent OS Studio"
+permissions:
+  - file_write
+inputs:
+  - name: chart_type
+    type: string
+    description: 图表类型（bar/line/pie/scatter）
+    required: true
+  - name: data
+    type: object
+    description: 图表数据
+    required: true
+  - name: title
+    type: string
+    description: 图表标题
+    required: false
+  - name: width
+    type: number
+    description: 图表宽度
+    required: false
+    default: 800
+  - name: height
+    type: number
+    description: 图表高度
+    required: false
+    default: 600
+outputs:
+  - name: image_url
+    type: string
+    description: 生成的图表图片URL
+---
+
+# 数据可视化技能
+
+## 支持图表
+
+- 柱状图 (bar)
+- 折线图 (line)
+- 饼图 (pie)
+- 散点图 (scatter)
+`,
+    handlerCode: `"""
+数据可视化技能处理器
+"""
+
+import io
+import base64
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    chart_type = inputs.get("chart_type", "bar")
+    data = inputs.get("data", {})
+    title = inputs.get("title", "")
+    width = inputs.get("width", 800)
+    height = inputs.get("height", 600)
+    
+    plt.figure(figsize=(width/100, height/100))
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    
+    labels = data.get("labels", [])
+    values = data.get("values", [])
+    
+    if chart_type == "bar":
+        plt.bar(labels, values)
+    elif chart_type == "line":
+        plt.plot(labels, values, marker='o')
+    elif chart_type == "pie":
+        plt.pie(values, labels=labels, autopct='%1.1f%%')
+    elif chart_type == "scatter":
+        x = data.get("x", [])
+        y = data.get("y", [])
+        plt.scatter(x, y)
+    
+    if title:
+        plt.title(title)
+    
+    plt.tight_layout()
+    
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', dpi=100)
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.read()).decode()
+    plt.close()
+    
+    return {
+        "image_url": f"data:image/png;base64,{image_base64}"
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("chart_type") and inputs.get("data"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 30
+  memory_mb: 512
+
+dependencies:
+  - matplotlib>=3.7.0
+  - numpy>=1.24.0
+`,
+  },
+  {
+    id: "git-operations",
+    name: "Git 操作",
+    description: "执行 Git 仓库的常见操作",
+    category: "开发工具",
+    icon: <GitBranch className="h-4 w-4" />,
+    difficulty: "advanced",
+    content: `---
+name: "git-operations"
+version: "1.0.0"
+description: "Git 仓库操作，支持克隆、提交、推送等"
+author: "Agent OS Studio"
+permissions:
+  - file_read
+  - file_write
+  - internet_access
+inputs:
+  - name: action
+    type: string
+    description: 操作类型（clone/commit/push/pull/status）
+    required: true
+  - name: repo_url
+    type: string
+    description: 仓库URL
+    required: false
+  - name: branch
+    type: string
+    description: 分支名
+    required: false
+    default: "main"
+  - name: message
+    type: string
+    description: 提交信息
+    required: false
+outputs:
+  - name: success
+    type: boolean
+    description: 操作是否成功
+  - name: output
+    type: string
+    description: 命令输出
+---
+
+# Git 操作技能
+
+## 支持操作
+
+- clone: 克隆仓库
+- commit: 提交更改
+- push: 推送到远程
+- pull: 拉取更新
+- status: 查看状态
+`,
+    handlerCode: `"""
+Git 操作技能处理器
+"""
+
+import os
+import subprocess
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    action = inputs.get("action", "")
+    repo_url = inputs.get("repo_url", "")
+    branch = inputs.get("branch", "main")
+    message = inputs.get("message", "")
+    work_dir = inputs.get("work_dir", "/tmp/repo")
+    
+    try:
+        if action == "clone":
+            result = subprocess.run(
+                ["git", "clone", "-b", branch, repo_url, work_dir],
+                capture_output=True, text=True
+            )
+        elif action == "commit":
+            subprocess.run(["git", "add", "."], cwd=work_dir)
+            result = subprocess.run(
+                ["git", "commit", "-m", message],
+                cwd=work_dir, capture_output=True, text=True
+            )
+        elif action == "push":
+            result = subprocess.run(
+                ["git", "push", "origin", branch],
+                cwd=work_dir, capture_output=True, text=True
+            )
+        elif action == "pull":
+            result = subprocess.run(
+                ["git", "pull", "origin", branch],
+                cwd=work_dir, capture_output=True, text=True
+            )
+        elif action == "status":
+            result = subprocess.run(
+                ["git", "status"],
+                cwd=work_dir, capture_output=True, text=True
+            )
+        else:
+            return {"success": False, "error": "无效的操作"}
+        
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout or result.stderr
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    action = inputs.get("action")
+    if action == "clone":
+        return bool(inputs.get("repo_url"))
+    elif action == "commit":
+        return bool(inputs.get("message"))
+    return action in ["push", "pull", "status"]
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 120
+  memory_mb: 512
+
+system_dependencies:
+  - git
+
+environment:
+  GIT_TOKEN: "\${GIT_TOKEN}"
+`,
+  },
+  {
+    id: "webhook-trigger",
+    name: "Webhook 触发器",
+    description: "发送和接收 Webhook 请求",
+    category: "集成",
+    icon: <Webhook className="h-4 w-4" />,
+    difficulty: "beginner",
+    content: `---
+name: "webhook-trigger"
+version: "1.0.0"
+description: "发送 Webhook 请求到指定端点"
+author: "Agent OS Studio"
+permissions:
+  - internet_access
+inputs:
+  - name: url
+    type: string
+    description: Webhook URL
+    required: true
+  - name: method
+    type: string
+    description: HTTP 方法
+    required: false
+    default: "POST"
+  - name: payload
+    type: object
+    description: 请求体
+    required: false
+  - name: headers
+    type: object
+    description: 请求头
+    required: false
+outputs:
+  - name: status_code
+    type: number
+    description: HTTP 状态码
+  - name: response
+    type: object
+    description: 响应内容
+---
+
+# Webhook 触发器技能
+
+## 功能
+
+- 支持 GET/POST/PUT/DELETE
+- 自定义请求头
+- JSON 请求体
+`,
+    handlerCode: `"""
+Webhook 触发器技能处理器
+"""
+
+import httpx
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    url = inputs.get("url", "")
+    method = inputs.get("method", "POST").upper()
+    payload = inputs.get("payload", {})
+    headers = inputs.get("headers", {})
+    
+    async with httpx.AsyncClient() as client:
+        if method == "GET":
+            response = await client.get(url, headers=headers)
+        elif method == "POST":
+            response = await client.post(url, json=payload, headers=headers)
+        elif method == "PUT":
+            response = await client.put(url, json=payload, headers=headers)
+        elif method == "DELETE":
+            response = await client.delete(url, headers=headers)
+        else:
+            return {"error": "不支持的 HTTP 方法"}
+    
+    try:
+        response_data = response.json()
+    except:
+        response_data = response.text
+    
+    return {
+        "status_code": response.status_code,
+        "response": response_data
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("url"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 30
+  memory_mb: 128
+
+dependencies:
+  - httpx>=0.24.0
+`,
+  },
 ];
 
 interface SkillTemplatesDialogProps {
   onSelectTemplate: (template: SkillTemplate) => void;
   trigger: React.ReactNode;
+}
+
+// AI 生成模版组件
+function AIGenerateTemplate({
+  onGenerate,
+}: {
+  onGenerate: (template: SkillTemplate) => void;
+}) {
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
+
+  const handleGenerate = async () => {
+    if (!description.trim()) {
+      toast({
+        title: "请输入技能描述",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-skill-template", {
+        body: { description, category, difficulty },
+      });
+
+      if (error) throw error;
+
+      const generatedTemplate: SkillTemplate = {
+        id: `ai-generated-${Date.now()}`,
+        name: data.name || "AI 生成技能",
+        description: data.description || description,
+        category: category || "自定义",
+        icon: <Sparkles className="h-4 w-4" />,
+        difficulty,
+        content: data.skillMd || "",
+        handlerCode: data.handlerPy || "",
+        configYaml: data.configYaml || "",
+      };
+
+      toast({
+        title: "技能模版生成成功",
+        description: `已生成 ${generatedTemplate.name}`,
+      });
+
+      onGenerate(generatedTemplate);
+    } catch (error) {
+      console.error("Generate template error:", error);
+      toast({
+        title: "生成失败",
+        description: error instanceof Error ? error.message : "请稍后重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+        <div className="flex items-center gap-2 mb-2">
+          <Bot className="h-5 w-5 text-primary" />
+          <span className="font-medium">AI 智能生成</span>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          描述你需要的技能功能，AI 将自动生成完整的 Skill.md 模版
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <Label>技能描述 *</Label>
+          <Textarea
+            placeholder="例如：一个可以调用 OpenAI API 进行图片识别的技能，支持识别图片中的物体、文字和场景..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="h-24 mt-1"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>类别（可选）</Label>
+            <Input
+              placeholder="例如：AI、数据处理"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label>难度</Label>
+            <Select value={difficulty} onValueChange={(v) => setDifficulty(v as typeof difficulty)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">入门</SelectItem>
+                <SelectItem value="intermediate">中级</SelectItem>
+                <SelectItem value="advanced">高级</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Button
+          className="w-full"
+          onClick={handleGenerate}
+          disabled={isGenerating || !description.trim()}
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              正在生成...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4 mr-2" />
+              生成技能模版
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export function SkillTemplatesDialog({
@@ -1637,6 +2978,7 @@ export function SkillTemplatesDialog({
 }: SkillTemplatesDialogProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("library");
 
   const categories = [
     "all",
@@ -1668,70 +3010,92 @@ export function SkillTemplatesDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
             技能模板库
           </DialogTitle>
+          <DialogDescription>
+            选择预设模版或使用 AI 生成自定义技能
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2 flex-wrap">
-          {categories.map((cat) => (
-            <Button
-              key={cat}
-              size="sm"
-              variant={selectedCategory === cat ? "default" : "outline"}
-              onClick={() => setSelectedCategory(cat)}
-              className="h-7 text-xs"
-            >
-              {cat === "all" ? "全部" : cat}
-            </Button>
-          ))}
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="library" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              模版库 ({skillTemplates.length})
+            </TabsTrigger>
+            <TabsTrigger value="ai-generate" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI 生成
+            </TabsTrigger>
+          </TabsList>
 
-        <ScrollArea className="h-[500px] pr-4">
-          <div className="grid grid-cols-2 gap-4">
-            {filteredTemplates.map((template) => (
-              <div
-                key={template.id}
-                className="p-4 rounded-lg border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group"
-                onClick={() => handleSelect(template)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    {template.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-sm truncate">
-                        {template.name}
-                      </h3>
-                      <Badge
-                        className={`text-[10px] px-1.5 py-0 ${
-                          difficultyColors[template.difficulty]
-                        }`}
-                      >
-                        {difficultyLabels[template.difficulty]}
-                      </Badge>
+          <TabsContent value="library" className="mt-4">
+            <div className="flex gap-2 flex-wrap mb-4">
+              {categories.map((cat) => (
+                <Button
+                  key={cat}
+                  size="sm"
+                  variant={selectedCategory === cat ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(cat)}
+                  className="h-7 text-xs"
+                >
+                  {cat === "all" ? "全部" : cat}
+                </Button>
+              ))}
+            </div>
+
+            <ScrollArea className="h-[450px] pr-4">
+              <div className="grid grid-cols-2 gap-4">
+                {filteredTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="p-4 rounded-lg border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group"
+                    onClick={() => handleSelect(template)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        {template.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-sm truncate">
+                            {template.name}
+                          </h3>
+                          <Badge
+                            className={`text-[10px] px-1.5 py-0 ${
+                              difficultyColors[template.difficulty]
+                            }`}
+                          >
+                            {difficultyLabels[template.difficulty]}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {template.description}
+                        </p>
+                        <Badge variant="outline" className="mt-2 text-[10px]">
+                          {template.category}
+                        </Badge>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {template.description}
-                    </p>
-                    <Badge variant="outline" className="mt-2 text-[10px]">
-                      {template.category}
-                    </Badge>
+                    <div className="mt-3 pt-3 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" className="w-full h-7 text-xs">
+                        使用此模板
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="sm" className="w-full h-7 text-xs">
-                    使用此模板
-                  </Button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="ai-generate" className="mt-4">
+            <AIGenerateTemplate onGenerate={handleSelect} />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
