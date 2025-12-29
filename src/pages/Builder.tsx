@@ -23,7 +23,7 @@ import { toast } from "@/hooks/use-toast";
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
-import { AgentConfigPanel, AgentConfig } from "@/components/builder/AgentConfigPanel";
+import { AgentConfigPanel, AgentConfig, SkillConfigOverride } from "@/components/builder/AgentConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
@@ -56,6 +56,7 @@ const Builder = () => {
   const [draggingSkill, setDraggingSkill] = useState<Skill | null>(null);
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(agentIdParam || null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [skillOverrides, setSkillOverrides] = useState<Record<string, SkillConfigOverride>>({});
 
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: "",
@@ -124,6 +125,8 @@ const Builder = () => {
       description: s!.description || "",
       permissions: s!.permissions || [],
       version: s!.version,
+      inputs: (s!.inputs as Skill["inputs"]) || [],
+      outputs: (s!.outputs as Skill["outputs"]) || [],
     })) as Skill[];
 
   const addedSkillIds = addedSkills.map((s) => s.id);
@@ -300,11 +303,16 @@ const Builder = () => {
       },
       system_prompt: agentConfig.systemPrompt || "",
       skills: {
-        mounts: addedSkills.map((s) => ({
-          skill_id: s.id,
-          version: s.version,
-          config_overrides: {},
-        })),
+        mounts: addedSkills.map((s) => {
+          const override = skillOverrides[s.id];
+          return {
+            skill_id: s.id,
+            version: s.version,
+            enabled: override?.enabled ?? true,
+            priority: override?.priority ?? 1,
+            config_overrides: override?.parameters ?? {},
+          };
+        }),
         details: addedSkills.map((s) => ({
           id: s.id,
           name: s.name,
@@ -510,6 +518,10 @@ const Builder = () => {
         onShowManifest={() => setShowManifest(true)}
         canDeploy={canDeploy}
         selectedSkill={selectedSkill || null}
+        skillOverrides={skillOverrides}
+        onSkillOverrideChange={(skillId, override) => {
+          setSkillOverrides((prev) => ({ ...prev, [skillId]: override }));
+        }}
       />
 
       {/* Manifest Preview Modal */}
