@@ -1,4 +1,5 @@
 import { useState, DragEvent } from "react";
+import { Link } from "react-router-dom";
 import {
   Puzzle,
   Search,
@@ -11,10 +12,12 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { usePublishedSkills, type Skill as DbSkill } from "@/hooks/useSkills";
 import { cn } from "@/lib/utils";
 
@@ -171,9 +174,19 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : skills.length === 0 ? (
+          <EmptyState
+            icon={Puzzle}
+            title="技能市场为空"
+            description="还没有已发布的技能，前往 Foundry 创建第一个技能吧"
+            action={{
+              label: "创建技能",
+              onClick: () => window.location.href = "/foundry",
+            }}
+          />
         ) : filteredSkills.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            {skills.length === 0 ? "暂无已发布的技能" : "未找到匹配的技能"}
+          <div className="text-center py-8 text-muted-foreground text-sm animate-fade-in">
+            未找到匹配的技能
           </div>
         ) : (
           filteredSkills.map((skill) => {
