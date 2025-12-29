@@ -16,6 +16,7 @@ import {
   FileCode,
   Sparkles,
   Library,
+  FileArchive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ import {
 import { SkillTemplatesDialog, SkillTemplate } from "@/components/foundry/SkillTemplates";
 import { DependencyManager } from "@/components/foundry/DependencyManager";
 import { SkillTestSandbox } from "@/components/foundry/SkillTestSandbox";
+import { SkillImportExport } from "@/components/foundry/SkillImportExport";
 import {
   useMySkills,
   useCreateSkill,
@@ -317,6 +319,21 @@ const Foundry = () => {
     });
   };
 
+  const handleImport = (
+    files: { skillMd: string; handlerPy: string; configYaml: string },
+    skillName: string
+  ) => {
+    setContents({
+      "file-skill": files.skillMd,
+      "file-handler": files.handlerPy,
+      "file-config": files.configYaml,
+    });
+    setFiles(createInitialFiles(skillName));
+    setActiveSkillId(null);
+    setActiveFileId("file-skill");
+    setHasUnsavedChanges(true);
+  };
+
   const handleSave = async () => {
     if (!user) {
       toast({
@@ -530,6 +547,21 @@ const Foundry = () => {
                   模板库
                 </Button>
               }
+            />
+            <SkillImportExport
+              trigger={
+                <Button variant="ghost" size="sm" className="gap-1.5 h-8">
+                  <FileArchive className="h-3.5 w-3.5" />
+                  导入/导出
+                </Button>
+              }
+              currentFiles={{
+                skillMd: contents["file-skill"],
+                handlerPy: contents["file-handler"],
+                configYaml: contents["file-config"],
+              }}
+              skillName={validation.metadata?.name || "new-skill"}
+              onImport={handleImport}
             />
             <Button
               variant="ghost"
