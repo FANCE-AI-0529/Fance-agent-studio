@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Play,
   Save,
@@ -11,6 +12,7 @@ import {
   Plus,
   Loader2,
   Trash2,
+  LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +42,7 @@ import {
   useDeleteSkill,
   type Skill,
 } from "@/hooks/useSkills";
+import { useAuth } from "@/contexts/AuthContext";
 
 const defaultSkillMd = `---
 name: "新技能"
@@ -149,6 +152,8 @@ const createFileContents = (): Record<string, string> => ({
 });
 
 const Foundry = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
   const [files, setFiles] = useState<FileItem[]>(createInitialFiles("new-skill"));
   const [activeFileId, setActiveFileId] = useState("file-skill");
@@ -230,6 +235,16 @@ const Foundry = () => {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "请先登录",
+        description: "保存技能需要登录账号",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     const skillMdContent = contents["file-skill"];
     const parsed = parseSkillMd(skillMdContent);
 
@@ -253,14 +268,17 @@ const Foundry = () => {
       outputs: parsed.metadata.outputs || [],
     };
 
-    if (activeSkillId) {
-      await updateSkill.mutateAsync({ id: activeSkillId, ...skillData });
-    } else {
-      const newSkill = await createSkill.mutateAsync(skillData);
-      setActiveSkillId(newSkill.id);
+    try {
+      if (activeSkillId) {
+        await updateSkill.mutateAsync({ id: activeSkillId, ...skillData });
+      } else {
+        const newSkill = await createSkill.mutateAsync(skillData);
+        setActiveSkillId(newSkill.id);
+      }
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      // Error toast is handled by the mutation
     }
-
-    setHasUnsavedChanges(false);
   };
 
   const handleTest = () => {
@@ -271,6 +289,16 @@ const Foundry = () => {
   };
 
   const handlePublish = async () => {
+    if (!user) {
+      toast({
+        title: "请先登录",
+        description: "发布技能需要登录账号",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     if (!validation.isValid) {
       toast({
         title: "无法发布",
@@ -286,7 +314,11 @@ const Foundry = () => {
     }
 
     if (activeSkillId) {
-      await publishSkill.mutateAsync(activeSkillId);
+      try {
+        await publishSkill.mutateAsync(activeSkillId);
+      } catch (error) {
+        // Error toast is handled by the mutation
+      }
     } else {
       toast({
         title: "请先保存",
@@ -396,6 +428,17 @@ const Foundry = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {!user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/auth")}
+                className="gap-1.5 h-8 text-muted-foreground"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                登录
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
