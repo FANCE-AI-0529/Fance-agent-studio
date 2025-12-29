@@ -23,7 +23,7 @@ import { toast } from "@/hooks/use-toast";
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
-import { AgentConfigPanel, AgentConfig, SkillConfigOverride } from "@/components/builder/AgentConfigPanel";
+import { AgentConfigPanel, AgentConfig, SkillConfigOverride, EnvironmentConfig } from "@/components/builder/AgentConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
@@ -73,11 +73,13 @@ const Builder = () => {
   // Load existing agent data
   useEffect(() => {
     if (existingAgent) {
+      const manifest = existingAgent.manifest as any;
       setAgentConfig({
         name: existingAgent.name,
         department: existingAgent.department || "",
         model: existingAgent.model as "claude-3.5" | "gpt-4",
-        systemPrompt: (existingAgent.manifest as any)?.system_prompt || "",
+        systemPrompt: manifest?.system_prompt || "",
+        environments: manifest?.environments || undefined,
       });
       setCurrentAgentId(existingAgent.id);
 
@@ -302,6 +304,16 @@ const Builder = () => {
         },
       },
       system_prompt: agentConfig.systemPrompt || "",
+      // 环境变量配置 - 持久化存储 (转换为 JSON 兼容格式)
+      environments: agentConfig.environments ? {
+        development: agentConfig.environments.development.map(v => ({ key: v.key, value: v.value, isSecret: v.isSecret })),
+        staging: agentConfig.environments.staging.map(v => ({ key: v.key, value: v.value, isSecret: v.isSecret })),
+        production: agentConfig.environments.production.map(v => ({ key: v.key, value: v.value, isSecret: v.isSecret })),
+      } : {
+        development: [],
+        staging: [],
+        production: [],
+      },
       skills: {
         mounts: addedSkills.map((s) => {
           const override = skillOverrides[s.id];
