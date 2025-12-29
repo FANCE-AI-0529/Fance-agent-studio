@@ -30,7 +30,7 @@ const SkillNode = memo(({ data, selected }: SkillNodeProps) => {
 
   return (
     <div
-      className={`node-card rounded-lg relative transition-all duration-200 ${
+      className={`node-card rounded-lg relative transition-all duration-200 animate-scale-in ${
         selected ? "border-primary glow-primary" : ""
       }`}
       style={{ minWidth: 180 }}

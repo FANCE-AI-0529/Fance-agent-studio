@@ -13,6 +13,8 @@ import {
   Loader2,
   Trash2,
   LogIn,
+  FileCode,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,54 @@ import {
   type Skill,
 } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Anthropic Skills Filesystem 标准模板
+const anthropicSkillTemplate = `---
+name: "new-skill"
+version: "1.0.0"
+description: "Description here"
+author: "Agent OS Studio"
+permissions:
+  - internet_access
+  - read
+inputs:
+  - name: query
+    type: string
+    description: The input query
+    required: true
+outputs:
+  - name: response
+    type: string
+    description: The processed response
+---
+
+# Instructions
+
+This skill provides the following capabilities:
+
+## Capabilities
+
+1. **Primary Function** - Describe the main capability
+2. **Secondary Function** - Describe additional capability
+
+## Usage Examples
+
+\`\`\`
+User: Example input query
+Assistant: Example response output
+\`\`\`
+
+## Guidelines
+
+- Follow these guidelines when using this skill
+- Handle errors gracefully
+- Return structured responses
+
+## Limitations
+
+- Document any known limitations
+- Specify edge cases
+`;
 
 const defaultSkillMd = `---
 name: "新技能"
@@ -232,6 +282,19 @@ const Foundry = () => {
     setFiles(createInitialFiles("new-skill"));
     setActiveFileId("file-skill");
     setHasUnsavedChanges(false);
+  };
+
+  const handleLoadTemplate = () => {
+    setContents((prev) => ({
+      ...prev,
+      "file-skill": anthropicSkillTemplate,
+    }));
+    setActiveFileId("file-skill");
+    setHasUnsavedChanges(true);
+    toast({
+      title: "模板已加载",
+      description: "Anthropic Skills Filesystem 标准模板已填入",
+    });
   };
 
   const handleSave = async () => {
@@ -439,6 +502,15 @@ const Foundry = () => {
                 登录
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLoadTemplate}
+              className="gap-1.5 h-8"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              加载模板
+            </Button>
             <Button
               variant="ghost"
               size="sm"

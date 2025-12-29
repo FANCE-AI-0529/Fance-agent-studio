@@ -404,6 +404,15 @@ const Builder = () => {
         navigate(`/builder/${agentId}`, { replace: true });
       }
       await deployAgent.mutateAsync(agentId);
+      
+      // Navigate to Runtime after successful deploy
+      toast({ 
+        title: "部署成功", 
+        description: "正在跳转到运行环境..." 
+      });
+      setTimeout(() => {
+        navigate("/runtime");
+      }, 1000);
     }
   };
 

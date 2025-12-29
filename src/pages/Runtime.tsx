@@ -835,7 +835,7 @@ const Runtime = () => {
             return (
               <div
                 key={message.id}
-                className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                className={`flex gap-3 animate-slide-up ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                   message.role === "user" 
