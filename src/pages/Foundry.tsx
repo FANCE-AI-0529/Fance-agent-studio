@@ -39,6 +39,7 @@ import {
 } from "@/components/foundry/SkillValidator";
 import { SkillTemplatesDialog, SkillTemplate } from "@/components/foundry/SkillTemplates";
 import { DependencyManager } from "@/components/foundry/DependencyManager";
+import { SkillTestSandbox } from "@/components/foundry/SkillTestSandbox";
 import {
   useMySkills,
   useCreateSkill,
@@ -539,15 +540,15 @@ const Foundry = () => {
               <Sparkles className="h-3.5 w-3.5" />
               快速模板
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleTest}
-              className="gap-1.5 h-8"
-            >
-              <Play className="h-3.5 w-3.5" />
-              测试
-            </Button>
+            <SkillTestSandbox
+              metadata={validation.metadata}
+              trigger={
+                <Button variant="ghost" size="sm" className="gap-1.5 h-8">
+                  <Play className="h-3.5 w-3.5" />
+                  测试
+                </Button>
+              }
+            />
             <Button
               variant="ghost"
               size="sm"
