@@ -34,6 +34,23 @@ export function useMyAgents() {
   });
 }
 
+// Fetch all deployed agents (for runtime selection)
+export function useDeployedAgents() {
+  return useQuery({
+    queryKey: ["agents", "deployed"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agents")
+        .select("*")
+        .eq("status", "deployed")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 // Fetch a single agent with its skills
 export function useAgent(agentId: string | null) {
   return useQuery({
