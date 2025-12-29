@@ -11,7 +11,8 @@ import {
   Cpu,
   Database,
   FileCode,
-  Key
+  Key,
+  Settings2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { TraceTree, TraceSession, TraceEvent, TraceEventType } from "@/component
 import { AgentSelector } from "@/components/runtime/AgentSelector";
 import { MPLPStepper, MPLPPhase } from "@/components/runtime/MPLPStepper";
 import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/ThinkingProcess";
+import { ModelSelector, availableModels } from "@/components/runtime/ModelSelector";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -388,9 +390,13 @@ const Runtime = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState("google/gemini-2.5-flash");
   const assistantContentRef = useRef("");
   const currentEventsRef = useRef<TraceEvent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Get selected model info
+  const selectedModel = availableModels.find(m => m.id === selectedModelId) || availableModels[0];
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -409,10 +415,12 @@ const Runtime = () => {
   const currentAgentConfig = selectedAgent ? {
     name: selectedAgent.name,
     systemPrompt: (selectedAgent.manifest as any)?.system_prompt || undefined,
-    model: selectedAgent.model,
+    model: selectedModelId,
     skills: agentSkills,
     mplpPolicy: selectedAgent.mplp_policy,
-  } : undefined;
+  } : {
+    model: selectedModelId,
+  };
 
   // Sync persisted messages to local state
   useEffect(() => {
@@ -959,12 +967,22 @@ const Runtime = () => {
             )}
           </div>
           
-          {activeSkill && (
-            <Badge variant="outline" className="text-xs gap-1">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              {activeSkill}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {activeSkill && (
+              <Badge variant="outline" className="text-xs gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {activeSkill}
+              </Badge>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <ModelSelector
+                value={selectedModelId}
+                onChange={setSelectedModelId}
+                disabled={currentPhase !== "idle"}
+              />
+            </div>
+          </div>
         </div>
 
         {/* MPLP Protocol Status Bar (Stepper) */}
