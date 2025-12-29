@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Terminal, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronRight, Terminal, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,66 +46,88 @@ export function ThinkingProcess({
   if (logs.length === 0) return null;
 
   return (
-    <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
+    <motion.div 
+      className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Header */}
       <button
         onClick={handleToggle}
         className="w-full flex items-center justify-between px-3 py-2 bg-secondary/30 hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          {isExpanded ? (
+          <motion.div
+            animate={{ rotate: isExpanded ? 0 : -90 }}
+            transition={{ duration: 0.2 }}
+          >
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          )}
+          </motion.div>
           <Terminal className="h-4 w-4 text-cognitive" />
-          <span className="text-sm font-medium">Thinking Process</span>
+          <span className="text-sm font-medium font-mono">Thinking Process</span>
         </div>
-        <Badge variant="outline" className="text-[10px]">
+        <Badge variant="outline" className="text-[10px] font-mono">
           {logs.length} entries
         </Badge>
       </button>
 
-      {/* Log content */}
-      {isExpanded && (
-        <div className="p-3 max-h-[200px] overflow-y-auto">
-          <div className="font-mono text-xs space-y-1.5">
-            {logs.map((log) => {
-              const config = levelConfig[log.level];
-              const Icon = config.icon;
-              
-              return (
-                <div key={log.id} className="flex items-start gap-2">
-                  {/* Timestamp */}
-                  <span className="text-muted-foreground flex-shrink-0 w-16">
-                    {log.timestamp.toLocaleTimeString('zh-CN', { 
-                      hour: '2-digit', 
-                      minute: '2-digit', 
-                      second: '2-digit',
-                      hour12: false
-                    })}
-                  </span>
+      {/* Log content with animation */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="p-3 max-h-[200px] overflow-y-auto">
+              <div className="font-mono text-xs space-y-1.5">
+                {logs.map((log, index) => {
+                  const config = levelConfig[log.level];
+                  const Icon = config.icon;
                   
-                  {/* Module badge */}
-                  <Badge 
-                    variant="outline" 
-                    className="text-[9px] px-1.5 py-0 h-4 flex-shrink-0 font-mono"
-                  >
-                    {log.module}
-                  </Badge>
-                  
-                  {/* Icon and message */}
-                  <div className={cn("flex items-start gap-1.5 min-w-0", config.color)}>
-                    <Icon className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                    <span className="break-all">{log.message}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+                  return (
+                    <motion.div 
+                      key={log.id} 
+                      className="flex items-start gap-2"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.2 }}
+                    >
+                      {/* Timestamp */}
+                      <span className="text-muted-foreground flex-shrink-0 w-16">
+                        {log.timestamp.toLocaleTimeString('zh-CN', { 
+                          hour: '2-digit', 
+                          minute: '2-digit', 
+                          second: '2-digit',
+                          hour12: false
+                        })}
+                      </span>
+                      
+                      {/* Module badge */}
+                      <Badge 
+                        variant="outline" 
+                        className="text-[9px] px-1.5 py-0 h-4 flex-shrink-0 font-mono"
+                      >
+                        {log.module}
+                      </Badge>
+                      
+                      {/* Icon and message */}
+                      <div className={cn("flex items-start gap-1.5 min-w-0", config.color)}>
+                        <Icon className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                        <span className="break-all">{log.message}</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
