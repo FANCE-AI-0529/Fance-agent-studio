@@ -41,14 +41,7 @@ interface AgentConfigPanelProps {
   onSkillOverrideChange: (skillId: string, override: SkillConfigOverride) => void;
 }
 
-const departments = [
-  { value: "政务服务", label: "政务服务" },
-  { value: "城市管理", label: "城市管理" },
-  { value: "民生保障", label: "民生保障" },
-  { value: "经济发展", label: "经济发展" },
-  { value: "生态环保", label: "生态环保" },
-  { value: "应急管理", label: "应急管理" },
-];
+// Department is now a free-form text field for flexibility
 
 export function AgentConfigPanel({
   config,
@@ -335,23 +328,14 @@ export function AgentConfigPanel({
                 }
                 className="bg-background"
               />
-              <Select
+              <Input
+                placeholder="所属部门/团队 (可选)"
                 value={config.department}
-                onValueChange={(value) =>
-                  onConfigChange({ ...config, department: value })
+                onChange={(e) =>
+                  onConfigChange({ ...config, department: e.target.value })
                 }
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="选择所属部门" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.value} value={dept.value}>
-                      {dept.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="bg-background"
+              />
             </div>
           </div>
 
@@ -487,7 +471,7 @@ export function AgentConfigPanel({
           disabled={!canDeploy}
         >
           <Rocket className="h-4 w-4" />
-          部署到城市网络
+          发布 Agent
         </Button>
       </div>
     </div>
