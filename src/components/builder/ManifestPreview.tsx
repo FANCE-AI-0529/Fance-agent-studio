@@ -1,31 +1,47 @@
 import { X, Copy, Check, Download } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Skill } from "./SkillMarketplace";
 
-interface AgentManifest {
+// AgentManifest 结构遵循开发逻辑文档 6.4 规范
+export interface AgentManifest {
   version: string;
   metadata: {
     name: string;
     department: string;
-    created: string;
+    description?: string;
+    created_at: string;
+    updated_at?: string;
   };
   runtime: {
-    model_config: {
-      provider: string;
-      model: string;
+    provider: string;
+    model: string;
+    model_config?: {
+      temperature?: number;
+      max_tokens?: number;
     };
   };
-  mounts: string[];
+  system_prompt: string;
   skills: {
-    id: string;
-    name: string;
-    version: string;
-    permissions: string[];
-  }[];
+    mounts: Array<{
+      skill_id: string;
+      version: string;
+      config_overrides?: Record<string, unknown>;
+    }>;
+    details: Array<{
+      id: string;
+      name: string;
+      category: string;
+      permissions: string[];
+    }>;
+  };
   mplp: {
     policy: string;
-    confirm_required: string[];
+    context: {
+      role: string;
+      department: string;
+    };
+    require_confirm: string[];
+    audit_log: boolean;
     trace_enabled: boolean;
   };
 }
@@ -33,50 +49,17 @@ interface AgentManifest {
 interface ManifestPreviewProps {
   isOpen: boolean;
   onClose: () => void;
-  agentName: string;
-  department: string;
-  model: string;
-  skills: Skill[];
+  manifest: AgentManifest | null;
 }
 
 export function ManifestPreview({
   isOpen,
   onClose,
-  agentName,
-  department,
-  model,
-  skills,
+  manifest,
 }: ManifestPreviewProps) {
   const [copied, setCopied] = useState(false);
 
-  if (!isOpen) return null;
-
-  const manifest: AgentManifest = {
-    version: "1.0.0",
-    metadata: {
-      name: agentName || "未命名 Agent",
-      department: department || "未指定",
-      created: new Date().toISOString(),
-    },
-    runtime: {
-      model_config: {
-        provider: model === "claude-3.5" ? "anthropic" : "openai",
-        model: model === "claude-3.5" ? "claude-3-5-sonnet-20241022" : "gpt-4-turbo",
-      },
-    },
-    mounts: skills.map((s) => `/skills/${s.id}`),
-    skills: skills.map((s) => ({
-      id: s.id,
-      name: s.name,
-      version: s.version,
-      permissions: s.permissions,
-    })),
-    mplp: {
-      policy: "default",
-      confirm_required: ["write", "delete", "network"],
-      trace_enabled: true,
-    },
-  };
+  if (!isOpen || !manifest) return null;
 
   const manifestJson = JSON.stringify(manifest, null, 2);
 
@@ -91,7 +74,7 @@ export function ManifestPreview({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `agent_manifest_${agentName || "unnamed"}.json`;
+    a.download = `agent_manifest_${manifest.metadata.name || "unnamed"}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -106,7 +89,7 @@ export function ManifestPreview({
           <div>
             <h2 className="text-lg font-semibold">Agent Manifest</h2>
             <p className="text-xs text-muted-foreground">
-              agent_manifest.json - 可用于部署和版本控制
+              agent_manifest.json - 符合 Anthropic Skills Filesystem 标准
             </p>
           </div>
           <button

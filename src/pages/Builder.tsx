@@ -279,30 +279,48 @@ const Builder = () => {
     [reactFlowInstance, addedSkillIds, setNodes, setEdges, handleRemoveSkill]
   );
 
-  // Generate manifest
+  // Generate manifest - 符合开发逻辑文档 6.4 AgentManifest 结构
   const generateManifest = () => {
     return {
       version: "1.0.0",
       metadata: {
-        name: agentConfig.name,
-        department: agentConfig.department,
-        created_at: new Date().toISOString(),
+        name: agentConfig.name || "未命名 Agent",
+        department: agentConfig.department || "未指定",
+        description: `${agentConfig.name} - ${agentConfig.department || "通用"} 智能体`,
+        created_at: existingAgent?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
       runtime: {
-        model: agentConfig.model,
         provider: agentConfig.model === "claude-3.5" ? "anthropic" : "openai",
+        model: agentConfig.model === "claude-3.5" ? "claude-3-5-sonnet-20241022" : "gpt-4-turbo",
+        model_config: {
+          temperature: 0.7,
+          max_tokens: 4096,
+        },
       },
-      system_prompt: agentConfig.systemPrompt,
-      mounts: addedSkills.map((s) => ({ skill_id: s.id, version: s.version })),
-      skills: addedSkills.map((s) => ({
-        id: s.id,
-        name: s.name,
-        permissions: s.permissions,
-      })),
+      system_prompt: agentConfig.systemPrompt || "",
+      skills: {
+        mounts: addedSkills.map((s) => ({
+          skill_id: s.id,
+          version: s.version,
+          config_overrides: {},
+        })),
+        details: addedSkills.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: s.category,
+          permissions: s.permissions,
+        })),
+      },
       mplp: {
         policy: "default",
-        require_confirm: ["write", "network", "execute"],
+        context: {
+          role: agentConfig.systemPrompt ? "custom" : "assistant",
+          department: agentConfig.department || "general",
+        },
+        require_confirm: ["write", "delete", "network", "execute"],
         audit_log: true,
+        trace_enabled: true,
       },
     };
   };
@@ -498,10 +516,7 @@ const Builder = () => {
       <ManifestPreview
         isOpen={showManifest}
         onClose={() => setShowManifest(false)}
-        agentName={agentConfig.name}
-        department={agentConfig.department}
-        model={agentConfig.model}
-        skills={addedSkills}
+        manifest={showManifest ? generateManifest() : null}
       />
     </div>
   );
