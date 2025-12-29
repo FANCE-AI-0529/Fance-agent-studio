@@ -342,23 +342,28 @@ export function DependencyManager({ configContent, onConfigChange }: DependencyM
             环境变量
           </label>
           <div className="space-y-1">
-            {Object.entries(config.environment).map(([key, value]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between p-2 rounded border border-border bg-card"
-              >
-                <code className="text-xs font-mono text-primary">{key}</code>
-                <span className="text-xs text-muted-foreground font-mono truncate max-w-[120px]">
-                  {value.startsWith("${") ? (
-                    <Badge variant="outline" className="text-[10px] font-normal">
-                      需配置
-                    </Badge>
-                  ) : (
-                    value
-                  )}
-                </span>
-              </div>
-            ))}
+            {Object.entries(config.environment).map(([key, value]) => {
+              const strValue = typeof value === 'string' ? value : String(value);
+              const needsConfig = typeof value === 'string' && value.startsWith("${");
+              
+              return (
+                <div
+                  key={key}
+                  className="flex items-center justify-between p-2 rounded border border-border bg-card"
+                >
+                  <code className="text-xs font-mono text-primary">{key}</code>
+                  <span className="text-xs text-muted-foreground font-mono truncate max-w-[120px]">
+                    {needsConfig ? (
+                      <Badge variant="outline" className="text-[10px] font-normal">
+                        需配置
+                      </Badge>
+                    ) : (
+                      strValue
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
