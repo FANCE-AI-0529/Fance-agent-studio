@@ -38,6 +38,7 @@ import {
   ValidationResult,
 } from "@/components/foundry/SkillValidator";
 import { SkillTemplatesDialog, SkillTemplate } from "@/components/foundry/SkillTemplates";
+import { DependencyManager } from "@/components/foundry/DependencyManager";
 import {
   useMySkills,
   useCreateSkill,
@@ -740,6 +741,21 @@ const Foundry = () => {
               </label>
               <MetadataDisplay metadata={validation.metadata} />
             </div>
+          )}
+
+          {/* Dependency Manager - show when config file is active */}
+          {activeFileId === "file-config" && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                依赖管理
+              </label>
+              <DependencyManager configContent={contents["file-config"]} />
+            </div>
+          )}
+
+          {/* Always show dependency info in a collapsed view */}
+          {activeFileId !== "file-config" && contents["file-config"] && (
+            <DependencyManager configContent={contents["file-config"]} />
           )}
         </div>
 
