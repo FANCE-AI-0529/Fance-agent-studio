@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, DragEvent, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ReactFlow,
   Controls,
@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Brain, Save, Loader2 } from "lucide-react";
+import { Brain, Save, Loader2, LogIn } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +27,7 @@ import { AgentConfigPanel, AgentConfig } from "@/components/builder/AgentConfigP
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
@@ -45,6 +46,8 @@ const createAgentNode = (name = "", department = "", model = "Claude 3.5", skill
 
 const Builder = () => {
   const { id: agentIdParam } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([createAgentNode()]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -306,6 +309,16 @@ const Builder = () => {
 
   // Handle save
   const handleSave = async () => {
+    if (!user) {
+      toast({ 
+        title: "请先登录", 
+        description: "保存 Agent 需要登录账号", 
+        variant: "destructive" 
+      });
+      navigate("/auth");
+      return;
+    }
+
     if (!agentConfig.name.trim()) {
       toast({ title: "请输入 Agent 名称", variant: "destructive" });
       return;
@@ -326,11 +339,25 @@ const Builder = () => {
 
     if (agentId) {
       setCurrentAgentId(agentId);
+      // Update URL without full navigation
+      if (!agentIdParam) {
+        navigate(`/builder/${agentId}`, { replace: true });
+      }
     }
   };
 
   // Handle deploy
   const handleDeploy = async () => {
+    if (!user) {
+      toast({ 
+        title: "请先登录", 
+        description: "部署 Agent 需要登录账号", 
+        variant: "destructive" 
+      });
+      navigate("/auth");
+      return;
+    }
+
     // First save
     const manifest = generateManifest();
     
@@ -347,6 +374,9 @@ const Builder = () => {
 
     if (agentId) {
       setCurrentAgentId(agentId);
+      if (!agentIdParam) {
+        navigate(`/builder/${agentId}`, { replace: true });
+      }
       await deployAgent.mutateAsync(agentId);
     }
   };
@@ -376,10 +406,26 @@ const Builder = () => {
             <Badge variant="outline" className="text-xs">
               已装载 {addedSkills.length} 个技能
             </Badge>
+            {currentAgentId && (
+              <Badge variant="secondary" className="text-xs">
+                已保存
+              </Badge>
+            )}
             {draggingSkill && (
               <Badge className="text-xs bg-cognitive/10 text-cognitive border-0">
                 拖拽中: {draggingSkill.name}
               </Badge>
+            )}
+            {!user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/auth")}
+                className="gap-1.5 h-8 text-muted-foreground"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                登录
+              </Button>
             )}
             <Button
               variant="outline"
