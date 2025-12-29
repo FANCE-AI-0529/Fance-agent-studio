@@ -1,7 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { 
   Send, 
-  History, 
   Bot, 
   User, 
   Loader2,
@@ -10,13 +9,16 @@ import {
   Zap,
   Brain,
   Shield,
-  GitBranch
+  GitBranch,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmCard, ConfirmAction } from "@/components/runtime/ConfirmCard";
 import { TraceTree, TraceSession, TraceEvent, TraceEventType } from "@/components/runtime/TraceTree";
+import { useAgentChat } from "@/hooks/useAgentChat";
+import { toast } from "sonner";
 
 type MPLPStatus = "idle" | "planning" | "confirm" | "executing";
 
@@ -53,6 +55,17 @@ const Runtime = () => {
   const [pendingConfirm, setPendingConfirm] = useState<ConfirmAction | null>(null);
   const [traceSessions, setTraceSessions] = useState<TraceSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const assistantContentRef = useRef("");
+
+  const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
+    if (type === "error") {
+      toast.error(data.message as string);
+    }
+  }, []);
+
+  const { streamChat, isLoading, error } = useAgentChat({
+    onTraceEvent: handleTraceEvent,
+  });
 
   // Add trace event to current session
   const addTraceEvent = useCallback((type: TraceEventType, data: TraceEvent["data"]) => {
@@ -94,28 +107,21 @@ const Runtime = () => {
     ));
   }, [currentSessionId]);
 
-  const simulateResponse = async (userMessage: string) => {
+  const sendMessage = async (userMessage: string) => {
     // Start trace session
     startTraceSession(userMessage);
 
-    // Simulate planning phase
+    // Planning phase
     setCurrentStatus("planning");
-    setActiveSkill("政策查询");
-    
+    setActiveSkill("AI 对话");
     addTraceEvent("intent_detected", { intent: userMessage });
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    addTraceEvent("skill_selected", { skillName: "政策查询" });
-    await new Promise(resolve => setTimeout(resolve, 600));
 
     // Check if this action requires confirmation (e.g., generating a form)
     const needsConfirm = userMessage.includes("生成") || userMessage.includes("表单") || userMessage.includes("申请");
     
     if (needsConfirm) {
       addTraceEvent("permission_check", { permissions: ["write", "network"] });
-      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Trigger confirm flow
       const confirmAction: ConfirmAction = {
         id: `confirm-${Date.now()}`,
         type: "write",
@@ -130,7 +136,6 @@ const Runtime = () => {
       setCurrentStatus("confirm");
       addTraceEvent("confirm_requested", { skillName: "表单生成" });
 
-      // Add system message for confirm
       setMessages(prev => [...prev, {
         id: `msg-confirm-${Date.now()}`,
         role: "system",
@@ -139,37 +144,57 @@ const Runtime = () => {
         confirmAction,
       }]);
 
-      return; // Wait for user confirmation
+      return;
     }
-    
-    // Simulate execution
-    setCurrentStatus("executing");
-    addTraceEvent("execution_started", { skillName: "政策查询" });
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    addTraceEvent("execution_completed", { 
-      skillName: "政策查询", 
-      duration: 1000,
-      result: "success" 
-    });
 
-    // Generate response
-    const response: Message = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: userMessage.includes("火锅") 
-        ? "好的，根据2025年最新规定，开设火锅店需要办理以下证照：\n\n1. **营业执照** - 市场监管局办理\n2. **食品经营许可证** - 需现场核查\n3. **消防安全检查合格证** - 消防部门出具\n4. **环保审批** - 餐饮油烟需达标\n\n请问需要我帮您生成申请表吗？"
-        : "好的，我来为您查询相关信息。根据当前政策，餐饮行业需要办理的基本证照包括营业执照、食品经营许可证等。请问您具体想了解哪方面的内容？",
-      timestamp: new Date(),
-      skill: "政策查询",
-      status: "idle"
+    // Execute AI chat
+    setCurrentStatus("executing");
+    addTraceEvent("skill_selected", { skillName: "AI 对话" });
+    addTraceEvent("execution_started", { skillName: "AI 对话" });
+
+    // Prepare conversation history for AI
+    const chatMessages = messages
+      .filter(m => m.role === "user" || m.role === "assistant")
+      .map(m => ({ role: m.role as "user" | "assistant", content: m.content }));
+    chatMessages.push({ role: "user", content: userMessage });
+
+    assistantContentRef.current = "";
+
+    const upsertAssistant = (nextChunk: string) => {
+      assistantContentRef.current += nextChunk;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && last.id.startsWith("ai-")) {
+          return prev.map((m, i) => 
+            i === prev.length - 1 
+              ? { ...m, content: assistantContentRef.current }
+              : m
+          );
+        }
+        return [...prev, {
+          id: `ai-${Date.now()}`,
+          role: "assistant" as const,
+          content: assistantContentRef.current,
+          timestamp: new Date(),
+          skill: "AI 对话",
+          status: "idle" as const,
+        }];
+      });
     };
 
-    setMessages(prev => [...prev, response]);
-    setCurrentStatus("idle");
-    setActiveSkill(null);
-    endTraceSession("completed");
+    await streamChat({
+      messages: chatMessages,
+      onDelta: upsertAssistant,
+      onDone: () => {
+        addTraceEvent("execution_completed", { 
+          skillName: "AI 对话", 
+          result: "success" 
+        });
+        setCurrentStatus("idle");
+        setActiveSkill(null);
+        endTraceSession("completed");
+      },
+    });
   };
 
   const handleConfirm = async () => {
@@ -246,7 +271,7 @@ const Runtime = () => {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     
-    await simulateResponse(input);
+    await sendMessage(input);
   };
 
   const StatusBadge = ({ status }: { status: MPLPStatus }) => {
