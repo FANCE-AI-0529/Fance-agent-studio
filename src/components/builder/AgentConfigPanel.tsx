@@ -1,4 +1,5 @@
-import { Settings, Rocket, Shield, Trash2, Code2, Sliders } from "lucide-react";
+import { useState } from "react";
+import { Settings, Rocket, Shield, Trash2, Code2, Sliders, Plus, Variable, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,12 +14,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
+export interface EnvVariable {
+  key: string;
+  value: string;
+  isSecret: boolean;
+}
+
+export interface EnvironmentConfig {
+  development: EnvVariable[];
+  staging: EnvVariable[];
+  production: EnvVariable[];
+}
 
 export interface AgentConfig {
   name: string;
   department: string;
   model: "claude-3.5" | "gpt-4";
   systemPrompt: string;
+  environments?: EnvironmentConfig;
 }
 
 export interface SkillConfigOverride {
@@ -42,6 +61,227 @@ interface AgentConfigPanelProps {
 }
 
 // Department is now a free-form text field for flexibility
+
+type EnvironmentType = "development" | "staging" | "production";
+
+const environmentLabels: Record<EnvironmentType, string> = {
+  development: "开发环境",
+  staging: "测试环境", 
+  production: "生产环境",
+};
+
+const defaultEnvironments: EnvironmentConfig = {
+  development: [],
+  staging: [],
+  production: [],
+};
+
+// Environment Variables Section Component
+function EnvironmentVariablesSection({
+  config,
+  onConfigChange,
+}: {
+  config: AgentConfig;
+  onConfigChange: (config: AgentConfig) => void;
+}) {
+  const [expandedEnv, setExpandedEnv] = useState<EnvironmentType | null>(null);
+  const [newVarKey, setNewVarKey] = useState("");
+  const [newVarValue, setNewVarValue] = useState("");
+  const [newVarIsSecret, setNewVarIsSecret] = useState(false);
+
+  const environments = config.environments || defaultEnvironments;
+
+  const handleAddVariable = (env: EnvironmentType) => {
+    if (!newVarKey.trim()) return;
+    
+    const newVar: EnvVariable = {
+      key: newVarKey.trim().toUpperCase().replace(/\s+/g, "_"),
+      value: newVarValue,
+      isSecret: newVarIsSecret,
+    };
+
+    const updatedEnv = [...(environments[env] || []), newVar];
+    onConfigChange({
+      ...config,
+      environments: {
+        ...environments,
+        [env]: updatedEnv,
+      },
+    });
+
+    setNewVarKey("");
+    setNewVarValue("");
+    setNewVarIsSecret(false);
+  };
+
+  const handleRemoveVariable = (env: EnvironmentType, index: number) => {
+    const updatedEnv = environments[env].filter((_, i) => i !== index);
+    onConfigChange({
+      ...config,
+      environments: {
+        ...environments,
+        [env]: updatedEnv,
+      },
+    });
+  };
+
+  const handleCopyFromEnv = (sourceEnv: EnvironmentType, targetEnv: EnvironmentType) => {
+    onConfigChange({
+      ...config,
+      environments: {
+        ...environments,
+        [targetEnv]: [...environments[sourceEnv]],
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Variable className="h-4 w-4 text-primary" />
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          环境变量配置
+        </label>
+      </div>
+      
+      <div className="space-y-2">
+        {(Object.keys(environmentLabels) as EnvironmentType[]).map((env) => {
+          const vars = environments[env] || [];
+          const isExpanded = expandedEnv === env;
+          
+          return (
+            <Collapsible
+              key={env}
+              open={isExpanded}
+              onOpenChange={(open) => setExpandedEnv(open ? env : null)}
+            >
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-medium">{environmentLabels[env]}</span>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {vars.length} 变量
+                  </Badge>
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <div className="mt-2 p-3 rounded-lg border border-border bg-secondary/20 space-y-3">
+                  {/* Existing variables */}
+                  {vars.length > 0 && (
+                    <div className="space-y-2">
+                      {vars.map((variable, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 p-2 rounded border border-border bg-card"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-xs font-mono text-primary">
+                                {variable.key}
+                              </code>
+                              {variable.isSecret && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                                  密钥
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono truncate">
+                              {variable.isSecret ? "••••••••" : variable.value || "(空)"}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveVariable(env, index)}
+                            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add new variable */}
+                  <div className="space-y-2 pt-2 border-t border-border">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="变量名"
+                        value={newVarKey}
+                        onChange={(e) => setNewVarKey(e.target.value)}
+                        className="bg-background h-8 text-xs font-mono"
+                      />
+                      <Input
+                        placeholder="值"
+                        type={newVarIsSecret ? "password" : "text"}
+                        value={newVarValue}
+                        onChange={(e) => setNewVarValue(e.target.value)}
+                        className="bg-background h-8 text-xs"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id={`secret-${env}`}
+                          checked={newVarIsSecret}
+                          onCheckedChange={setNewVarIsSecret}
+                        />
+                        <Label htmlFor={`secret-${env}`} className="text-xs text-muted-foreground">
+                          标记为密钥
+                        </Label>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => handleAddVariable(env)}
+                        disabled={!newVarKey.trim()}
+                      >
+                        <Plus className="h-3 w-3" />
+                        添加
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Copy from other environment */}
+                  {vars.length === 0 && (
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-[10px] text-muted-foreground mb-2">从其他环境复制:</p>
+                      <div className="flex gap-1">
+                        {(Object.keys(environmentLabels) as EnvironmentType[])
+                          .filter((e) => e !== env && (environments[e]?.length || 0) > 0)
+                          .map((sourceEnv) => (
+                            <Button
+                              key={sourceEnv}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => handleCopyFromEnv(sourceEnv, env)}
+                            >
+                              复制 {environmentLabels[sourceEnv]}
+                            </Button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
+      </div>
+      
+      <p className="text-[10px] text-muted-foreground">
+        环境变量将在运行时注入到 Agent，密钥类型变量将被加密存储
+      </p>
+    </div>
+  );
+}
 
 export function AgentConfigPanel({
   config,
@@ -398,6 +638,12 @@ export function AgentConfigPanel({
               </p>
             </div>
           </div>
+
+          {/* Environment Variables */}
+          <EnvironmentVariablesSection 
+            config={config} 
+            onConfigChange={onConfigChange} 
+          />
 
           {/* Mounted Skills */}
           <div className="space-y-3">
