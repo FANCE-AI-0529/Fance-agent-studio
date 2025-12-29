@@ -15,6 +15,7 @@ import {
   LogIn,
   FileCode,
   Sparkles,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import {
   MetadataDisplay,
   ValidationResult,
 } from "@/components/foundry/SkillValidator";
+import { SkillTemplatesDialog, SkillTemplate } from "@/components/foundry/SkillTemplates";
 import {
   useMySkills,
   useCreateSkill,
@@ -297,6 +299,22 @@ const Foundry = () => {
     });
   };
 
+  const handleSelectTemplate = (template: SkillTemplate) => {
+    setContents({
+      "file-skill": template.content,
+      "file-handler": template.handlerCode,
+      "file-config": template.configYaml,
+    });
+    setFiles(createInitialFiles(template.name));
+    setActiveSkillId(null);
+    setActiveFileId("file-skill");
+    setHasUnsavedChanges(true);
+    toast({
+      title: "模板已加载",
+      description: `已加载 "${template.name}" 技能模板`,
+    });
+  };
+
   const handleSave = async () => {
     if (!user) {
       toast({
@@ -502,6 +520,15 @@ const Foundry = () => {
                 登录
               </Button>
             )}
+            <SkillTemplatesDialog
+              onSelectTemplate={handleSelectTemplate}
+              trigger={
+                <Button variant="ghost" size="sm" className="gap-1.5 h-8">
+                  <Library className="h-3.5 w-3.5" />
+                  模板库
+                </Button>
+              }
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -509,7 +536,7 @@ const Foundry = () => {
               className="gap-1.5 h-8"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              加载模板
+              快速模板
             </Button>
             <Button
               variant="ghost"
