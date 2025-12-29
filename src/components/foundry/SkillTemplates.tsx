@@ -3010,7 +3010,7 @@ export function SkillTemplatesDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[85vh]">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
@@ -3021,8 +3021,8 @@ export function SkillTemplatesDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
             <TabsTrigger value="library" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               模版库 ({skillTemplates.length})
@@ -3033,8 +3033,8 @@ export function SkillTemplatesDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="library" className="mt-4">
-            <div className="flex gap-2 flex-wrap mb-4">
+          <TabsContent value="library" className="mt-4 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex gap-2 flex-wrap mb-4 flex-shrink-0">
               {categories.map((cat) => (
                 <Button
                   key={cat}
@@ -3048,7 +3048,7 @@ export function SkillTemplatesDialog({
               ))}
             </div>
 
-            <ScrollArea className="h-[450px] pr-4">
+            <ScrollArea className="flex-1 h-[450px] pr-4">
               <div className="grid grid-cols-2 gap-4">
                 {filteredTemplates.map((template) => (
                   <div
@@ -3057,16 +3057,16 @@ export function SkillTemplatesDialog({
                     onClick={() => handleSelect(template)}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
                         {template.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-medium text-sm truncate">
                             {template.name}
                           </h3>
                           <Badge
-                            className={`text-[10px] px-1.5 py-0 ${
+                            className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
                               difficultyColors[template.difficulty]
                             }`}
                           >
