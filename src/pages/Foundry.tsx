@@ -13,10 +13,11 @@ import {
   Loader2,
   Trash2,
   LogIn,
-  FileCode,
   Sparkles,
   Library,
   FileArchive,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 import { SkillEditor } from "@/components/foundry/SkillEditor";
 import { FileExplorer, FileItem } from "@/components/foundry/FileExplorer";
@@ -48,7 +54,6 @@ import {
   useUpdateSkill,
   usePublishSkill,
   useDeleteSkill,
-  type Skill,
 } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -207,6 +212,78 @@ const createFileContents = (): Record<string, string> => ({
   "file-config": configYaml,
 });
 
+// Frontmatter Check Card Component
+function FrontmatterCheckCard({ validation }: { validation: ValidationResult }) {
+  const isValid = validation.isValid && validation.errors.length === 0;
+  const hasWarnings = validation.warnings.length > 0;
+
+  return (
+    <div className={`p-4 rounded-lg border ${
+      isValid 
+        ? hasWarnings
+          ? "border-status-confirm/50 bg-status-confirm/5"
+          : "border-status-executing/50 bg-status-executing/5"
+        : "border-destructive/50 bg-destructive/5"
+    }`}>
+      <div className="flex items-center gap-3">
+        {isValid ? (
+          hasWarnings ? (
+            <AlertTriangle className="h-5 w-5 text-status-confirm" />
+          ) : (
+            <CheckCircle2 className="h-5 w-5 text-status-executing" />
+          )
+        ) : (
+          <XCircle className="h-5 w-5 text-destructive" />
+        )}
+        <div>
+          <h3 className={`font-semibold ${
+            isValid 
+              ? hasWarnings ? "text-status-confirm" : "text-status-executing"
+              : "text-destructive"
+          }`}>
+            {isValid 
+              ? hasWarnings ? "Valid Skill (with warnings)" : "Valid Skill"
+              : "Invalid Format"
+            }
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isValid 
+              ? hasWarnings
+                ? `YAML Frontmatter 有效，但有 ${validation.warnings.length} 个警告`
+                : "YAML Frontmatter 格式正确"
+              : `发现 ${validation.errors.length} 个错误`
+            }
+          </p>
+        </div>
+      </div>
+      
+      {/* Show errors */}
+      {validation.errors.length > 0 && (
+        <div className="mt-3 space-y-1">
+          {validation.errors.map((error, idx) => (
+            <div key={idx} className="text-xs text-destructive flex items-start gap-2">
+              <span className="text-destructive/60">•</span>
+              <span>{error}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Show warnings */}
+      {validation.warnings.length > 0 && (
+        <div className="mt-3 space-y-1">
+          {validation.warnings.map((warning, idx) => (
+            <div key={idx} className="text-xs text-status-confirm flex items-start gap-2">
+              <span className="text-status-confirm/60">•</span>
+              <span>{warning}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const Foundry = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -228,7 +305,6 @@ const Foundry = () => {
     if (activeSkillId) {
       const skill = mySkills.find((s) => s.id === activeSkillId);
       if (skill) {
-        // Load skill content
         setContents({
           "file-skill": skill.content || defaultSkillMd,
           "file-handler": handlerPy,
@@ -238,7 +314,6 @@ const Foundry = () => {
         setHasUnsavedChanges(false);
       }
     } else {
-      // Reset to defaults for new skill
       setContents(createFileContents());
       setFiles(createInitialFiles("new-skill"));
       setHasUnsavedChanges(false);
@@ -362,7 +437,7 @@ const Foundry = () => {
       version: parsed.metadata.version,
       description: parsed.metadata.description || null,
       permissions: parsed.metadata.permissions || [],
-      category: "nlp", // Default category, could be parsed from metadata
+      category: "nlp",
       content: skillMdContent,
       inputs: parsed.metadata.inputs || [],
       outputs: parsed.metadata.outputs || [],
@@ -379,13 +454,6 @@ const Foundry = () => {
     } catch (error) {
       // Error toast is handled by the mutation
     }
-  };
-
-  const handleTest = () => {
-    toast({
-      title: "测试运行中",
-      description: "正在沙箱环境中测试技能...",
-    });
   };
 
   const handlePublish = async () => {
@@ -408,7 +476,6 @@ const Foundry = () => {
       return;
     }
 
-    // Save first if there are unsaved changes
     if (hasUnsavedChanges) {
       await handleSave();
     }
@@ -430,7 +497,6 @@ const Foundry = () => {
 
   const handleDelete = async () => {
     if (!activeSkillId) return;
-
     await deleteSkill.mutateAsync(activeSkillId);
     handleNewSkill();
   };
@@ -450,363 +516,333 @@ const Foundry = () => {
   const currentSkill = mySkills.find((s) => s.id === activeSkillId);
 
   return (
-    <div className="h-full flex">
-      {/* Left Panel - File Explorer */}
-      <div className="w-64 border-r border-border flex flex-col bg-card/50">
-        {/* Skill Selector */}
-        <div className="p-3 border-b border-border space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase">我的技能</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleNewSkill}>
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <Select
-            value={activeSkillId || "new"}
-            onValueChange={(value) => setActiveSkillId(value === "new" ? null : value)}
-          >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="新建技能" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">+ 新建技能</SelectItem>
-              {mySkills.map((skill) => (
-                <SelectItem key={skill.id} value={skill.id}>
-                  {skill.name}
-                  {skill.is_published && (
-                    <Badge variant="secondary" className="ml-2 text-[10px]">
-                      已发布
-                    </Badge>
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="h-full flex flex-col">
+      {/* Top Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/50">
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="gap-1.5">
+            <FileText className="h-3 w-3" />
+            {activeFile?.name || "未选择文件"}
+          </Badge>
+          {hasUnsavedChanges && (
+            <Badge variant="secondary" className="text-xs">未保存</Badge>
+          )}
         </div>
-
-        <FileExplorer
-          files={files}
-          activeFileId={activeFileId}
-          onFileSelect={handleFileSelect}
-        />
-      </div>
-
-      {/* Center - Editor Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="panel-header border-b border-border">
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="gap-1.5">
-              <FileText className="h-3 w-3" />
-              {activeFile?.name || "未选择文件"}
-            </Badge>
-            {hasUnsavedChanges && (
-              <Badge variant="secondary" className="text-xs">
-                未保存
-              </Badge>
-            )}
-            {activeFileId === "file-skill" && (
-              <div className="flex items-center gap-1.5">
-                {validation.isValid ? (
-                  validation.warnings.length > 0 ? (
-                    <Badge className="bg-status-planning/10 text-status-planning border-0 text-xs">
-                      {validation.warnings.length} 警告
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-status-executing/10 text-status-executing border-0 text-xs gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      有效
-                    </Badge>
-                  )
-                ) : (
-                  <Badge className="bg-destructive/10 text-destructive border-0 text-xs">
-                    {validation.errors.length} 错误
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {!user && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/auth")}
-                className="gap-1.5 h-8 text-muted-foreground"
-              >
-                <LogIn className="h-3.5 w-3.5" />
-                登录
-              </Button>
-            )}
-            <SkillTemplatesDialog
-              onSelectTemplate={handleSelectTemplate}
-              trigger={
-                <Button variant="ghost" size="sm" className="gap-1.5 h-8">
-                  <Library className="h-3.5 w-3.5" />
-                  模板库
-                </Button>
-              }
-            />
-            <SkillImportExport
-              trigger={
-                <Button variant="ghost" size="sm" className="gap-1.5 h-8">
-                  <FileArchive className="h-3.5 w-3.5" />
-                  导入/导出
-                </Button>
-              }
-              currentFiles={{
-                skillMd: contents["file-skill"],
-                handlerPy: contents["file-handler"],
-                configYaml: contents["file-config"],
-              }}
-              skillName={validation.metadata?.name || "new-skill"}
-              onImport={handleImport}
-            />
+        
+        <div className="flex items-center gap-2">
+          {!user && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleLoadTemplate}
-              className="gap-1.5 h-8"
+              onClick={() => navigate("/auth")}
+              className="gap-1.5 h-8 text-muted-foreground"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              快速模板
+              <LogIn className="h-3.5 w-3.5" />
+              登录
             </Button>
-            <SkillTestSandbox
-              metadata={validation.metadata}
-              trigger={
-                <Button variant="ghost" size="sm" className="gap-1.5 h-8">
-                  <Play className="h-3.5 w-3.5" />
-                  测试
-                </Button>
-              }
-            />
+          )}
+          <Button variant="outline" size="sm" onClick={handleLoadTemplate} className="gap-1.5 h-8">
+            <Sparkles className="h-3.5 w-3.5" />
+            Load Template
+          </Button>
+          <SkillTemplatesDialog
+            onSelectTemplate={handleSelectTemplate}
+            trigger={
+              <Button variant="ghost" size="sm" className="gap-1.5 h-8">
+                <Library className="h-3.5 w-3.5" />
+                模板库
+              </Button>
+            }
+          />
+          <SkillImportExport
+            trigger={
+              <Button variant="ghost" size="sm" className="gap-1.5 h-8">
+                <FileArchive className="h-3.5 w-3.5" />
+                导入/导出
+              </Button>
+            }
+            currentFiles={{
+              skillMd: contents["file-skill"],
+              handlerPy: contents["file-handler"],
+              configYaml: contents["file-config"],
+            }}
+            skillName={validation.metadata?.name || "new-skill"}
+            onImport={handleImport}
+          />
+          <div className="w-px h-6 bg-border" />
+          <SkillTestSandbox
+            metadata={validation.metadata}
+            trigger={
+              <Button variant="ghost" size="sm" className="gap-1.5 h-8">
+                <Play className="h-3.5 w-3.5" />
+                测试
+              </Button>
+            }
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="gap-1.5 h-8"
+          >
+            {isSaving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            保存
+          </Button>
+          {activeSkillId && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="gap-1.5 h-8"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="gap-1.5 h-8 text-destructive hover:text-destructive"
             >
-              {isSaving ? (
+              {isDeleting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Save className="h-3.5 w-3.5" />
+                <Trash2 className="h-3.5 w-3.5" />
               )}
-              保存
             </Button>
-            {activeSkillId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="gap-1.5 h-8 text-destructive hover:text-destructive"
-              >
-                {isDeleting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-                删除
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Editor with Tabs */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex-1 flex flex-col min-h-0"
-        >
-          <div className="px-4 pt-2 border-b border-border flex-shrink-0">
-            <TabsList className="bg-transparent h-8 p-0 gap-4">
-              <TabsTrigger
-                value="edit"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-8 px-0 gap-1.5"
-              >
-                <Code2 className="h-3.5 w-3.5" />
-                编辑器
-              </TabsTrigger>
-              <TabsTrigger
-                value="preview"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-8 px-0 gap-1.5"
-              >
-                <Eye className="h-3.5 w-3.5" />
-                预览
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="edit" className="flex-1 m-0 p-0 min-h-0">
-            <SkillEditor
-              value={currentContent}
-              onChange={handleContentChange}
-              language={getLanguage()}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value="preview"
-            className="flex-1 m-0 p-4 overflow-y-auto"
-          >
-            {activeFileId === "file-skill" && validation.metadata ? (
-              <div className="max-w-2xl mx-auto">
-                <div className="p-6 rounded-lg border border-border bg-card">
-                  <h2 className="text-xl font-bold mb-2">
-                    {validation.metadata.name}
-                  </h2>
-                  <p className="text-muted-foreground mb-4">
-                    {validation.metadata.description}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="p-3 rounded bg-secondary/30">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        版本
-                      </div>
-                      <div className="font-mono">
-                        {validation.metadata.version}
-                      </div>
-                    </div>
-                    <div className="p-3 rounded bg-secondary/30">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        作者
-                      </div>
-                      <div>{validation.metadata.author}</div>
-                    </div>
-                  </div>
-
-                  {validation.metadata.permissions && (
-                    <div className="mb-4">
-                      <div className="text-xs text-muted-foreground mb-2">
-                        权限
-                      </div>
-                      <div className="flex gap-1">
-                        {validation.metadata.permissions.map((p) => (
-                          <Badge key={p} variant="outline">
-                            {p}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {validation.metadata.inputs && (
-                    <div className="mb-4">
-                      <div className="text-xs text-muted-foreground mb-2">
-                        输入
-                      </div>
-                      {validation.metadata.inputs.map((input, i) => (
-                        <div
-                          key={i}
-                          className="p-2 rounded bg-secondary/30 font-mono text-sm"
-                        >
-                          <span className="text-cognitive">{input.name}</span>
-                          <span className="text-muted-foreground">: </span>
-                          <span className="text-governance">{input.type}</span>
-                          {input.description && (
-                            <span className="text-muted-foreground ml-2">
-                              // {input.description}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                预览仅支持 SKILL.md 文件
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Right Panel - Metadata & Validation */}
-      <div className="w-72 border-l border-border bg-card/50 hidden xl:flex flex-col">
-        <div className="panel-header">
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="font-semibold text-sm">元数据</span>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Current Skill Info */}
-          {currentSkill && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                技能状态
-              </label>
-              <div className="p-3 rounded-lg border border-border bg-secondary/30">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{currentSkill.name}</span>
-                  <Badge variant={currentSkill.is_published ? "default" : "secondary"}>
-                    {currentSkill.is_published ? "已发布" : "草稿"}
-                  </Badge>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  v{currentSkill.version}
-                </div>
-              </div>
-            </div>
           )}
-
-          {/* Validation Status */}
-          {activeFileId === "file-skill" && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                校验状态
-              </label>
-              <ValidationPanel validation={validation} />
-            </div>
-          )}
-
-          {/* Metadata Display */}
-          {activeFileId === "file-skill" && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                解析结果
-              </label>
-              <MetadataDisplay metadata={validation.metadata} />
-            </div>
-          )}
-
-          {/* Dependency Manager - show when config file is active */}
-          {activeFileId === "file-config" && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                依赖管理
-              </label>
-              <DependencyManager configContent={contents["file-config"]} />
-            </div>
-          )}
-
-          {/* Always show dependency info in a collapsed view */}
-          {activeFileId !== "file-config" && contents["file-config"] && (
-            <DependencyManager configContent={contents["file-config"]} />
-          )}
-        </div>
-
-        {/* Publish Button */}
-        <div className="p-4 border-t border-border">
           <Button
-            className="w-full gap-2"
+            size="sm"
             onClick={handlePublish}
             disabled={!validation.isValid || isPublishing}
+            className="gap-1.5 h-8"
           >
             {isPublishing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Upload className="h-4 w-4" />
+              <Upload className="h-3.5 w-3.5" />
             )}
-            发布到技能市场
+            Publish Skill
           </Button>
         </div>
+      </div>
+
+      {/* Main Split Pane Layout */}
+      <div className="flex-1 min-h-0">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* Left Panel - File Explorer */}
+          <ResizablePanel defaultSize={15} minSize={12} maxSize={25}>
+            <div className="h-full flex flex-col border-r border-border bg-card/50">
+              {/* Skill Selector */}
+              <div className="p-3 border-b border-border space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">我的技能</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleNewSkill}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <Select
+                  value={activeSkillId || "new"}
+                  onValueChange={(value) => setActiveSkillId(value === "new" ? null : value)}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="新建技能" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">+ 新建技能</SelectItem>
+                    {mySkills.map((skill) => (
+                      <SelectItem key={skill.id} value={skill.id}>
+                        {skill.name}
+                        {skill.is_published && (
+                          <Badge variant="secondary" className="ml-2 text-[10px]">
+                            已发布
+                          </Badge>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <FileExplorer
+                files={files}
+                activeFileId={activeFileId}
+                onFileSelect={handleFileSelect}
+              />
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* Center - Code Editor */}
+          <ResizablePanel defaultSize={50} minSize={30}>
+            <div className="h-full flex flex-col">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="flex-1 flex flex-col min-h-0"
+              >
+                <div className="px-4 pt-2 border-b border-border flex-shrink-0">
+                  <TabsList className="bg-transparent h-8 p-0 gap-4">
+                    <TabsTrigger
+                      value="edit"
+                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-8 px-0 gap-1.5"
+                    >
+                      <Code2 className="h-3.5 w-3.5" />
+                      编辑器
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="preview"
+                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-8 px-0 gap-1.5"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      预览
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent value="edit" className="flex-1 m-0 p-0 min-h-0">
+                  <SkillEditor
+                    value={currentContent}
+                    onChange={handleContentChange}
+                    language={getLanguage()}
+                  />
+                </TabsContent>
+
+                <TabsContent value="preview" className="flex-1 m-0 p-4 overflow-y-auto">
+                  {activeFileId === "file-skill" && validation.metadata ? (
+                    <div className="max-w-2xl mx-auto">
+                      <div className="p-6 rounded-lg border border-border bg-card">
+                        <h2 className="text-xl font-bold mb-2">
+                          {validation.metadata.name}
+                        </h2>
+                        <p className="text-muted-foreground mb-4">
+                          {validation.metadata.description}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="p-3 rounded bg-secondary/30">
+                            <div className="text-xs text-muted-foreground mb-1">版本</div>
+                            <div className="font-mono">{validation.metadata.version}</div>
+                          </div>
+                          <div className="p-3 rounded bg-secondary/30">
+                            <div className="text-xs text-muted-foreground mb-1">作者</div>
+                            <div>{validation.metadata.author}</div>
+                          </div>
+                        </div>
+
+                        {validation.metadata.permissions && (
+                          <div className="mb-4">
+                            <div className="text-xs text-muted-foreground mb-2">权限</div>
+                            <div className="flex gap-1 flex-wrap">
+                              {validation.metadata.permissions.map((p) => (
+                                <Badge key={p} variant="outline">{p}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {validation.metadata.inputs && (
+                          <div className="mb-4">
+                            <div className="text-xs text-muted-foreground mb-2">输入</div>
+                            {validation.metadata.inputs.map((input, i) => (
+                              <div key={i} className="p-2 rounded bg-secondary/30 font-mono text-sm">
+                                <span className="text-cognitive">{input.name}</span>
+                                <span className="text-muted-foreground">: </span>
+                                <span className="text-governance">{input.type}</span>
+                                {input.description && (
+                                  <span className="text-muted-foreground ml-2">
+                                    // {input.description}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-muted-foreground">
+                      预览仅支持 SKILL.md 文件
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* Right Panel - Preview & Validation */}
+          <ResizablePanel defaultSize={35} minSize={25}>
+            <div className="h-full flex flex-col bg-card/50 overflow-y-auto">
+              <div className="panel-header">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="font-semibold text-sm">Preview & Validation</span>
+                </div>
+              </div>
+
+              <div className="flex-1 p-4 space-y-6">
+                {/* Frontmatter Check Status Card */}
+                {activeFileId === "file-skill" && (
+                  <FrontmatterCheckCard validation={validation} />
+                )}
+
+                {/* Current Skill Info */}
+                {currentSkill && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      技能状态
+                    </label>
+                    <div className="p-3 rounded-lg border border-border bg-secondary/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">{currentSkill.name}</span>
+                        <Badge variant={currentSkill.is_published ? "default" : "secondary"}>
+                          {currentSkill.is_published ? "已发布" : "草稿"}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        v{currentSkill.version}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Validation Details */}
+                {activeFileId === "file-skill" && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      校验详情
+                    </label>
+                    <ValidationPanel validation={validation} />
+                  </div>
+                )}
+
+                {/* Metadata Display */}
+                {activeFileId === "file-skill" && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Frontmatter 解析结果
+                    </label>
+                    <MetadataDisplay metadata={validation.metadata} />
+                  </div>
+                )}
+
+                {/* Dependency Manager */}
+                {activeFileId === "file-config" && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      依赖管理
+                    </label>
+                    <DependencyManager configContent={contents["file-config"]} />
+                  </div>
+                )}
+
+                {activeFileId !== "file-config" && contents["file-config"] && (
+                  <DependencyManager configContent={contents["file-config"]} />
+                )}
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );

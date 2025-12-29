@@ -5,20 +5,12 @@ import {
   User, 
   Loader2,
   CheckCircle2,
-  Clock,
-  Zap,
-  Brain,
-  Shield,
-  GitBranch,
   Plus,
   History,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Cpu,
   Database,
   FileCode,
-  Settings,
   Key
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmCard, ConfirmAction } from "@/components/runtime/ConfirmCard";
 import { TraceTree, TraceSession, TraceEvent, TraceEventType } from "@/components/runtime/TraceTree";
 import { AgentSelector } from "@/components/runtime/AgentSelector";
+import { MPLPStepper, MPLPPhase } from "@/components/runtime/MPLPStepper";
+import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/ThinkingProcess";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -37,95 +31,22 @@ import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-type MPLPStatus = "idle" | "planning" | "confirm" | "executing";
-
 interface Message {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: Date;
   skill?: string;
-  status?: MPLPStatus;
+  status?: MPLPPhase;
   confirmAction?: ConfirmAction;
   traceEvents?: TraceEvent[];
+  thinkingLogs?: LogEntry[];
 }
 
 interface MemoryItem {
   key: string;
   value: string;
   type: "context" | "entity" | "fact";
-}
-
-const statusConfig = {
-  idle: { 
-    label: "待命", 
-    icon: Clock, 
-    className: "text-muted-foreground bg-muted",
-    pulse: false
-  },
-  planning: { 
-    label: "规划中", 
-    icon: Brain, 
-    className: "text-status-planning bg-status-planning/10",
-    pulse: true
-  },
-  confirm: { 
-    label: "待确认", 
-    icon: Shield, 
-    className: "text-status-confirm bg-status-confirm/10",
-    pulse: true
-  },
-  executing: { 
-    label: "执行中", 
-    icon: Zap, 
-    className: "text-status-executing bg-status-executing/10",
-    pulse: true
-  },
-};
-
-// Message Trace Panel Component
-function MessageTracePanel({ events }: { events: TraceEvent[] }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  if (!events || events.length === 0) return null;
-
-  return (
-    <div className="mt-2">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-      >
-        {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        <GitBranch className="h-3 w-3" />
-        <span>Trace Log ({events.length})</span>
-      </button>
-      
-      {isExpanded && (
-        <div className="mt-2 p-2 rounded-lg bg-secondary/30 border border-border/50 space-y-1.5">
-          {events.map((event, idx) => (
-            <div key={event.id} className="flex items-start gap-2 text-[10px]">
-              <span className="text-muted-foreground w-12 flex-shrink-0">
-                {event.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </span>
-              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-                {event.type.replace(/_/g, ' ')}
-              </Badge>
-              {event.data.skillName && (
-                <span className="text-cognitive">{event.data.skillName}</span>
-              )}
-              {event.data.result && (
-                <span className={cn(
-                  event.data.result === 'success' ? 'text-status-executing' : 'text-destructive'
-                )}>
-                  {event.data.result}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // Context Panel Component
@@ -140,7 +61,6 @@ function ContextPanel({
   
   return (
     <div className="w-72 border-l border-border bg-card/50 hidden xl:flex flex-col">
-      {/* Header */}
       <div className="panel-header">
         <div className="flex items-center gap-2">
           <Cpu className="h-4 w-4 text-governance" />
@@ -206,7 +126,7 @@ function ContextPanel({
           </div>
         </div>
 
-        {/* Memory / Context (PSG) */}
+        {/* Memory / Context */}
         <div className="p-3">
           <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
             <Database className="h-3 w-3" />
@@ -263,22 +183,27 @@ const Runtime = () => {
     createSession,
     loadSession,
     addMessage,
-    updateLastAssistantMessage,
     deleteSession,
-    setMessages: setPersistedMessages,
   } = useChatSession();
 
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [currentStatus, setCurrentStatus] = useState<MPLPStatus>("idle");
+  const [currentPhase, setCurrentPhase] = useState<MPLPPhase>("idle");
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<ConfirmAction | null>(null);
   const [traceSessions, setTraceSessions] = useState<TraceSession[]>([]);
   const [currentTraceSessionId, setCurrentTraceSessionId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
+  const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
   const assistantContentRef = useRef("");
   const currentEventsRef = useRef<TraceEvent[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [localMessages, currentThinkingLogs]);
 
   // Get current agent config for AI
   const currentAgentConfig = selectedAgent ? {
@@ -297,7 +222,7 @@ const Runtime = () => {
           content: m.content,
           timestamp: m.timestamp,
           skill: m.skill,
-          status: "idle" as MPLPStatus,
+          status: "idle" as MPLPPhase,
         }))
       );
     }
@@ -327,6 +252,7 @@ const Runtime = () => {
     setLocalMessages([]);
     setTraceSessions([]);
     setContextMemory([]);
+    setCurrentThinkingLogs([]);
   }, []);
 
   const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
@@ -335,12 +261,19 @@ const Runtime = () => {
     }
   }, []);
 
-  const { streamChat, isLoading, error } = useAgentChat({
+  const { streamChat, isLoading } = useAgentChat({
     agentConfig: currentAgentConfig,
     onTraceEvent: handleTraceEvent,
   });
 
-  // Add trace event to current session and ref
+  // Add thinking log
+  const addThinkingLog = useCallback((module: string, message: string, level: LogEntry["level"] = "info") => {
+    const log = createLogEntry(module, message, level);
+    setCurrentThinkingLogs(prev => [...prev, log]);
+    return log;
+  }, []);
+
+  // Add trace event to current session
   const addTraceEvent = useCallback((type: TraceEventType, data: TraceEvent["data"]) => {
     const event: TraceEvent = {
       id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -371,6 +304,7 @@ const Runtime = () => {
     setTraceSessions(prev => [newSession, ...prev]);
     setCurrentTraceSessionId(sessionId);
     currentEventsRef.current = [];
+    setCurrentThinkingLogs([]);
     return sessionId;
   }, []);
 
@@ -384,10 +318,9 @@ const Runtime = () => {
   }, [currentTraceSessionId]);
 
   // Update context memory based on conversation
-  const updateContextMemory = useCallback((userMessage: string, response: string) => {
+  const updateContextMemory = useCallback((userMessage: string) => {
     const newMemory: MemoryItem[] = [];
     
-    // Extract entities from user message
     if (userMessage.includes("火锅") || userMessage.includes("餐饮")) {
       newMemory.push({ key: "business_type", value: "餐饮服务", type: "entity" });
     }
@@ -398,7 +331,6 @@ const Runtime = () => {
       newMemory.push({ key: "has_location", value: "true", type: "fact" });
     }
     
-    // Add session context
     if (contextMemory.length === 0) {
       newMemory.push({ key: "session_start", value: new Date().toLocaleString('zh-CN'), type: "context" });
     }
@@ -413,7 +345,7 @@ const Runtime = () => {
           updated.push(item);
         }
       });
-      return updated.slice(-10); // Keep last 10 items
+      return updated.slice(-10);
     });
   }, [contextMemory]);
 
@@ -421,15 +353,24 @@ const Runtime = () => {
     // Start trace session
     startTraceSession(userMessage);
 
-    // Planning phase
-    setCurrentStatus("planning");
-    setActiveSkill("AI 对话");
+    // ============ PLANNING PHASE ============
+    setCurrentPhase("planning");
+    setActiveSkill(null);
+    
+    // Add thinking logs
+    addThinkingLog("MPLP:Router", `Intent detected: "${userMessage.slice(0, 50)}..."`, "info");
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    addThinkingLog("MPLP:Auth", `Checking permissions for "${selectedAgent?.department || 'General'}"... OK`, "success");
+    await new Promise(resolve => setTimeout(resolve, 400));
+    
     addTraceEvent("intent_detected", { intent: userMessage });
 
     // Check if this action requires confirmation
     const needsConfirm = userMessage.includes("生成") || userMessage.includes("表单") || userMessage.includes("申请");
     
     if (needsConfirm) {
+      addThinkingLog("MPLP:Policy", "Sensitive operation detected - requires user confirmation", "warn");
       addTraceEvent("permission_check", { permissions: ["write", "network"] });
 
       const confirmAction: ConfirmAction = {
@@ -443,22 +384,40 @@ const Runtime = () => {
       };
 
       setPendingConfirm(confirmAction);
-      setCurrentStatus("confirm");
+      setCurrentPhase("confirm");
       addTraceEvent("confirm_requested", { skillName: "表单生成" });
 
-      setLocalMessages(prev => [...prev, {
-        id: `msg-confirm-${Date.now()}`,
-        role: "system",
-        content: "",
-        timestamp: new Date(),
-        confirmAction,
-      }]);
+      // Insert thinking process card before confirm card
+      const thinkingLogs = [...currentThinkingLogs];
+      
+      setLocalMessages(prev => [...prev, 
+        {
+          id: `msg-thinking-${Date.now()}`,
+          role: "system" as const,
+          content: "",
+          timestamp: new Date(),
+          thinkingLogs,
+        },
+        {
+          id: `msg-confirm-${Date.now()}`,
+          role: "system" as const,
+          content: "",
+          timestamp: new Date(),
+          confirmAction,
+        }
+      ]);
 
       return;
     }
 
-    // Execute AI chat
-    setCurrentStatus("executing");
+    // ============ EXECUTING PHASE ============
+    addThinkingLog("Skill:Selector", `Match: "AI 对话" skill`, "info");
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    setCurrentPhase("executing");
+    setActiveSkill("AI 对话");
+    
+    addThinkingLog("Skill:AI", "Loading context...", "info");
     addTraceEvent("skill_selected", { skillName: "AI 对话" });
     addTraceEvent("execution_started", { skillName: "AI 对话" });
 
@@ -469,6 +428,16 @@ const Runtime = () => {
     chatMessages.push({ role: "user", content: userMessage });
 
     assistantContentRef.current = "";
+
+    // Insert thinking process card
+    const thinkingLogs = [...currentThinkingLogs];
+    setLocalMessages(prev => [...prev, {
+      id: `msg-thinking-${Date.now()}`,
+      role: "system" as const,
+      content: "",
+      timestamp: new Date(),
+      thinkingLogs,
+    }]);
 
     const upsertAssistant = (nextChunk: string) => {
       assistantContentRef.current += nextChunk;
@@ -497,6 +466,9 @@ const Runtime = () => {
       messages: chatMessages,
       onDelta: upsertAssistant,
       onDone: async () => {
+        // ============ TRACE PHASE ============
+        setCurrentPhase("trace");
+        
         addTraceEvent("execution_completed", { 
           skillName: "AI 对话", 
           result: "success" 
@@ -510,12 +482,14 @@ const Runtime = () => {
             : m
         ));
 
-        setCurrentStatus("idle");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        setCurrentPhase("idle");
         setActiveSkill(null);
         endTraceSession("completed");
 
         // Update context memory
-        updateContextMemory(userMessage, assistantContentRef.current);
+        updateContextMemory(userMessage);
 
         // Save assistant message to DB
         if (chatSession) {
@@ -523,7 +497,6 @@ const Runtime = () => {
             role: "assistant",
             content: assistantContentRef.current,
           }, "AI 对话");
-          toast.success("消息已保存");
         }
       },
     });
@@ -537,17 +510,27 @@ const Runtime = () => {
     setLocalMessages(prev => prev.filter(m => !m.confirmAction));
     setPendingConfirm(null);
     
-    setCurrentStatus("executing");
+    setCurrentPhase("executing");
     setActiveSkill("表单生成");
+    
+    addThinkingLog("Skill:Form", "Starting form generation...", "info");
     addTraceEvent("execution_started", { skillName: "表单生成" });
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 800));
+    addThinkingLog("Skill:Form", "Collecting user data...", "info");
+    
+    await new Promise(resolve => setTimeout(resolve, 700));
+    addThinkingLog("Skill:Form", "Form generated successfully", "success");
 
     addTraceEvent("execution_completed", { 
       skillName: "表单生成", 
       duration: 1500,
       result: "success" 
     });
+
+    // Trace phase
+    setCurrentPhase("trace");
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     const events = [...currentEventsRef.current];
     const responseContent = "✅ 申请表已生成完成！\n\n我已为您准备好《餐饮服务许可证申请表》，包含以下信息：\n\n- 申请人信息（待填写）\n- 经营场所信息\n- 经营项目：火锅餐饮\n- 所需材料清单\n\n您可以点击下载或在线编辑。是否需要我帮您预约递交材料的时间？";
@@ -563,24 +546,22 @@ const Runtime = () => {
     };
 
     setLocalMessages(prev => [...prev, response]);
-    setCurrentStatus("idle");
+    setCurrentPhase("idle");
     setActiveSkill(null);
     endTraceSession("completed");
     toast.success("操作已完成");
 
-    // Update context memory
     setContextMemory(prev => [...prev, { key: "form_generated", value: "餐饮服务许可证申请表", type: "fact" }]);
 
-    // Save to DB
     if (chatSession) {
       await addMessage({ role: "assistant", content: responseContent }, "表单生成");
-      toast.success("消息已保存");
     }
   };
 
   const handleReject = async () => {
     if (!pendingConfirm) return;
 
+    addThinkingLog("MPLP:Policy", "User rejected operation", "warn");
     addTraceEvent("confirm_rejected", { 
       skillName: pendingConfirm.skillName,
       reason: "用户拒绝" 
@@ -588,7 +569,7 @@ const Runtime = () => {
 
     setLocalMessages(prev => prev.filter(m => !m.confirmAction));
     setPendingConfirm(null);
-    setCurrentStatus("idle");
+    setCurrentPhase("idle");
     setActiveSkill(null);
 
     const events = [...currentEventsRef.current];
@@ -613,12 +594,11 @@ const Runtime = () => {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || currentStatus !== "idle") return;
+    if (!input.trim() || currentPhase !== "idle") return;
 
     const messageContent = input;
     setInput("");
 
-    // Create session if needed and user is logged in
     let activeSession = chatSession;
     if (!activeSession && user) {
       const agentId = selectedAgent?.id || undefined;
@@ -627,7 +607,6 @@ const Runtime = () => {
         toast.error("创建会话失败");
         return;
       }
-      toast.success("会话已创建");
     }
 
     const userMessage: Message = {
@@ -639,7 +618,6 @@ const Runtime = () => {
 
     setLocalMessages(prev => [...prev, userMessage]);
 
-    // Save user message to DB
     if (activeSession) {
       await addMessage({ role: "user", content: messageContent });
     }
@@ -655,6 +633,7 @@ const Runtime = () => {
     await createSession();
     setTraceSessions([]);
     setContextMemory([]);
+    setCurrentThinkingLogs([]);
     toast.success("已创建新会话");
   };
 
@@ -663,28 +642,12 @@ const Runtime = () => {
     setShowHistory(false);
     setTraceSessions([]);
     setContextMemory([]);
-    toast.success("已加载会话");
+    setCurrentThinkingLogs([]);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
     await deleteSession(sessionId);
     toast.success("已删除会话");
-  };
-
-  const StatusBadge = ({ status }: { status: MPLPStatus }) => {
-    const config = statusConfig[status];
-    const Icon = config.icon;
-    
-    return (
-      <div className={cn(
-        "status-badge",
-        config.className,
-        config.pulse && "animate-pulse"
-      )}>
-        <Icon className="h-3 w-3" />
-        <span>{config.label}</span>
-      </div>
-    );
   };
 
   return (
@@ -741,7 +704,7 @@ const Runtime = () => {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header with MPLP Status */}
+        {/* Header */}
         <div className="panel-header border-b border-border">
           <div className="flex items-center gap-2">
             {user && (
@@ -761,64 +724,36 @@ const Runtime = () => {
               isLoading={isLoadingAgents}
             />
             {chatSession && (
-              <Badge variant="secondary" className="text-xs">
-                已保存
-              </Badge>
+              <Badge variant="secondary" className="text-xs">已保存</Badge>
             )}
           </div>
           
-          <div className="flex items-center gap-3">
-            <StatusBadge status={currentStatus} />
-            {activeSkill && (
-              <Badge variant="outline" className="text-xs gap-1">
-                <Brain className="h-3 w-3" />
-                {activeSkill}
-              </Badge>
-            )}
-          </div>
+          {activeSkill && (
+            <Badge variant="outline" className="text-xs gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {activeSkill}
+            </Badge>
+          )}
         </div>
 
-        {/* MPLP Protocol Indicator */}
-        <div className="px-4 py-2 bg-secondary/30 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-governance" />
-              <span className="text-xs text-muted-foreground">MPLP Protocol v1.0</span>
-            </div>
-            <div className="h-3 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-status-executing animate-pulse" />
-              <span className="text-xs text-muted-foreground">治理引擎在线</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {(["idle", "planning", "confirm", "executing"] as MPLPStatus[]).map((phase) => (
-              <div key={phase} className="flex items-center gap-1.5">
-                <div className={cn(
-                  "w-2 h-2 rounded-full transition-all",
-                  currentStatus === phase 
-                    ? cn(
-                        statusConfig[phase].className.replace('text-', 'bg-').split(' ')[0].replace('/10', ''),
-                        "scale-125"
-                      )
-                    : "bg-muted"
-                )} />
-                <span className={cn(
-                  "text-[10px] transition-colors",
-                  currentStatus === phase
-                    ? "text-foreground font-medium"
-                    : "text-muted-foreground"
-                )}>
-                  {statusConfig[phase].label}
-                </span>
-              </div>
-            ))}
-          </div>
+        {/* MPLP Protocol Status Bar (Stepper) */}
+        <div className="px-4 py-3 bg-secondary/30 border-b border-border flex items-center justify-center">
+          <MPLPStepper currentPhase={currentPhase} />
         </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {localMessages.map(message => {
+            // Render Thinking Process card
+            if (message.role === "system" && message.thinkingLogs && message.thinkingLogs.length > 0) {
+              return (
+                <div key={message.id} className="max-w-[85%]">
+                  <ThinkingProcess logs={message.thinkingLogs} />
+                </div>
+              );
+            }
+
+            // Render Confirm Card
             if (message.role === "system" && message.confirmAction) {
               return (
                 <div key={message.id} className="flex justify-center">
@@ -826,12 +761,13 @@ const Runtime = () => {
                     action={message.confirmAction}
                     onConfirm={handleConfirm}
                     onReject={handleReject}
-                    isPending={currentStatus === "executing"}
+                    isPending={currentPhase === "executing"}
                   />
                 </div>
               );
             }
 
+            // Render regular messages
             return (
               <div
                 key={message.id}
@@ -857,64 +793,65 @@ const Runtime = () => {
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
                   
-                  <div className={cn(
-                    "mt-1.5",
-                    message.role === "user" ? "flex flex-col items-end" : ""
-                  )}>
-                    {message.skill && (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] gap-1">
-                          <CheckCircle2 className="h-2.5 w-2.5" />
-                          {message.skill}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground">
-                          {message.timestamp.toLocaleTimeString()}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Trace Log Panel for assistant messages */}
-                    {message.role === "assistant" && message.traceEvents && (
-                      <MessageTracePanel events={message.traceEvents} />
-                    )}
-                  </div>
+                  {message.skill && (
+                    <div className={cn(
+                      "mt-1.5 flex items-center gap-2",
+                      message.role === "user" ? "justify-end" : ""
+                    )}>
+                      <Badge variant="outline" className="text-[10px] gap-1">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        {message.skill}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        {message.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
 
+          {/* Inline Thinking Process during processing */}
+          {currentPhase !== "idle" && currentPhase !== "confirm" && currentThinkingLogs.length > 0 && (
+            <div className="max-w-[85%]">
+              <ThinkingProcess logs={currentThinkingLogs} />
+            </div>
+          )}
+
           {/* Typing indicator */}
-          {currentStatus !== "idle" && currentStatus !== "confirm" && (
+          {currentPhase !== "idle" && currentPhase !== "confirm" && (
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
               <div className="p-3 rounded-lg bg-card border border-border">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    {currentStatus === "planning" && "正在分析意图并选择技能..."}
-                    {currentStatus === "executing" && "正在执行任务..."}
-                  </span>
-                </div>
+                <span className="text-sm text-muted-foreground">
+                  {currentPhase === "planning" && "正在分析意图并选择技能..."}
+                  {currentPhase === "executing" && "正在执行任务..."}
+                  {currentPhase === "trace" && "正在记录执行结果..."}
+                </span>
               </div>
             </div>
           )}
+          
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
         <div className="p-4 border-t border-border">
           <div className="flex gap-2">
             <Input
-              placeholder="输入您的问题..."
+              placeholder="输入您的问题... (试试: '帮我生成申请表')"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               className="bg-card"
-              disabled={currentStatus !== "idle"}
+              disabled={currentPhase !== "idle"}
             />
             <Button 
               onClick={handleSend} 
-              disabled={!input.trim() || currentStatus !== "idle"}
+              disabled={!input.trim() || currentPhase !== "idle"}
               className="gap-2"
             >
               <Send className="h-4 w-4" />
@@ -927,7 +864,7 @@ const Runtime = () => {
       <div className="w-80 border-l border-border bg-card/50 hidden lg:flex flex-col">
         <div className="panel-header">
           <div className="flex items-center gap-2">
-            <GitBranch className="h-4 w-4 text-cognitive" />
+            <Database className="h-4 w-4 text-cognitive" />
             <span className="font-semibold text-sm">决策追踪</span>
           </div>
           <Badge variant="secondary" className="text-xs">
