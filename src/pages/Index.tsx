@@ -7,20 +7,19 @@ import {
   Brain, 
   Shield, 
   Activity,
-  Zap,
   Users,
   FileCode,
-  TrendingUp
+  TrendingUp,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const stats = [
-  { label: "活跃 Agent", value: "12", icon: Bot, trend: "+3" },
-  { label: "技能库", value: "48", icon: FileCode, trend: "+8" },
-  { label: "今日任务", value: "156", icon: Activity, trend: "+24" },
-  { label: "用户数", value: "89", icon: Users, trend: "+12" },
-];
+import { useMyAgents, useDeployedAgents } from "@/hooks/useAgents";
+import { useMySkills, usePublishedSkills } from "@/hooks/useSkills";
+import { useAuth } from "@/contexts/AuthContext";
 
 const quickActions = [
   {
@@ -47,6 +46,54 @@ const quickActions = [
 ];
 
 const Index = () => {
+  const { user } = useAuth();
+  const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
+  const { data: deployedAgents = [] } = useDeployedAgents();
+  const { data: mySkills = [], isLoading: skillsLoading } = useMySkills();
+  const { data: publishedSkills = [] } = usePublishedSkills();
+
+  const isLoading = agentsLoading || skillsLoading;
+
+  // Calculate stats
+  const totalAgents = myAgents.length;
+  const deployedCount = myAgents.filter(a => a.status === 'deployed').length;
+  const draftAgents = myAgents.filter(a => a.status === 'draft').length;
+  
+  const totalSkills = mySkills.length;
+  const publishedSkillsCount = mySkills.filter(s => s.is_published).length;
+  const draftSkills = mySkills.filter(s => !s.is_published).length;
+
+  const stats = [
+    { 
+      label: "我的 Agent", 
+      value: totalAgents.toString(), 
+      icon: Bot, 
+      subLabel: `${deployedCount} 已部署`,
+      color: "cognitive"
+    },
+    { 
+      label: "已部署 Agent", 
+      value: deployedAgents.length.toString(), 
+      icon: CheckCircle2, 
+      subLabel: "全平台",
+      color: "status-executing"
+    },
+    { 
+      label: "我的技能", 
+      value: totalSkills.toString(), 
+      icon: FileCode, 
+      subLabel: `${publishedSkillsCount} 已发布`,
+      color: "governance"
+    },
+    { 
+      label: "技能市场", 
+      value: publishedSkills.length.toString(), 
+      icon: Upload, 
+      subLabel: "公开可用",
+      color: "primary"
+    },
+  ];
+
   return (
     <div className="h-full overflow-y-auto">
       {/* Header */}
@@ -82,7 +129,9 @@ const Index = () => {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">已加载技能</span>
-              <Badge variant="secondary">48 个</Badge>
+              <Badge variant="secondary">
+                {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : `${publishedSkills.length} 个`}
+              </Badge>
             </div>
           </div>
 
@@ -103,22 +152,140 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="panel p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-status-executing flex items-center gap-0.5">
-                  <TrendingUp className="h-3 w-3" />
-                  {stat.trend}
-                </span>
+        {/* Stats Dashboard */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">系统概览</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat) => (
+              <div key={stat.label} className="panel p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <stat.icon className={`h-4 w-4 text-${stat.color}`} />
+                  {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                </div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? "-" : stat.value}
+                </div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+                <div className="text-xs text-muted-foreground/70 mt-1">{stat.subLabel}</div>
               </div>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {/* My Resources Summary */}
+        {user && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Agents Summary */}
+            <div className="panel p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">我的 Agent</h3>
+                <Link to="/builder">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs">
+                    查看全部
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : myAgents.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  暂无 Agent，点击"创建新 Agent"开始
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {myAgents.slice(0, 3).map((agent) => (
+                    <Link 
+                      key={agent.id} 
+                      to={`/builder/${agent.id}`}
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md bg-cognitive/10 flex items-center justify-center">
+                          <Bot className="h-3.5 w-3.5 text-cognitive" />
+                        </div>
+                        <span className="text-sm font-medium">{agent.name}</span>
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${
+                          agent.status === 'deployed' 
+                            ? 'border-status-executing/50 text-status-executing' 
+                            : 'border-muted-foreground/30'
+                        }`}
+                      >
+                        {agent.status === 'deployed' ? '已部署' : '草稿'}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {myAgents.length > 3 && (
+                    <div className="text-xs text-muted-foreground text-center pt-2">
+                      还有 {myAgents.length - 3} 个 Agent...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Skills Summary */}
+            <div className="panel p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">我的技能</h3>
+                <Link to="/foundry">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs">
+                    查看全部
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : mySkills.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  暂无技能，点击"开发新技能"开始
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {mySkills.slice(0, 3).map((skill) => (
+                    <div 
+                      key={skill.id} 
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md bg-governance/10 flex items-center justify-center">
+                          <FileCode className="h-3.5 w-3.5 text-governance" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium">{skill.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">v{skill.version}</span>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${
+                          skill.is_published 
+                            ? 'border-status-executing/50 text-status-executing' 
+                            : 'border-muted-foreground/30'
+                        }`}
+                      >
+                        {skill.is_published ? '已发布' : '草稿'}
+                      </Badge>
+                    </div>
+                  ))}
+                  {mySkills.length > 3 && (
+                    <div className="text-xs text-muted-foreground text-center pt-2">
+                      还有 {mySkills.length - 3} 个技能...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div>
@@ -164,34 +331,66 @@ const Index = () => {
         <div>
           <h2 className="text-lg font-semibold mb-4">最近活动</h2>
           <div className="panel rounded-lg divide-y divide-border">
-            {[
-              { agent: "餐饮办证助手", action: "完成 32 次对话", time: "5 分钟前", status: "active" },
-              { agent: "数据分析专员", action: "生成月度报表", time: "1 小时前", status: "completed" },
-              { agent: "代码审查助手", action: "审查 PR #156", time: "2 小时前", status: "completed" },
-            ].map((activity, i) => (
-              <div key={i} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                    <Bot className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">{activity.agent}</div>
-                    <div className="text-xs text-muted-foreground">{activity.action}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
-                  <div className={`w-2 h-2 rounded-full ${
-                    activity.status === "active" ? "bg-status-executing animate-pulse" : "bg-muted"
-                  }`} />
-                </div>
+            {myAgents.length === 0 && mySkills.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                暂无活动记录，开始创建您的第一个 Agent 或技能吧
               </div>
-            ))}
+            ) : (
+              [...myAgents, ...mySkills]
+                .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                .slice(0, 5)
+                .map((item, i) => {
+                  const isAgent = 'status' in item;
+                  const timeAgo = getTimeAgo(new Date(item.updated_at));
+                  return (
+                    <div key={i} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          isAgent ? 'bg-cognitive/10' : 'bg-governance/10'
+                        }`}>
+                          {isAgent ? (
+                            <Bot className="h-4 w-4 text-cognitive" />
+                          ) : (
+                            <FileCode className="h-4 w-4 text-governance" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">{item.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {isAgent ? 'Agent' : '技能'} · {isAgent 
+                              ? (item as any).status === 'deployed' ? '已部署' : '草稿'
+                              : (item as any).is_published ? '已发布' : '草稿'
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground">{timeAgo}</span>
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                    </div>
+                  );
+                })
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return '刚刚';
+  if (diffMins < 60) return `${diffMins} 分钟前`;
+  if (diffHours < 24) return `${diffHours} 小时前`;
+  if (diffDays < 7) return `${diffDays} 天前`;
+  return date.toLocaleDateString('zh-CN');
+}
 
 export default Index;
