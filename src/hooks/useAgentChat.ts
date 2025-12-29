@@ -4,15 +4,37 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
 type Message = { role: "user" | "assistant"; content: string };
 
+interface AgentSkill {
+  name: string;
+  description?: string;
+  permissions?: string[];
+}
+
 interface AgentConfig {
   name?: string;
   systemPrompt?: string;
   model?: string;
+  skills?: AgentSkill[];
+  mplpPolicy?: string;
+}
+
+interface TraceEventData {
+  module?: string;
+  message?: string;
+  level?: "info" | "warn" | "error" | "success";
+  [key: string]: unknown;
 }
 
 interface UseAgentChatOptions {
   agentConfig?: AgentConfig;
-  onTraceEvent?: (type: string, data: Record<string, unknown>) => void;
+  onTraceEvent?: (type: string, data: TraceEventData) => void;
+}
+
+interface StreamChatOptions {
+  messages: Message[];
+  onDelta: (deltaText: string) => void;
+  onDone: () => void;
+  onThinking?: (module: string, message: string, level: "info" | "warn" | "success" | "error") => void;
 }
 
 export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions = {}) {
@@ -23,13 +45,13 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
     messages,
     onDelta,
     onDone,
-  }: {
-    messages: Message[];
-    onDelta: (deltaText: string) => void;
-    onDone: () => void;
-  }) => {
+    onThinking,
+  }: StreamChatOptions) => {
     setIsLoading(true);
     setError(null);
+
+    // Emit initial thinking events
+    onThinking?.("MPLP:Gateway", "Connecting to AI Gateway...", "info");
 
     try {
       const resp = await fetch(CHAT_URL, {
@@ -43,9 +65,12 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
 
       if (!resp.ok) {
         const errorData = await resp.json().catch(() => ({}));
+        const errorCode = errorData.code || "UNKNOWN";
         const errorMessage = errorData.error || `请求失败 (${resp.status})`;
+        
+        onThinking?.("MPLP:Gateway", `Error: ${errorMessage}`, "error");
         setError(errorMessage);
-        onTraceEvent?.("error", { message: errorMessage });
+        onTraceEvent?.("error", { message: errorMessage, code: errorCode });
         setIsLoading(false);
         return;
       }
@@ -54,10 +79,14 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
         throw new Error("No response body");
       }
 
+      onThinking?.("MPLP:Gateway", "Connection established", "success");
+      onThinking?.("LLM:Stream", "Receiving response stream...", "info");
+
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = "";
       let streamDone = false;
+      let tokenCount = 0;
 
       while (!streamDone) {
         const { done, value } = await reader.read();
@@ -82,7 +111,10 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) onDelta(content);
+            if (content) {
+              tokenCount++;
+              onDelta(content);
+            }
           } catch {
             textBuffer = line + "\n" + textBuffer;
             break;
@@ -102,14 +134,20 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) onDelta(content);
+            if (content) {
+              tokenCount++;
+              onDelta(content);
+            }
           } catch { /* ignore */ }
         }
       }
 
+      onThinking?.("LLM:Stream", `Response complete (${tokenCount} tokens)`, "success");
+      onTraceEvent?.("ai_response_complete", { tokenCount });
       onDone();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
+      onThinking?.("MPLP:Gateway", `Connection failed: ${message}`, "error");
       setError(message);
       onTraceEvent?.("error", { message });
     } finally {

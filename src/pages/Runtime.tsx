@@ -398,10 +398,20 @@ const Runtime = () => {
   }, [localMessages, currentThinkingLogs]);
 
   // Get current agent config for AI
+  const agentSkills = selectedAgent 
+    ? ((selectedAgent.manifest as any)?.skills?.details || []).map((s: any) => ({
+        name: s.name,
+        description: s.description,
+        permissions: s.permissions,
+      }))
+    : [];
+
   const currentAgentConfig = selectedAgent ? {
     name: selectedAgent.name,
     systemPrompt: (selectedAgent.manifest as any)?.system_prompt || undefined,
     model: selectedAgent.model,
+    skills: agentSkills,
+    mplpPolicy: selectedAgent.mplp_policy,
   } : undefined;
 
   // Sync persisted messages to local state
@@ -429,8 +439,8 @@ const Runtime = () => {
           id: "welcome",
           role: "assistant",
           content: user 
-            ? `您好！我是${agentName}，这是 MPLP 协议的演示终端。\n\n您可以尝试以下操作来体验不同的权限级别：\n\n🟢 **低风险**：查看文件、搜索数据\n🟡 **中风险**：调用API、生成表单、发送邮件\n🔴 **高风险**：删除数据、执行脚本、支付处理\n\n试试说：\"帮我读取配置文件\" 或 \"执行部署脚本\"`
-            : `您好！我是${agentName}。请先登录以保存对话历史。`,
+            ? `您好！我是 **${agentName}**，运行在 Agent OS 平台上。\n\n🤖 **真实 AI 对话已启用** - 使用 Lovable AI Gateway 提供智能响应\n\n您可以尝试以下操作来体验不同的权限级别：\n\n🟢 **低风险**：查看文件、搜索数据\n🟡 **中风险**：调用API、生成表单、发送邮件\n🔴 **高风险**：删除数据、执行脚本、支付处理\n\n或者直接向我提问任何问题！`
+            : `您好！我是 **${agentName}**。请先登录以保存对话历史。`,
           timestamp: new Date(),
           status: "idle",
         },
@@ -453,7 +463,7 @@ const Runtime = () => {
     }
   }, []);
 
-  const { streamChat } = useAgentChat({
+  const { streamChat, isLoading: isAILoading } = useAgentChat({
     agentConfig: currentAgentConfig,
     onTraceEvent: handleTraceEvent,
   });
@@ -727,6 +737,9 @@ const Runtime = () => {
       await streamChat({
         messages: chatMessages,
         onDelta: upsertAssistant,
+        onThinking: (module, message, level) => {
+          addThinkingLog(module, message, level);
+        },
         onDone: async () => {
           setCurrentPhase("trace");
           
