@@ -40,6 +40,8 @@ export interface Skill {
   description: string;
   permissions: string[];
   version: string;
+  inputs?: Array<{ name: string; type: string; description?: string; required?: boolean }>;
+  outputs?: Array<{ name: string; type: string; description?: string }>;
 }
 
 // Convert DB skill to component skill format
@@ -51,6 +53,8 @@ function toSkill(dbSkill: DbSkill): Skill {
     description: dbSkill.description || "",
     permissions: dbSkill.permissions || [],
     version: dbSkill.version,
+    inputs: (dbSkill.inputs as Skill["inputs"]) || [],
+    outputs: (dbSkill.outputs as Skill["outputs"]) || [],
   };
 }
 
