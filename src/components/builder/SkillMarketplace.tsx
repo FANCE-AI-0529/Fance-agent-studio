@@ -9,10 +9,14 @@ import {
   Sparkles,
   GripVertical,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { usePublishedSkills, type Skill as DbSkill } from "@/hooks/useSkills";
+import { cn } from "@/lib/utils";
 
 const categoryIcons: Record<string, React.ElementType> = {
   analysis: Database,
@@ -58,6 +62,7 @@ interface SkillMarketplaceProps {
 export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplaceProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: dbSkills, isLoading } = usePublishedSkills();
 
   const skills = (dbSkills || []).map(toSkill);
@@ -77,6 +82,30 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
     onDragStart(skill);
   };
 
+  if (isCollapsed) {
+    return (
+      <div className="w-12 border-r border-border flex flex-col bg-card/50 items-center py-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => setIsCollapsed(false)}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+          <Puzzle className="h-4 w-4 text-cognitive" />
+          <span className="text-xs text-muted-foreground [writing-mode:vertical-rl]">
+            技能市场
+          </span>
+        </div>
+        <Badge variant="secondary" className="text-[10px] px-1">
+          {skills.length}
+        </Badge>
+      </div>
+    );
+  }
+
   return (
     <div className="w-80 border-r border-border flex flex-col bg-card/50">
       {/* Header */}
@@ -85,9 +114,19 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
           <Puzzle className="h-4 w-4 text-cognitive" />
           <span className="font-semibold text-sm">技能市场</span>
         </div>
-        <Badge variant="secondary" className="text-xs">
-          {skills.length} 可用
-        </Badge>
+        <div className="flex items-center gap-1">
+          <Badge variant="secondary" className="text-xs">
+            {skills.length} 可用
+          </Badge>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setIsCollapsed(true)}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -109,11 +148,12 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors ${
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors",
               activeCategory === cat.id
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
-            }`}
+            )}
           >
             {cat.icon && <cat.icon className="h-3.5 w-3.5" />}
             {cat.label}
@@ -141,11 +181,12 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
                 key={skill.id}
                 draggable={!isAdded}
                 onDragStart={(e) => handleDragStart(e, skill)}
-                className={`p-3 rounded-lg border transition-all ${
+                className={cn(
+                  "p-3 rounded-lg border transition-all",
                   isAdded
                     ? "border-primary/50 bg-primary/5 opacity-60 cursor-not-allowed"
                     : "border-border bg-card hover:border-primary/50 cursor-grab active:cursor-grabbing"
-                }`}
+                )}
               >
                 <div className="flex items-start gap-2">
                   {!isAdded && (

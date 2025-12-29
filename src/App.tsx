@@ -85,6 +85,16 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/builder/:id"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Builder />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/foundry"
         element={
           <ProtectedRoute>
