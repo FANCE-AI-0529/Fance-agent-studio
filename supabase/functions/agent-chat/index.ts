@@ -19,6 +19,24 @@ interface AgentConfig {
   mplpPolicy?: string;
 }
 
+// Available models
+const validModels = [
+  "google/gemini-2.5-flash",
+  "google/gemini-2.5-pro",
+  "google/gemini-2.5-flash-lite",
+  "google/gemini-3-pro-preview",
+  "openai/gpt-5",
+  "openai/gpt-5-mini",
+  "openai/gpt-5-nano",
+];
+
+function getValidModel(requestedModel?: string): string {
+  if (requestedModel && validModels.includes(requestedModel)) {
+    return requestedModel;
+  }
+  return "google/gemini-2.5-flash"; // default
+}
+
 function buildSystemPrompt(config?: AgentConfig): string {
   const agentName = config?.name || "Agent OS Assistant";
   const skills = config?.skills || [];
@@ -82,9 +100,7 @@ serve(async (req) => {
     }
 
     const systemPrompt = buildSystemPrompt(agentConfig);
-    const model = agentConfig?.model === "claude-3-5-sonnet" 
-      ? "google/gemini-2.5-pro" 
-      : "google/gemini-2.5-flash";
+    const model = getValidModel(agentConfig?.model);
 
     console.log(`[agent-chat] Starting chat with model: ${model}, agent: ${agentConfig?.name || 'default'}`);
     console.log(`[agent-chat] Message count: ${messages?.length || 0}`);
@@ -131,7 +147,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[agent-chat] Streaming response started`);
+    console.log(`[agent-chat] Streaming response started with model: ${model}`);
     
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
