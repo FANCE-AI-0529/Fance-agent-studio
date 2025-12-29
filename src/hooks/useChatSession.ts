@@ -86,16 +86,19 @@ export function useChatSession() {
   }, []);
 
   // Create a new session
-  const createSession = useCallback(async (agentId: string = DEFAULT_AGENT_ID) => {
+  const createSession = useCallback(async (agentId?: string) => {
     if (!user) {
       toast.error("请先登录");
       return null;
     }
 
+    // Use a valid UUID for default agent or provided agentId
+    const sessionAgentId = agentId || DEFAULT_AGENT_ID;
+
     const { data, error } = await supabase
       .from("sessions")
       .insert({
-        agent_id: agentId,
+        agent_id: sessionAgentId,
         user_id: user.id,
         status: "active",
       })
@@ -117,18 +120,6 @@ export function useChatSession() {
 
     setSession(newSession);
     setMessages([]);
-    
-    // Add welcome message
-    const welcomeMessage: ChatMessage = {
-      id: `welcome-${Date.now()}`,
-      role: "assistant",
-      content: "您好！我是餐饮办证助手，可以帮您了解开店所需的证照和办理流程。请问有什么可以帮您的？",
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
-    
-    // Save welcome message to DB
-    await saveMessage(data.id, welcomeMessage);
 
     return newSession;
   }, [user]);

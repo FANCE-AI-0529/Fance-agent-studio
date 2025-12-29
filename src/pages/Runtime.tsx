@@ -19,8 +19,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmCard, ConfirmAction } from "@/components/runtime/ConfirmCard";
 import { TraceTree, TraceSession, TraceEvent, TraceEventType } from "@/components/runtime/TraceTree";
+import { AgentSelector } from "@/components/runtime/AgentSelector";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
+import { useDeployedAgents, Agent } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,6 +50,9 @@ const statusConfig = {
 
 const Runtime = () => {
   const { user } = useAuth();
+  const { data: deployedAgents = [], isLoading: isLoadingAgents } = useDeployedAgents();
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  
   const {
     session: chatSession,
     sessions: chatSessions,
@@ -71,6 +76,13 @@ const Runtime = () => {
   const [showHistory, setShowHistory] = useState(false);
   const assistantContentRef = useRef("");
 
+  // Get current agent config for AI
+  const currentAgentConfig = selectedAgent ? {
+    name: selectedAgent.name,
+    systemPrompt: (selectedAgent.manifest as any)?.system_prompt || undefined,
+    model: selectedAgent.model,
+  } : undefined;
+
   // Sync persisted messages to local state
   useEffect(() => {
     if (persistedMessages.length > 0) {
@@ -90,19 +102,28 @@ const Runtime = () => {
   // Initialize with welcome message if no session
   useEffect(() => {
     if (!chatSession && !isLoadingSession && localMessages.length === 0) {
+      const agentName = selectedAgent?.name || "餐饮办证助手";
       setLocalMessages([
         {
           id: "welcome",
           role: "assistant",
           content: user 
-            ? "您好！我是餐饮办证助手，可以帮您了解开店所需的证照和办理流程。请问有什么可以帮您的？"
-            : "您好！我是餐饮办证助手。请先登录以保存对话历史。",
+            ? `您好！我是${agentName}，请问有什么可以帮您的？`
+            : `您好！我是${agentName}。请先登录以保存对话历史。`,
           timestamp: new Date(),
           status: "idle",
         },
       ]);
     }
-  }, [chatSession, isLoadingSession, user, localMessages.length]);
+  }, [chatSession, isLoadingSession, user, localMessages.length, selectedAgent]);
+
+  // Reset messages when agent changes
+  const handleAgentChange = useCallback((agent: Agent | null) => {
+    setSelectedAgent(agent);
+    setLocalMessages([]);
+    setTraceSessions([]);
+    // Welcome message will be added by the effect above
+  }, []);
 
   const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
     if (type === "error") {
@@ -111,6 +132,7 @@ const Runtime = () => {
   }, []);
 
   const { streamChat, isLoading, error } = useAgentChat({
+    agentConfig: currentAgentConfig,
     onTraceEvent: handleTraceEvent,
   });
 
@@ -334,7 +356,8 @@ const Runtime = () => {
     // Create session if needed and user is logged in
     let activeSession = chatSession;
     if (!activeSession && user) {
-      activeSession = await createSession();
+      const agentId = selectedAgent?.id || undefined;
+      activeSession = await createSession(agentId);
       if (!activeSession) {
         toast.error("创建会话失败");
         return;
@@ -448,7 +471,7 @@ const Runtime = () => {
       <div className="flex-1 flex flex-col">
         {/* Header with MPLP Status */}
         <div className="panel-header border-b border-border">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {user && (
               <Button
                 variant="ghost"
@@ -459,15 +482,17 @@ const Runtime = () => {
                 <History className="h-4 w-4" />
               </Button>
             )}
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold text-sm">餐饮办证助手</div>
-              <div className="text-xs text-muted-foreground">
-                {chatSession ? "会话已保存" : user ? "未保存" : "市场监管局"}
-              </div>
-            </div>
+            <AgentSelector
+              agents={deployedAgents}
+              selectedAgent={selectedAgent}
+              onSelectAgent={handleAgentChange}
+              isLoading={isLoadingAgents}
+            />
+            {chatSession && (
+              <Badge variant="secondary" className="text-xs">
+                已保存
+              </Badge>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
