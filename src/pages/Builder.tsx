@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, DragEvent, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   ReactFlow,
   Controls,
@@ -22,9 +23,9 @@ import { toast } from "@/hooks/use-toast";
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
-import { AgentConfigPanel } from "@/components/builder/AgentConfigPanel";
+import { AgentConfigPanel, AgentConfig } from "@/components/builder/AgentConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
-import { useSaveAgentWithSkills, useDeployAgent, useMyAgents } from "@/hooks/useAgents";
+import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 
 // Custom node types
@@ -43,24 +44,67 @@ const createAgentNode = (name = "", department = "", model = "Claude 3.5", skill
 });
 
 const Builder = () => {
+  const { id: agentIdParam } = useParams<{ id: string }>();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([createAgentNode()]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [showManifest, setShowManifest] = useState(false);
   const [draggingSkill, setDraggingSkill] = useState<Skill | null>(null);
-  const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
+  const [currentAgentId, setCurrentAgentId] = useState<string | null>(agentIdParam || null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  const [agentConfig, setAgentConfig] = useState({
+  const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: "",
     department: "",
-    model: "claude-3.5" as "claude-3.5" | "gpt-4",
+    model: "claude-3.5",
+    systemPrompt: "",
   });
 
   const { data: publishedSkills = [] } = usePublishedSkills();
-  const { data: myAgents = [] } = useMyAgents();
+  const { data: existingAgent } = useAgent(agentIdParam || null);
   const saveAgent = useSaveAgentWithSkills();
   const deployAgent = useDeployAgent();
+
+  // Load existing agent data
+  useEffect(() => {
+    if (existingAgent) {
+      setAgentConfig({
+        name: existingAgent.name,
+        department: existingAgent.department || "",
+        model: existingAgent.model as "claude-3.5" | "gpt-4",
+        systemPrompt: (existingAgent.manifest as any)?.system_prompt || "",
+      });
+      setCurrentAgentId(existingAgent.id);
+
+      // Load skills as nodes
+      if (existingAgent.skills && existingAgent.skills.length > 0) {
+        const skillNodes: Node<SkillNodeData>[] = existingAgent.skills.map((skill, index) => ({
+          id: `skill-${skill.id}-${Date.now()}-${index}`,
+          type: "skill",
+          position: { x: 100 + (index % 2) * 200, y: 100 + Math.floor(index / 2) * 150 },
+          data: {
+            id: skill.id,
+            name: skill.name,
+            category: skill.category,
+            description: skill.description || "",
+            permissions: skill.permissions || [],
+          },
+        }));
+
+        const skillEdges: Edge[] = skillNodes.map((node) => ({
+          id: `edge-${node.id}`,
+          source: node.id,
+          target: "agent-central",
+          animated: true,
+          style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+        }));
+
+        setNodes([createAgentNode(existingAgent.name, existingAgent.department || "", existingAgent.model, existingAgent.skills.length), ...skillNodes]);
+        setEdges(skillEdges);
+      }
+    }
+  }, [existingAgent, setNodes, setEdges]);
 
   // Get added skills from nodes
   const addedSkills = nodes
@@ -80,6 +124,11 @@ const Builder = () => {
     })) as Skill[];
 
   const addedSkillIds = addedSkills.map((s) => s.id);
+
+  // Get selected skill if a skill node is selected
+  const selectedSkill = selectedNodeId
+    ? addedSkills.find((s) => nodes.find((n) => n.id === selectedNodeId && (n.data as SkillNodeData).id === s.id))
+    : null;
 
   // Update agent node when config or skills change
   const updateAgentNode = useCallback(() => {
@@ -106,6 +155,20 @@ const Builder = () => {
   useEffect(() => {
     updateAgentNode();
   }, [updateAgentNode]);
+
+  // Handle node selection
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    if (node.type === "skill") {
+      setSelectedNodeId(node.id);
+    } else {
+      setSelectedNodeId(null);
+    }
+  }, []);
+
+  // Handle pane click (deselect)
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
 
   // Handle connections
   const onConnect = useCallback(
@@ -134,6 +197,7 @@ const Builder = () => {
             !e.source.includes(skillId) && !e.target.includes(skillId)
         )
       );
+      setSelectedNodeId(null);
       toast({
         title: "技能已移除",
         description: "已从 Agent 配置中移除该技能",
@@ -225,6 +289,7 @@ const Builder = () => {
         model: agentConfig.model,
         provider: agentConfig.model === "claude-3.5" ? "anthropic" : "openai",
       },
+      system_prompt: agentConfig.systemPrompt,
       mounts: addedSkills.map((s) => ({ skill_id: s.id, version: s.version })),
       skills: addedSkills.map((s) => ({
         id: s.id,
@@ -248,7 +313,7 @@ const Builder = () => {
 
     const manifest = generateManifest();
 
-    await saveAgent.mutateAsync({
+    const agentId = await saveAgent.mutateAsync({
       agent: {
         id: currentAgentId || undefined,
         name: agentConfig.name,
@@ -258,6 +323,10 @@ const Builder = () => {
       skillIds: addedSkillIds,
       manifest,
     });
+
+    if (agentId) {
+      setCurrentAgentId(agentId);
+    }
   };
 
   // Handle deploy
@@ -342,6 +411,8 @@ const Builder = () => {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onInit={setReactFlowInstance}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
             fitView
             fitViewOptions={{ padding: 0.5 }}
@@ -374,6 +445,7 @@ const Builder = () => {
         onDeploy={handleDeploy}
         onShowManifest={() => setShowManifest(true)}
         canDeploy={canDeploy}
+        selectedSkill={selectedSkill || null}
       />
 
       {/* Manifest Preview Modal */}

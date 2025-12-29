@@ -1,13 +1,22 @@
 import { Settings, Rocket, Shield, Trash2, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skill } from "./SkillMarketplace";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-interface AgentConfig {
+export interface AgentConfig {
   name: string;
   department: string;
   model: "claude-3.5" | "gpt-4";
+  systemPrompt: string;
 }
 
 interface AgentConfigPanelProps {
@@ -18,7 +27,17 @@ interface AgentConfigPanelProps {
   onDeploy: () => void;
   onShowManifest: () => void;
   canDeploy: boolean;
+  selectedSkill: Skill | null;
 }
+
+const departments = [
+  { value: "政务服务", label: "政务服务" },
+  { value: "城市管理", label: "城市管理" },
+  { value: "民生保障", label: "民生保障" },
+  { value: "经济发展", label: "经济发展" },
+  { value: "生态环保", label: "生态环保" },
+  { value: "应急管理", label: "应急管理" },
+];
 
 export function AgentConfigPanel({
   config,
@@ -28,7 +47,91 @@ export function AgentConfigPanel({
   onDeploy,
   onShowManifest,
   canDeploy,
+  selectedSkill,
 }: AgentConfigPanelProps) {
+  // Show skill details when a skill node is selected
+  if (selectedSkill) {
+    return (
+      <div className="w-80 border-l border-border flex flex-col bg-card/50">
+        {/* Header */}
+        <div className="panel-header">
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-cognitive" />
+            <span className="font-semibold text-sm">技能详情</span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Skill Name */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              技能名称
+            </label>
+            <div className="p-3 rounded-lg border border-border bg-secondary/30">
+              <span className="font-medium">{selectedSkill.name}</span>
+              <span className="text-xs text-muted-foreground ml-2">
+                v{selectedSkill.version}
+              </span>
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              分类
+            </label>
+            <Badge variant="outline">{selectedSkill.category}</Badge>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              描述
+            </label>
+            <p className="text-sm text-muted-foreground">
+              {selectedSkill.description || "暂无描述"}
+            </p>
+          </div>
+
+          {/* Permissions */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              所需权限
+            </label>
+            <div className="flex flex-wrap gap-1">
+              {selectedSkill.permissions.map((perm) => (
+                <Badge
+                  key={perm}
+                  variant="secondary"
+                  className="text-xs"
+                >
+                  {perm}
+                </Badge>
+              ))}
+              {selectedSkill.permissions.length === 0 && (
+                <span className="text-xs text-muted-foreground">无特殊权限</span>
+              )}
+            </div>
+          </div>
+
+          {/* Remove Skill */}
+          <div className="pt-4">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full gap-2"
+              onClick={() => onRemoveSkill(selectedSkill.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+              移除技能
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show agent config when agent node is selected or nothing is selected
   return (
     <div className="w-80 border-l border-border flex flex-col bg-card/50">
       {/* Header */}
@@ -55,15 +158,39 @@ export function AgentConfigPanel({
                 }
                 className="bg-background"
               />
-              <Input
-                placeholder="所属部门"
+              <Select
                 value={config.department}
-                onChange={(e) =>
-                  onConfigChange({ ...config, department: e.target.value })
+                onValueChange={(value) =>
+                  onConfigChange({ ...config, department: value })
                 }
-                className="bg-background"
-              />
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="选择所属部门" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.value} value={dept.value}>
+                      {dept.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          {/* Role/System Prompt */}
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              角色设定 (System Prompt)
+            </label>
+            <Textarea
+              placeholder="定义 Agent 的角色、行为和能力边界..."
+              value={config.systemPrompt}
+              onChange={(e) =>
+                onConfigChange({ ...config, systemPrompt: e.target.value })
+              }
+              className="bg-background min-h-[100px] resize-none"
+            />
           </div>
 
           {/* Model Selection */}
