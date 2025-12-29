@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { 
   Send, 
   Bot, 
@@ -10,7 +10,9 @@ import {
   Brain,
   Shield,
   GitBranch,
-  AlertCircle
+  Plus,
+  History,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +20,12 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmCard, ConfirmAction } from "@/components/runtime/ConfirmCard";
 import { TraceTree, TraceSession, TraceEvent, TraceEventType } from "@/components/runtime/TraceTree";
 import { useAgentChat } from "@/hooks/useAgentChat";
+import { useChatSession } from "@/hooks/useChatSession";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
+import { zhCN } from "date-fns/locale";
 
 type MPLPStatus = "idle" | "planning" | "confirm" | "executing";
 
@@ -40,22 +47,62 @@ const statusConfig = {
 };
 
 const Runtime = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "您好！我是餐饮办证助手，可以帮您了解开店所需的证照和办理流程。请问有什么可以帮您的？",
-      timestamp: new Date(),
-      status: "idle"
-    }
-  ]);
+  const { user } = useAuth();
+  const {
+    session: chatSession,
+    sessions: chatSessions,
+    messages: persistedMessages,
+    isLoading: isLoadingSession,
+    createSession,
+    loadSession,
+    addMessage,
+    updateLastAssistantMessage,
+    deleteSession,
+    setMessages: setPersistedMessages,
+  } = useChatSession();
+
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [currentStatus, setCurrentStatus] = useState<MPLPStatus>("idle");
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<ConfirmAction | null>(null);
   const [traceSessions, setTraceSessions] = useState<TraceSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [currentTraceSessionId, setCurrentTraceSessionId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const assistantContentRef = useRef("");
+
+  // Sync persisted messages to local state
+  useEffect(() => {
+    if (persistedMessages.length > 0) {
+      setLocalMessages(
+        persistedMessages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+          skill: m.skill,
+          status: "idle" as MPLPStatus,
+        }))
+      );
+    }
+  }, [persistedMessages]);
+
+  // Initialize with welcome message if no session
+  useEffect(() => {
+    if (!chatSession && !isLoadingSession && localMessages.length === 0) {
+      setLocalMessages([
+        {
+          id: "welcome",
+          role: "assistant",
+          content: user 
+            ? "您好！我是餐饮办证助手，可以帮您了解开店所需的证照和办理流程。请问有什么可以帮您的？"
+            : "您好！我是餐饮办证助手。请先登录以保存对话历史。",
+          timestamp: new Date(),
+          status: "idle",
+        },
+      ]);
+    }
+  }, [chatSession, isLoadingSession, user, localMessages.length]);
 
   const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
     if (type === "error") {
@@ -77,11 +124,11 @@ const Runtime = () => {
     };
 
     setTraceSessions(prev => prev.map(session => 
-      session.id === currentSessionId
+      session.id === currentTraceSessionId
         ? { ...session, events: [...session.events, event] }
         : session
     ));
-  }, [currentSessionId]);
+  }, [currentTraceSessionId]);
 
   // Start a new trace session
   const startTraceSession = useCallback((query: string) => {
@@ -94,18 +141,18 @@ const Runtime = () => {
       events: [],
     };
     setTraceSessions(prev => [newSession, ...prev]);
-    setCurrentSessionId(sessionId);
+    setCurrentTraceSessionId(sessionId);
     return sessionId;
   }, []);
 
   // End current trace session
   const endTraceSession = useCallback((status: TraceSession["status"]) => {
     setTraceSessions(prev => prev.map(session =>
-      session.id === currentSessionId
+      session.id === currentTraceSessionId
         ? { ...session, status, endTime: new Date() }
         : session
     ));
-  }, [currentSessionId]);
+  }, [currentTraceSessionId]);
 
   const sendMessage = async (userMessage: string) => {
     // Start trace session
@@ -116,7 +163,7 @@ const Runtime = () => {
     setActiveSkill("AI 对话");
     addTraceEvent("intent_detected", { intent: userMessage });
 
-    // Check if this action requires confirmation (e.g., generating a form)
+    // Check if this action requires confirmation
     const needsConfirm = userMessage.includes("生成") || userMessage.includes("表单") || userMessage.includes("申请");
     
     if (needsConfirm) {
@@ -136,7 +183,7 @@ const Runtime = () => {
       setCurrentStatus("confirm");
       addTraceEvent("confirm_requested", { skillName: "表单生成" });
 
-      setMessages(prev => [...prev, {
+      setLocalMessages(prev => [...prev, {
         id: `msg-confirm-${Date.now()}`,
         role: "system",
         content: "",
@@ -153,7 +200,7 @@ const Runtime = () => {
     addTraceEvent("execution_started", { skillName: "AI 对话" });
 
     // Prepare conversation history for AI
-    const chatMessages = messages
+    const chatMessages = localMessages
       .filter(m => m.role === "user" || m.role === "assistant")
       .map(m => ({ role: m.role as "user" | "assistant", content: m.content }));
     chatMessages.push({ role: "user", content: userMessage });
@@ -162,7 +209,7 @@ const Runtime = () => {
 
     const upsertAssistant = (nextChunk: string) => {
       assistantContentRef.current += nextChunk;
-      setMessages(prev => {
+      setLocalMessages(prev => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant" && last.id.startsWith("ai-")) {
           return prev.map((m, i) => 
@@ -185,7 +232,7 @@ const Runtime = () => {
     await streamChat({
       messages: chatMessages,
       onDelta: upsertAssistant,
-      onDone: () => {
+      onDone: async () => {
         addTraceEvent("execution_completed", { 
           skillName: "AI 对话", 
           result: "success" 
@@ -193,6 +240,14 @@ const Runtime = () => {
         setCurrentStatus("idle");
         setActiveSkill(null);
         endTraceSession("completed");
+
+        // Save assistant message to DB
+        if (chatSession) {
+          await addMessage({
+            role: "assistant",
+            content: assistantContentRef.current,
+          }, "AI 对话");
+        }
       },
     });
   };
@@ -202,8 +257,7 @@ const Runtime = () => {
 
     addTraceEvent("confirm_approved", { skillName: pendingConfirm.skillName });
     
-    // Remove confirm message and add approved message
-    setMessages(prev => prev.filter(m => !m.confirmAction));
+    setLocalMessages(prev => prev.filter(m => !m.confirmAction));
     setPendingConfirm(null);
     
     setCurrentStatus("executing");
@@ -218,22 +272,29 @@ const Runtime = () => {
       result: "success" 
     });
 
+    const responseContent = "✅ 申请表已生成完成！\n\n我已为您准备好《餐饮服务许可证申请表》，包含以下信息：\n\n- 申请人信息（待填写）\n- 经营场所信息\n- 经营项目：火锅餐饮\n- 所需材料清单\n\n您可以点击下载或在线编辑。是否需要我帮您预约递交材料的时间？";
+
     const response: Message = {
       id: Date.now().toString(),
       role: "assistant",
-      content: "✅ 申请表已生成完成！\n\n我已为您准备好《餐饮服务许可证申请表》，包含以下信息：\n\n- 申请人信息（待填写）\n- 经营场所信息\n- 经营项目：火锅餐饮\n- 所需材料清单\n\n您可以点击下载或在线编辑。是否需要我帮您预约递交材料的时间？",
+      content: responseContent,
       timestamp: new Date(),
       skill: "表单生成",
       status: "idle"
     };
 
-    setMessages(prev => [...prev, response]);
+    setLocalMessages(prev => [...prev, response]);
     setCurrentStatus("idle");
     setActiveSkill(null);
     endTraceSession("completed");
+
+    // Save to DB
+    if (chatSession) {
+      await addMessage({ role: "assistant", content: responseContent }, "表单生成");
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!pendingConfirm) return;
 
     addTraceEvent("confirm_rejected", { 
@@ -241,37 +302,82 @@ const Runtime = () => {
       reason: "用户拒绝" 
     });
 
-    setMessages(prev => prev.filter(m => !m.confirmAction));
+    setLocalMessages(prev => prev.filter(m => !m.confirmAction));
     setPendingConfirm(null);
     setCurrentStatus("idle");
     setActiveSkill(null);
 
+    const responseContent = "好的，已取消表单生成操作。如果您有其他问题，请随时告诉我。";
+
     const response: Message = {
       id: Date.now().toString(),
       role: "assistant",
-      content: "好的，已取消表单生成操作。如果您有其他问题，请随时告诉我。",
+      content: responseContent,
       timestamp: new Date(),
       status: "idle"
     };
 
-    setMessages(prev => [...prev, response]);
+    setLocalMessages(prev => [...prev, response]);
     endTraceSession("cancelled");
+
+    if (chatSession) {
+      await addMessage({ role: "assistant", content: responseContent });
+    }
   };
 
   const handleSend = async () => {
     if (!input.trim() || currentStatus !== "idle") return;
 
+    const messageContent = input;
+    setInput("");
+
+    // Create session if needed and user is logged in
+    let activeSession = chatSession;
+    if (!activeSession && user) {
+      activeSession = await createSession();
+      if (!activeSession) {
+        toast.error("创建会话失败");
+        return;
+      }
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content: messageContent,
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
+    setLocalMessages(prev => [...prev, userMessage]);
+
+    // Save user message to DB
+    if (activeSession) {
+      await addMessage({ role: "user", content: messageContent });
+    }
     
-    await sendMessage(input);
+    await sendMessage(messageContent);
+  };
+
+  const handleNewSession = async () => {
+    if (!user) {
+      toast.error("请先登录");
+      return;
+    }
+    await createSession();
+    setTraceSessions([]);
+    toast.success("已创建新会话");
+  };
+
+  const handleLoadSession = async (sessionId: string) => {
+    await loadSession(sessionId);
+    setShowHistory(false);
+    setTraceSessions([]);
+    toast.success("已加载会话");
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    await deleteSession(sessionId);
+    toast.success("已删除会话");
   };
 
   const StatusBadge = ({ status }: { status: MPLPStatus }) => {
@@ -288,17 +394,79 @@ const Runtime = () => {
 
   return (
     <div className="h-full flex">
+      {/* History Sidebar */}
+      {showHistory && user && (
+        <div className="w-64 border-r border-border bg-card/50 flex flex-col">
+          <div className="panel-header">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              <span className="font-semibold text-sm">历史会话</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleNewSession}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-1">
+              {chatSessions.map((s) => (
+                <div
+                  key={s.id}
+                  className={`p-2 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors group ${
+                    chatSession?.id === s.id ? "bg-accent" : ""
+                  }`}
+                  onClick={() => handleLoadSession(s.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(s.createdAt, { addSuffix: true, locale: zhCN })}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSession(s.id);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {chatSessions.length === 0 && (
+                <div className="text-center text-muted-foreground text-xs py-4">
+                  暂无历史会话
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
+
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header with MPLP Status */}
         <div className="panel-header border-b border-border">
           <div className="flex items-center gap-3">
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            )}
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Bot className="h-5 w-5 text-primary" />
             </div>
             <div>
               <div className="font-semibold text-sm">餐饮办证助手</div>
-              <div className="text-xs text-muted-foreground">市场监管局</div>
+              <div className="text-xs text-muted-foreground">
+                {chatSession ? "会话已保存" : user ? "未保存" : "市场监管局"}
+              </div>
             </div>
           </div>
           
@@ -348,8 +516,7 @@ const Runtime = () => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map(message => {
-            // Render confirm card for system confirm messages
+          {localMessages.map(message => {
             if (message.role === "system" && message.confirmAction) {
               return (
                 <div key={message.id} className="flex justify-center">
@@ -459,7 +626,7 @@ const Runtime = () => {
         <div className="flex-1 overflow-y-auto p-3">
           <TraceTree 
             sessions={traceSessions} 
-            currentSessionId={currentSessionId || undefined}
+            currentSessionId={currentTraceSessionId || undefined}
           />
         </div>
       </div>
