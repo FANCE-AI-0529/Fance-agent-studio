@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { 
   Bot, 
   Hammer, 
@@ -20,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMyAgents, useDeployedAgents } from "@/hooks/useAgents";
 import { useMySkills, usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
+import { EmptyState, PulseIndicator } from "@/components/ui/empty-state";
 
 const quickActions = [
   {
@@ -107,8 +109,8 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border">
-              <div className="w-2 h-2 rounded-full bg-status-executing animate-pulse" />
-              <span className="text-xs">系统运行中</span>
+              <PulseIndicator color="success" size="sm" />
+              <span className="text-xs font-mono">系统运行中</span>
             </div>
           </div>
         </div>
@@ -156,18 +158,24 @@ const Index = () => {
         <div>
           <h2 className="text-lg font-semibold mb-4">系统概览</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="panel p-4 rounded-lg">
+            {stats.map((stat, index) => (
+              <motion.div 
+                key={stat.label} 
+                className="panel p-4 rounded-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
                 <div className="flex items-center justify-between mb-2">
                   <stat.icon className={`h-4 w-4 text-${stat.color}`} />
                   {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 </div>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold font-mono">
                   {isLoading ? "-" : stat.value}
                 </div>
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
                 <div className="text-xs text-muted-foreground/70 mt-1">{stat.subLabel}</div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

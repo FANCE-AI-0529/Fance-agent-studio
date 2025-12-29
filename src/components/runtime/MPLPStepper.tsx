@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Brain, Shield, Zap, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,41 +60,50 @@ export function MPLPStepper({ currentPhase, className }: MPLPStepperProps) {
           <div key={phase.key} className="flex items-center">
             {/* Step indicator */}
             <div className="flex flex-col items-center">
-              <div
+              <motion.div
                 className={cn(
                   "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
-                  isActive && [
-                    colors.bg,
-                    colors.glow,
-                    "text-background",
-                    "animate-pulse"
-                  ],
+                  isActive && [colors.bg, colors.glow, "text-background"],
                   isPast && "bg-primary/20 text-primary",
                   !isActive && !isPast && "bg-muted text-muted-foreground"
                 )}
+                animate={isActive ? { 
+                  scale: [1, 1.1, 1],
+                } : {}}
+                transition={{
+                  duration: 1.5,
+                  repeat: isActive ? Infinity : 0,
+                  ease: "easeInOut"
+                }}
               >
                 <Icon className="h-4 w-4" />
-              </div>
-              <span
+              </motion.div>
+              <motion.span
                 className={cn(
-                  "text-[10px] mt-1 font-medium transition-colors",
+                  "text-[10px] mt-1 font-medium transition-colors font-mono",
                   isActive && colors.text,
                   isPast && "text-primary",
                   !isActive && !isPast && "text-muted-foreground"
                 )}
+                animate={isActive ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
+                transition={{ duration: 1.5, repeat: isActive ? Infinity : 0 }}
               >
                 {phase.label}
-              </span>
+              </motion.span>
             </div>
 
-            {/* Connector line */}
+            {/* Connector line with animation */}
             {index < phases.length - 1 && (
-              <div
-                className={cn(
-                  "w-8 h-0.5 mx-1 transition-all duration-300",
-                  index < currentIndex ? "bg-primary" : "bg-border"
-                )}
-              />
+              <div className="relative w-8 h-0.5 mx-1">
+                <div className="absolute inset-0 bg-border" />
+                <motion.div
+                  className="absolute inset-0 bg-primary"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: index < currentIndex ? 1 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ transformOrigin: "left" }}
+                />
+              </div>
             )}
           </div>
         );

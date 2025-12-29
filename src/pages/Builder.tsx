@@ -525,6 +525,21 @@ const Builder = () => {
             <Controls
               className="!bg-card !border-border !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-secondary"
             />
+            
+            {/* Empty state overlay when no skills added */}
+            {addedSkills.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-4">
+                    <svg width="200" height="140" viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto opacity-50">
+                      <rect x="30" y="20" width="140" height="100" rx="8" stroke="currentColor" strokeWidth="2" strokeDasharray="8 4" fill="none" />
+                      <circle cx="100" cy="70" r="25" fill="hsl(var(--cognitive) / 0.1)" stroke="hsl(var(--cognitive) / 0.3)" strokeWidth="2" strokeDasharray="4 4" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-mono">从左侧拖拽技能到画布</p>
+                </div>
+              </div>
+            )}
           </ReactFlow>
         </div>
       </div>
