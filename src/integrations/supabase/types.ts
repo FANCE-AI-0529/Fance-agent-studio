@@ -941,6 +941,172 @@ export type Database = {
         }
         Relationships: []
       }
+      task_chain_steps: {
+        Row: {
+          chain_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          error_message: string | null
+          id: string
+          input_mapping: Json | null
+          max_retries: number
+          name: string
+          output_key: string | null
+          parallel_group: number | null
+          result: Json | null
+          retry_count: number
+          started_at: string | null
+          status: string
+          step_order: number
+          target_agent_id: string | null
+          task_id: string | null
+          task_type: string
+          timeout_ms: number | null
+        }
+        Insert: {
+          chain_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          error_message?: string | null
+          id?: string
+          input_mapping?: Json | null
+          max_retries?: number
+          name: string
+          output_key?: string | null
+          parallel_group?: number | null
+          result?: Json | null
+          retry_count?: number
+          started_at?: string | null
+          status?: string
+          step_order: number
+          target_agent_id?: string | null
+          task_id?: string | null
+          task_type?: string
+          timeout_ms?: number | null
+        }
+        Update: {
+          chain_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          error_message?: string | null
+          id?: string
+          input_mapping?: Json | null
+          max_retries?: number
+          name?: string
+          output_key?: string | null
+          parallel_group?: number | null
+          result?: Json | null
+          retry_count?: number
+          started_at?: string | null
+          status?: string
+          step_order?: number
+          target_agent_id?: string | null
+          task_id?: string | null
+          task_type?: string
+          timeout_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_chain_steps_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "task_chains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_chain_steps_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_chain_steps_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "delegated_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_chains: {
+        Row: {
+          collaboration_id: string | null
+          completed_at: string | null
+          completed_steps: number
+          created_at: string
+          description: string | null
+          error_message: string | null
+          execution_mode: string
+          failed_steps: number
+          final_result: Json | null
+          id: string
+          name: string
+          source_agent_id: string | null
+          started_at: string | null
+          status: string
+          total_steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          collaboration_id?: string | null
+          completed_at?: string | null
+          completed_steps?: number
+          created_at?: string
+          description?: string | null
+          error_message?: string | null
+          execution_mode?: string
+          failed_steps?: number
+          final_result?: Json | null
+          id?: string
+          name: string
+          source_agent_id?: string | null
+          started_at?: string | null
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          collaboration_id?: string | null
+          completed_at?: string | null
+          completed_steps?: number
+          created_at?: string
+          description?: string | null
+          error_message?: string | null
+          execution_mode?: string
+          failed_steps?: number
+          final_result?: Json | null
+          id?: string
+          name?: string
+          source_agent_id?: string | null
+          started_at?: string | null
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_chains_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "agent_collaborations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_chains_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_queue: {
         Row: {
           completed_at: string | null
