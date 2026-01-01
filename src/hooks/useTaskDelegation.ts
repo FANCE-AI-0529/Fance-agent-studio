@@ -204,6 +204,37 @@ export function useStartTask() {
   });
 }
 
+// Execute a task using AI
+export function useExecuteTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { taskId: string; additionalContext?: string }) => {
+      const response = await supabase.functions.invoke("task-executor", {
+        body: params,
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["delegated-tasks"] });
+      toast.success("任务执行完成", {
+        description: `耗时: ${(data.result?.execution_time_ms / 1000).toFixed(1)}s`,
+      });
+    },
+    onError: (error: any) => {
+      if (error.message?.includes("429")) {
+        toast.error("AI 请求频率限制", { description: "请稍后再试" });
+      } else if (error.message?.includes("402")) {
+        toast.error("AI 余额不足", { description: "请充值后再试" });
+      } else {
+        toast.error(`执行失败: ${error.message}`);
+      }
+    },
+  });
+}
+
 // Complete a task
 export function useCompleteTask() {
   const queryClient = useQueryClient();
