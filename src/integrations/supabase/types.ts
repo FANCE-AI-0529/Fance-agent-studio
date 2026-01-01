@@ -1279,6 +1279,56 @@ export type Database = {
           },
         ]
       }
+      template_versions: {
+        Row: {
+          category: string
+          change_summary: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string
+          id: string
+          name: string
+          steps: Json
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          category?: string
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          name: string
+          steps?: Json
+          template_id: string
+          version_number?: number
+        }
+        Update: {
+          category?: string
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          name?: string
+          steps?: Json
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "task_chain_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trace_logs: {
         Row: {
           created_at: string
