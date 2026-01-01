@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, DragEvent, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ReactFlow,
   Controls,
@@ -66,6 +66,7 @@ import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAge
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { findTemplateById } from "@/data/agentTemplates";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
@@ -90,6 +91,7 @@ const createAgentNode = (
 const Builder = () => {
   const { id: agentIdParam } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([createAgentNode()]);
@@ -107,14 +109,14 @@ const Builder = () => {
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [showLLMConfig, setShowLLMConfig] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
+  const [templateApplied, setTemplateApplied] = useState(false);
 
   // Check URL params for wizard mode
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("wizard") === "true") {
+    if (searchParams.get("wizard") === "true") {
       setShowConversational(true);
     }
-  }, []);
+  }, [searchParams]);
 
   // Check if first time user
   useEffect(() => {
@@ -192,6 +194,110 @@ const Builder = () => {
       }
     }
   }, [existingAgent, setNodes, setEdges]);
+
+  // Apply template from URL parameter
+  useEffect(() => {
+    const templateId = searchParams.get("template");
+    
+    // Only apply template if:
+    // 1. There's a template ID in the URL
+    // 2. We're not editing an existing agent
+    // 3. Template hasn't been applied yet
+    // 4. Published skills are loaded (for skill matching)
+    if (templateId && !agentIdParam && !templateApplied && publishedSkills.length >= 0) {
+      const template = findTemplateById(templateId);
+      
+      if (template) {
+        // Apply template config
+        setAgentConfig({
+          name: template.name,
+          department: template.config.department,
+          model: template.config.model.includes("gpt") ? "gpt-4" : "claude-3.5",
+          systemPrompt: template.config.systemPrompt,
+          avatar: template.config.avatar,
+        });
+
+        // Match and add skills based on template categories
+        const matchedSkills = publishedSkills.filter((skill) => {
+          const skillText = `${skill.name} ${skill.description || ""} ${skill.category}`.toLowerCase();
+          return template.config.suggestedSkillCategories.some((category) => {
+            const keywords = [category, ...getCategoryKeywords(category)];
+            return keywords.some((kw) => skillText.includes(kw.toLowerCase()));
+          });
+        }).slice(0, 5);
+
+        if (matchedSkills.length > 0) {
+          const skillNodes: Node<SkillNodeData>[] = matchedSkills.map(
+            (skill, index) => ({
+              id: `skill-${skill.id}-${Date.now()}-${index}`,
+              type: "skill",
+              position: {
+                x: 100 + (index % 3) * 180,
+                y: 80 + Math.floor(index / 3) * 140,
+              },
+              data: {
+                id: skill.id,
+                name: skill.name,
+                category: skill.category,
+                description: skill.description || "",
+                permissions: skill.permissions || [],
+              },
+            })
+          );
+
+          const skillEdges: Edge[] = skillNodes.map((node) => ({
+            id: `edge-${node.id}`,
+            source: node.id,
+            target: "agent-central",
+            animated: true,
+            style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+          }));
+
+          setNodes([
+            createAgentNode(template.name, template.config.department, template.config.model, matchedSkills.length),
+            ...skillNodes,
+          ]);
+          setEdges(skillEdges);
+
+          toast({
+            title: `已应用「${template.name}」模板`,
+            description: `已自动添加 ${matchedSkills.length} 个推荐技能`,
+          });
+        } else {
+          setNodes([createAgentNode(template.name, template.config.department, template.config.model, 0)]);
+          
+          toast({
+            title: `已应用「${template.name}」模板`,
+            description: "你可以在左侧技能市场选择需要的技能",
+          });
+        }
+
+        setTemplateApplied(true);
+        
+        // Clear template param from URL to prevent re-applying
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("template");
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [searchParams, agentIdParam, templateApplied, publishedSkills, setNodes, setEdges, setSearchParams]);
+
+  // Helper function to get category keywords
+  function getCategoryKeywords(category: string): string[] {
+    const mapping: Record<string, string[]> = {
+      "text-generation": ["文本生成", "内容创作", "文案写作", "生成"],
+      "summarization": ["总结", "摘要", "概括"],
+      "translation": ["翻译", "多语言"],
+      "data-analysis": ["数据分析", "统计", "分析"],
+      "faq": ["FAQ", "问答", "常见问题"],
+      "auto-reply": ["自动回复", "回复"],
+      "code-execution": ["代码", "编程", "执行"],
+      "document-parsing": ["文档", "解析", "PDF"],
+      "web-search": ["搜索", "网页", "查询"],
+      "education": ["教育", "学习", "辅导"],
+    };
+    return mapping[category] || [];
+  }
 
   // Get added skills from nodes
   const addedSkills = nodes
