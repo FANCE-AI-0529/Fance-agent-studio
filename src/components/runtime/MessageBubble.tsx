@@ -1,9 +1,12 @@
-import { Bot, User, CheckCircle2 } from "lucide-react";
+import { Bot, User, CheckCircle2, Copy, RefreshCw, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { FormattedText } from "./FormattedText";
 import { TypewriterFormattedText } from "./TypewriterFormattedText";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface MessageBubbleProps {
   id: string;
@@ -16,6 +19,7 @@ interface MessageBubbleProps {
     iconId: string;
     colorId: string;
   };
+  onRegenerate?: () => void;
 }
 
 // Agent avatar color themes
@@ -42,9 +46,29 @@ export function MessageBubble({
   skill,
   isNew,
   agentAvatar,
+  onRegenerate,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const colorTheme = agentAvatar?.colorId ? avatarColors[agentAvatar.colorId] : avatarColors.blue;
+  const [copied, setCopied] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      toast.success("已复制到剪贴板");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("复制失败");
+    }
+  };
+
+  const handleRegenerate = () => {
+    if (onRegenerate) {
+      onRegenerate();
+    }
+  };
 
   return (
     <motion.div
@@ -55,7 +79,9 @@ export function MessageBubble({
         ease: [0.4, 0, 0.2, 1],
         scale: { duration: 0.2 }
       }}
-      className={cn("flex gap-3", isUser ? "flex-row-reverse" : "")}
+      className={cn("flex gap-3 group", isUser ? "flex-row-reverse" : "")}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Avatar */}
       <motion.div
@@ -125,7 +151,7 @@ export function MessageBubble({
           </div>
         </motion.div>
         
-        {/* Meta info */}
+        {/* Meta info and action buttons */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -150,6 +176,43 @@ export function MessageBubble({
               minute: "2-digit" 
             })}
           </span>
+          
+          {/* Action buttons - show on hover */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: isHovered ? 1 : 0, 
+              scale: isHovered ? 1 : 0.8 
+            }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center gap-1"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+              onClick={handleCopy}
+              title="复制内容"
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-green-500" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
+            
+            {!isUser && onRegenerate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                onClick={handleRegenerate}
+                title="重新生成"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            )}
+          </motion.div>
         </motion.div>
       </div>
     </motion.div>

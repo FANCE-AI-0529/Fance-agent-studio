@@ -1111,6 +1111,25 @@ const Runtime = () => {
                       }
                     : undefined
                 }
+                onRegenerate={
+                  message.role === "assistant" && currentPhase === "idle"
+                    ? () => {
+                        // Find the user message before this assistant message
+                        const messageIndex = localMessages.findIndex(m => m.id === message.id);
+                        if (messageIndex > 0) {
+                          const userMessage = localMessages
+                            .slice(0, messageIndex)
+                            .reverse()
+                            .find(m => m.role === "user");
+                          if (userMessage) {
+                            // Remove the current assistant message and regenerate
+                            setLocalMessages(prev => prev.filter(m => m.id !== message.id));
+                            sendMessage(userMessage.content);
+                          }
+                        }
+                      }
+                    : undefined
+                }
               />
             );
           })}
