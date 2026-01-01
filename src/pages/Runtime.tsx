@@ -18,6 +18,8 @@ import {
   ChevronRight,
   Code2,
   MessageCircle,
+  PanelBottomClose,
+  PanelBottomOpen,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -37,10 +39,6 @@ import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/
 import { ModelSelector, availableModels } from "@/components/runtime/ModelSelector";
 import { SystemPromptEditor } from "@/components/runtime/SystemPromptEditor";
 import { ModelRoutingConfig } from "@/components/runtime/ModelRoutingConfig";
-import { AgentCollaborationPanel } from "@/components/runtime/AgentCollaborationPanel";
-import { CircuitBreakerPanel } from "@/components/runtime/CircuitBreakerPanel";
-import { TaskChainPanel } from "@/components/runtime/TaskChainPanel";
-import { ExecutionHistoryPanel } from "@/components/runtime/ExecutionHistoryPanel";
 import { FormattedText } from "@/components/runtime/FormattedText";
 import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormattedText";
 import { MessageBubble } from "@/components/runtime/MessageBubble";
@@ -51,6 +49,10 @@ import OnboardingTour, { useOnboardingTour } from "@/components/runtime/Onboardi
 import { QuickCommandMenu, MessageTemplates } from "@/components/runtime/QuickCommandMenu";
 import { FileUploadButton } from "@/components/runtime/FileUploadButton";
 import { AttachmentPreview } from "@/components/runtime/AttachmentPreview";
+import { DevToolsPanel } from "@/components/runtime/DevToolsPanel";
+import { CircuitBreakerContent } from "@/components/runtime/CircuitBreakerContent";
+import { ContextPanelContent } from "@/components/runtime/ContextPanelContent";
+import { useDevToolsState } from "@/hooks/useDevToolsState";
 import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
 import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { useChatSession } from "@/hooks/useChatSession";
@@ -58,6 +60,11 @@ import { useDeployedAgents, Agent } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -200,227 +207,52 @@ const mplpScenarios: MPLPScenario[] = [
     skillName: "数据删除",
     requiresConfirm: true,
     riskLevel: "high",
-    permissions: ["database_write", "delete"],
+    permissions: ["database_write", "admin"],
     actionType: "admin",
     description: "删除数据库记录",
-    details: "⚠️ 此操作将永久删除数据，无法恢复！请谨慎确认",
+    details: "⚠️ 此操作将永久删除数据，无法恢复。请确认您要执行此操作。",
     thinkingSteps: [
-      { module: "MPLP:Router", message: "Intent detected: data_deletion", level: "info" },
-      { module: "MPLP:Auth", message: "Permission check: delete... HIGH RISK", level: "error" },
-      { module: "MPLP:Policy", message: "CRITICAL: Destructive operation detected!", level: "error" },
-      { module: "MPLP:Policy", message: "Escalating to user confirmation with high-risk warning", level: "warn" },
+      { module: "MPLP:Router", message: "Intent detected: data_delete - HIGH RISK", level: "warn" },
+      { module: "MPLP:Auth", message: "Permission check: database_write, admin... REQUIRES_CONFIRM", level: "warn" },
+      { module: "MPLP:Policy", message: "🔴 HIGH RISK OPERATION - Admin confirmation required", level: "error" },
     ],
-    mockResponse: "🗑️ 数据删除完成\n\n已成功删除以下记录：\n- 删除记录数：23条\n- 释放空间：156KB\n\n操作已记录到审计日志。如需恢复，请联系管理员。",
+    mockResponse: "🗑️ 数据删除完成！\n\n已成功删除以下内容：\n- 删除记录数：23 条\n- 释放空间：1.5 MB\n- 操作时间：2024-01-15 14:30:25\n\n此操作已记录到审计日志。",
   },
-  // High Risk - Execute Operations
+  // High Risk - Execute Script
   {
-    keywords: ["执行", "运行", "脚本", "命令", "部署"],
+    keywords: ["执行", "运行", "脚本", "命令"],
     skillName: "脚本执行",
     requiresConfirm: true,
     riskLevel: "high",
-    permissions: ["execute", "system"],
+    permissions: ["execute", "admin"],
     actionType: "execute",
     description: "执行系统脚本",
     details: "⚠️ 将在服务器上执行脚本命令，可能影响系统状态",
     thinkingSteps: [
-      { module: "MPLP:Router", message: "Intent detected: script_execution", level: "info" },
-      { module: "MPLP:Auth", message: "Permission check: execute, system... HIGH RISK", level: "error" },
-      { module: "MPLP:Policy", message: "CRITICAL: Code execution request!", level: "error" },
-      { module: "MPLP:Sandbox", message: "Preparing isolated execution environment...", level: "warn" },
+      { module: "MPLP:Router", message: "Intent detected: script_execute - HIGH RISK", level: "warn" },
+      { module: "MPLP:Auth", message: "Permission check: execute, admin... REQUIRES_CONFIRM", level: "warn" },
+      { module: "MPLP:Policy", message: "🔴 Script execution requires admin approval", level: "error" },
     ],
-    mockResponse: "⚡ 脚本执行完成！\n\n**执行结果：**\n```\n[2024-01-15 10:30:45] Starting deployment...\n[2024-01-15 10:30:47] Building application...\n[2024-01-15 10:31:02] Deploying to production...\n[2024-01-15 10:31:15] Deployment successful!\n```\n\n✅ 所有步骤执行成功，服务已更新。",
+    mockResponse: "⚡ 脚本执行完成！\n\n```bash\n$ ./deploy.sh --env=production\n[OK] Building application...\n[OK] Running tests...\n[OK] Deploying to server...\n[OK] Health check passed\n```\n\n部署成功！服务已在生产环境上线。",
   },
-  // High Risk - Payment Operations
+  // High Risk - Payment
   {
-    keywords: ["支付", "转账", "付款", "交易"],
+    keywords: ["支付", "付款", "转账", "扣款"],
     skillName: "支付处理",
     requiresConfirm: true,
     riskLevel: "high",
-    permissions: ["payment", "financial"],
+    permissions: ["payment", "admin"],
     actionType: "admin",
     description: "处理支付交易",
-    details: "⚠️ 此操作涉及资金流转，请仔细核对金额和收款方信息",
+    details: "⚠️ 将执行资金转移操作，请仔细核对金额和收款方",
     thinkingSteps: [
-      { module: "MPLP:Router", message: "Intent detected: payment_processing", level: "info" },
-      { module: "MPLP:Auth", message: "Permission check: payment, financial... CRITICAL", level: "error" },
-      { module: "MPLP:Policy", message: "FINANCIAL OPERATION - Maximum security required", level: "error" },
-      { module: "MPLP:Compliance", message: "Checking transaction limits...", level: "warn" },
-      { module: "MPLP:Compliance", message: "Anti-fraud check passed", level: "success" },
+      { module: "MPLP:Router", message: "Intent detected: payment_process - HIGH RISK", level: "warn" },
+      { module: "MPLP:Auth", message: "Permission check: payment, admin... REQUIRES_CONFIRM", level: "warn" },
+      { module: "MPLP:Policy", message: "🔴 Financial transaction requires explicit approval", level: "error" },
     ],
-    mockResponse: "💳 支付处理成功！\n\n**交易详情：**\n- 交易号: PAY-2024011512345\n- 金额: ¥299.00\n- 收款方: 餐饮服务有限公司\n- 状态: 已完成\n\n交易凭证已发送至您的邮箱，请查收。",
-  },
-  // Medium Risk - Email Operations
-  {
-    keywords: ["邮件", "发送", "通知", "推送"],
-    skillName: "邮件发送",
-    requiresConfirm: true,
-    riskLevel: "medium",
-    permissions: ["network", "email"],
-    actionType: "network",
-    description: "发送电子邮件",
-    details: "将通过邮件服务发送消息到指定收件人",
-    thinkingSteps: [
-      { module: "MPLP:Router", message: "Intent detected: email_send", level: "info" },
-      { module: "MPLP:Auth", message: "Permission check: email, network... REQUIRES_CONFIRM", level: "warn" },
-      { module: "MPLP:Policy", message: "External communication - user confirmation required", level: "warn" },
-    ],
-    mockResponse: "📧 邮件发送成功！\n\n**发送详情：**\n- 收件人: user@example.com\n- 主题: 您的申请已受理\n- 状态: 已送达\n- 消息ID: MSG-20240115-001\n\n预计对方将在24小时内回复。",
+    mockResponse: "💰 支付处理完成！\n\n**交易详情：**\n- 交易ID: TXN-2024-001234\n- 金额: ¥1,500.00\n- 收款方: 某某供应商\n- 状态: ✅ 成功\n\n电子回单已发送至您的邮箱。",
   },
 ];
-
-// Helper function to match scenario
-function matchScenario(message: string): MPLPScenario | null {
-  const lowerMessage = message.toLowerCase();
-  
-  for (const scenario of mplpScenarios) {
-    for (const keyword of scenario.keywords) {
-      if (lowerMessage.includes(keyword)) {
-        return scenario;
-      }
-    }
-  }
-  return null;
-}
-
-// Context Panel Component
-function ContextPanel({ 
-  agent, 
-  memory,
-  collapsed,
-  onToggle,
-}: { 
-  agent: Agent | null; 
-  memory: MemoryItem[];
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
-  const skills = agent ? ((agent.manifest as any)?.skills?.details || []) : [];
-  
-  return (
-    <div className={cn(
-      "border-l border-border bg-card/50 hidden xl:flex flex-col transition-all duration-300",
-      collapsed ? "w-10" : "w-72"
-    )}>
-      <div className="panel-header flex justify-between items-center">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <Cpu className="h-4 w-4 text-governance" />
-            <span className="font-semibold text-sm">运行上下文</span>
-          </div>
-        )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={cn("h-7 w-7", collapsed && "mx-auto")}
-          onClick={onToggle}
-        >
-          {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </Button>
-      </div>
-
-      {!collapsed && (
-        <div className="flex-1 overflow-y-auto">
-          {/* Agent Info */}
-          <div className="p-3 border-b border-border">
-            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-              当前 Agent
-            </label>
-            <div className="mt-2 p-2 rounded-lg bg-secondary/30 border border-border">
-              {agent ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 text-cognitive" />
-                    <span className="text-sm font-medium">{agent.name}</span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span>{agent.department || '通用'}</span>
-                    <span>•</span>
-                    <span>{agent.model}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="text-xs text-muted-foreground">使用默认 Demo Agent</div>
-              )}
-            </div>
-          </div>
-
-          {/* Loaded Skills */}
-          <div className="p-3 border-b border-border">
-            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-              已加载技能
-            </label>
-            <div className="mt-2 space-y-1.5">
-              {skills.length > 0 ? (
-                skills.map((skill: any) => (
-                  <div 
-                    key={skill.id} 
-                    className="flex items-center gap-2 p-1.5 rounded bg-cognitive/5 border border-cognitive/20"
-                  >
-                    <FileCode className="h-3 w-3 text-cognitive" />
-                    <span className="text-xs">{skill.name}</span>
-                    {skill.permissions?.length > 0 && (
-                      <div className="flex gap-0.5 ml-auto">
-                        {skill.permissions.slice(0, 2).map((p: string) => (
-                          <Badge key={p} variant="outline" className="text-[8px] px-1 py-0 h-3">
-                            {p}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-xs text-muted-foreground text-center py-2">
-                  无已加载技能
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Memory / Context */}
-          <div className="p-3">
-            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-              <Database className="h-3 w-3" />
-              Memory / Context
-            </label>
-            <div className="mt-2 space-y-1">
-              {memory.length > 0 ? (
-                memory.map((item, idx) => (
-                  <div 
-                    key={idx}
-                    className="flex items-start gap-2 p-1.5 rounded bg-secondary/30 border border-border/50"
-                  >
-                    <Key className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-medium text-muted-foreground">{item.key}</div>
-                      <div className="text-xs truncate">{item.value}</div>
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "text-[8px] px-1 py-0 h-3",
-                        item.type === 'entity' && 'border-cognitive/50 text-cognitive',
-                        item.type === 'fact' && 'border-governance/50 text-governance',
-                        item.type === 'context' && 'border-primary/50 text-primary'
-                      )}
-                    >
-                      {item.type}
-                    </Badge>
-                  </div>
-                ))
-              ) : (
-                <div className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded-lg">
-                  <Database className="h-5 w-5 mx-auto mb-1 opacity-50" />
-                  对话开始后将显示上下文
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 const Runtime = () => {
   const { user } = useAuth();
@@ -453,7 +285,6 @@ const Runtime = () => {
   const trace = useTrace();
   
   const [showHistory, setShowHistory] = useState(false);
-  const [isContextPanelCollapsed, setIsContextPanelCollapsed] = useState(false);
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
@@ -463,6 +294,9 @@ const Runtime = () => {
   const assistantContentRef = useRef("");
   const currentEventsRef = useRef<TraceEvent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // DevTools state
+  const devToolsState = useDevToolsState();
   
   // File upload hook
   const { files: pendingFiles, isUploading, addFiles, removeFile, clearFiles } = useFileUpload();
@@ -474,6 +308,18 @@ const Runtime = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [localMessages, currentThinkingLogs]);
+
+  // Keyboard shortcut for developer mode toggle
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "D") {
+        e.preventDefault();
+        setIsDeveloperMode(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Get current agent config for AI
   const agentSkills = selectedAgent 
@@ -599,70 +445,59 @@ const Runtime = () => {
       newMemory.push({ 
         key: "last_action", 
         value: scenario.actionType, 
-        type: "fact" 
+        type: "context" 
       });
-      newMemory.push({ 
-        key: "risk_level", 
-        value: scenario.riskLevel, 
-        type: "entity" 
-      });
+      if (scenario.riskLevel !== "low") {
+        newMemory.push({ 
+          key: "risk_level", 
+          value: scenario.riskLevel, 
+          type: "fact" 
+        });
+      }
     }
-    
-    if (contextMemory.length === 0) {
-      newMemory.push({ key: "session_start", value: new Date().toLocaleString('zh-CN'), type: "context" });
-    }
-    
-    setContextMemory(prev => {
-      const updated = [...prev];
-      newMemory.forEach(item => {
-        const existingIdx = updated.findIndex(m => m.key === item.key);
-        if (existingIdx >= 0) {
-          updated[existingIdx] = item;
-        } else {
-          updated.push(item);
-        }
-      });
-      return updated.slice(-10);
-    });
-  }, [contextMemory]);
 
+    // Extract entities from user message (simple example)
+    const dateMatch = userMessage.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
+    if (dateMatch) {
+      newMemory.push({ key: "date_entity", value: dateMatch[1], type: "entity" });
+    }
+
+    const amountMatch = userMessage.match(/([¥$€]\s*[\d,]+\.?\d*)/);
+    if (amountMatch) {
+      newMemory.push({ key: "amount_entity", value: amountMatch[1], type: "entity" });
+    }
+
+    setContextMemory(prev => [...prev, ...newMemory].slice(-10)); // Keep last 10 items
+  }, []);
+
+  // Execute a scenario (after confirm if needed)
   const executeScenario = async (scenario: MPLPScenario, userMessage: string) => {
-    // ============ EXECUTING PHASE ============
     setCurrentPhase("executing");
     setActiveSkill(scenario.skillName);
     
-    addThinkingLog("Skill:" + scenario.skillName.replace(/\s/g, ''), "Starting execution...", "info");
+    addTraceEvent("skill_selected", { skillName: scenario.skillName });
+    addTraceEvent("permission_check", { 
+      permissions: scenario.permissions, 
+      result: "approved" 
+    });
     addTraceEvent("execution_started", { skillName: scenario.skillName });
 
-    // Simulate execution time
+    addThinkingLog("Skill:" + scenario.skillName, "Executing skill...", "info");
     await new Promise(resolve => setTimeout(resolve, 800));
-    addThinkingLog("Skill:" + scenario.skillName.replace(/\s/g, ''), "Processing request...", "info");
     
-    await new Promise(resolve => setTimeout(resolve, 600));
-    addThinkingLog("Skill:" + scenario.skillName.replace(/\s/g, ''), "Operation completed successfully", "success");
+    addThinkingLog("Skill:" + scenario.skillName, "Processing complete", "success");
+    await new Promise(resolve => setTimeout(resolve, 300));
 
+    setCurrentPhase("trace");
+    
     addTraceEvent("execution_completed", { 
       skillName: scenario.skillName, 
       result: "success" 
     });
 
-    // ============ TRACE PHASE ============
-    setCurrentPhase("trace");
-    await new Promise(resolve => setTimeout(resolve, 300));
-
     const events = [...currentEventsRef.current];
     const thinkingLogs = [...currentThinkingLogs];
-
-    // Add thinking process card
-    setLocalMessages(prev => [...prev, {
-      id: `msg-thinking-${Date.now()}`,
-      role: "system" as const,
-      content: "",
-      timestamp: new Date(),
-      thinkingLogs,
-    }]);
-
-    // Add response
+    
     const response: Message = {
       id: Date.now().toString(),
       role: "assistant",
@@ -674,7 +509,19 @@ const Runtime = () => {
       isNew: true,
     };
 
-    setLocalMessages(prev => [...prev, response]);
+    setLocalMessages(prev => [...prev, 
+      {
+        id: `msg-thinking-${Date.now()}`,
+        role: "system" as const,
+        content: "",
+        timestamp: new Date(),
+        thinkingLogs,
+      },
+      response
+    ]);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     setCurrentPhase("idle");
     setActiveSkill(null);
     endTraceSession("completed");
@@ -682,20 +529,44 @@ const Runtime = () => {
     updateContextMemory(scenario, userMessage);
 
     if (chatSession) {
-      await addMessage({ role: "assistant", content: scenario.mockResponse }, scenario.skillName);
+      await addMessage({
+        role: "assistant",
+        content: scenario.mockResponse,
+      }, scenario.skillName);
     }
   };
 
-  const sendMessage = async (userMessage: string, attachments: MessageAttachment[] = []) => {
-    // Start trace session
-    startTraceSession(userMessage);
+  // Match user input to MPLP scenario
+  const matchScenario = (message: string): MPLPScenario | null => {
+    const lowerMessage = message.toLowerCase();
+    
+    for (const scenario of mplpScenarios) {
+      for (const keyword of scenario.keywords) {
+        if (lowerMessage.includes(keyword.toLowerCase())) {
+          return scenario;
+        }
+      }
+    }
+    
+    return null;
+  };
 
-    // Match scenario
-    const scenario = matchScenario(userMessage);
-
+  // Send message handler
+  const sendMessage = async (messageContent: string, attachments: MessageAttachment[] = []) => {
+    startTraceSession(messageContent);
+    
+    const scenario = matchScenario(messageContent);
+    
     // ============ PLANNING PHASE ============
     setCurrentPhase("planning");
-    setActiveSkill(null);
+    addThinkingLog("MPLP:Gateway", `Received message: "${messageContent.slice(0, 50)}${messageContent.length > 50 ? '...' : ''}"`, "info");
+    
+    // Add attachment info to thinking logs
+    if (attachments.length > 0) {
+      addThinkingLog("MPLP:Gateway", `附件: ${attachments.length} 个文件 (${attachments.map(a => a.type).join(', ')})`, "info");
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 400));
     
     if (scenario) {
       // Add scenario-specific thinking logs
@@ -746,10 +617,10 @@ const Runtime = () => {
       }
 
       // Execute directly for low-risk operations
-      await executeScenario(scenario, userMessage);
+      await executeScenario(scenario, messageContent);
     } else {
       // No matching scenario - use AI chat
-      addThinkingLog("MPLP:Router", `Intent detected: "${userMessage.slice(0, 50)}..."`, "info");
+      addThinkingLog("MPLP:Router", `Intent detected: "${messageContent.slice(0, 50)}..."`, "info");
       await new Promise(resolve => setTimeout(resolve, 300));
       
       addThinkingLog("MPLP:Auth", `Permission check: general_query... OK`, "success");
@@ -774,8 +645,8 @@ const Runtime = () => {
       
       // Add the new user message with attachments
       const newMessageContent = attachments.length > 0
-        ? createMultimodalContent(userMessage, attachments.map(a => ({ type: a.type, url: a.url })))
-        : userMessage;
+        ? createMultimodalContent(messageContent, attachments.map(a => ({ type: a.type, url: a.url })))
+        : messageContent;
       chatMessages.push({ role: "user", content: newMessageContent });
 
       assistantContentRef.current = "";
@@ -840,7 +711,7 @@ const Runtime = () => {
           setActiveSkill(null);
           endTraceSession("completed");
 
-          updateContextMemory(null, userMessage);
+          updateContextMemory(null, messageContent);
 
           if (chatSession) {
             await addMessage({
@@ -898,25 +769,21 @@ const Runtime = () => {
     setLocalMessages(prev => [...prev, response]);
     endTraceSession("cancelled");
     toast.info("操作已取消");
-
-    if (chatSession) {
-      await addMessage({ role: "assistant", content: responseContent });
-    }
   };
 
   const handleSend = async () => {
     if ((!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle") return;
-
-    const messageContent = input;
+    
+    const messageContent = input.trim();
     setInput("");
     
-    // Prepare attachments
-    const attachments: MessageAttachment[] = pendingFiles.map(f => ({
-      id: f.id,
-      type: f.type,
-      name: f.name,
-      url: f.preview,
-      mimeType: f.mimeType,
+    // Collect attachments from pending files
+    const attachments: MessageAttachment[] = pendingFiles.map(file => ({
+      id: file.id,
+      type: file.type === 'image' ? 'image' : 'document',
+      name: file.name,
+      url: file.url, // Use local data URL or uploaded URL
+      mimeType: file.file.type,
     }));
     clearFiles();
 
@@ -972,396 +839,399 @@ const Runtime = () => {
     toast.success("已删除会话");
   };
 
+  // Render DevTools content panels
+  const renderTraceContent = () => (
+    <TraceTree 
+      sessions={trace.sessions} 
+      currentSessionId={trace.activeSessionId || undefined}
+      onClearSessions={() => {
+        trace.clearSessions();
+        currentEventsRef.current = [];
+      }}
+      onRefresh={() => {}}
+    />
+  );
+
+  const renderContextContent = () => (
+    <ContextPanelContent agent={selectedAgent} memory={contextMemory} />
+  );
+
+  const renderCircuitContent = () => (
+    <CircuitBreakerContent
+      agentId={selectedAgent?.id}
+      agentName={selectedAgent?.name}
+      onWarningChange={devToolsState.setCircuitWarning}
+    />
+  );
+
   return (
     <>
       {/* Onboarding Tour */}
       <OnboardingTour onComplete={completeTour} forceShow={showTour} />
       
-    <div className="h-full flex">
-      {/* History Sidebar */}
-      {showHistory && user && (
-        <div className="w-64 border-r border-border bg-card/50 flex flex-col">
-          <div className="panel-header">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              <span className="font-semibold text-sm">历史会话</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleNewSession}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-              {chatSessions.map((s) => (
-                <div
-                  key={s.id}
-                  className={`p-2 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors group ${
-                    chatSession?.id === s.id ? "bg-accent" : ""
-                  }`}
-                  onClick={() => handleLoadSession(s.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(s.createdAt, { addSuffix: true, locale: zhCN })}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteSession(s.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
+      <div className="h-full flex flex-col">
+        {/* Main Content */}
+        <ResizablePanelGroup direction="vertical" className="flex-1">
+          {/* Chat Area Panel */}
+          <ResizablePanel defaultSize={isDeveloperMode ? 65 : 100} minSize={40}>
+            <div className="h-full flex">
+              {/* History Sidebar */}
+              {showHistory && user && (
+                <div className="w-64 border-r border-border bg-card/50 flex flex-col">
+                  <div className="panel-header">
+                    <div className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      <span className="font-semibold text-sm">历史会话</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleNewSession}>
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-              ))}
-              {chatSessions.length === 0 && (
-                <div className="text-center text-muted-foreground text-xs py-4">
-                  暂无历史会话
+                  <ScrollArea className="flex-1">
+                    <div className="p-2 space-y-1">
+                      {chatSessions.map((s) => (
+                        <div
+                          key={s.id}
+                          className={`p-2 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors group ${
+                            chatSession?.id === s.id ? "bg-accent" : ""
+                          }`}
+                          onClick={() => handleLoadSession(s.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(s.createdAt, { addSuffix: true, locale: zhCN })}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSession(s.id);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {chatSessions.length === 0 && (
+                        <div className="text-center text-muted-foreground text-xs py-4">
+                          暂无历史会话
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
                 </div>
               )}
-            </div>
-          </ScrollArea>
-        </div>
-      )}
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="panel-header border-b border-border">
-          <div className="flex items-center gap-2">
-            {user && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setShowHistory(!showHistory)}
-              >
-                <History className="h-4 w-4" />
-              </Button>
-            )}
-            <AgentSelector
-              agents={deployedAgents}
-              selectedAgent={selectedAgent}
-              onSelectAgent={handleAgentChange}
-              isLoading={isLoadingAgents}
-            />
-            {chatSession && (
-              <Badge variant="secondary" className="text-xs">已保存</Badge>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {activeSkill && (
-              <Badge variant="outline" className="text-xs gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                {activeSkill}
-              </Badge>
-            )}
-            {isDeveloperMode && (
-              <SystemPromptEditor
-                value={customSystemPrompt || baseSystemPrompt || ""}
-                onChange={setCustomSystemPrompt}
-                onVariablesChange={setPromptVariables}
-                agentId={selectedAgent?.id}
-                agentName={selectedAgent?.name || "Default Agent"}
-                disabled={currentPhase !== "idle"}
-              />
-            )}
-            <div className="flex items-center gap-1.5">
-              {isDeveloperMode && (
-                <>
-                  <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  <ModelSelector
-                    value={selectedModelId}
-                    onChange={setSelectedModelId}
-                    disabled={currentPhase !== "idle"}
-                  />
-                  <ModelRoutingConfig 
-                    agentId={selectedAgent?.id}
-                    agentName={selectedAgent?.name}
-                  />
-                  <AgentCollaborationPanel
-                    currentAgentId={selectedAgent?.id}
-                    currentAgentName={selectedAgent?.name}
-                  />
-                  <TaskChainPanel />
-                  <ExecutionHistoryPanel />
-                </>
-              )}
-              {isDeveloperMode && (
-                <CircuitBreakerPanel
-                  agentId={selectedAgent?.id}
-                  agentName={selectedAgent?.name}
-                />
-              )}
-              
-              {/* Developer Mode Toggle */}
-              <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-secondary/50 border border-border">
-                <MessageCircle className={cn("h-3.5 w-3.5", !isDeveloperMode && "text-primary")} />
-                <Switch
-                  id="developer-mode"
-                  checked={isDeveloperMode}
-                  onCheckedChange={setIsDeveloperMode}
-                  className="scale-75"
-                />
-                <Code2 className={cn("h-3.5 w-3.5", isDeveloperMode && "text-primary")} />
-              </div>
-              
-              <TooltipProvider>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={resetTour}
-                  title="查看使用教程"
-                >
-                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </TooltipProvider>
-            </div>
-          </div>
-        </div>
-
-        {/* MPLP Protocol Status Bar (Stepper) - Only in Developer Mode */}
-        {isDeveloperMode && (
-          <div className="px-4 py-3 bg-secondary/30 border-b border-border flex items-center justify-center">
-            <MPLPStepper currentPhase={currentPhase} />
-          </div>
-        )}
-
-        {/* Messages or Welcome Guide */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {localMessages.length === 0 && currentPhase === "idle" ? (
-            <WelcomeGuide 
-              agent={selectedAgent} 
-              onCommandClick={(command) => {
-                setInput(command);
-              }}
-            />
-          ) : (
-            <>
-          {localMessages.map(message => {
-            // Render Thinking Process card
-            // Render Thinking Process card - Only in Developer Mode
-            if (message.role === "system" && message.thinkingLogs && message.thinkingLogs.length > 0) {
-              if (!isDeveloperMode) return null;
-              return (
-                <div key={message.id} className="max-w-[85%]">
-                  <ThinkingProcess logs={message.thinkingLogs} />
+              {/* Main Chat Area */}
+              <div className="flex-1 flex flex-col min-w-0">
+                {/* Header */}
+                <div className="panel-header border-b border-border">
+                  <div className="flex items-center gap-2">
+                    {user && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowHistory(!showHistory)}
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <AgentSelector
+                      agents={deployedAgents}
+                      selectedAgent={selectedAgent}
+                      onSelectAgent={handleAgentChange}
+                      isLoading={isLoadingAgents}
+                    />
+                    {chatSession && (
+                      <Badge variant="secondary" className="text-xs">已保存</Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {activeSkill && (
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        {activeSkill}
+                      </Badge>
+                    )}
+                    
+                    {/* Developer Mode Config - Simplified */}
+                    {isDeveloperMode && (
+                      <>
+                        <SystemPromptEditor
+                          value={customSystemPrompt || baseSystemPrompt || ""}
+                          onChange={setCustomSystemPrompt}
+                          onVariablesChange={setPromptVariables}
+                          agentId={selectedAgent?.id}
+                          agentName={selectedAgent?.name || "Default Agent"}
+                          disabled={currentPhase !== "idle"}
+                        />
+                        <div className="flex items-center gap-1.5">
+                          <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <ModelSelector
+                            value={selectedModelId}
+                            onChange={setSelectedModelId}
+                            disabled={currentPhase !== "idle"}
+                          />
+                          <ModelRoutingConfig 
+                            agentId={selectedAgent?.id}
+                            agentName={selectedAgent?.name}
+                          />
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Developer Mode Toggle */}
+                    <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-secondary/50 border border-border">
+                      <MessageCircle className={cn("h-3.5 w-3.5", !isDeveloperMode && "text-primary")} />
+                      <Switch
+                        id="developer-mode"
+                        checked={isDeveloperMode}
+                        onCheckedChange={setIsDeveloperMode}
+                        className="scale-75"
+                      />
+                      <Code2 className={cn("h-3.5 w-3.5", isDeveloperMode && "text-primary")} />
+                    </div>
+                    
+                    {/* DevTools Panel Toggle (in developer mode) */}
+                    {isDeveloperMode && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={devToolsState.toggleCollapsed}
+                        title={devToolsState.isCollapsed ? "展开开发者工具" : "折叠开发者工具"}
+                      >
+                        {devToolsState.isCollapsed ? (
+                          <PanelBottomOpen className="h-4 w-4" />
+                        ) : (
+                          <PanelBottomClose className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                    
+                    <TooltipProvider>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={resetTour}
+                        title="查看使用教程"
+                      >
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </TooltipProvider>
+                  </div>
                 </div>
-              );
-            }
 
-            // Render Confirm Card
-            if (message.role === "system" && message.confirmAction) {
-              return (
-                <div key={message.id} className="flex justify-center">
-                  <ConfirmCard
-                    action={message.confirmAction}
-                    onConfirm={handleConfirm}
-                    onReject={handleReject}
-                    isPending={currentPhase === "executing"}
-                  />
-                </div>
-              );
-            }
+                {/* MPLP Protocol Status Bar (Stepper) - Only in Developer Mode */}
+                {isDeveloperMode && (
+                  <div className="px-4 py-3 bg-secondary/30 border-b border-border flex items-center justify-center">
+                    <MPLPStepper currentPhase={currentPhase} />
+                  </div>
+                )}
 
-            // Render regular messages
-            return (
-              <MessageBubble
-                key={message.id}
-                id={message.id}
-                role={message.role as "user" | "assistant"}
-                content={message.content}
-                timestamp={message.timestamp}
-                skill={message.skill}
-                isNew={message.isNew}
-                attachments={message.attachments}
-                agentAvatar={
-                  selectedAgent?.manifest 
-                    ? {
-                        iconId: (selectedAgent.manifest as any).iconId || "bot",
-                        colorId: (selectedAgent.manifest as any).colorId || "blue",
-                      }
-                    : undefined
-                }
-                onRegenerate={
-                  message.role === "assistant" && currentPhase === "idle"
-                    ? () => {
-                        // Find the user message before this assistant message
-                        const messageIndex = localMessages.findIndex(m => m.id === message.id);
-                        if (messageIndex > 0) {
-                          const userMessage = localMessages
-                            .slice(0, messageIndex)
-                            .reverse()
-                            .find(m => m.role === "user");
-                          if (userMessage) {
-                            // Remove the current assistant message and regenerate
-                            setLocalMessages(prev => prev.filter(m => m.id !== message.id));
-                            sendMessage(userMessage.content);
-                          }
+                {/* Messages or Welcome Guide */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {localMessages.length === 0 && currentPhase === "idle" ? (
+                    <WelcomeGuide 
+                      agent={selectedAgent} 
+                      onCommandClick={(command) => {
+                        setInput(command);
+                      }}
+                    />
+                  ) : (
+                    <>
+                      {localMessages.map(message => {
+                        // Render Thinking Process card - Only in Developer Mode
+                        if (message.role === "system" && message.thinkingLogs && message.thinkingLogs.length > 0) {
+                          if (!isDeveloperMode) return null;
+                          return (
+                            <div key={message.id} className="max-w-[85%]">
+                              <ThinkingProcess logs={message.thinkingLogs} />
+                            </div>
+                          );
                         }
-                      }
-                    : undefined
-                }
-                onEdit={
-                  message.role === "user" && currentPhase === "idle"
-                    ? (newContent: string) => {
-                        const messageIndex = localMessages.findIndex(m => m.id === message.id);
-                        // Update the user message content
-                        setLocalMessages(prev => {
-                          const updated = [...prev];
-                          // Update the edited message
-                          updated[messageIndex] = { ...updated[messageIndex], content: newContent };
-                          // Remove all messages after this one (including AI responses)
-                          return updated.slice(0, messageIndex + 1);
-                        });
-                        // Regenerate response with edited content
-                        sendMessage(newContent);
-                      }
-                    : undefined
-                }
-              />
-            );
-          })}
 
-          {/* Inline Thinking Process during processing - Only in Developer Mode */}
-          {isDeveloperMode && currentPhase !== "idle" && currentPhase !== "confirm" && currentThinkingLogs.length > 0 && (
-            <div className="max-w-[85%]">
-              <ThinkingProcess logs={currentThinkingLogs} />
+                        // Render Confirm Card
+                        if (message.role === "system" && message.confirmAction) {
+                          return (
+                            <div key={message.id} className="flex justify-center">
+                              <ConfirmCard
+                                action={message.confirmAction}
+                                onConfirm={handleConfirm}
+                                onReject={handleReject}
+                                isPending={currentPhase === "executing"}
+                              />
+                            </div>
+                          );
+                        }
+
+                        // Render regular messages
+                        return (
+                          <MessageBubble
+                            key={message.id}
+                            id={message.id}
+                            role={message.role as "user" | "assistant"}
+                            content={message.content}
+                            timestamp={message.timestamp}
+                            skill={message.skill}
+                            isNew={message.isNew}
+                            attachments={message.attachments}
+                            agentAvatar={
+                              selectedAgent?.manifest 
+                                ? {
+                                    iconId: (selectedAgent.manifest as any).iconId || "bot",
+                                    colorId: (selectedAgent.manifest as any).colorId || "blue",
+                                  }
+                                : undefined
+                            }
+                            onRegenerate={
+                              message.role === "assistant" && currentPhase === "idle"
+                                ? () => {
+                                    const messageIndex = localMessages.findIndex(m => m.id === message.id);
+                                    if (messageIndex > 0) {
+                                      const userMessage = localMessages
+                                        .slice(0, messageIndex)
+                                        .reverse()
+                                        .find(m => m.role === "user");
+                                      if (userMessage) {
+                                        setLocalMessages(prev => prev.filter((_, i) => i < messageIndex));
+                                        sendMessage(userMessage.content, userMessage.attachments);
+                                      }
+                                    }
+                                  }
+                                : undefined
+                            }
+                          />
+                        );
+                      })}
+                      
+                      {/* Typing Indicator */}
+                      {(currentPhase === "executing" || isAILoading) && (
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-cognitive/10 flex items-center justify-center shrink-0">
+                            <Bot className="h-4 w-4 text-cognitive" />
+                          </div>
+                          <div className="flex-1">
+                            <TypingIndicator />
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
+
+                {/* Input Area */}
+                <div className="p-4 border-t border-border bg-card/30">
+                  {/* Quick Commands */}
+                  {showQuickCommands && (
+                    <div className="mb-3">
+                      <QuickCommandMenu
+                        isOpen={showQuickCommands}
+                        onClose={() => setShowQuickCommands(false)}
+                        onSelectCommand={(cmd) => {
+                          setInput(cmd);
+                          setShowQuickCommands(false);
+                        }}
+                        searchQuery={input.slice(1)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Attachment Preview */}
+                  {pendingFiles.length > 0 && (
+                    <AttachmentPreview 
+                      files={pendingFiles} 
+                      onRemove={removeFile}
+                      isUploading={isUploading}
+                    />
+                  )}
+                  
+                  <div className="flex gap-2">
+                    <TooltipProvider>
+                      <FileUploadButton
+                        onFilesSelected={addFiles}
+                        disabled={currentPhase !== "idle" || isUploading}
+                      />
+                      <VoiceInputButton 
+                        onTranscript={(text) => setInput(prev => prev ? `${prev} ${text}` : text)}
+                        disabled={currentPhase !== "idle"}
+                      />
+                    </TooltipProvider>
+                    <Input
+                      placeholder="输入消息，或输入 / 打开快捷命令菜单..."
+                      value={input}
+                      onChange={(e) => {
+                        setInput(e.target.value);
+                        if (e.target.value.startsWith("/")) {
+                          setShowQuickCommands(true);
+                        } else {
+                          setShowQuickCommands(false);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !showQuickCommands) {
+                          handleSend();
+                        } else if (e.key === "Escape") {
+                          setShowQuickCommands(false);
+                        }
+                      }}
+                      className="bg-card"
+                      disabled={currentPhase !== "idle"}
+                    />
+                    <Button 
+                      onClick={handleSend} 
+                      disabled={(!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle"}
+                      className="gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                    输入 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">/</kbd> 打开快捷命令 · 按 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Enter</kbd> 发送
+                    {isDeveloperMode && (
+                      <span className="ml-2">
+                        · <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Ctrl+`</kbd> 切换工具面板
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
+          </ResizablePanel>
 
-          {/* Typing indicator */}
-          {currentPhase !== "idle" && currentPhase !== "confirm" && (
-            <TypingIndicator 
-              phase={currentPhase === "planning" ? "planning" : currentPhase === "executing" ? "executing" : "trace"} 
-            />
+          {/* Developer Tools Panel */}
+          {isDeveloperMode && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel 
+                defaultSize={35} 
+                minSize={15} 
+                maxSize={60}
+                collapsible
+                collapsedSize={0}
+                onCollapse={() => devToolsState.setCollapsed(true)}
+                onExpand={() => devToolsState.setCollapsed(false)}
+              >
+                <DevToolsPanel
+                  renderTrace={renderTraceContent}
+                  renderContext={renderContextContent}
+                  renderCircuit={renderCircuitContent}
+                  onClose={() => setIsDeveloperMode(false)}
+                />
+              </ResizablePanel>
+            </>
           )}
-          
-          <div ref={messagesEndRef} />
-          </>
-          )}
-        </div>
-
-        {/* Input Area */}
-        <div className="p-4 border-t border-border relative">
-          {/* Quick Command Menu */}
-          <QuickCommandMenu
-            isOpen={showQuickCommands}
-            onClose={() => setShowQuickCommands(false)}
-            onSelect={(prompt) => {
-              setInput(prompt);
-              setShowQuickCommands(false);
-            }}
-            filter={input.startsWith("/") ? input.slice(1) : ""}
-          />
-          
-          {/* Message templates for empty state */}
-          {localMessages.length <= 1 && !input && (
-            <div className="mb-3">
-              <p className="text-xs text-muted-foreground mb-2">快速开始：</p>
-              <MessageTemplates 
-                onSelect={(content) => setInput(content)} 
-              />
-            </div>
-          )}
-          
-          {/* Attachment Preview */}
-          <AttachmentPreview
-            files={pendingFiles}
-            onRemove={removeFile}
-            isUploading={isUploading}
-          />
-          
-          <div className="flex gap-2">
-            <TooltipProvider>
-              <FileUploadButton
-                onFilesSelected={addFiles}
-                disabled={currentPhase !== "idle" || isUploading}
-              />
-              <VoiceInputButton 
-                onTranscript={(text) => setInput(prev => prev ? `${prev} ${text}` : text)}
-                disabled={currentPhase !== "idle"}
-              />
-            </TooltipProvider>
-            <Input
-              placeholder="输入消息，或输入 / 打开快捷命令菜单..."
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                // Show quick commands when typing /
-                if (e.target.value.startsWith("/")) {
-                  setShowQuickCommands(true);
-                } else {
-                  setShowQuickCommands(false);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !showQuickCommands) {
-                  handleSend();
-                } else if (e.key === "Escape") {
-                  setShowQuickCommands(false);
-                }
-              }}
-              className="bg-card"
-              disabled={currentPhase !== "idle"}
-            />
-            <Button 
-              onClick={handleSend} 
-              disabled={(!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle"}
-              className="gap-2"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <p className="text-[10px] text-muted-foreground mt-2 text-center">
-            输入 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">/</kbd> 打开快捷命令 · 按 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Enter</kbd> 发送
-          </p>
-        </div>
+        </ResizablePanelGroup>
       </div>
-
-      {/* Right Panel - Trace Tree - Only in Developer Mode */}
-      {isDeveloperMode && (
-        <div className="w-72 border-l border-border bg-card/50 hidden lg:flex flex-col">
-          <div className="panel-header border-b border-border">
-            <div className="flex items-center gap-2">
-              <Database className="h-4 w-4 text-cognitive" />
-              <span className="font-semibold text-sm">决策追踪</span>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-hidden p-2">
-            <TraceTree 
-              sessions={trace.sessions} 
-              currentSessionId={trace.activeSessionId || undefined}
-              onClearSessions={() => {
-                trace.clearSessions();
-                currentEventsRef.current = [];
-              }}
-              onRefresh={() => {
-                // No-op, state is reactive
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Context Panel - Only in Developer Mode */}
-      {isDeveloperMode && (
-        <ContextPanel 
-          agent={selectedAgent} 
-          memory={contextMemory} 
-          collapsed={isContextPanelCollapsed}
-          onToggle={() => setIsContextPanelCollapsed(!isContextPanelCollapsed)}
-        />
-      )}
-    </div>
     </>
   );
 };
