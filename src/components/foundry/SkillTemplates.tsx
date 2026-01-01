@@ -2845,6 +2845,14 @@ interface SkillTemplatesDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+// AI 生成进度步骤
+const generationSteps = [
+  { id: "analyze", label: "分析需求", icon: Search },
+  { id: "design", label: "设计架构", icon: GitBranch },
+  { id: "generate", label: "生成代码", icon: Code },
+  { id: "validate", label: "验证输出", icon: Shield },
+];
+
 // AI 生成模版组件
 function AIGenerateTemplate({
   onGenerate,
@@ -2855,7 +2863,23 @@ function AIGenerateTemplate({
   const [category, setCategory] = useState("");
   const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [generatedTemplate, setGeneratedTemplate] = useState<SkillTemplate | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
+
+  const simulateProgress = () => {
+    setCurrentStep(0);
+    const stepDurations = [800, 1200, 2000, 800];
+    let totalDelay = 0;
+    
+    stepDurations.forEach((duration, index) => {
+      setTimeout(() => {
+        setCurrentStep(index + 1);
+      }, totalDelay);
+      totalDelay += duration;
+    });
+  };
 
   const handleGenerate = async () => {
     if (!description.trim()) {
@@ -2867,6 +2891,10 @@ function AIGenerateTemplate({
     }
 
     setIsGenerating(true);
+    setGeneratedTemplate(null);
+    setShowPreview(false);
+    simulateProgress();
+
     try {
       const { data, error } = await supabase.functions.invoke("generate-skill-template", {
         body: { description, category, difficulty },
@@ -2874,7 +2902,7 @@ function AIGenerateTemplate({
 
       if (error) throw error;
 
-      const generatedTemplate: SkillTemplate = {
+      const template: SkillTemplate = {
         id: `ai-generated-${Date.now()}`,
         name: data.name || "AI 生成技能",
         description: data.description || description,
@@ -2886,12 +2914,14 @@ function AIGenerateTemplate({
         configYaml: data.configYaml || "",
       };
 
+      setCurrentStep(4);
+      setGeneratedTemplate(template);
+      setShowPreview(true);
+
       toast({
         title: "技能模版生成成功",
-        description: `已生成 ${generatedTemplate.name}`,
+        description: `已生成 ${template.name}`,
       });
-
-      onGenerate(generatedTemplate);
     } catch (error) {
       console.error("Generate template error:", error);
       toast({
@@ -2899,77 +2929,248 @@ function AIGenerateTemplate({
         description: error instanceof Error ? error.message : "请稍后重试",
         variant: "destructive",
       });
+      setCurrentStep(0);
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const handleUseTemplate = () => {
+    if (generatedTemplate) {
+      onGenerate(generatedTemplate);
+    }
+  };
+
+  const handleReset = () => {
+    setGeneratedTemplate(null);
+    setShowPreview(false);
+    setCurrentStep(0);
+    setDescription("");
+    setCategory("");
+    setDifficulty("intermediate");
+  };
+
+  const difficultyConfig = {
+    beginner: { label: "入门", className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" },
+    intermediate: { label: "中级", className: "bg-amber-500/20 text-amber-400 border-amber-500/40" },
+    advanced: { label: "高级", className: "bg-rose-500/20 text-rose-400 border-rose-500/40" },
+  };
+
+  // 结果预览界面
+  if (showPreview && generatedTemplate) {
+    return (
+      <div className="space-y-4 animate-fade-in">
+        {/* 成功提示 */}
+        <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-emerald-500/20">
+              <Shield className="h-5 w-5 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-emerald-400">生成完成</h3>
+              <p className="text-sm text-muted-foreground">AI 已成功生成技能模版，请预览确认</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 模版预览卡片 */}
+        <div className="p-4 rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/80">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary ring-1 ring-primary/20">
+              {generatedTemplate.icon}
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">{generatedTemplate.name}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{generatedTemplate.description}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${difficultyConfig[generatedTemplate.difficulty].className}`}>
+                  {difficultyConfig[generatedTemplate.difficulty].label}
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-primary/15 text-primary border border-primary/30">
+                  {generatedTemplate.category}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 代码预览 */}
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              SKILL.md 预览
+            </div>
+            <div className="p-3 rounded-lg bg-background/50 border border-border/50 max-h-32 overflow-y-auto">
+              <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">
+                {generatedTemplate.content.slice(0, 500)}
+                {generatedTemplate.content.length > 500 && "..."}
+              </pre>
+            </div>
+          </div>
+
+          {/* 文件列表 */}
+          <div className="mt-3 pt-3 border-t border-border/50">
+            <div className="text-xs font-medium text-muted-foreground mb-2">包含文件</div>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 text-xs">
+                <FileText className="h-3 w-3 text-blue-400" />
+                SKILL.md
+              </span>
+              {generatedTemplate.handlerCode && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 text-xs">
+                  <Code className="h-3 w-3 text-green-400" />
+                  handler.py
+                </span>
+              )}
+              {generatedTemplate.configYaml && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 text-xs">
+                  <FileText className="h-3 w-3 text-amber-400" />
+                  config.yaml
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 操作按钮 */}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleReset} className="flex-1">
+            重新生成
+          </Button>
+          <Button onClick={handleUseTemplate} className="flex-1">
+            <Zap className="h-4 w-4 mr-2" />
+            使用此模版
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-        <div className="flex items-center gap-2 mb-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <span className="font-medium">AI 智能生成</span>
+      {/* AI 介绍 */}
+      <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-full bg-primary/20 animate-pulse">
+            <Bot className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <span className="font-semibold">AI 智能生成</span>
+            <p className="text-sm text-muted-foreground">
+              描述你需要的技能功能，AI 将自动生成完整的模版文件
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          描述你需要的技能功能，AI 将自动生成完整的 Skill.md 模版
-        </p>
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <Label>技能描述 *</Label>
-          <Textarea
-            placeholder="例如：一个可以调用 OpenAI API 进行图片识别的技能，支持识别图片中的物体、文字和场景..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="h-24 mt-1"
-          />
+      {/* 生成进度 */}
+      {isGenerating && (
+        <div className="p-4 rounded-xl border border-border/60 bg-card/50 animate-fade-in">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium">生成进度</span>
+            <span className="text-xs text-muted-foreground">
+              {currentStep}/{generationSteps.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {generationSteps.map((step, index) => {
+              const StepIcon = step.icon;
+              const isActive = index === currentStep - 1;
+              const isCompleted = index < currentStep - 1;
+              const isPending = index >= currentStep;
+              
+              return (
+                <div
+                  key={step.id}
+                  className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-300 ${
+                    isActive 
+                      ? "bg-primary/10 border border-primary/30" 
+                      : isCompleted 
+                      ? "bg-emerald-500/10" 
+                      : "bg-muted/30"
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-full transition-colors ${
+                    isActive 
+                      ? "bg-primary/20 text-primary" 
+                      : isCompleted 
+                      ? "bg-emerald-500/20 text-emerald-400" 
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    {isActive ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : isCompleted ? (
+                      <Shield className="h-3.5 w-3.5" />
+                    ) : (
+                      <StepIcon className="h-3.5 w-3.5" />
+                    )}
+                  </div>
+                  <span className={`text-sm ${
+                    isActive ? "text-primary font-medium" : isCompleted ? "text-emerald-400" : "text-muted-foreground"
+                  }`}>
+                    {step.label}
+                  </span>
+                  {isActive && (
+                    <div className="ml-auto flex gap-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
+      )}
 
-        <div className="grid grid-cols-2 gap-3">
+      {/* 输入表单 */}
+      {!isGenerating && (
+        <div className="space-y-3">
           <div>
-            <Label>类别（可选）</Label>
-            <Input
-              placeholder="例如：AI、数据处理"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-1"
+            <Label className="text-sm">技能描述 *</Label>
+            <Textarea
+              placeholder="例如：一个可以调用 OpenAI API 进行图片识别的技能，支持识别图片中的物体、文字和场景..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="h-24 mt-1.5 resize-none"
             />
           </div>
-          <div>
-            <Label>难度</Label>
-            <Select value={difficulty} onValueChange={(v) => setDifficulty(v as typeof difficulty)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">入门</SelectItem>
-                <SelectItem value="intermediate">中级</SelectItem>
-                <SelectItem value="advanced">高级</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
 
-        <Button
-          className="w-full"
-          onClick={handleGenerate}
-          disabled={isGenerating || !description.trim()}
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              正在生成...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4 mr-2" />
-              生成技能模版
-            </>
-          )}
-        </Button>
-      </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-sm">类别（可选）</Label>
+              <Input
+                placeholder="例如：AI、数据处理"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-sm">难度</Label>
+              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as typeof difficulty)}>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">入门</SelectItem>
+                  <SelectItem value="intermediate">中级</SelectItem>
+                  <SelectItem value="advanced">高级</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-10 font-medium"
+            onClick={handleGenerate}
+            disabled={!description.trim()}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            生成技能模版
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
