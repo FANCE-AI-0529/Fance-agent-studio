@@ -2840,7 +2840,9 @@ dependencies:
 
 interface SkillTemplatesDialogProps {
   onSelectTemplate: (template: SkillTemplate) => void;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 // AI 生成模版组件
@@ -2975,9 +2977,13 @@ function AIGenerateTemplate({
 export function SkillTemplatesDialog({
   onSelectTemplate,
   trigger,
+  open: controlledOpen,
+  onOpenChange,
 }: SkillTemplatesDialogProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [activeTab, setActiveTab] = useState("library");
 
   const categories = [

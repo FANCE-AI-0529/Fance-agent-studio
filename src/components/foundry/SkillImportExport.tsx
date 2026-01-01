@@ -32,10 +32,12 @@ interface SkillFiles {
 }
 
 interface SkillImportExportProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   currentFiles: SkillFiles;
   skillName: string;
   onImport: (files: SkillFiles, skillName: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface ImportPreview {
@@ -54,8 +56,12 @@ export function SkillImportExport({
   currentFiles,
   skillName,
   onImport,
+  open: controlledOpen,
+  onOpenChange,
 }: SkillImportExportProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [activeTab, setActiveTab] = useState("export");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -256,7 +262,7 @@ export function SkillImportExport({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
