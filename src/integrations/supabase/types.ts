@@ -14,6 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_api_keys: {
+        Row: {
+          agent_id: string
+          api_key: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          name: string
+          rate_limit: number
+          total_calls: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          api_key: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          name?: string
+          rate_limit?: number
+          total_calls?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          api_key?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          name?: string
+          rate_limit?: number
+          total_calls?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_api_keys_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_api_logs: {
+        Row: {
+          agent_id: string
+          api_key_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          latency_ms: number | null
+          request_body: Json | null
+          response_body: Json | null
+          status_code: number
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          api_key_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          latency_ms?: number | null
+          request_body?: Json | null
+          response_body?: Json | null
+          status_code?: number
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          api_key_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          latency_ms?: number | null
+          request_body?: Json | null
+          response_body?: Json | null
+          status_code?: number
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_api_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "agent_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_collaborations: {
         Row: {
           capabilities: Json | null
@@ -1528,6 +1634,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      generate_agent_api_key: { Args: never; Returns: string }
       generate_share_token: { Args: never; Returns: string }
       get_next_skill_version_number: {
         Args: { p_skill_id: string }

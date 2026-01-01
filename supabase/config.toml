@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.task-chain-executor]
 verify_jwt = false
+
+[functions.agent-api]
+verify_jwt = false
