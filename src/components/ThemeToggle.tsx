@@ -1,4 +1,4 @@
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,11 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        onClick={() => {
+          if (theme === "dark") setTheme("light");
+          else if (theme === "light") setTheme("system");
+          else setTheme("dark");
+        }}
       >
         <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
         <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -43,6 +47,10 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
         <DropdownMenuItem onClick={() => setTheme("dark")}>
           <Moon className="h-4 w-4 mr-2" />
           深色模式
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          <Monitor className="h-4 w-4 mr-2" />
+          跟随系统
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
