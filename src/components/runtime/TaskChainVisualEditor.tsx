@@ -221,6 +221,10 @@ function TaskChainVisualEditorInner({
     itemKey: string;
     indexKey: string;
     maxIterations: number;
+    variablePrefix: string;
+    nestingLevel: number;
+    collectResults: boolean;
+    resultsKey: string;
   }>({
     name: "",
     description: "",
@@ -228,6 +232,10 @@ function TaskChainVisualEditorInner({
     itemKey: "item",
     indexKey: "index",
     maxIterations: 100,
+    variablePrefix: "",
+    nestingLevel: 0,
+    collectResults: false,
+    resultsKey: "",
   });
   const [inputMappingKey, setInputMappingKey] = useState("");
   const [inputMappingValue, setInputMappingValue] = useState("");
@@ -309,6 +317,10 @@ function TaskChainVisualEditorInner({
           itemKey: data.itemKey || "item",
           indexKey: data.indexKey || "index",
           maxIterations: data.maxIterations || 100,
+          variablePrefix: data.variablePrefix || "",
+          nestingLevel: data.nestingLevel || 0,
+          collectResults: data.collectResults || false,
+          resultsKey: data.resultsKey || "",
         });
         setEditingNodeId(nodeId);
         setEditingNodeType("loop");
@@ -462,6 +474,10 @@ function TaskChainVisualEditorInner({
         itemKey: "item",
         indexKey: "index",
         maxIterations: 100,
+        variablePrefix: "",
+        nestingLevel: nodes.filter(n => n.type === "loop").length,
+        collectResults: false,
+        resultsKey: "",
         status: "pending" as const,
         onEdit: handleEditNode,
         onDelete: handleDeleteNode,
@@ -566,6 +582,10 @@ function TaskChainVisualEditorInner({
               itemKey: loopForm.itemKey,
               indexKey: loopForm.indexKey,
               maxIterations: loopForm.maxIterations,
+              variablePrefix: loopForm.variablePrefix,
+              nestingLevel: loopForm.nestingLevel,
+              collectResults: loopForm.collectResults,
+              resultsKey: loopForm.resultsKey,
             },
           };
         }
@@ -582,6 +602,10 @@ function TaskChainVisualEditorInner({
       itemKey: "item",
       indexKey: "index",
       maxIterations: 100,
+      variablePrefix: "",
+      nestingLevel: 0,
+      collectResults: false,
+      resultsKey: "",
     });
   }, [editingNodeId, loopForm]);
 
@@ -1240,13 +1264,90 @@ function TaskChainVisualEditorInner({
                 </p>
               </div>
 
+              {/* Nesting Support Section */}
+              <div className="p-3 border border-blue-500/30 rounded-lg bg-blue-500/5">
+                <Label className="text-blue-500 text-sm flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  嵌套循环设置
+                </Label>
+                
+                <div className="space-y-3 mt-3">
+                  <div>
+                    <Label className="text-xs">变量命名空间前缀</Label>
+                    <Input
+                      value={loopForm.variablePrefix}
+                      onChange={(e) => setLoopForm({ ...loopForm, variablePrefix: e.target.value })}
+                      placeholder="例: outer 或 user_loop"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      嵌套循环时用于区分不同层级的变量
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">嵌套层级</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={loopForm.nestingLevel}
+                      onChange={(e) => setLoopForm({ ...loopForm, nestingLevel: parseInt(e.target.value) || 0 })}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      0=最外层，1=第一层嵌套，以此类推
+                    </p>
+                  </div>
+
+                  {loopForm.variablePrefix && (
+                    <div className="text-xs p-2 bg-muted/50 rounded border border-border">
+                      <span className="text-muted-foreground">完整变量路径：</span>
+                      <div className="font-mono text-purple-500 mt-1">
+                        {loopForm.variablePrefix}.{loopForm.itemKey || "item"}
+                      </div>
+                      <div className="font-mono text-purple-500">
+                        {loopForm.variablePrefix}.{loopForm.indexKey || "index"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Results Collection */}
+              <div className="p-3 border border-green-500/30 rounded-lg bg-green-500/5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-green-500 text-sm">收集迭代结果</Label>
+                  <input
+                    type="checkbox"
+                    checked={loopForm.collectResults}
+                    onChange={(e) => setLoopForm({ ...loopForm, collectResults: e.target.checked })}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                </div>
+                
+                {loopForm.collectResults && (
+                  <div className="mt-3">
+                    <Label className="text-xs">结果键名</Label>
+                    <Input
+                      value={loopForm.resultsKey}
+                      onChange={(e) => setLoopForm({ ...loopForm, resultsKey: e.target.value })}
+                      placeholder="例: processed_items"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      循环结束后可通过此键名获取所有迭代结果
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="p-3 border border-border rounded-lg bg-muted/20">
-                <Label className="text-xs text-muted-foreground">使用说明</Label>
+                <Label className="text-xs text-muted-foreground">嵌套循环说明</Label>
                 <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                  <li>循环节点会对列表中的每个元素执行后续步骤</li>
-                  <li>在循环体内的步骤可通过变量名访问当前项和索引</li>
-                  <li>连接"循环体"输出到需要重复执行的步骤</li>
-                  <li>连接"循环完成"输出到循环结束后的下一步</li>
+                  <li>可在循环体内添加条件分支或子循环</li>
+                  <li>使用变量前缀避免内外层变量名冲突</li>
+                  <li>内层循环可通过完整路径访问外层变量</li>
+                  <li>例：outer.item.children 访问外层当前项的子列表</li>
                 </ul>
               </div>
 

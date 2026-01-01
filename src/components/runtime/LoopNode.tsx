@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Clock,
   List,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,11 @@ export interface LoopNodeData {
   itemKey: string; // 当前迭代项的键名
   indexKey: string; // 当前索引的键名
   maxIterations: number; // 最大迭代次数限制
+  variablePrefix: string; // 变量命名空间前缀，用于嵌套循环
+  nestingLevel: number; // 嵌套层级
+  parentLoopId?: string; // 父循环节点ID
+  collectResults: boolean; // 是否收集每次迭代结果
+  resultsKey: string; // 收集结果的键名
   status: "pending" | "in_progress" | "completed" | "failed";
   currentIteration?: number;
   totalIterations?: number;
@@ -48,10 +54,14 @@ function LoopNode({ data, id, selected }: NodeProps) {
     ? Math.round((nodeData.currentIteration || 0) / nodeData.totalIterations * 100)
     : 0;
 
+  const prefix = nodeData.variablePrefix || "";
+  const fullItemKey = prefix ? `${prefix}.${nodeData.itemKey}` : nodeData.itemKey;
+  const fullIndexKey = prefix ? `${prefix}.${nodeData.indexKey}` : nodeData.indexKey;
+
   return (
     <div
       className={cn(
-        "bg-card border-2 rounded-lg shadow-lg min-w-[240px] max-w-[320px]",
+        "bg-card border-2 rounded-lg shadow-lg min-w-[260px] max-w-[340px]",
         "transition-all duration-300",
         selected ? "border-primary ring-2 ring-primary/20" : "border-border",
         isExecuting && "border-purple-500 ring-4 ring-purple-500/30 animate-pulse shadow-[0_0_20px_rgba(168,85,247,0.5)]",
@@ -95,9 +105,17 @@ function LoopNode({ data, id, selected }: NodeProps) {
               {nodeData.name || "循环节点"}
             </span>
           </div>
-          <Badge variant="outline" className="text-[10px] shrink-0 border-purple-500/50 text-purple-500">
-            循环
-          </Badge>
+          <div className="flex items-center gap-1">
+            {nodeData.nestingLevel > 0 && (
+              <Badge variant="outline" className="text-[10px] shrink-0 border-blue-500/50 text-blue-500 gap-0.5">
+                <Layers className="h-2.5 w-2.5" />
+                L{nodeData.nestingLevel}
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-[10px] shrink-0 border-purple-500/50 text-purple-500">
+              循环
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -115,17 +133,33 @@ function LoopNode({ data, id, selected }: NodeProps) {
           </span>
         </div>
 
-        {/* Item & Index Keys */}
-        <div className="grid grid-cols-2 gap-1.5">
-          <div className="text-[10px] p-1.5 rounded bg-muted/30 border border-border">
-            <span className="text-muted-foreground">迭代项: </span>
-            <span className="font-mono">{nodeData.itemKey || "item"}</span>
+        {/* Variable Prefix (if set) */}
+        {prefix && (
+          <div className="text-[10px] p-1.5 rounded bg-blue-500/10 border border-blue-500/30">
+            <span className="text-blue-500">命名空间: </span>
+            <span className="font-mono text-blue-400">{prefix}</span>
           </div>
-          <div className="text-[10px] p-1.5 rounded bg-muted/30 border border-border">
-            <span className="text-muted-foreground">索引: </span>
-            <span className="font-mono">{nodeData.indexKey || "index"}</span>
+        )}
+
+        {/* Item & Index Keys with full path */}
+        <div className="space-y-1">
+          <div className="text-[10px] p-1.5 rounded bg-muted/30 border border-border flex items-center justify-between">
+            <span className="text-muted-foreground">迭代项:</span>
+            <span className="font-mono text-purple-500">{fullItemKey}</span>
+          </div>
+          <div className="text-[10px] p-1.5 rounded bg-muted/30 border border-border flex items-center justify-between">
+            <span className="text-muted-foreground">索引:</span>
+            <span className="font-mono text-purple-500">{fullIndexKey}</span>
           </div>
         </div>
+
+        {/* Collect Results Info */}
+        {nodeData.collectResults && nodeData.resultsKey && (
+          <div className="text-[10px] p-1.5 rounded bg-green-500/10 border border-green-500/30">
+            <span className="text-green-500">结果收集: </span>
+            <span className="font-mono text-green-400">{nodeData.resultsKey}</span>
+          </div>
+        )}
 
         {/* Progress Bar (when executing) */}
         {isExecuting && nodeData.totalIterations && (
