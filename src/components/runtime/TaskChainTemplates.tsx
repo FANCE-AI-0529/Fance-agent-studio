@@ -70,6 +70,7 @@ import {
   Copy,
   FileDown,
   FileUp,
+  Variable,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -80,6 +81,15 @@ import {
   type CustomTemplate 
 } from "@/hooks/useCustomTemplates";
 import type { TaskChain } from "@/hooks/useTaskChains";
+import { TemplateVariableDialog } from "./TemplateVariableDialog";
+
+export interface TemplateVariable {
+  name: string;
+  description?: string;
+  defaultValue?: string;
+  required?: boolean;
+  type?: "text" | "number" | "textarea";
+}
 
 export interface TemplateStep {
   name: string;
@@ -88,6 +98,7 @@ export interface TemplateStep {
   inputMapping?: Record<string, string>;
   outputKey: string;
   parallelGroup?: number;
+  variables?: TemplateVariable[];
 }
 
 export interface TaskChainTemplate {
@@ -598,6 +609,50 @@ export const taskChainTemplates: TaskChainTemplate[] = [
       },
     ],
   },
+  // 带变量的通用模板
+  {
+    id: "custom-data-process",
+    name: "{{projectName}} 数据处理",
+    description: "为 {{clientName}} 处理 {{dataType}} 类型数据的通用流程",
+    category: "数据处理",
+    icon: "FileSearch",
+    executionMode: "sequential",
+    estimatedTime: "约 10 分钟",
+    tags: ["变量模板", "可定制", "数据处理"],
+    steps: [
+      {
+        name: "获取 {{dataType}} 数据",
+        description: "从 {{dataSource}} 获取原始数据",
+        taskType: "extraction",
+        outputKey: "raw_data",
+        variables: [
+          { name: "dataType", description: "数据类型 (如: 销售、用户、产品)", required: true },
+          { name: "dataSource", description: "数据来源系统", defaultValue: "数据库" },
+        ],
+      },
+      {
+        name: "数据清洗与转换",
+        description: "按照 {{clientName}} 的要求清洗和转换数据",
+        taskType: "analysis",
+        inputMapping: { data: "raw_data" },
+        outputKey: "cleaned_data",
+        variables: [
+          { name: "clientName", description: "客户名称", required: true },
+        ],
+      },
+      {
+        name: "生成 {{reportType}} 报告",
+        description: "为 {{projectName}} 生成最终报告",
+        taskType: "generation",
+        inputMapping: { data: "cleaned_data" },
+        outputKey: "final_report",
+        variables: [
+          { name: "projectName", description: "项目名称", required: true },
+          { name: "reportType", description: "报告类型", defaultValue: "汇总" },
+        ],
+      },
+    ],
+  },
 ];
 
 interface TaskChainTemplatesProps {
@@ -623,6 +678,10 @@ export function TaskChainTemplates({
   const [importJson, setImportJson] = useState("");
   const [importError, setImportError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Variable dialog state
+  const [variableDialogTemplate, setVariableDialogTemplate] = useState<TaskChainTemplate | null>(null);
+  const [showVariableDialog, setShowVariableDialog] = useState(false);
 
   // Save template form state
   const [saveForm, setSaveForm] = useState({
@@ -672,8 +731,59 @@ export function TaskChainTemplates({
     return matchesSearch && matchesCategory;
   });
 
+  // Check if template has variables and show dialog
   const handleUseTemplate = (template: TaskChainTemplate) => {
-    onSelectTemplate(template);
+    // Check for variables in template
+    const hasVariables = checkTemplateHasVariables(template);
+    
+    if (hasVariables) {
+      setVariableDialogTemplate(template);
+      setShowVariableDialog(true);
+      setPreviewTemplate(null);
+    } else {
+      onSelectTemplate(template);
+      onClose?.();
+    }
+  };
+
+  // Check if template contains variables
+  const checkTemplateHasVariables = (template: TaskChainTemplate): boolean => {
+    const variableRegex = /\{\{(\w+)\}\}|\$\{(\w+)\}/;
+    
+    // Check template name and description
+    if (variableRegex.test(template.name) || variableRegex.test(template.description)) {
+      return true;
+    }
+    
+    // Check steps
+    for (const step of template.steps) {
+      if (variableRegex.test(step.name) || variableRegex.test(step.description)) {
+        return true;
+      }
+      if (step.outputKey && variableRegex.test(step.outputKey)) {
+        return true;
+      }
+      if (step.inputMapping) {
+        for (const value of Object.values(step.inputMapping)) {
+          if (variableRegex.test(value)) {
+            return true;
+          }
+        }
+      }
+      // Check if step has defined variables
+      if (step.variables && step.variables.length > 0) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Handle variable dialog confirm
+  const handleVariableConfirm = (processedTemplate: TaskChainTemplate) => {
+    onSelectTemplate(processedTemplate);
+    setShowVariableDialog(false);
+    setVariableDialogTemplate(null);
     onClose?.();
   };
 
@@ -1049,7 +1159,13 @@ export function TaskChainTemplates({
                       >
                         <Icon className="h-5 w-5" />
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {checkTemplateHasVariables(template) && (
+                          <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-600">
+                            <Variable className="h-3 w-3 mr-1" />
+                            变量
+                          </Badge>
+                        )}
                         {template.isCustom && (
                           <Badge variant="outline" className="text-[10px]">
                             <User className="h-3 w-3 mr-1" />
@@ -1133,8 +1249,14 @@ export function TaskChainTemplates({
                     })()}
                   </div>
                   <div>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 flex-wrap">
                       {previewTemplate.name}
+                      {checkTemplateHasVariables(previewTemplate) && (
+                        <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-600">
+                          <Variable className="h-3 w-3 mr-1" />
+                          包含变量
+                        </Badge>
+                      )}
                       {previewTemplate.isCustom && (
                         <Badge variant="outline" className="text-[10px]">
                           我的模板
@@ -1147,7 +1269,7 @@ export function TaskChainTemplates({
               </DialogHeader>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-4 text-sm flex-wrap">
                   <Badge variant="secondary">
                     {previewTemplate.executionMode === "sequential" && "串行执行"}
                     {previewTemplate.executionMode === "parallel" && "并行执行"}
@@ -1158,6 +1280,18 @@ export function TaskChainTemplates({
                     {previewTemplate.steps.length} 个步骤
                   </span>
                 </div>
+
+                {checkTemplateHasVariables(previewTemplate) && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                      <Variable className="h-4 w-4" />
+                      <span className="font-medium">此模板包含可自定义变量</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      使用模板时将提示您填写变量值，变量以 {"{{"}变量名{"}}"} 格式标记
+                    </p>
+                  </div>
+                )}
 
                 {previewTemplate.tags && previewTemplate.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
@@ -1413,6 +1547,14 @@ export function TaskChainTemplates({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Template Variable Dialog */}
+      <TemplateVariableDialog
+        open={showVariableDialog}
+        onOpenChange={setShowVariableDialog}
+        template={variableDialogTemplate}
+        onConfirm={handleVariableConfirm}
+      />
     </div>
   );
 }
