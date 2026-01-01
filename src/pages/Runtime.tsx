@@ -49,7 +49,10 @@ import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import WelcomeGuide from "@/components/runtime/WelcomeGuide";
 import OnboardingTour, { useOnboardingTour } from "@/components/runtime/OnboardingTour";
 import { QuickCommandMenu, MessageTemplates } from "@/components/runtime/QuickCommandMenu";
-import { useAgentChat } from "@/hooks/useAgentChat";
+import { FileUploadButton } from "@/components/runtime/FileUploadButton";
+import { AttachmentPreview } from "@/components/runtime/AttachmentPreview";
+import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
+import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,6 +61,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+
+// Attachment info stored with messages
+interface MessageAttachment {
+  id: string;
+  type: 'image' | 'document';
+  name: string;
+  url: string;
+  mimeType: string;
+}
 
 interface Message {
   id: string;
@@ -70,6 +82,7 @@ interface Message {
   traceEvents?: TraceEvent[];
   thinkingLogs?: LogEntry[];
   isNew?: boolean; // Flag for typewriter effect
+  attachments?: MessageAttachment[]; // For multimodal messages
 }
 
 interface MemoryItem {
@@ -450,6 +463,9 @@ const Runtime = () => {
   const assistantContentRef = useRef("");
   const currentEventsRef = useRef<TraceEvent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // File upload hook
+  const { files: pendingFiles, isUploading, addFiles, removeFile, clearFiles } = useFileUpload();
 
   // Get selected model info
   const selectedModel = availableModels.find(m => m.id === selectedModelId) || availableModels[0];
@@ -670,7 +686,7 @@ const Runtime = () => {
     }
   };
 
-  const sendMessage = async (userMessage: string) => {
+  const sendMessage = async (userMessage: string, attachments: MessageAttachment[] = []) => {
     // Start trace session
     startTraceSession(userMessage);
 
@@ -747,10 +763,20 @@ const Runtime = () => {
       addTraceEvent("skill_selected", { skillName: "AI 对话" });
       addTraceEvent("execution_started", { skillName: "AI 对话" });
 
-      const chatMessages = localMessages
+      const chatMessages: ChatMessage[] = localMessages
         .filter(m => m.role === "user" || m.role === "assistant")
-        .map(m => ({ role: m.role as "user" | "assistant", content: m.content }));
-      chatMessages.push({ role: "user", content: userMessage });
+        .map(m => ({ 
+          role: m.role as "user" | "assistant", 
+          content: m.attachments?.length 
+            ? createMultimodalContent(m.content, m.attachments.map(a => ({ type: a.type, url: a.url })))
+            : m.content 
+        }));
+      
+      // Add the new user message with attachments
+      const newMessageContent = attachments.length > 0
+        ? createMultimodalContent(userMessage, attachments.map(a => ({ type: a.type, url: a.url })))
+        : userMessage;
+      chatMessages.push({ role: "user", content: newMessageContent });
 
       assistantContentRef.current = "";
 
@@ -879,10 +905,20 @@ const Runtime = () => {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || currentPhase !== "idle") return;
+    if ((!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle") return;
 
     const messageContent = input;
     setInput("");
+    
+    // Prepare attachments
+    const attachments: MessageAttachment[] = pendingFiles.map(f => ({
+      id: f.id,
+      type: f.type,
+      name: f.name,
+      url: f.preview,
+      mimeType: f.mimeType,
+    }));
+    clearFiles();
 
     let activeSession = chatSession;
     if (!activeSession && user) {
@@ -898,7 +934,8 @@ const Runtime = () => {
       id: Date.now().toString(),
       role: "user",
       content: messageContent,
-      timestamp: new Date()
+      timestamp: new Date(),
+      attachments: attachments.length > 0 ? attachments : undefined,
     };
 
     setLocalMessages(prev => [...prev, userMessage]);
@@ -907,7 +944,7 @@ const Runtime = () => {
       await addMessage({ role: "user", content: messageContent });
     }
     
-    await sendMessage(messageContent);
+    await sendMessage(messageContent, attachments);
   };
 
   const handleNewSession = async () => {
@@ -1143,6 +1180,7 @@ const Runtime = () => {
                 timestamp={message.timestamp}
                 skill={message.skill}
                 isNew={message.isNew}
+                attachments={message.attachments}
                 agentAvatar={
                   selectedAgent?.manifest 
                     ? {
@@ -1233,8 +1271,19 @@ const Runtime = () => {
             </div>
           )}
           
+          {/* Attachment Preview */}
+          <AttachmentPreview
+            files={pendingFiles}
+            onRemove={removeFile}
+            isUploading={isUploading}
+          />
+          
           <div className="flex gap-2">
             <TooltipProvider>
+              <FileUploadButton
+                onFilesSelected={addFiles}
+                disabled={currentPhase !== "idle" || isUploading}
+              />
               <VoiceInputButton 
                 onTranscript={(text) => setInput(prev => prev ? `${prev} ${text}` : text)}
                 disabled={currentPhase !== "idle"}
@@ -1264,7 +1313,7 @@ const Runtime = () => {
             />
             <Button 
               onClick={handleSend} 
-              disabled={!input.trim() || currentPhase !== "idle"}
+              disabled={(!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle"}
               className="gap-2"
             >
               <Send className="h-4 w-4" />

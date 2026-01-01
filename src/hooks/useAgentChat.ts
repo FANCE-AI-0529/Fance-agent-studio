@@ -2,7 +2,15 @@ import { useState, useCallback } from "react";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
-type Message = { role: "user" | "assistant"; content: string };
+// Multimodal message content types
+type TextContent = { type: "text"; text: string };
+type ImageContent = { type: "image_url"; image_url: { url: string } };
+type MessageContent = string | (TextContent | ImageContent)[];
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: MessageContent;
+}
 
 interface AgentSkill {
   name: string;
@@ -31,10 +39,56 @@ interface UseAgentChatOptions {
 }
 
 interface StreamChatOptions {
-  messages: Message[];
+  messages: ChatMessage[];
   onDelta: (deltaText: string) => void;
   onDone: () => void;
   onThinking?: (module: string, message: string, level: "info" | "warn" | "success" | "error") => void;
+}
+
+// Helper to check if a message has multimodal content
+export function hasMultimodalContent(content: MessageContent): boolean {
+  if (typeof content === 'string') return false;
+  return content.some(c => c.type === 'image_url');
+}
+
+// Helper to create multimodal message content
+export function createMultimodalContent(
+  text: string,
+  attachments?: { type: 'image' | 'document'; url: string }[]
+): MessageContent {
+  if (!attachments || attachments.length === 0) {
+    return text;
+  }
+
+  const content: (TextContent | ImageContent)[] = [];
+  
+  // Add images first
+  for (const attachment of attachments) {
+    if (attachment.type === 'image') {
+      content.push({
+        type: "image_url",
+        image_url: { url: attachment.url }
+      });
+    }
+  }
+  
+  // Add text content (include document descriptions if any)
+  const documentDescriptions = attachments
+    .filter(a => a.type === 'document')
+    .map((a, i) => `[附件 ${i + 1}: 文档]`)
+    .join('\n');
+  
+  const fullText = documentDescriptions 
+    ? `${documentDescriptions}\n\n${text}` 
+    : text;
+  
+  if (fullText.trim()) {
+    content.push({ type: "text", text: fullText });
+  }
+
+  return content.length === 1 && content[0].type === 'text' 
+    ? (content[0] as TextContent).text 
+    : content;
 }
 
 export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions = {}) {
@@ -50,8 +104,11 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
     setIsLoading(true);
     setError(null);
 
+    // Check if any message contains multimodal content
+    const isMultimodal = messages.some(m => hasMultimodalContent(m.content));
+    
     // Emit initial thinking events
-    onThinking?.("MPLP:Gateway", "Connecting to AI Gateway...", "info");
+    onThinking?.("MPLP:Gateway", isMultimodal ? "处理多模态请求..." : "连接AI网关...", "info");
 
     try {
       const resp = await fetch(CHAT_URL, {
@@ -79,8 +136,8 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
         throw new Error("No response body");
       }
 
-      onThinking?.("MPLP:Gateway", "Connection established", "success");
-      onThinking?.("LLM:Stream", "Receiving response stream...", "info");
+      onThinking?.("MPLP:Gateway", "连接成功", "success");
+      onThinking?.("LLM:Stream", isMultimodal ? "分析图片内容..." : "接收响应流...", "info");
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -142,12 +199,12 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
         }
       }
 
-      onThinking?.("LLM:Stream", `Response complete (${tokenCount} tokens)`, "success");
-      onTraceEvent?.("ai_response_complete", { tokenCount });
+      onThinking?.("LLM:Stream", `响应完成 (${tokenCount} tokens)`, "success");
+      onTraceEvent?.("ai_response_complete", { tokenCount, isMultimodal });
       onDone();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      onThinking?.("MPLP:Gateway", `Connection failed: ${message}`, "error");
+      const message = err instanceof Error ? err.message : "未知错误";
+      onThinking?.("MPLP:Gateway", `连接失败: ${message}`, "error");
       setError(message);
       onTraceEvent?.("error", { message });
     } finally {

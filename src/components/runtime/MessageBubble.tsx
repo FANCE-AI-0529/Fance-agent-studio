@@ -10,6 +10,14 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useMessageFeedback } from "@/hooks/useMessageFeedback";
 
+interface MessageAttachment {
+  id: string;
+  type: 'image' | 'document';
+  name: string;
+  url: string;
+  mimeType: string;
+}
+
 interface MessageBubbleProps {
   id: string;
   role: "user" | "assistant";
@@ -21,6 +29,7 @@ interface MessageBubbleProps {
     iconId: string;
     colorId: string;
   };
+  attachments?: MessageAttachment[];
   onRegenerate?: () => void;
   onEdit?: (newContent: string) => void;
 }
@@ -49,6 +58,7 @@ export function MessageBubble({
   skill,
   isNew,
   agentAvatar,
+  attachments,
   onRegenerate,
   onEdit,
 }: MessageBubbleProps) {
@@ -214,6 +224,28 @@ export function MessageBubble({
                     : "polygon(100% 0, 0% 100%, 100% 100%)"
                 }}
               />
+              
+              {/* Attachments */}
+              {attachments && attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {attachments.map((attachment) => (
+                    <div key={attachment.id} className="relative">
+                      {attachment.type === 'image' ? (
+                        <img
+                          src={attachment.url}
+                          alt={attachment.name}
+                          className="max-w-[200px] max-h-[150px] rounded-lg object-cover cursor-pointer hover:opacity-90"
+                          onClick={() => window.open(attachment.url, '_blank')}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs">
+                          <span className="truncate max-w-[120px]">{attachment.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               
               {/* Content */}
               <div className={cn("relative z-10", isUser ? "text-right" : "")}>
