@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ReactFlow,
   Controls,
+  MiniMap,
   Background,
   BackgroundVariant,
   useNodesState,
@@ -15,21 +16,39 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Brain, Save, Loader2, LogIn, Network, Sparkles } from "lucide-react";
+import {
+  Brain,
+  Save,
+  Loader2,
+  LogIn,
+  Sparkles,
+  Wand2,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
+  ZoomIn,
+  Maximize2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
-import { AgentConfigPanel, AgentConfig, SkillConfigOverride, EnvironmentConfig } from "@/components/builder/AgentConfigPanel";
+import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
-import { SemanticGraphPanel } from "@/components/builder/SemanticGraphPanel";
-import AgentTemplates, { AgentTemplate } from "@/components/builder/AgentTemplates";
+import { BuilderWizard } from "@/components/builder/BuilderWizard";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
@@ -38,10 +57,15 @@ const nodeTypes: NodeTypes = {
 };
 
 // Initial agent node in center
-const createAgentNode = (name = "", department = "", model = "Claude 3.5", skillCount = 0): Node<AgentNodeData> => ({
+const createAgentNode = (
+  name = "",
+  department = "",
+  model = "Claude 3.5",
+  skillCount = 0
+): Node<AgentNodeData> => ({
   id: "agent-central",
   type: "agent",
-  position: { x: 400, y: 200 },
+  position: { x: 400, y: 250 },
   data: { name, department, model, skillCount },
   draggable: false,
 });
@@ -57,10 +81,20 @@ const Builder = () => {
   const [showManifest, setShowManifest] = useState(false);
   const [draggingSkill, setDraggingSkill] = useState<Skill | null>(null);
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(agentIdParam || null);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [skillOverrides, setSkillOverrides] = useState<Record<string, SkillConfigOverride>>({});
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
-  const [agentConfig, setAgentConfig] = useState<AgentConfig>({
+  // Check if first time user
+  useEffect(() => {
+    const hasSeenBuilder = localStorage.getItem("hasSeenBuilder");
+    if (!hasSeenBuilder && !agentIdParam) {
+      setShowWizard(true);
+      localStorage.setItem("hasSeenBuilder", "true");
+    }
+  }, [agentIdParam]);
+
+  const [agentConfig, setAgentConfig] = useState<SimpleAgentConfig>({
     name: "",
     department: "",
     model: "claude-3.5",
@@ -72,36 +106,6 @@ const Builder = () => {
   const saveAgent = useSaveAgentWithSkills();
   const deployAgent = useDeployAgent();
 
-  // Handle template selection
-  const handleSelectTemplate = useCallback((template: AgentTemplate) => {
-    setAgentConfig(prev => ({
-      ...prev,
-      name: template.name,
-      department: template.department,
-      systemPrompt: template.systemPrompt,
-    }));
-    
-    // Update agent node
-    setNodes(nds => nds.map(node => {
-      if (node.id === "agent-central") {
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            name: template.name,
-            department: template.department,
-          },
-        };
-      }
-      return node;
-    }));
-
-    toast({
-      title: "模板已应用",
-      description: `已应用「${template.name}」模板，可根据需要调整配置`,
-    });
-  }, [setNodes]);
-
   // Load existing agent data
   useEffect(() => {
     if (existingAgent) {
@@ -111,24 +115,28 @@ const Builder = () => {
         department: existingAgent.department || "",
         model: existingAgent.model as "claude-3.5" | "gpt-4",
         systemPrompt: manifest?.system_prompt || "",
-        environments: manifest?.environments || undefined,
       });
       setCurrentAgentId(existingAgent.id);
 
       // Load skills as nodes
       if (existingAgent.skills && existingAgent.skills.length > 0) {
-        const skillNodes: Node<SkillNodeData>[] = existingAgent.skills.map((skill, index) => ({
-          id: `skill-${skill.id}-${Date.now()}-${index}`,
-          type: "skill",
-          position: { x: 100 + (index % 2) * 200, y: 100 + Math.floor(index / 2) * 150 },
-          data: {
-            id: skill.id,
-            name: skill.name,
-            category: skill.category,
-            description: skill.description || "",
-            permissions: skill.permissions || [],
-          },
-        }));
+        const skillNodes: Node<SkillNodeData>[] = existingAgent.skills.map(
+          (skill, index) => ({
+            id: `skill-${skill.id}-${Date.now()}-${index}`,
+            type: "skill",
+            position: {
+              x: 100 + (index % 3) * 180,
+              y: 80 + Math.floor(index / 3) * 140,
+            },
+            data: {
+              id: skill.id,
+              name: skill.name,
+              category: skill.category,
+              description: skill.description || "",
+              permissions: skill.permissions || [],
+            },
+          })
+        );
 
         const skillEdges: Edge[] = skillNodes.map((node) => ({
           id: `edge-${node.id}`,
@@ -138,7 +146,15 @@ const Builder = () => {
           style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
         }));
 
-        setNodes([createAgentNode(existingAgent.name, existingAgent.department || "", existingAgent.model, existingAgent.skills.length), ...skillNodes]);
+        setNodes([
+          createAgentNode(
+            existingAgent.name,
+            existingAgent.department || "",
+            existingAgent.model,
+            existingAgent.skills.length
+          ),
+          ...skillNodes,
+        ]);
         setEdges(skillEdges);
       }
     }
@@ -165,11 +181,6 @@ const Builder = () => {
 
   const addedSkillIds = addedSkills.map((s) => s.id);
 
-  // Get selected skill if a skill node is selected
-  const selectedSkill = selectedNodeId
-    ? addedSkills.find((s) => nodes.find((n) => n.id === selectedNodeId && (n.data as SkillNodeData).id === s.id))
-    : null;
-
   // Update agent node when config or skills change
   const updateAgentNode = useCallback(() => {
     setNodes((nds) =>
@@ -191,24 +202,9 @@ const Builder = () => {
     );
   }, [agentConfig, addedSkillIds.length, setNodes]);
 
-  // Update agent node on config/skills change
   useEffect(() => {
     updateAgentNode();
   }, [updateAgentNode]);
-
-  // Handle node selection
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    if (node.type === "skill") {
-      setSelectedNodeId(node.id);
-    } else {
-      setSelectedNodeId(null);
-    }
-  }, []);
-
-  // Handle pane click (deselect)
-  const onPaneClick = useCallback(() => {
-    setSelectedNodeId(null);
-  }, []);
 
   // Handle connections
   const onConnect = useCallback(
@@ -233,14 +229,12 @@ const Builder = () => {
       setNodes((nds) => nds.filter((n) => n.data?.id !== skillId));
       setEdges((eds) =>
         eds.filter(
-          (e) =>
-            !e.source.includes(skillId) && !e.target.includes(skillId)
+          (e) => !e.source.includes(skillId) && !e.target.includes(skillId)
         )
       );
-      setSelectedNodeId(null);
       toast({
         title: "技能已移除",
-        description: "已从 Agent 配置中移除该技能",
+        description: "已从智能体配置中移除该技能",
       });
     },
     [setNodes, setEdges]
@@ -264,11 +258,10 @@ const Builder = () => {
 
       const skill: Skill = JSON.parse(skillData);
 
-      // Check if already added
       if (addedSkillIds.includes(skill.id)) {
         toast({
           title: "技能已存在",
-          description: "该技能已添加到 Agent 配置中",
+          description: "该技能已添加到智能体配置中",
           variant: "destructive",
         });
         return;
@@ -296,7 +289,6 @@ const Builder = () => {
 
       setNodes((nds) => [...nds, newNode]);
 
-      // Auto-connect to agent
       const newEdge: Edge = {
         id: `edge-${skill.id}-${Date.now()}`,
         source: newNode.id,
@@ -308,7 +300,7 @@ const Builder = () => {
 
       toast({
         title: "技能已添加",
-        description: `${skill.name} 已成功装载到 Agent`,
+        description: `${skill.name} 已成功装载`,
       });
 
       setDraggingSkill(null);
@@ -316,12 +308,12 @@ const Builder = () => {
     [reactFlowInstance, addedSkillIds, setNodes, setEdges, handleRemoveSkill]
   );
 
-  // Generate manifest - 符合开发逻辑文档 6.4 AgentManifest 结构
+  // Generate manifest
   const generateManifest = () => {
     return {
       version: "1.0.0",
       metadata: {
-        name: agentConfig.name || "未命名 Agent",
+        name: agentConfig.name || "未命名智能体",
         department: agentConfig.department || "未指定",
         description: `${agentConfig.name} - ${agentConfig.department || "通用"} 智能体`,
         created_at: existingAgent?.created_at || new Date().toISOString(),
@@ -329,34 +321,24 @@ const Builder = () => {
       },
       runtime: {
         provider: agentConfig.model === "claude-3.5" ? "anthropic" : "openai",
-        model: agentConfig.model === "claude-3.5" ? "claude-3-5-sonnet-20241022" : "gpt-4-turbo",
+        model:
+          agentConfig.model === "claude-3.5"
+            ? "claude-3-5-sonnet-20241022"
+            : "gpt-4-turbo",
         model_config: {
           temperature: 0.7,
           max_tokens: 4096,
         },
       },
       system_prompt: agentConfig.systemPrompt || "",
-      // 环境变量配置 - 持久化存储 (转换为 JSON 兼容格式)
-      environments: agentConfig.environments ? {
-        development: agentConfig.environments.development.map(v => ({ key: v.key, value: v.value, isSecret: v.isSecret })),
-        staging: agentConfig.environments.staging.map(v => ({ key: v.key, value: v.value, isSecret: v.isSecret })),
-        production: agentConfig.environments.production.map(v => ({ key: v.key, value: v.value, isSecret: v.isSecret })),
-      } : {
-        development: [],
-        staging: [],
-        production: [],
-      },
       skills: {
-        mounts: addedSkills.map((s) => {
-          const override = skillOverrides[s.id];
-          return {
-            skill_id: s.id,
-            version: s.version,
-            enabled: override?.enabled ?? true,
-            priority: override?.priority ?? 1,
-            config_overrides: override?.parameters ?? {},
-          };
-        }),
+        mounts: addedSkills.map((s) => ({
+          skill_id: s.id,
+          version: s.version,
+          enabled: true,
+          priority: 1,
+          config_overrides: {},
+        })),
         details: addedSkills.map((s) => ({
           id: s.id,
           name: s.name,
@@ -380,17 +362,17 @@ const Builder = () => {
   // Handle save
   const handleSave = async () => {
     if (!user) {
-      toast({ 
-        title: "请先登录", 
-        description: "保存 Agent 需要登录账号", 
-        variant: "destructive" 
+      toast({
+        title: "请先登录",
+        description: "保存智能体需要登录账号",
+        variant: "destructive",
       });
       navigate("/auth");
       return;
     }
 
     if (!agentConfig.name.trim()) {
-      toast({ title: "请输入 Agent 名称", variant: "destructive" });
+      toast({ title: "请输入智能体名称", variant: "destructive" });
       return;
     }
 
@@ -409,7 +391,6 @@ const Builder = () => {
 
     if (agentId) {
       setCurrentAgentId(agentId);
-      // Update URL without full navigation
       if (!agentIdParam) {
         navigate(`/builder/${agentId}`, { replace: true });
       }
@@ -419,18 +400,17 @@ const Builder = () => {
   // Handle deploy
   const handleDeploy = async () => {
     if (!user) {
-      toast({ 
-        title: "请先登录", 
-        description: "部署 Agent 需要登录账号", 
-        variant: "destructive" 
+      toast({
+        title: "请先登录",
+        description: "部署智能体需要登录账号",
+        variant: "destructive",
       });
       navigate("/auth");
       return;
     }
 
-    // First save
     const manifest = generateManifest();
-    
+
     const agentId = await saveAgent.mutateAsync({
       agent: {
         id: currentAgentId || undefined,
@@ -448,11 +428,10 @@ const Builder = () => {
         navigate(`/builder/${agentId}`, { replace: true });
       }
       await deployAgent.mutateAsync(agentId);
-      
-      // Navigate to Runtime after successful deploy
-      toast({ 
-        title: "部署成功", 
-        description: "正在跳转到运行环境..." 
+
+      toast({
+        title: "部署成功",
+        description: "正在跳转到运行环境...",
       });
       setTimeout(() => {
         navigate("/runtime");
@@ -460,158 +439,354 @@ const Builder = () => {
     }
   };
 
-  // Can deploy check
+  // Handle wizard complete
+  const handleWizardComplete = (config: {
+    name: string;
+    department: string;
+    systemPrompt: string;
+    selectedSkillIds: string[];
+  }) => {
+    setAgentConfig({
+      name: config.name,
+      department: config.department,
+      model: "claude-3.5",
+      systemPrompt: config.systemPrompt,
+    });
+
+    // Add selected skills as nodes
+    const selectedSkills = publishedSkills.filter((s) =>
+      config.selectedSkillIds.includes(s.id)
+    );
+
+    if (selectedSkills.length > 0) {
+      const skillNodes: Node<SkillNodeData>[] = selectedSkills.map(
+        (skill, index) => ({
+          id: `skill-${skill.id}-${Date.now()}-${index}`,
+          type: "skill",
+          position: {
+            x: 100 + (index % 3) * 180,
+            y: 80 + Math.floor(index / 3) * 140,
+          },
+          data: {
+            id: skill.id,
+            name: skill.name,
+            category: skill.category,
+            description: skill.description || "",
+            permissions: skill.permissions || [],
+          },
+        })
+      );
+
+      const skillEdges: Edge[] = skillNodes.map((node) => ({
+        id: `edge-${node.id}`,
+        source: node.id,
+        target: "agent-central",
+        animated: true,
+        style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+      }));
+
+      setNodes([
+        createAgentNode(config.name, config.department, "Claude 3.5", selectedSkills.length),
+        ...skillNodes,
+      ]);
+      setEdges(skillEdges);
+    } else {
+      setNodes([createAgentNode(config.name, config.department, "Claude 3.5", 0)]);
+    }
+
+    setShowWizard(false);
+    toast({
+      title: "配置完成",
+      description: "你可以继续在画布中调整智能体配置",
+    });
+  };
+
   const canDeploy = agentConfig.name.trim() !== "" && addedSkills.length > 0;
   const isSaving = saveAgent.isPending || deployAgent.isPending;
 
-  return (
-    <div className="h-full flex">
-      {/* Left - Skill Marketplace */}
-      <SkillMarketplace
-        onDragStart={setDraggingSkill}
-        addedSkillIds={addedSkillIds}
-      />
+  // Fit view helper
+  const handleFitView = () => {
+    if (reactFlowInstance) {
+      reactFlowInstance.fitView({ padding: 0.3, duration: 300 });
+    }
+  };
 
-      {/* Center - React Flow Canvas */}
-      <div className="flex-1 flex flex-col">
-        <div className="panel-header border-b border-border">
-          <div className="flex items-center gap-3">
+  // Convert published skills to wizard format
+  const availableSkillsForWizard: Skill[] = publishedSkills.map((s) => ({
+    id: s.id,
+    name: s.name,
+    category: s.category,
+    description: s.description || "",
+    permissions: s.permissions || [],
+    version: s.version,
+    inputs: (s.inputs as Skill["inputs"]) || [],
+    outputs: (s.outputs as Skill["outputs"]) || [],
+  }));
+
+  return (
+    <TooltipProvider>
+      <div className="h-full flex overflow-hidden bg-background">
+        {/* Left Panel - Skill Marketplace */}
+        <div
+          className={cn(
+            "transition-all duration-300 ease-in-out flex-shrink-0",
+            leftPanelCollapsed ? "w-0" : "w-72"
+          )}
+        >
+          {!leftPanelCollapsed && (
+            <SkillMarketplace
+              onDragStart={setDraggingSkill}
+              addedSkillIds={addedSkillIds}
+            />
+          )}
+        </div>
+
+        {/* Center - Canvas */}
+        <div className="flex-1 flex flex-col min-w-0 relative">
+          {/* Toolbar */}
+          <div className="h-12 px-3 flex items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-cognitive" />
-              <span className="font-semibold">Agent 构建画布</span>
+              {/* Left panel toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+                  >
+                    {leftPanelCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronLeft className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {leftPanelCollapsed ? "显示技能市场" : "隐藏技能市场"}
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="h-5 w-px bg-border" />
+
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-primary" />
+                <span className="font-medium text-sm">
+                  {agentConfig.name || "智能体构建器"}
+                </span>
+              </div>
+
+              {currentAgentId && (
+                <Badge variant="secondary" className="text-[10px]">
+                  已保存
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {draggingSkill && (
+                <Badge className="text-xs bg-primary/10 text-primary border-0 animate-pulse">
+                  拖拽中: {draggingSkill.name}
+                </Badge>
+              )}
+
+              <Badge variant="outline" className="text-xs">
+                {addedSkills.length} 个技能
+              </Badge>
+
+              <div className="h-5 w-px bg-border" />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowWizard(true)}
+                  >
+                    <Wand2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>向导模式</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleFitView}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>适应画布</TooltipContent>
+              </Tooltip>
+
+              {!user && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/auth")}
+                  className="gap-1.5 h-8 text-muted-foreground"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  登录
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSave}
+                disabled={isSaving || !agentConfig.name.trim()}
+                className="gap-1.5 h-8"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
+                保存
+              </Button>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+                  >
+                    {rightPanelCollapsed ? (
+                      <ChevronLeft className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {rightPanelCollapsed ? "显示配置面板" : "隐藏配置面板"}
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              已装载 {addedSkills.length} 个技能
-            </Badge>
-            {currentAgentId && (
-              <Badge variant="secondary" className="text-xs">
-                已保存
-              </Badge>
-            )}
-            {draggingSkill && (
-              <Badge className="text-xs bg-cognitive/10 text-cognitive border-0">
-                拖拽中: {draggingSkill.name}
-              </Badge>
-            )}
-            <AgentTemplates
-              onSelectTemplate={handleSelectTemplate}
-              trigger={
-                <Button variant="outline" size="sm" className="gap-1.5 h-8">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  使用模板
-                </Button>
-              }
-            />
-            <SemanticGraphPanel
-              agentId={currentAgentId || undefined}
-              agentName={agentConfig.name || undefined}
-            />
-            {!user && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/auth")}
-                className="gap-1.5 h-8 text-muted-foreground"
-              >
-                <LogIn className="h-3.5 w-3.5" />
-                登录
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving || !agentConfig.name.trim()}
-              className="gap-1.5 h-8"
+
+          {/* Canvas Area */}
+          <div
+            ref={reactFlowWrapper}
+            className="flex-1"
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+          >
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onInit={setReactFlowInstance}
+              nodeTypes={nodeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.4 }}
+              defaultEdgeOptions={{
+                animated: true,
+                style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+              }}
+              proOptions={{ hideAttribution: true }}
+              className="bg-background"
+              minZoom={0.3}
+              maxZoom={2}
             >
-              {isSaving ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Save className="h-3.5 w-3.5" />
+              <Background
+                variant={BackgroundVariant.Dots}
+                gap={24}
+                size={1.5}
+                color="hsl(var(--border))"
+              />
+              <Controls
+                className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-secondary"
+                showFitView={false}
+              />
+              <MiniMap
+                nodeColor={(node) =>
+                  node.type === "agent"
+                    ? "hsl(var(--primary))"
+                    : "hsl(var(--cognitive))"
+                }
+                maskColor="hsl(var(--background) / 0.8)"
+                className="!bg-card !border-border !rounded-lg"
+              />
+
+              {/* Empty state overlay */}
+              {addedSkills.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                  <div className="text-center max-w-md mx-auto px-8">
+                    <div className="relative mb-6">
+                      <div className="w-24 h-24 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/30">
+                        <Sparkles className="h-10 w-10 text-primary/50" />
+                      </div>
+                      <div className="absolute -top-2 -right-8 animate-bounce">
+                        <div className="bg-card px-3 py-1.5 rounded-full border shadow-lg text-xs flex items-center gap-1.5">
+                          <ChevronLeft className="h-3 w-3" />
+                          拖拽技能到这里
+                        </div>
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      开始构建你的智能体
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      从左侧技能市场拖拽技能到画布，或使用向导模式快速开始
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 pointer-events-auto"
+                      onClick={() => setShowWizard(true)}
+                    >
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      使用向导
+                    </Button>
+                  </div>
+                </div>
               )}
-              保存
-            </Button>
+            </ReactFlow>
           </div>
         </div>
 
-        <div
-          ref={reactFlowWrapper}
-          className="flex-1"
-          onDragOver={onDragOver}
-          onDrop={onDrop}
-        >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onInit={setReactFlowInstance}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            nodeTypes={nodeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.5 }}
-            defaultEdgeOptions={{
-              animated: true,
-              style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
-            }}
-            proOptions={{ hideAttribution: true }}
-            className="bg-background"
-          >
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={20}
-              size={1}
-              color="hsl(var(--border))"
-            />
-            <Controls
-              className="!bg-card !border-border !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-secondary"
-            />
-            
-            {/* Empty state overlay when no skills added */}
-            {addedSkills.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <div className="text-center">
-                  <div className="text-muted-foreground mb-4">
-                    <svg width="200" height="140" viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto opacity-50">
-                      <rect x="30" y="20" width="140" height="100" rx="8" stroke="currentColor" strokeWidth="2" strokeDasharray="8 4" fill="none" />
-                      <circle cx="100" cy="70" r="25" fill="hsl(var(--cognitive) / 0.1)" stroke="hsl(var(--cognitive) / 0.3)" strokeWidth="2" strokeDasharray="4 4" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-muted-foreground font-mono">从左侧拖拽技能到画布</p>
-                </div>
-              </div>
-            )}
-          </ReactFlow>
-        </div>
+        {/* Right Panel - Config */}
+        <SimplifiedConfigPanel
+          config={agentConfig}
+          onConfigChange={setAgentConfig}
+          skills={addedSkills}
+          onRemoveSkill={handleRemoveSkill}
+          onDeploy={handleDeploy}
+          onShowManifest={() => setShowManifest(true)}
+          onSave={handleSave}
+          canDeploy={canDeploy}
+          isSaving={isSaving}
+          isCollapsed={rightPanelCollapsed}
+          onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+        />
+
+        {/* Wizard Modal */}
+        <BuilderWizard
+          isOpen={showWizard}
+          onClose={() => setShowWizard(false)}
+          onComplete={handleWizardComplete}
+          availableSkills={availableSkillsForWizard}
+        />
+
+        {/* Manifest Preview Modal */}
+        <ManifestPreview
+          isOpen={showManifest}
+          onClose={() => setShowManifest(false)}
+          manifest={showManifest ? generateManifest() : null}
+        />
       </div>
-
-      {/* Right - Config Panel */}
-      <AgentConfigPanel
-        config={agentConfig}
-        onConfigChange={setAgentConfig}
-        skills={addedSkills}
-        onRemoveSkill={handleRemoveSkill}
-        onDeploy={handleDeploy}
-        onShowManifest={() => setShowManifest(true)}
-        canDeploy={canDeploy}
-        selectedSkill={selectedSkill || null}
-        skillOverrides={skillOverrides}
-        onSkillOverrideChange={(skillId, override) => {
-          setSkillOverrides((prev) => ({ ...prev, [skillId]: override }));
-        }}
-      />
-
-      {/* Manifest Preview Modal */}
-      <ManifestPreview
-        isOpen={showManifest}
-        onClose={() => setShowManifest(false)}
-        manifest={showManifest ? generateManifest() : null}
-      />
-    </div>
+    </TooltipProvider>
   );
 };
 
