@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.rss-query]
 verify_jwt = false
+
+[functions.agent-handshake]
+verify_jwt = false
+
+[functions.drift-detection]
+verify_jwt = false

@@ -25,6 +25,7 @@ import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/
 import { ModelSelector, availableModels } from "@/components/runtime/ModelSelector";
 import { SystemPromptEditor } from "@/components/runtime/SystemPromptEditor";
 import { ModelRoutingConfig } from "@/components/runtime/ModelRoutingConfig";
+import { AgentCollaborationPanel } from "@/components/runtime/AgentCollaborationPanel";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -1003,6 +1004,10 @@ const Runtime = () => {
               <ModelRoutingConfig 
                 agentId={selectedAgent?.id}
                 agentName={selectedAgent?.name}
+              />
+              <AgentCollaborationPanel
+                currentAgentId={selectedAgent?.id}
+                currentAgentName={selectedAgent?.name}
               />
             </div>
           </div>
