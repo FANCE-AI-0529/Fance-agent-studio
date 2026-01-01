@@ -130,6 +130,65 @@ export type Database = {
           },
         ]
       }
+      model_routing_rules: {
+        Row: {
+          agent_id: string | null
+          conditions: Json
+          created_at: string
+          description: string | null
+          fallback_model: string | null
+          id: string
+          is_active: boolean
+          max_tokens: number | null
+          name: string
+          priority: number
+          target_model: string
+          temperature: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          fallback_model?: string | null
+          id?: string
+          is_active?: boolean
+          max_tokens?: number | null
+          name: string
+          priority?: number
+          target_model: string
+          temperature?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          fallback_model?: string | null
+          id?: string
+          is_active?: boolean
+          max_tokens?: number | null
+          name?: string
+          priority?: number
+          target_model?: string
+          temperature?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_routing_rules_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -154,6 +213,54 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      scheduler_metrics: {
+        Row: {
+          avg_latency_ms: number | null
+          completed_tasks: number
+          created_at: string
+          failed_tasks: number
+          id: string
+          model_used: string | null
+          p95_latency_ms: number | null
+          p99_latency_ms: number | null
+          priority: string
+          time_bucket: string
+          timeout_tasks: number
+          tokens_used: number | null
+          total_tasks: number
+        }
+        Insert: {
+          avg_latency_ms?: number | null
+          completed_tasks?: number
+          created_at?: string
+          failed_tasks?: number
+          id?: string
+          model_used?: string | null
+          p95_latency_ms?: number | null
+          p99_latency_ms?: number | null
+          priority: string
+          time_bucket: string
+          timeout_tasks?: number
+          tokens_used?: number | null
+          total_tasks?: number
+        }
+        Update: {
+          avg_latency_ms?: number | null
+          completed_tasks?: number
+          created_at?: string
+          failed_tasks?: number
+          id?: string
+          model_used?: string | null
+          p95_latency_ms?: number | null
+          p99_latency_ms?: number | null
+          priority?: string
+          time_bucket?: string
+          timeout_tasks?: number
+          tokens_used?: number | null
+          total_tasks?: number
         }
         Relationships: []
       }
@@ -239,6 +346,68 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      task_queue: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deadline: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          max_latency_ms: number | null
+          payload: Json
+          priority: string
+          result: Json | null
+          session_id: string | null
+          started_at: string | null
+          status: string
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          max_latency_ms?: number | null
+          payload?: Json
+          priority?: string
+          result?: Json | null
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          max_latency_ms?: number | null
+          payload?: Json
+          priority?: string
+          result?: Json | null
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_queue_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trace_logs: {
         Row: {
