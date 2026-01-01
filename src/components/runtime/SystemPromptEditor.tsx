@@ -35,14 +35,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, UserPrompt } from "@/hooks/useUserPrompts";
+import { useVariablePresets, useSaveVariablePreset, useDeleteVariablePreset, VariablePreset } from "@/hooks/useVariablePresets";
 import { useAuth } from "@/contexts/AuthContext";
-
-// Variable preset type
-interface VariablePreset {
-  id: string;
-  name: string;
-  values: Record<string, string>;
-}
 
 // Extract variables from prompt using {{variable}} syntax
 const extractVariables = (prompt: string): string[] => {
@@ -162,28 +156,38 @@ export function SystemPromptEditor({
   const [hasChanges, setHasChanges] = useState(false);
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
-  const [variablePresets, setVariablePresets] = useState<VariablePreset[]>([]);
+  const [localPresets, setLocalPresets] = useState<VariablePreset[]>([]);
   const [newPresetName, setNewPresetName] = useState("");
   const [showPresetInput, setShowPresetInput] = useState(false);
 
-  // Load presets from localStorage
+  // Cloud presets for logged-in users
+  const { data: cloudPresets = [], isLoading: isLoadingPresets } = useVariablePresets(agentId);
+  const savePresetMutation = useSaveVariablePreset();
+  const deletePresetMutation = useDeleteVariablePreset();
+
+  // Use cloud presets for logged-in users, localStorage for guests
+  const variablePresets = user ? cloudPresets : localPresets;
+
+  // Load local presets from localStorage (for non-logged-in users)
   useEffect(() => {
-    const storageKey = `variable-presets-${agentId || 'default'}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        setVariablePresets(JSON.parse(stored));
-      } catch {
-        // ignore parse errors
+    if (!user) {
+      const storageKey = `variable-presets-${agentId || 'default'}`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          setLocalPresets(JSON.parse(stored));
+        } catch {
+          // ignore parse errors
+        }
       }
     }
-  }, [agentId]);
+  }, [agentId, user]);
 
-  // Save presets to localStorage
-  const savePresetsToStorage = useCallback((presets: VariablePreset[]) => {
+  // Save local presets to localStorage (for non-logged-in users)
+  const saveLocalPreset = useCallback((presets: VariablePreset[]) => {
     const storageKey = `variable-presets-${agentId || 'default'}`;
     localStorage.setItem(storageKey, JSON.stringify(presets));
-    setVariablePresets(presets);
+    setLocalPresets(presets);
   }, [agentId]);
 
   // Extract variables from prompt
@@ -212,7 +216,7 @@ export function SystemPromptEditor({
   }, []);
 
   // Save current variables as a preset
-  const handleSavePreset = useCallback(() => {
+  const handleSavePreset = useCallback(async () => {
     if (!newPresetName.trim()) {
       toast.error("请输入预设名称");
       return;
@@ -222,16 +226,34 @@ export function SystemPromptEditor({
       toast.error("请至少填写一个变量值");
       return;
     }
-    const newPreset: VariablePreset = {
-      id: `preset-${Date.now()}`,
-      name: newPresetName.trim(),
-      values: { ...variableValues },
-    };
-    savePresetsToStorage([...variablePresets, newPreset]);
+
+    if (user) {
+      // Save to cloud
+      try {
+        await savePresetMutation.mutateAsync({
+          name: newPresetName.trim(),
+          values: variableValues,
+          agentId,
+        });
+        toast.success(`预设「${newPresetName}」已保存到云端`);
+      } catch (error) {
+        toast.error(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        return;
+      }
+    } else {
+      // Save to localStorage
+      const newPreset: VariablePreset = {
+        id: `preset-${Date.now()}`,
+        name: newPresetName.trim(),
+        values: { ...variableValues },
+      };
+      saveLocalPreset([...localPresets, newPreset]);
+      toast.success(`预设「${newPreset.name}」已保存（本地）`);
+    }
+
     setNewPresetName("");
     setShowPresetInput(false);
-    toast.success(`预设「${newPreset.name}」已保存`);
-  }, [newPresetName, variableValues, variablePresets, savePresetsToStorage]);
+  }, [newPresetName, variableValues, user, agentId, savePresetMutation, localPresets, saveLocalPreset]);
 
   // Load a preset
   const handleLoadPreset = useCallback((preset: VariablePreset) => {
@@ -248,12 +270,24 @@ export function SystemPromptEditor({
   }, []);
 
   // Delete a preset
-  const handleDeletePreset = useCallback((presetId: string, e: React.MouseEvent) => {
+  const handleDeletePreset = useCallback(async (presetId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = variablePresets.filter(p => p.id !== presetId);
-    savePresetsToStorage(updated);
-    toast.success("预设已删除");
-  }, [variablePresets, savePresetsToStorage]);
+    
+    if (user) {
+      // Delete from cloud
+      try {
+        await deletePresetMutation.mutateAsync(presetId);
+        toast.success("预设已从云端删除");
+      } catch (error) {
+        toast.error(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
+    } else {
+      // Delete from localStorage
+      const updated = localPresets.filter(p => p.id !== presetId);
+      saveLocalPreset(updated);
+      toast.success("预设已删除");
+    }
+  }, [user, deletePresetMutation, localPresets, saveLocalPreset]);
 
   // Get the final prompt with variables replaced
   const getFinalPrompt = useCallback(() => {
@@ -635,8 +669,8 @@ export function SystemPromptEditor({
               {variablePresets.length > 0 && (
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground mb-1.5 block">
-                    <Bookmark className="h-3 w-3 inline mr-1" />
-                    已保存预设
+                    {user ? <Cloud className="h-3 w-3 inline mr-1" /> : <Bookmark className="h-3 w-3 inline mr-1" />}
+                    已保存预设 {user && <span className="text-primary">(云端同步)</span>}
                   </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {variablePresets.map((preset) => (
