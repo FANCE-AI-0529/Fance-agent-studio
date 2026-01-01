@@ -64,11 +64,13 @@ import {
   Upload,
   Bot,
   Link2,
+  Repeat,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import TaskStepNode, { type TaskStepNodeData } from "./TaskStepNode";
 import ConditionalNode, { type ConditionalNodeData, type ConditionRule } from "./ConditionalNode";
+import LoopNode, { type LoopNodeData } from "./LoopNode";
 import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from "@/hooks/useTaskChains";
 import { useDeployedAgents } from "@/hooks/useAgents";
 import { taskTypeLabels } from "@/hooks/useTaskDelegation";
@@ -140,6 +142,7 @@ function AnimatedEdge({
 const nodeTypes = {
   taskStep: TaskStepNode,
   conditional: ConditionalNode,
+  loop: LoopNode,
 };
 
 const edgeTypes = {
@@ -196,8 +199,9 @@ function TaskChainVisualEditorInner({
   // UI state
   const [showStepEditor, setShowStepEditor] = useState(false);
   const [showConditionEditor, setShowConditionEditor] = useState(false);
+  const [showLoopEditor, setShowLoopEditor] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-  const [editingNodeType, setEditingNodeType] = useState<"step" | "conditional">("step");
+  const [editingNodeType, setEditingNodeType] = useState<"step" | "conditional" | "loop">("step");
   const [stepForm, setStepForm] = useState<StepFormData>(defaultStepForm);
   const [conditionForm, setConditionForm] = useState<{
     name: string;
@@ -209,6 +213,21 @@ function TaskChainVisualEditorInner({
     description: "",
     conditions: [],
     defaultHandle: "default",
+  });
+  const [loopForm, setLoopForm] = useState<{
+    name: string;
+    description: string;
+    sourceKey: string;
+    itemKey: string;
+    indexKey: string;
+    maxIterations: number;
+  }>({
+    name: "",
+    description: "",
+    sourceKey: "",
+    itemKey: "item",
+    indexKey: "index",
+    maxIterations: 100,
   });
   const [inputMappingKey, setInputMappingKey] = useState("");
   const [inputMappingValue, setInputMappingValue] = useState("");
@@ -281,6 +300,19 @@ function TaskChainVisualEditorInner({
         setEditingNodeId(nodeId);
         setEditingNodeType("conditional");
         setShowConditionEditor(true);
+      } else if (node.type === "loop") {
+        const data = node.data as unknown as LoopNodeData;
+        setLoopForm({
+          name: data.name,
+          description: data.description || "",
+          sourceKey: data.sourceKey || "",
+          itemKey: data.itemKey || "item",
+          indexKey: data.indexKey || "index",
+          maxIterations: data.maxIterations || 100,
+        });
+        setEditingNodeId(nodeId);
+        setEditingNodeType("loop");
+        setShowLoopEditor(true);
       } else {
         const data = node.data as unknown as TaskStepNodeData;
         setStepForm({
@@ -413,6 +445,48 @@ function TaskChainVisualEditorInner({
     }
   }, [nodes, executionMode, handleEditNode, handleDeleteNode]);
 
+  // Add loop node
+  const addLoopNode = useCallback(() => {
+    const nodeCount = nodes.length;
+    const newNodeId = `loop-${Date.now()}`;
+    
+    const newNode: Node = {
+      id: newNodeId,
+      type: "loop",
+      position: { x: 150, y: nodeCount * 180 + 50 },
+      data: {
+        id: newNodeId,
+        name: `循环 ${nodes.filter(n => n.type === "loop").length + 1}`,
+        description: "",
+        sourceKey: "",
+        itemKey: "item",
+        indexKey: "index",
+        maxIterations: 100,
+        status: "pending" as const,
+        onEdit: handleEditNode,
+        onDelete: handleDeleteNode,
+      } satisfies LoopNodeData,
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+
+    // Auto-connect to previous node if sequential
+    if (executionMode === "sequential" && nodeCount > 0) {
+      const lastNode = nodes[nodeCount - 1];
+      setEdges((eds) => [
+        ...eds,
+        {
+          id: `edge-${lastNode.id}-${newNodeId}`,
+          source: lastNode.id,
+          target: newNodeId,
+          type: "animated",
+          markerEnd: { type: MarkerType.ArrowClosed },
+          data: { animated: false, completed: false },
+        },
+      ]);
+    }
+  }, [nodes, executionMode, handleEditNode, handleDeleteNode]);
+
   const saveStepChanges = useCallback(() => {
     if (!editingNodeId) return;
 
@@ -474,6 +548,42 @@ function TaskChainVisualEditorInner({
       defaultHandle: "default",
     });
   }, [editingNodeId, conditionForm]);
+
+  // Save loop changes
+  const saveLoopChanges = useCallback(() => {
+    if (!editingNodeId) return;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === editingNodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              name: loopForm.name,
+              description: loopForm.description,
+              sourceKey: loopForm.sourceKey,
+              itemKey: loopForm.itemKey,
+              indexKey: loopForm.indexKey,
+              maxIterations: loopForm.maxIterations,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setShowLoopEditor(false);
+    setEditingNodeId(null);
+    setLoopForm({
+      name: "",
+      description: "",
+      sourceKey: "",
+      itemKey: "item",
+      indexKey: "index",
+      maxIterations: 100,
+    });
+  }, [editingNodeId, loopForm]);
 
   // Add a new condition rule
   const addConditionRule = useCallback(() => {
@@ -655,6 +765,10 @@ function TaskChainVisualEditorInner({
           <Button variant="outline" size="sm" onClick={addConditionalNode}>
             <GitBranch className="h-4 w-4 mr-1" />
             条件分支
+          </Button>
+          <Button variant="outline" size="sm" onClick={addLoopNode}>
+            <Repeat className="h-4 w-4 mr-1" />
+            循环
           </Button>
           <Button variant="outline" size="sm" onClick={exportChain}>
             <Download className="h-4 w-4 mr-1" />
@@ -1035,6 +1149,108 @@ function TaskChainVisualEditorInner({
               </div>
 
               <Button className="w-full" onClick={saveConditionChanges}>
+                保存修改
+              </Button>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Loop Editor Sheet */}
+      <Sheet open={showLoopEditor} onOpenChange={setShowLoopEditor}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Repeat className="h-5 w-5 text-purple-500" />
+              编辑循环节点
+            </SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>循环名称</Label>
+                <Input
+                  value={loopForm.name}
+                  onChange={(e) => setLoopForm({ ...loopForm, name: e.target.value })}
+                  placeholder="例: 处理用户列表"
+                />
+              </div>
+
+              <div>
+                <Label>循环描述</Label>
+                <Textarea
+                  value={loopForm.description}
+                  onChange={(e) => setLoopForm({ ...loopForm, description: e.target.value })}
+                  placeholder="描述这个循环的用途..."
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <Label>列表数据来源</Label>
+                <Input
+                  value={loopForm.sourceKey}
+                  onChange={(e) => setLoopForm({ ...loopForm, sourceKey: e.target.value })}
+                  placeholder="例: users_list 或 previous_step.items"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  引用上一步输出的列表数据键名
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>迭代项变量名</Label>
+                  <Input
+                    value={loopForm.itemKey}
+                    onChange={(e) => setLoopForm({ ...loopForm, itemKey: e.target.value })}
+                    placeholder="item"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    每次迭代的当前项
+                  </p>
+                </div>
+                <div>
+                  <Label>索引变量名</Label>
+                  <Input
+                    value={loopForm.indexKey}
+                    onChange={(e) => setLoopForm({ ...loopForm, indexKey: e.target.value })}
+                    placeholder="index"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    当前迭代索引 (0开始)
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <Label>最大迭代次数</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  value={loopForm.maxIterations}
+                  onChange={(e) => setLoopForm({ ...loopForm, maxIterations: parseInt(e.target.value) || 100 })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  防止无限循环的安全限制
+                </p>
+              </div>
+
+              <div className="p-3 border border-border rounded-lg bg-muted/20">
+                <Label className="text-xs text-muted-foreground">使用说明</Label>
+                <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                  <li>循环节点会对列表中的每个元素执行后续步骤</li>
+                  <li>在循环体内的步骤可通过变量名访问当前项和索引</li>
+                  <li>连接"循环体"输出到需要重复执行的步骤</li>
+                  <li>连接"循环完成"输出到循环结束后的下一步</li>
+                </ul>
+              </div>
+
+              <Button className="w-full" onClick={saveLoopChanges}>
                 保存修改
               </Button>
             </div>
