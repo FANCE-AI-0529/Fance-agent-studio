@@ -807,7 +807,7 @@ export type Database = {
       }
       sessions: {
         Row: {
-          agent_id: string
+          agent_id: string | null
           created_at: string
           id: string
           status: string
@@ -815,7 +815,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          agent_id: string
+          agent_id?: string | null
           created_at?: string
           id?: string
           status?: string
@@ -823,22 +823,14 @@ export type Database = {
           user_id: string
         }
         Update: {
-          agent_id?: string
+          agent_id?: string | null
           created_at?: string
           id?: string
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "sessions_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       skill_versions: {
         Row: {

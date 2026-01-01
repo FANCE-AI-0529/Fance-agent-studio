@@ -19,8 +19,8 @@ interface ChatSession {
   createdAt: Date;
 }
 
-// Default agent ID for the demo agent
-const DEFAULT_AGENT_ID = "00000000-0000-0000-0000-000000000001";
+// Default agent ID - null means no specific agent selected
+const DEFAULT_AGENT_ID: string | null = null;
 
 export function useChatSession() {
   const { user } = useAuth();
@@ -92,7 +92,7 @@ export function useChatSession() {
       return null;
     }
 
-    // Use a valid UUID for default agent or provided agentId
+    // Use provided agentId or null for general chat
     const sessionAgentId = agentId || DEFAULT_AGENT_ID;
 
     const { data, error } = await supabase
