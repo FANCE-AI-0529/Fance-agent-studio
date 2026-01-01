@@ -76,6 +76,7 @@ import {
   useStartTask,
   useCompleteTask,
   useCancelTask,
+  useExecuteTask,
   taskStatusColors,
   taskStatusLabels,
   taskPriorityColors,
@@ -132,6 +133,11 @@ export function AgentCollaborationPanel({
   const startTask = useStartTask();
   const completeTask = useCompleteTask();
   const cancelTask = useCancelTask();
+  const executeTask = useExecuteTask();
+  
+  // Task result dialog
+  const [showTaskResult, setShowTaskResult] = useState(false);
+  const [selectedTaskResult, setSelectedTaskResult] = useState<DelegatedTask | null>(null);
 
   // Real-time message handler
   const handleNewMessage = useCallback((message: CollaborationMessage) => {
@@ -492,21 +498,54 @@ export function AgentCollaborationPanel({
                             <div className="flex gap-1">
                               {isReceiver && task.status === "pending" && (
                                 <>
-                                  <Button size="sm" variant="outline" onClick={() => acceptTask.mutate(task.id)}><Check className="h-4 w-4" /></Button>
-                                  <Button size="sm" variant="outline" onClick={() => rejectTask.mutate({ taskId: task.id })}><X className="h-4 w-4" /></Button>
+                                  <Button size="sm" variant="outline" onClick={() => acceptTask.mutate(task.id)} disabled={acceptTask.isPending}><Check className="h-4 w-4" /></Button>
+                                  <Button size="sm" variant="outline" onClick={() => rejectTask.mutate({ taskId: task.id })} disabled={rejectTask.isPending}><X className="h-4 w-4" /></Button>
                                 </>
                               )}
                               {isReceiver && task.status === "accepted" && (
-                                <Button size="sm" variant="outline" onClick={() => startTask.mutate(task.id)}><Play className="h-4 w-4" /></Button>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => executeTask.mutate({ taskId: task.id })}
+                                  disabled={executeTask.isPending}
+                                >
+                                  {executeTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                  执行
+                                </Button>
                               )}
                               {isReceiver && task.status === "in_progress" && (
-                                <Button size="sm" variant="outline" onClick={() => completeTask.mutate({ taskId: task.id })}><CheckCircle className="h-4 w-4" /></Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => executeTask.mutate({ taskId: task.id })}
+                                  disabled={executeTask.isPending}
+                                >
+                                  {executeTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />AI执行</>}
+                                </Button>
+                              )}
+                              {task.status === "completed" && task.result && (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => {
+                                    setSelectedTaskResult(task);
+                                    setShowTaskResult(true);
+                                  }}
+                                >
+                                  <Activity className="h-4 w-4 mr-1" />
+                                  查看结果
+                                </Button>
                               )}
                               {!isReceiver && task.status === "pending" && (
-                                <Button size="sm" variant="ghost" onClick={() => cancelTask.mutate(task.id)}><XCircle className="h-4 w-4" /></Button>
+                                <Button size="sm" variant="ghost" onClick={() => cancelTask.mutate(task.id)} disabled={cancelTask.isPending}><XCircle className="h-4 w-4" /></Button>
                               )}
                             </div>
                           </div>
+                          {task.actual_duration_ms && (
+                            <div className="mt-2 text-xs text-muted-foreground flex gap-4">
+                              <span>耗时: {(task.actual_duration_ms / 1000).toFixed(1)}s</span>
+                              {task.tokens_used && <span>Tokens: {task.tokens_used}</span>}
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     );
@@ -747,6 +786,171 @@ export function AgentCollaborationPanel({
                 )}
                 发起握手
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* New Task Dialog */}
+        <Dialog open={showNewTask} onOpenChange={setShowNewTask}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                委派任务
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>目标Agent</Label>
+                <Select value={newTaskTargetAgent} onValueChange={setNewTaskTargetAgent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择接收任务的Agent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeCollabs.map((collab: any) => {
+                      const partnerId = collab.initiator_agent_id === currentAgentId 
+                        ? collab.target_agent_id 
+                        : collab.initiator_agent_id;
+                      const partner = collab.initiator_agent_id === currentAgentId 
+                        ? collab.target 
+                        : collab.initiator;
+                      return (
+                        <SelectItem key={partnerId} value={partnerId}>
+                          {partner?.name || "Unknown"}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>任务标题</Label>
+                <Input 
+                  value={newTaskTitle} 
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="输入任务标题"
+                />
+              </div>
+              <div>
+                <Label>任务描述</Label>
+                <Textarea 
+                  value={newTaskDescription} 
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  placeholder="描述任务详情..."
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>优先级</Label>
+                  <Select value={newTaskPriority} onValueChange={(v: any) => setNewTaskPriority(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">低</SelectItem>
+                      <SelectItem value="normal">普通</SelectItem>
+                      <SelectItem value="high">高</SelectItem>
+                      <SelectItem value="urgent">紧急</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>任务类型</Label>
+                  <Select value={newTaskType} onValueChange={(v: any) => setNewTaskType(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">通用</SelectItem>
+                      <SelectItem value="analysis">分析</SelectItem>
+                      <SelectItem value="generation">生成</SelectItem>
+                      <SelectItem value="query">查询</SelectItem>
+                      <SelectItem value="validation">验证</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNewTask(false)}>
+                取消
+              </Button>
+              <Button
+                onClick={handleDelegateTask}
+                disabled={!newTaskTargetAgent || !newTaskTitle || delegateTask.isPending}
+              >
+                {delegateTask.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-1" />
+                )}
+                委派
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Task Result Dialog */}
+        <Dialog open={showTaskResult} onOpenChange={setShowTaskResult}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                任务执行结果
+                {selectedTaskResult && (
+                  <Badge style={{ backgroundColor: taskStatusColors[selectedTaskResult.status], color: "#fff" }}>
+                    {taskStatusLabels[selectedTaskResult.status]}
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedTaskResult && (
+              <ScrollArea className="max-h-[60vh]">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">任务类型:</span>
+                      <span className="ml-2 font-medium">{taskTypeLabels[selectedTaskResult.task_type]}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">执行耗时:</span>
+                      <span className="ml-2 font-medium">{selectedTaskResult.actual_duration_ms ? `${(selectedTaskResult.actual_duration_ms / 1000).toFixed(1)}s` : "-"}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Token用量:</span>
+                      <span className="ml-2 font-medium">{selectedTaskResult.tokens_used || "-"}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">任务标题</Label>
+                    <div className="font-medium">{selectedTaskResult.title}</div>
+                  </div>
+                  {selectedTaskResult.description && (
+                    <div>
+                      <Label className="text-sm text-muted-foreground">任务描述</Label>
+                      <div>{selectedTaskResult.description}</div>
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-sm text-muted-foreground">执行结果</Label>
+                    <div className="mt-2 p-4 bg-muted rounded-lg">
+                      {selectedTaskResult.result && typeof selectedTaskResult.result === "object" && "content" in selectedTaskResult.result ? (
+                        <div className="whitespace-pre-wrap text-sm">
+                          {String((selectedTaskResult.result as any).content)}
+                        </div>
+                      ) : (
+                        <pre className="text-xs whitespace-pre-wrap overflow-auto">
+                          {JSON.stringify(selectedTaskResult.result, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setShowTaskResult(false)}>关闭</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
