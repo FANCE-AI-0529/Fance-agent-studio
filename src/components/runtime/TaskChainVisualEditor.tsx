@@ -48,6 +48,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
   Plus,
   Save,
   Play,
@@ -65,15 +70,20 @@ import {
   Bot,
   Link2,
   Repeat,
+  Bug,
+  CircleDot,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import TaskStepNode, { type TaskStepNodeData } from "./TaskStepNode";
 import ConditionalNode, { type ConditionalNodeData, type ConditionRule } from "./ConditionalNode";
 import LoopNode, { type LoopNodeData } from "./LoopNode";
+import DebugControlPanel from "./DebugControlPanel";
+import { useTaskChainDebug } from "@/hooks/useTaskChainDebug";
 import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from "@/hooks/useTaskChains";
 import { useDeployedAgents } from "@/hooks/useAgents";
 import { taskTypeLabels } from "@/hooks/useTaskDelegation";
+import { cn } from "@/lib/utils";
 
 // Custom animated edge component
 function AnimatedEdge({
@@ -200,6 +210,8 @@ function TaskChainVisualEditorInner({
   const [showStepEditor, setShowStepEditor] = useState(false);
   const [showConditionEditor, setShowConditionEditor] = useState(false);
   const [showLoopEditor, setShowLoopEditor] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingNodeType, setEditingNodeType] = useState<"step" | "conditional" | "loop">("step");
   const [stepForm, setStepForm] = useState<StepFormData>(defaultStepForm);
@@ -243,6 +255,60 @@ function TaskChainVisualEditorInner({
   const { data: agents = [] } = useDeployedAgents();
   const createChain = useCreateChain();
   const executeChain = useExecuteChain();
+
+  // Debug hook
+  const {
+    debugState,
+    startDebug,
+    pauseDebug,
+    resumeDebug,
+    stopDebug,
+    stepOver,
+    stepInto,
+    toggleBreakpoint,
+    clearBreakpoints,
+  } = useTaskChainDebug({
+    onNodeHighlight: (nodeId) => {
+      setHighlightedNodeId(nodeId);
+      // Update node styles for debugging highlight
+      setNodes((nds) =>
+        nds.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            isDebugging: nodeId === node.id,
+          },
+        }))
+      );
+    },
+    onBreakpointHit: (nodeId) => {
+      // Ensure debug panel is visible when breakpoint is hit
+      setShowDebugPanel(true);
+    },
+  });
+
+  // Handle breakpoint toggle on node
+  const handleToggleBreakpoint = useCallback((nodeId: string) => {
+    toggleBreakpoint(nodeId);
+    // Update node visual to show breakpoint
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          hasBreakpoint: node.id === nodeId 
+            ? !debugState.breakpoints.has(nodeId) || !debugState.breakpoints.get(nodeId)?.enabled
+            : node.data.hasBreakpoint,
+        },
+      }))
+    );
+  }, [toggleBreakpoint, debugState.breakpoints, setNodes]);
+
+  // Start debug execution
+  const handleStartDebug = useCallback(() => {
+    setShowDebugPanel(true);
+    startDebug(nodes);
+  }, [startDebug, nodes]);
 
   // Initialize nodes from existing chain
   useEffect(() => {
@@ -798,6 +864,15 @@ function TaskChainVisualEditorInner({
             <Download className="h-4 w-4 mr-1" />
             导出
           </Button>
+          <Button 
+            variant={showDebugPanel ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setShowDebugPanel(!showDebugPanel)}
+            className={cn(showDebugPanel && "bg-primary")}
+          >
+            <Bug className="h-4 w-4 mr-1" />
+            调试
+          </Button>
           {chain?.id && chain.status === "draft" && (
             <Button variant="outline" size="sm" onClick={handleExecuteChain}>
               <Play className="h-4 w-4 mr-1" />
@@ -811,87 +886,218 @@ function TaskChainVisualEditorInner({
         </div>
       </div>
 
-      {/* Canvas */}
-      <div ref={reactFlowWrapper} className="flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          fitView
-          snapToGrid
-          snapGrid={[15, 15]}
-          defaultEdgeOptions={{
-            type: "animated",
-            markerEnd: { type: MarkerType.ArrowClosed },
-          }}
-        >
-          {/* SVG Defs for glow effect */}
-          <svg style={{ position: "absolute", width: 0, height: 0 }}>
-            <defs>
-              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-          </svg>
-          
-          <Controls />
-          <MiniMap
-            nodeColor={(node) => {
-              const data = node.data as unknown as TaskStepNodeData;
-              switch (data.status) {
-                case "completed":
-                  return "#4CAF50";
-                case "in_progress":
-                  return "#2196F3";
-                case "failed":
-                  return "#F44336";
-                default:
-                  return "#9E9E9E";
-              }
-            }}
-          />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+      {/* Canvas with optional debug panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {showDebugPanel ? (
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={75} minSize={50}>
+              <div ref={reactFlowWrapper} className="h-full">
+                <ReactFlow
+                  nodes={nodes.map((node) => ({
+                    ...node,
+                    className: cn(
+                      highlightedNodeId === node.id && "ring-2 ring-blue-500 ring-offset-2 ring-offset-background",
+                      debugState.breakpoints.has(node.id) && debugState.breakpoints.get(node.id)?.enabled && "relative"
+                    ),
+                  }))}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
+                  onNodeClick={(_, node) => {
+                    // Toggle breakpoint with F9 or Ctrl+Click
+                  }}
+                  onNodeContextMenu={(e, node) => {
+                    e.preventDefault();
+                    handleToggleBreakpoint(node.id);
+                  }}
+                  fitView
+                  snapToGrid
+                  snapGrid={[15, 15]}
+                  defaultEdgeOptions={{
+                    type: "animated",
+                    markerEnd: { type: MarkerType.ArrowClosed },
+                  }}
+                >
+                  {/* SVG Defs for glow effect */}
+                  <svg style={{ position: "absolute", width: 0, height: 0 }}>
+                    <defs>
+                      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                  </svg>
+                  
+                  <Controls />
+                  <MiniMap
+                    nodeColor={(node) => {
+                      // Highlight current debug step
+                      if (highlightedNodeId === node.id) return "#3b82f6";
+                      // Show breakpoint nodes
+                      if (debugState.breakpoints.has(node.id) && debugState.breakpoints.get(node.id)?.enabled) {
+                        return "#ef4444";
+                      }
+                      const data = node.data as unknown as TaskStepNodeData;
+                      switch (data.status) {
+                        case "completed":
+                          return "#4CAF50";
+                        case "in_progress":
+                          return "#2196F3";
+                        case "failed":
+                          return "#F44336";
+                        default:
+                          return "#9E9E9E";
+                      }
+                    }}
+                  />
+                  <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
 
-          {/* Empty State */}
-          {nodes.length === 0 && (
-            <Panel position="top-center" className="mt-20">
-              <div className="text-center p-8 bg-card/80 backdrop-blur rounded-lg border border-dashed border-border">
-                <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="font-semibold mb-2">开始构建任务链</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  点击"添加步骤"创建第一个任务节点
-                </p>
-                <Button onClick={addNewStep}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  添加第一个步骤
-                </Button>
+                  {/* Empty State */}
+                  {nodes.length === 0 && (
+                    <Panel position="top-center" className="mt-20">
+                      <div className="text-center p-8 bg-card/80 backdrop-blur rounded-lg border border-dashed border-border">
+                        <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <h3 className="font-semibold mb-2">开始构建任务链</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          点击"添加步骤"创建第一个任务节点
+                        </p>
+                        <Button onClick={addNewStep}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          添加第一个步骤
+                        </Button>
+                      </div>
+                    </Panel>
+                  )}
+
+                  {/* Toolbar */}
+                  <Panel position="bottom-center" className="mb-4">
+                    <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shadow-lg">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomIn()}>
+                        <ZoomIn className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomOut()}>
+                        <ZoomOut className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fitView()}>
+                        <Maximize className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Panel>
+
+                  {/* Debug hint */}
+                  <Panel position="top-left" className="ml-2 mt-2">
+                    <div className="text-xs text-muted-foreground bg-card/80 backdrop-blur px-2 py-1 rounded border border-border">
+                      <CircleDot className="h-3 w-3 inline-block mr-1 text-red-500" />
+                      右键点击节点添加断点
+                    </div>
+                  </Panel>
+                </ReactFlow>
               </div>
-            </Panel>
-          )}
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+              <DebugControlPanel
+                debugState={debugState}
+                onStartDebug={handleStartDebug}
+                onPauseDebug={pauseDebug}
+                onResumeDebug={resumeDebug}
+                onStopDebug={stopDebug}
+                onStepOver={stepOver}
+                onStepInto={stepInto}
+                onToggleBreakpoint={handleToggleBreakpoint}
+                onClearBreakpoints={clearBreakpoints}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <div ref={reactFlowWrapper} className="flex-1">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              fitView
+              snapToGrid
+              snapGrid={[15, 15]}
+              defaultEdgeOptions={{
+                type: "animated",
+                markerEnd: { type: MarkerType.ArrowClosed },
+              }}
+            >
+              {/* SVG Defs for glow effect */}
+              <svg style={{ position: "absolute", width: 0, height: 0 }}>
+                <defs>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+              </svg>
+              
+              <Controls />
+              <MiniMap
+                nodeColor={(node) => {
+                  const data = node.data as unknown as TaskStepNodeData;
+                  switch (data.status) {
+                    case "completed":
+                      return "#4CAF50";
+                    case "in_progress":
+                      return "#2196F3";
+                    case "failed":
+                      return "#F44336";
+                    default:
+                      return "#9E9E9E";
+                  }
+                }}
+              />
+              <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
 
-          {/* Toolbar */}
-          <Panel position="bottom-center" className="mb-4">
-            <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shadow-lg">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomIn()}>
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomOut()}>
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fitView()}>
-                <Maximize className="h-4 w-4" />
-              </Button>
-            </div>
-          </Panel>
-        </ReactFlow>
+              {/* Empty State */}
+              {nodes.length === 0 && (
+                <Panel position="top-center" className="mt-20">
+                  <div className="text-center p-8 bg-card/80 backdrop-blur rounded-lg border border-dashed border-border">
+                    <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="font-semibold mb-2">开始构建任务链</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      点击"添加步骤"创建第一个任务节点
+                    </p>
+                    <Button onClick={addNewStep}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      添加第一个步骤
+                    </Button>
+                  </div>
+                </Panel>
+              )}
+
+              {/* Toolbar */}
+              <Panel position="bottom-center" className="mb-4">
+                <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shadow-lg">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomIn()}>
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomOut()}>
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fitView()}>
+                    <Maximize className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Panel>
+            </ReactFlow>
+          </div>
+        )}
       </div>
 
       {/* Step Editor Sheet */}
