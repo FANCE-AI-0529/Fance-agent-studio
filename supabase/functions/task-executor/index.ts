@@ -5,14 +5,89 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Key entity extracted from conversation
+interface KeyEntity {
+  name: string;
+  type: "person" | "organization" | "location" | "date" | "number" | "policy" | "document" | "other";
+  value?: string;
+  confidence?: number;
+  source?: string;
+}
+
+// Completed step in the workflow
+interface DoneStep {
+  stepId: string;
+  description: string;
+  completedAt: string;
+  result?: unknown;
+  agentId?: string;
+}
+
+// Artifact generated during the workflow
+interface Artifact {
+  id: string;
+  type: "document" | "report" | "form" | "calculation" | "data" | "image" | "other";
+  name: string;
+  url?: string;
+  content?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+// User preferences for the task
+interface UserPreferences {
+  language?: string;
+  responseFormat?: "brief" | "detailed" | "structured";
+  priorityFocus?: string[];
+  excludeTopics?: string[];
+  customPreferences?: Record<string, unknown>;
+}
+
+// Enhanced HandoffPacket following A2A protocol
 interface HandoffContext {
-  sessionSummary?: string;
-  keyEntities?: string[];
-  userPreferences?: Record<string, unknown>;
-  constraints?: string[];
-  previousResults?: unknown[];
-  urgency?: string;
+  // Core task context
+  goal?: string;
   userQuery?: string;
+  urgency?: "low" | "normal" | "high" | "urgent";
+  
+  // Conversation context
+  conversationSummary?: string;
+  conversationId?: string;
+  turnCount?: number;
+  
+  // Completed work history
+  doneHistory?: DoneStep[];
+  previousResults?: unknown[];
+  
+  // Key information extracted
+  keyEntities?: KeyEntity[];
+  
+  // Constraints and rules
+  constraints?: string[];
+  legalRequirements?: string[];
+  
+  // Generated artifacts
+  artifacts?: Artifact[];
+  
+  // User context
+  userPreferences?: UserPreferences;
+  userProfile?: {
+    department?: string;
+    role?: string;
+    accessLevel?: string;
+  };
+  
+  // Agent-specific context
+  sourceAgentContext?: {
+    agentId: string;
+    agentName: string;
+    capabilities: string[];
+    reasonForHandoff: string;
+  };
+  
+  // Metadata
+  handoffTimestamp?: string;
+  protocolVersion?: string;
 }
 
 interface ExecuteTaskRequest {
@@ -39,23 +114,89 @@ function buildSystemPrompt(
 
   prompt += `\n\nThis task was delegated from Agent "${sourceAgentName}".`;
 
-  if (handoffContext.sessionSummary) {
-    prompt += `\n\nSession Context:\n${handoffContext.sessionSummary}`;
+  // Add goal if provided
+  if (handoffContext.goal) {
+    prompt += `\n\n## Task Goal:\n${handoffContext.goal}`;
   }
 
+  // Add conversation context
+  if (handoffContext.conversationSummary) {
+    prompt += `\n\n## Conversation Context:\n${handoffContext.conversationSummary}`;
+  }
+
+  // Add done history (completed steps)
+  if (handoffContext.doneHistory && handoffContext.doneHistory.length > 0) {
+    prompt += `\n\n## Previously Completed Steps:`;
+    handoffContext.doneHistory.forEach((step, index) => {
+      prompt += `\n${index + 1}. ${step.description}`;
+      if (step.result) {
+        prompt += ` (Result: ${JSON.stringify(step.result)})`;
+      }
+    });
+  }
+
+  // Add key entities
   if (handoffContext.keyEntities && handoffContext.keyEntities.length > 0) {
-    prompt += `\n\nKey Entities to consider:\n${handoffContext.keyEntities.join(", ")}`;
+    prompt += `\n\n## Key Entities:`;
+    handoffContext.keyEntities.forEach((entity) => {
+      prompt += `\n- ${entity.name} (${entity.type})`;
+      if (entity.value) {
+        prompt += `: ${entity.value}`;
+      }
+    });
   }
 
+  // Add constraints
   if (handoffContext.constraints && handoffContext.constraints.length > 0) {
-    prompt += `\n\nConstraints:\n${handoffContext.constraints.map((c) => `- ${c}`).join("\n")}`;
+    prompt += `\n\n## Constraints:\n${handoffContext.constraints.map((c) => `- ${c}`).join("\n")}`;
   }
 
+  // Add legal requirements
+  if (handoffContext.legalRequirements && handoffContext.legalRequirements.length > 0) {
+    prompt += `\n\n## Legal/Regulatory Requirements:\n${handoffContext.legalRequirements.map((r) => `- ${r}`).join("\n")}`;
+  }
+
+  // Add artifacts
+  if (handoffContext.artifacts && handoffContext.artifacts.length > 0) {
+    prompt += `\n\n## Available Artifacts:`;
+    handoffContext.artifacts.forEach((artifact) => {
+      prompt += `\n- ${artifact.name} (${artifact.type})`;
+      if (artifact.content) {
+        prompt += `\n  Content: ${artifact.content.substring(0, 200)}${artifact.content.length > 200 ? "..." : ""}`;
+      }
+    });
+  }
+
+  // Add user preferences
   if (handoffContext.userPreferences) {
-    prompt += `\n\nUser Preferences:\n${JSON.stringify(handoffContext.userPreferences, null, 2)}`;
+    const prefs = handoffContext.userPreferences;
+    prompt += `\n\n## User Preferences:`;
+    if (prefs.language) prompt += `\n- Language: ${prefs.language}`;
+    if (prefs.responseFormat) prompt += `\n- Response Format: ${prefs.responseFormat}`;
+    if (prefs.priorityFocus && prefs.priorityFocus.length > 0) {
+      prompt += `\n- Priority Focus: ${prefs.priorityFocus.join(", ")}`;
+    }
+    if (prefs.excludeTopics && prefs.excludeTopics.length > 0) {
+      prompt += `\n- Exclude Topics: ${prefs.excludeTopics.join(", ")}`;
+    }
   }
 
-  prompt += `\n\nProvide a structured response with:
+  // Add user profile
+  if (handoffContext.userProfile) {
+    const profile = handoffContext.userProfile;
+    prompt += `\n\n## User Profile:`;
+    if (profile.department) prompt += `\n- Department: ${profile.department}`;
+    if (profile.role) prompt += `\n- Role: ${profile.role}`;
+    if (profile.accessLevel) prompt += `\n- Access Level: ${profile.accessLevel}`;
+  }
+
+  // Add source agent context
+  if (handoffContext.sourceAgentContext) {
+    const sourceCtx = handoffContext.sourceAgentContext;
+    prompt += `\n\n## Handoff Reason: ${sourceCtx.reasonForHandoff}`;
+  }
+
+  prompt += `\n\n## Expected Response Format:
 1. Executive Summary (2-3 sentences)
 2. Detailed Result
 3. Confidence Level (high/medium/low)

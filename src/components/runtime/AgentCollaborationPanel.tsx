@@ -84,9 +84,11 @@ import {
   taskTypeLabels,
   useRealtimeTaskUpdates,
   type DelegatedTask,
+  type HandoffContext,
 } from "@/hooks/useTaskDelegation";
 import { useDeployedAgents } from "@/hooks/useAgents";
 import { CollaborationDashboard } from "./CollaborationDashboard";
+import { HandoffPacketEditor } from "./HandoffPacketEditor";
 
 interface AgentCollaborationPanelProps {
   currentAgentId?: string;
@@ -112,6 +114,8 @@ export function AgentCollaborationPanel({
   const [newTaskPriority, setNewTaskPriority] = useState<"low" | "normal" | "high" | "urgent">("normal");
   const [newTaskType, setNewTaskType] = useState<"general" | "analysis" | "generation" | "query" | "validation">("general");
   const [newTaskTargetAgent, setNewTaskTargetAgent] = useState("");
+  const [showAdvancedHandoff, setShowAdvancedHandoff] = useState(false);
+  const [handoffContext, setHandoffContext] = useState<HandoffContext>({});
 
   const { data: collaborations = [], isLoading: collabLoading, refetch: refetchCollabs } = useAgentCollaborations();
   const { data: agents = [] } = useDeployedAgents();
@@ -189,6 +193,22 @@ export function AgentCollaborationPanel({
       (c: any) => c.initiator_agent_id === newTaskTargetAgent || c.target_agent_id === newTaskTargetAgent
     );
 
+    // Build enhanced handoff context
+    const finalHandoffContext: HandoffContext = {
+      ...handoffContext,
+      goal: handoffContext.goal || newTaskTitle,
+      conversationSummary: handoffContext.conversationSummary || newTaskDescription || "Task delegated from collaboration panel",
+      urgency: newTaskPriority,
+      handoffTimestamp: new Date().toISOString(),
+      protocolVersion: "1.0",
+      sourceAgentContext: {
+        agentId: currentAgentId,
+        agentName: currentAgentName || "Unknown",
+        capabilities: ["task_delegation"],
+        reasonForHandoff: `Task type: ${newTaskType}`,
+      },
+    };
+
     await delegateTask.mutateAsync({
       sourceAgentId: currentAgentId,
       targetAgentId: newTaskTargetAgent,
@@ -197,10 +217,7 @@ export function AgentCollaborationPanel({
       description: newTaskDescription,
       priority: newTaskPriority,
       taskType: newTaskType,
-      handoffContext: {
-        sessionSummary: "Task delegated from collaboration panel",
-        urgency: newTaskPriority,
-      },
+      handoffContext: finalHandoffContext,
     });
 
     setShowNewTask(false);
@@ -209,6 +226,8 @@ export function AgentCollaborationPanel({
     setNewTaskPriority("normal");
     setNewTaskType("general");
     setNewTaskTargetAgent("");
+    setHandoffContext({});
+    setShowAdvancedHandoff(false);
   };
 
   const handleInitiateHandshake = async () => {
@@ -792,85 +811,108 @@ export function AgentCollaborationPanel({
 
         {/* New Task Dialog */}
         <Dialog open={showNewTask} onOpenChange={setShowNewTask}>
-          <DialogContent>
+          <DialogContent className={showAdvancedHandoff ? "max-w-4xl max-h-[90vh] overflow-hidden" : ""}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Send className="h-5 w-5" />
                 委派任务
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>目标Agent</Label>
-                <Select value={newTaskTargetAgent} onValueChange={setNewTaskTargetAgent}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择接收任务的Agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {activeCollabs.map((collab: any) => {
-                      const partnerId = collab.initiator_agent_id === currentAgentId 
-                        ? collab.target_agent_id 
-                        : collab.initiator_agent_id;
-                      const partner = collab.initiator_agent_id === currentAgentId 
-                        ? collab.target 
-                        : collab.initiator;
-                      return (
-                        <SelectItem key={partnerId} value={partnerId}>
-                          {partner?.name || "Unknown"}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>任务标题</Label>
-                <Input 
-                  value={newTaskTitle} 
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="输入任务标题"
-                />
-              </div>
-              <div>
-                <Label>任务描述</Label>
-                <Textarea 
-                  value={newTaskDescription} 
-                  onChange={(e) => setNewTaskDescription(e.target.value)}
-                  placeholder="描述任务详情..."
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <div className={showAdvancedHandoff ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+              <div className="space-y-4">
                 <div>
-                  <Label>优先级</Label>
-                  <Select value={newTaskPriority} onValueChange={(v: any) => setNewTaskPriority(v)}>
+                  <Label>目标Agent</Label>
+                  <Select value={newTaskTargetAgent} onValueChange={setNewTaskTargetAgent}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="选择接收任务的Agent" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">低</SelectItem>
-                      <SelectItem value="normal">普通</SelectItem>
-                      <SelectItem value="high">高</SelectItem>
-                      <SelectItem value="urgent">紧急</SelectItem>
+                      {activeCollabs.map((collab: any) => {
+                        const partnerId = collab.initiator_agent_id === currentAgentId 
+                          ? collab.target_agent_id 
+                          : collab.initiator_agent_id;
+                        const partner = collab.initiator_agent_id === currentAgentId 
+                          ? collab.target 
+                          : collab.initiator;
+                        return (
+                          <SelectItem key={partnerId} value={partnerId}>
+                            {partner?.name || "Unknown"}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>任务类型</Label>
-                  <Select value={newTaskType} onValueChange={(v: any) => setNewTaskType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">通用</SelectItem>
-                      <SelectItem value="analysis">分析</SelectItem>
-                      <SelectItem value="generation">生成</SelectItem>
-                      <SelectItem value="query">查询</SelectItem>
-                      <SelectItem value="validation">验证</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>任务标题</Label>
+                  <Input 
+                    value={newTaskTitle} 
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="输入任务标题"
+                  />
                 </div>
+                <div>
+                  <Label>任务描述</Label>
+                  <Textarea 
+                    value={newTaskDescription} 
+                    onChange={(e) => setNewTaskDescription(e.target.value)}
+                    placeholder="描述任务详情..."
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>优先级</Label>
+                    <Select value={newTaskPriority} onValueChange={(v: any) => setNewTaskPriority(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">低</SelectItem>
+                        <SelectItem value="normal">普通</SelectItem>
+                        <SelectItem value="high">高</SelectItem>
+                        <SelectItem value="urgent">紧急</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>任务类型</Label>
+                    <Select value={newTaskType} onValueChange={(v: any) => setNewTaskType(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">通用</SelectItem>
+                        <SelectItem value="analysis">分析</SelectItem>
+                        <SelectItem value="generation">生成</SelectItem>
+                        <SelectItem value="query">查询</SelectItem>
+                        <SelectItem value="validation">验证</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAdvancedHandoff(!showAdvancedHandoff)}
+                  className="w-full"
+                >
+                  {showAdvancedHandoff ? "隐藏高级上下文" : "配置HandoffPacket上下文"}
+                </Button>
               </div>
+              
+              {showAdvancedHandoff && (
+                <HandoffPacketEditor
+                  value={handoffContext}
+                  onChange={setHandoffContext}
+                  sourceAgentName={currentAgentName}
+                  targetAgentName={activeCollabs.find((c: any) => 
+                    c.initiator_agent_id === newTaskTargetAgent || c.target_agent_id === newTaskTargetAgent
+                  )?.initiator?.name || activeCollabs.find((c: any) => 
+                    c.initiator_agent_id === newTaskTargetAgent || c.target_agent_id === newTaskTargetAgent
+                  )?.target?.name}
+                />
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowNewTask(false)}>

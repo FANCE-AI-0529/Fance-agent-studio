@@ -4,13 +4,89 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useEffect, useCallback } from "react";
 
+// Key entity extracted from conversation
+export interface KeyEntity {
+  name: string;
+  type: "person" | "organization" | "location" | "date" | "number" | "policy" | "document" | "other";
+  value?: string;
+  confidence?: number;
+  source?: string;
+}
+
+// Completed step in the workflow
+export interface DoneStep {
+  stepId: string;
+  description: string;
+  completedAt: string;
+  result?: unknown;
+  agentId?: string;
+}
+
+// Artifact generated during the workflow
+export interface Artifact {
+  id: string;
+  type: "document" | "report" | "form" | "calculation" | "data" | "image" | "other";
+  name: string;
+  url?: string;
+  content?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+// User preferences for the task
+export interface UserPreferences {
+  language?: string;
+  responseFormat?: "brief" | "detailed" | "structured";
+  priorityFocus?: string[];
+  excludeTopics?: string[];
+  customPreferences?: Record<string, unknown>;
+}
+
+// Enhanced HandoffPacket following A2A protocol
 export interface HandoffContext {
-  sessionSummary?: string;
-  keyEntities?: string[];
-  userPreferences?: Record<string, unknown>;
-  constraints?: string[];
+  // Core task context
+  goal?: string;
+  userQuery?: string;
+  urgency?: "low" | "normal" | "high" | "urgent";
+  
+  // Conversation context
+  conversationSummary?: string;
+  conversationId?: string;
+  turnCount?: number;
+  
+  // Completed work history
+  doneHistory?: DoneStep[];
   previousResults?: unknown[];
-  urgency?: string;
+  
+  // Key information extracted
+  keyEntities?: KeyEntity[];
+  
+  // Constraints and rules
+  constraints?: string[];
+  legalRequirements?: string[];
+  
+  // Generated artifacts
+  artifacts?: Artifact[];
+  
+  // User context
+  userPreferences?: UserPreferences;
+  userProfile?: {
+    department?: string;
+    role?: string;
+    accessLevel?: string;
+  };
+  
+  // Agent-specific context
+  sourceAgentContext?: {
+    agentId: string;
+    agentName: string;
+    capabilities: string[];
+    reasonForHandoff: string;
+  };
+  
+  // Metadata
+  handoffTimestamp?: string;
+  protocolVersion?: string;
 }
 
 export interface DelegatedTask {
