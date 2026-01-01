@@ -353,17 +353,48 @@ const groupedTemplates = agentTemplates.reduce((acc, template) => {
 interface AgentTemplatesProps {
   onSelectTemplate: (template: AgentTemplate) => void;
   trigger?: React.ReactNode;
+  inlineMode?: boolean;
 }
 
-const AgentTemplates: React.FC<AgentTemplatesProps> = ({ onSelectTemplate, trigger }) => {
+const AgentTemplates: React.FC<AgentTemplatesProps> = ({ onSelectTemplate, trigger, inlineMode = false }) => {
   const [open, setOpen] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
   const handleSelect = (template: AgentTemplate) => {
     setSelectedId(template.id);
     onSelectTemplate(template);
-    setOpen(false);
+    if (!inlineMode) {
+      setOpen(false);
+    }
   };
+
+  // Inline mode - render templates directly without dialog
+  if (inlineMode) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[280px] overflow-y-auto p-1">
+        {agentTemplates.slice(0, 6).map((template) => (
+          <button
+            key={template.id}
+            onClick={() => handleSelect(template)}
+            className={cn(
+              "flex flex-col items-center gap-2 p-4 rounded-lg border text-center transition-all",
+              "hover:shadow-md hover:scale-[1.02] active:scale-[0.98]",
+              "bg-card hover:bg-accent/50",
+              selectedId === template.id && "ring-2 ring-primary border-primary"
+            )}
+          >
+            <div className={cn("p-3 rounded-xl", template.color)}>
+              {template.icon}
+            </div>
+            <div>
+              <span className="font-medium text-sm block">{template.name}</span>
+              <span className="text-xs text-muted-foreground">{template.department}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
