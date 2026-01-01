@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_collaborations: {
+        Row: {
+          capabilities: Json | null
+          created_at: string
+          handshake_token: string | null
+          id: string
+          initiator_agent_id: string
+          last_heartbeat: string | null
+          protocol_version: string
+          status: string
+          target_agent_id: string
+          trust_level: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capabilities?: Json | null
+          created_at?: string
+          handshake_token?: string | null
+          id?: string
+          initiator_agent_id: string
+          last_heartbeat?: string | null
+          protocol_version?: string
+          status?: string
+          target_agent_id: string
+          trust_level?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capabilities?: Json | null
+          created_at?: string
+          handshake_token?: string | null
+          id?: string
+          initiator_agent_id?: string
+          last_heartbeat?: string | null
+          protocol_version?: string
+          status?: string
+          target_agent_id?: string
+          trust_level?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_collaborations_initiator_agent_id_fkey"
+            columns: ["initiator_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_collaborations_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_skills: {
         Row: {
           agent_id: string
@@ -89,6 +149,61 @@ export type Database = {
         }
         Relationships: []
       }
+      collaboration_messages: {
+        Row: {
+          collaboration_id: string
+          created_at: string
+          id: string
+          message_type: string
+          payload: Json
+          receiver_agent_id: string
+          sender_agent_id: string
+          status: string
+        }
+        Insert: {
+          collaboration_id: string
+          created_at?: string
+          id?: string
+          message_type: string
+          payload?: Json
+          receiver_agent_id: string
+          sender_agent_id: string
+          status?: string
+        }
+        Update: {
+          collaboration_id?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          payload?: Json
+          receiver_agent_id?: string
+          sender_agent_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_messages_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "agent_collaborations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_messages_receiver_agent_id_fkey"
+            columns: ["receiver_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_messages_sender_agent_id_fkey"
+            columns: ["sender_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_processing: {
         Row: {
           agent_id: string | null
@@ -132,6 +247,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "document_processing_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drift_logs: {
+        Row: {
+          agent_id: string
+          baseline_value: Json | null
+          context: Json | null
+          created_at: string
+          current_value: Json | null
+          deviation_score: number | null
+          drift_type: string
+          id: string
+          resolved: boolean | null
+          resolved_at: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          baseline_value?: Json | null
+          context?: Json | null
+          created_at?: string
+          current_value?: Json | null
+          deviation_score?: number | null
+          drift_type: string
+          id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          baseline_value?: Json | null
+          context?: Json | null
+          created_at?: string
+          current_value?: Json | null
+          deviation_score?: number | null
+          drift_type?: string
+          id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drift_logs_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
