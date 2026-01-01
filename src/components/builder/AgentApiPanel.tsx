@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   Plug,
   Boxes,
+  BarChart3,
 } from "lucide-react";
 import {
   Dialog,
@@ -65,6 +66,7 @@ import {
   useAgentApiStats,
 } from "@/hooks/useAgentApi";
 import { toast } from "sonner";
+import { ApiStatsDashboard } from "./ApiStatsDashboard";
 
 interface AgentApiPanelProps {
   agentId: string | null;
@@ -164,6 +166,10 @@ export function AgentApiPanel({
             <TabsTrigger value="keys" className="gap-1.5">
               <Key className="h-3.5 w-3.5" />
               API 密钥
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" />
+              统计仪表盘
             </TabsTrigger>
             <TabsTrigger value="docs" className="gap-1.5">
               <FileText className="h-3.5 w-3.5" />
@@ -380,6 +386,13 @@ export function AgentApiPanel({
                 )}
               </ScrollArea>
             </div>
+          </TabsContent>
+
+          <TabsContent value="stats" className="flex-1 overflow-auto mt-0 pt-4">
+            <ApiStatsDashboard 
+              agentId={agentId} 
+              apiKeyIds={apiKeys.map(k => k.id)} 
+            />
           </TabsContent>
 
           <TabsContent value="docs" className="flex-1 overflow-auto mt-0 pt-4">
