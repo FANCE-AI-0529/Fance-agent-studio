@@ -33,6 +33,9 @@ import {
   Bell,
   Cpu,
   BarChart3,
+  CheckCircle,
+  Play,
+  FileCode,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -110,6 +115,7 @@ const Builder = () => {
   const [showLLMConfig, setShowLLMConfig] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [templateApplied, setTemplateApplied] = useState(false);
+  const [showDeploySuccessDialog, setShowDeploySuccessDialog] = useState(false);
 
   // Check URL params for wizard mode
   useEffect(() => {
@@ -569,13 +575,8 @@ const Builder = () => {
       }
       await deployAgent.mutateAsync(agentId);
 
-      toast({
-        title: "部署成功",
-        description: "正在跳转到运行环境...",
-      });
-      setTimeout(() => {
-        navigate("/runtime");
-      }, 1000);
+      // Show deploy success dialog instead of auto-navigating
+      setShowDeploySuccessDialog(true);
     }
   };
 
@@ -1048,6 +1049,72 @@ const Builder = () => {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Deploy Success Dialog */}
+        <Dialog open={showDeploySuccessDialog} onOpenChange={setShowDeploySuccessDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-status-success/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-status-success" />
+                </div>
+                <div>
+                  <DialogTitle>智能体部署成功！</DialogTitle>
+                  <DialogDescription className="mt-1">
+                    「{agentConfig.name}」已成功部署到云端
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                下一步，您可以选择：
+              </p>
+              <div className="space-y-3">
+                <Button
+                  className="w-full justify-start gap-3"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeploySuccessDialog(false);
+                    setShowApiPanel(true);
+                  }}
+                >
+                  <Key className="h-4 w-4 text-primary" />
+                  <div className="text-left">
+                    <div className="font-medium">生成 API 密钥</div>
+                    <div className="text-xs text-muted-foreground">创建密钥以便通过 API 调用智能体</div>
+                  </div>
+                </Button>
+                <Button
+                  className="w-full justify-start gap-3"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeploySuccessDialog(false);
+                    navigate("/api-hub");
+                  }}
+                >
+                  <FileCode className="h-4 w-4 text-cognitive" />
+                  <div className="text-left">
+                    <div className="font-medium">查看 API 文档</div>
+                    <div className="text-xs text-muted-foreground">获取接口说明和代码示例</div>
+                  </div>
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowDeploySuccessDialog(false);
+                  navigate("/runtime");
+                }}
+              >
+                稍后设置，前往运行环境
+                <Play className="h-4 w-4 ml-2" />
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );

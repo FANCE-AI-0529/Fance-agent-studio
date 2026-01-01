@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
+import ApiHub from "./pages/ApiHub";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -119,6 +120,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <MainLayout>
               <Runtime />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/api-hub"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ApiHub />
             </MainLayout>
           </ProtectedRoute>
         }
