@@ -32,6 +32,7 @@ import {
   Webhook,
   Bell,
   Cpu,
+  BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
@@ -53,6 +60,7 @@ import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { ApiAlertPanel } from "@/components/builder/ApiAlertPanel";
 import { LLMConfigPanel } from "@/components/builder/LLMConfigPanel";
+import { ApiStatsDashboard } from "@/components/builder/ApiStatsDashboard";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,6 +104,7 @@ const Builder = () => {
   const [showWebhookPanel, setShowWebhookPanel] = useState(false);
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [showLLMConfig, setShowLLMConfig] = useState(false);
+  const [showStatsPanel, setShowStatsPanel] = useState(false);
 
   // Check if first time user
   useEffect(() => {
@@ -698,6 +707,20 @@ const Builder = () => {
                     </TooltipTrigger>
                     <TooltipContent>大模型配置</TooltipContent>
                   </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowStatsPanel(true)}
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>API 统计</TooltipContent>
+                  </Tooltip>
                 </>
               )}
 
@@ -894,6 +917,21 @@ const Builder = () => {
           isOpen={showLLMConfig}
           onClose={() => setShowLLMConfig(false)}
         />
+
+        {/* API Stats Dialog */}
+        {showStatsPanel && currentAgentId && (
+          <Dialog open={showStatsPanel} onOpenChange={setShowStatsPanel}>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>API 调用统计</DialogTitle>
+              </DialogHeader>
+              <ApiStatsDashboard
+                agentId={currentAgentId}
+                apiKeyIds={[]}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </TooltipProvider>
   );
