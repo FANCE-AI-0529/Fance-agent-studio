@@ -33,6 +33,7 @@ import { TaskChainPanel } from "@/components/runtime/TaskChainPanel";
 import { ExecutionHistoryPanel } from "@/components/runtime/ExecutionHistoryPanel";
 import { FormattedText } from "@/components/runtime/FormattedText";
 import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormattedText";
+import { MessageBubble } from "@/components/runtime/MessageBubble";
 import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import WelcomeGuide from "@/components/runtime/WelcomeGuide";
@@ -1094,55 +1095,23 @@ const Runtime = () => {
 
             // Render regular messages
             return (
-              <div
+              <MessageBubble
                 key={message.id}
-                className={`flex gap-3 animate-slide-up ${message.role === "user" ? "flex-row-reverse" : ""}`}
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  message.role === "user" 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-card border border-border"
-                }`}>
-                  {message.role === "user" 
-                    ? <User className="h-4 w-4" />
-                    : <Bot className="h-4 w-4" />
-                  }
-                </div>
-                
-                <div className={`max-w-[70%] ${message.role === "user" ? "text-right" : ""}`}>
-                  <div className={cn(
-                    "p-3 rounded-lg",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border"
-                  )}>
-                    {message.role === "assistant" && message.isNew ? (
-                      <TypewriterFormattedText 
-                        content={message.content} 
-                        className="text-sm" 
-                        speed={12}
-                      />
-                    ) : (
-                      <FormattedText content={message.content} className="text-sm" />
-                    )}
-                  </div>
-                  
-                  {message.skill && (
-                    <div className={cn(
-                      "mt-1.5 flex items-center gap-2",
-                      message.role === "user" ? "justify-end" : ""
-                    )}>
-                      <Badge variant="outline" className="text-[10px] gap-1">
-                        <CheckCircle2 className="h-2.5 w-2.5" />
-                        {message.skill}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                id={message.id}
+                role={message.role as "user" | "assistant"}
+                content={message.content}
+                timestamp={message.timestamp}
+                skill={message.skill}
+                isNew={message.isNew}
+                agentAvatar={
+                  selectedAgent?.manifest 
+                    ? {
+                        iconId: (selectedAgent.manifest as any).iconId || "bot",
+                        colorId: (selectedAgent.manifest as any).colorId || "blue",
+                      }
+                    : undefined
+                }
+              />
             );
           })}
 
