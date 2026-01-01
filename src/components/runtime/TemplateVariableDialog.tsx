@@ -13,9 +13,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Variable, Sparkles, AlertCircle, Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Variable, Sparkles, AlertCircle, Check, Save, FolderOpen, Trash2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { TaskChainTemplate, TemplateStep } from "./TaskChainTemplates";
+import {
+  useVariablePresets,
+  useSaveVariablePreset,
+  useDeleteVariablePreset,
+  type VariablePreset,
+} from "@/hooks/useVariablePresets";
 
 // Regex to match variables in format {{variableName}} or ${variableName}
 const VARIABLE_REGEX = /\{\{(\w+)\}\}|\$\{(\w+)\}/g;
@@ -140,6 +159,13 @@ export function TemplateVariableDialog({
   onConfirm,
 }: TemplateVariableDialogProps) {
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+  const [presetName, setPresetName] = useState("");
+  const [showSavePreset, setShowSavePreset] = useState(false);
+
+  // Preset hooks
+  const { data: presets = [] } = useVariablePresets();
+  const savePreset = useSaveVariablePreset();
+  const deletePreset = useDeleteVariablePreset();
 
   // Extract variables from template
   const extractedVariables = useMemo(() => {
@@ -183,6 +209,17 @@ export function TemplateVariableDialog({
     return Array.from(varMap.values());
   }, [extractedVariables, definedVariables]);
 
+  // Filter presets that have matching variables
+  const matchingPresets = useMemo(() => {
+    if (allVariables.length === 0) return [];
+    const varNames = new Set(allVariables.map((v) => v.name));
+    return presets.filter((preset) => {
+      const presetVarNames = Object.keys(preset.values);
+      // Check if preset has any matching variables
+      return presetVarNames.some((name) => varNames.has(name));
+    });
+  }, [presets, allVariables]);
+
   // Initialize default values
   useEffect(() => {
     if (!open || allVariables.length === 0) return;
@@ -196,6 +233,8 @@ export function TemplateVariableDialog({
       }
     });
     setVariableValues(defaults);
+    setPresetName("");
+    setShowSavePreset(false);
   }, [open, allVariables]);
 
   const handleConfirm = () => {
@@ -220,9 +259,61 @@ export function TemplateVariableDialog({
     onOpenChange(false);
   };
 
+  const handleLoadPreset = (preset: VariablePreset) => {
+    setVariableValues((prev) => ({
+      ...prev,
+      ...preset.values,
+    }));
+    toast.success(`已加载预设: ${preset.name}`);
+  };
+
+  const handleSavePreset = async () => {
+    if (!presetName.trim()) {
+      toast.error("请输入预设名称");
+      return;
+    }
+
+    // Only save non-empty values
+    const valuesToSave: Record<string, string> = {};
+    Object.entries(variableValues).forEach(([key, value]) => {
+      if (value) {
+        valuesToSave[key] = value;
+      }
+    });
+
+    if (Object.keys(valuesToSave).length === 0) {
+      toast.error("请至少填写一个变量值");
+      return;
+    }
+
+    try {
+      await savePreset.mutateAsync({
+        name: presetName.trim(),
+        values: valuesToSave,
+      });
+      toast.success("预设已保存");
+      setShowSavePreset(false);
+      setPresetName("");
+    } catch (error) {
+      toast.error("保存预设失败");
+    }
+  };
+
+  const handleDeletePreset = async (presetId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deletePreset.mutateAsync(presetId);
+      toast.success("预设已删除");
+    } catch (error) {
+      toast.error("删除预设失败");
+    }
+  };
+
   const isAllFilled = allVariables.every(
     (v) => !v.definition?.required || variableValues[v.name]
   );
+
+  const hasFilledValues = Object.values(variableValues).some((v) => v);
 
   if (!template) return null;
 
@@ -243,6 +334,98 @@ export function TemplateVariableDialog({
             此模板包含 {allVariables.length} 个变量，请填写具体值后使用
           </DialogDescription>
         </DialogHeader>
+
+        {/* Preset Actions */}
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={matchingPresets.length === 0}>
+                <FolderOpen className="h-4 w-4 mr-1" />
+                加载预设
+                {matchingPresets.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-[10px]">
+                    {matchingPresets.length}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {matchingPresets.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  暂无可用预设
+                </div>
+              ) : (
+                matchingPresets.map((preset) => (
+                  <DropdownMenuItem
+                    key={preset.id}
+                    onClick={() => handleLoadPreset(preset)}
+                    className="flex items-center justify-between group"
+                  >
+                    <span className="truncate">{preset.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-[10px]">
+                        {Object.keys(preset.values).length} 变量
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => handleDeletePreset(preset.id, e)}
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Popover open={showSavePreset} onOpenChange={setShowSavePreset}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" disabled={!hasFilledValues}>
+                <Save className="h-4 w-4 mr-1" />
+                保存预设
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-sm">预设名称</Label>
+                  <Input
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                    placeholder="输入预设名称..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSavePreset();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  将保存当前填写的 {Object.values(variableValues).filter(Boolean).length} 个变量值
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSavePreset(false)}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSavePreset}
+                    disabled={!presetName.trim() || savePreset.isPending}
+                  >
+                    {savePreset.isPending ? "保存中..." : "保存"}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         <ScrollArea className="max-h-[50vh] pr-4">
           <div className="space-y-4">
