@@ -3001,16 +3001,32 @@ export function SkillTemplatesDialog({
     setOpen(false);
   };
 
-  const difficultyColors = {
-    beginner: "bg-status-executing/10 text-status-executing",
-    intermediate: "bg-status-planning/10 text-status-planning",
-    advanced: "bg-destructive/10 text-destructive",
+  const difficultyConfig = {
+    beginner: {
+      label: "入门",
+      className: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm shadow-emerald-500/10",
+      dotColor: "bg-emerald-400",
+    },
+    intermediate: {
+      label: "中级", 
+      className: "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-sm shadow-amber-500/10",
+      dotColor: "bg-amber-400",
+    },
+    advanced: {
+      label: "高级",
+      className: "bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm shadow-rose-500/10",
+      dotColor: "bg-rose-400",
+    },
   };
 
-  const difficultyLabels = {
-    beginner: "入门",
-    intermediate: "中级",
-    advanced: "高级",
+  const categoryColors: Record<string, string> = {
+    "信息检索": "bg-sky-500/15 text-sky-400 border-sky-500/30",
+    "数据操作": "bg-violet-500/15 text-violet-400 border-violet-500/30",
+    "NLP": "bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30",
+    "工具": "bg-teal-500/15 text-teal-400 border-teal-500/30",
+    "API": "bg-orange-500/15 text-orange-400 border-orange-500/30",
+    "安全": "bg-red-500/15 text-red-400 border-red-500/30",
+    "AI": "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
   };
 
   return (
@@ -3056,44 +3072,58 @@ export function SkillTemplatesDialog({
 
             <ScrollArea className="flex-1 h-[450px] pr-4">
               <div className="grid grid-cols-2 gap-4">
-                {filteredTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="p-4 rounded-lg border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group"
-                    onClick={() => handleSelect(template)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                        {template.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-medium text-sm truncate">
-                            {template.name}
-                          </h3>
-                          <Badge
-                            className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
-                              difficultyColors[template.difficulty]
-                            }`}
-                          >
-                            {difficultyLabels[template.difficulty]}
-                          </Badge>
+                {filteredTemplates.map((template) => {
+                  const diffConfig = difficultyConfig[template.difficulty];
+                  const catColor = categoryColors[template.category] || "bg-muted/50 text-muted-foreground border-border";
+                  
+                  return (
+                    <div
+                      key={template.id}
+                      className="p-4 rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/80 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+                      onClick={() => handleSelect(template)}
+                    >
+                      {/* Gradient accent bar */}
+                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      
+                      <div className="flex items-start gap-3">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary flex-shrink-0 ring-1 ring-primary/20">
+                          {template.icon}
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {template.description}
-                        </p>
-                        <Badge variant="outline" className="mt-2 text-[10px]">
-                          {template.category}
-                        </Badge>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-sm text-foreground truncate">
+                              {template.name}
+                            </h3>
+                          </div>
+                          
+                          {/* Prominent difficulty badge */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${diffConfig.className}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${diffConfig.dotColor} animate-pulse`} />
+                              {diffConfig.label}
+                            </span>
+                            
+                            {/* Category tag */}
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${catColor}`}>
+                              {template.category}
+                            </span>
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                            {template.description}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 pt-3 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
+                        <Button size="sm" className="w-full h-8 text-xs font-medium shadow-sm">
+                          <Zap className="h-3 w-3 mr-1.5" />
+                          使用此模板
+                        </Button>
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-border opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" className="w-full h-7 text-xs">
-                        使用此模板
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ScrollArea>
           </TabsContent>
