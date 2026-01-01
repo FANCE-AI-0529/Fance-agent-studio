@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +15,25 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   FileText,
   Users,
   ClipboardCheck,
@@ -21,7 +42,6 @@ import {
   MessageSquare,
   Briefcase,
   ShieldCheck,
-  Loader2,
   Search,
   ArrowRight,
   Layers,
@@ -33,8 +53,20 @@ import {
   UserCheck,
   FileCheck,
   Bot,
+  Plus,
+  Trash2,
+  Share2,
+  User,
+  Library,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  useCustomTemplates, 
+  useCreateCustomTemplate, 
+  useDeleteCustomTemplate,
+  type CustomTemplate 
+} from "@/hooks/useCustomTemplates";
+import type { TaskChain } from "@/hooks/useTaskChains";
 
 export interface TemplateStep {
   name: string;
@@ -55,6 +87,8 @@ export interface TaskChainTemplate {
   estimatedTime: string;
   steps: TemplateStep[];
   tags: string[];
+  isCustom?: boolean;
+  isShared?: boolean;
 }
 
 const templateIcons = {
@@ -81,6 +115,11 @@ const categoryColors: Record<string, string> = {
   "客户服务": "bg-purple-500/10 text-purple-500 border-purple-500/20",
   "数据处理": "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
   "招聘流程": "bg-pink-500/10 text-pink-500 border-pink-500/20",
+  "custom": "bg-amber-500/10 text-amber-500 border-amber-500/20",
+};
+
+const categoryLabels: Record<string, string> = {
+  "custom": "自定义",
 };
 
 export const taskChainTemplates: TaskChainTemplate[] = [
@@ -551,21 +590,65 @@ export const taskChainTemplates: TaskChainTemplate[] = [
 interface TaskChainTemplatesProps {
   onSelectTemplate: (template: TaskChainTemplate) => void;
   onClose?: () => void;
+  chainToSave?: TaskChain | null;
+  onSaveComplete?: () => void;
 }
 
-export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTemplatesProps) {
+export function TaskChainTemplates({ 
+  onSelectTemplate, 
+  onClose, 
+  chainToSave,
+  onSaveComplete,
+}: TaskChainTemplatesProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TaskChainTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState<string>(chainToSave ? "my" : "all");
+  const [showSaveDialog, setShowSaveDialog] = useState(!!chainToSave);
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+
+  // Save template form state
+  const [saveForm, setSaveForm] = useState({
+    name: chainToSave?.name || "",
+    description: chainToSave?.description || "",
+    category: "custom",
+    icon: "FileText" as keyof typeof templateIcons,
+    isShared: false,
+  });
+
+  const { data: customTemplates = [], isLoading } = useCustomTemplates();
+  const createTemplate = useCreateCustomTemplate();
+  const deleteTemplate = useDeleteCustomTemplate();
 
   const categories = [...new Set(taskChainTemplates.map((t) => t.category))];
+  const customCategories = [...new Set(customTemplates.map((t) => t.category))];
+  const allCategories = [...new Set([...categories, ...customCategories])];
 
-  const filteredTemplates = taskChainTemplates.filter((template) => {
+  // Convert custom templates to TaskChainTemplate format
+  const formattedCustomTemplates: TaskChainTemplate[] = customTemplates.map((t) => ({
+    id: t.id,
+    name: t.name,
+    description: t.description || "",
+    category: t.category,
+    icon: (t.icon as keyof typeof templateIcons) || "FileText",
+    executionMode: "sequential" as const,
+    estimatedTime: `${t.steps.length} 步骤`,
+    steps: t.steps,
+    tags: [],
+    isCustom: true,
+    isShared: t.is_shared,
+  }));
+
+  const allTemplates = activeTab === "my" 
+    ? formattedCustomTemplates 
+    : [...taskChainTemplates, ...formattedCustomTemplates];
+
+  const filteredTemplates = allTemplates.filter((template) => {
     const matchesSearch =
       searchQuery === "" ||
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      (template.tags || []).some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCategory = selectedCategory === null || template.category === selectedCategory;
 
@@ -577,14 +660,66 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
     onClose?.();
   };
 
+  const handleSaveAsTemplate = async () => {
+    if (!chainToSave) return;
+
+    const steps = chainToSave.steps?.map((step) => ({
+      name: step.name,
+      description: step.description || "",
+      taskType: step.task_type,
+      inputMapping: (step.input_mapping as Record<string, string>) || {},
+      outputKey: step.output_key || "",
+      parallelGroup: step.parallel_group || 0,
+    })) || [];
+
+    await createTemplate.mutateAsync({
+      name: saveForm.name,
+      description: saveForm.description,
+      category: saveForm.category,
+      icon: saveForm.icon,
+      steps,
+      isShared: saveForm.isShared,
+    });
+
+    setShowSaveDialog(false);
+    onSaveComplete?.();
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!deleteTemplateId) return;
+    await deleteTemplate.mutateAsync(deleteTemplateId);
+    setDeleteTemplateId(null);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">任务链模板</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">任务链模板</h2>
+          </div>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="all" className="flex items-center gap-2">
+              <Library className="h-4 w-4" />
+              全部模板
+            </TabsTrigger>
+            <TabsTrigger value="my" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              我的模板
+              {formattedCustomTemplates.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px]">
+                  {formattedCustomTemplates.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Search */}
         <div className="relative mb-4">
@@ -606,7 +741,7 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
           >
             全部
           </Badge>
-          {categories.map((category) => (
+          {allCategories.map((category) => (
             <Badge
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
@@ -616,7 +751,7 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
               )}
               onClick={() => setSelectedCategory(category)}
             >
-              {category}
+              {categoryLabels[category] || category}
             </Badge>
           ))}
         </div>
@@ -624,77 +759,119 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
 
       {/* Template Grid */}
       <ScrollArea className="flex-1 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => {
-            const Icon = templateIcons[template.icon] || FileText;
-            return (
-              <Card
-                key={template.id}
-                className="hover:border-primary/50 transition-colors cursor-pointer group"
-                onClick={() => setPreviewTemplate(template)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div
-                      className={cn(
-                        "p-2 rounded-lg",
-                        categoryColors[template.category] || "bg-muted"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {template.executionMode === "sequential" && (
-                        <ArrowRight className="h-3 w-3 mr-1" />
-                      )}
-                      {template.executionMode === "parallel" && (
-                        <Layers className="h-3 w-3 mr-1" />
-                      )}
-                      {template.executionMode === "mixed" && (
-                        <GitBranch className="h-3 w-3 mr-1" />
-                      )}
-                      {template.steps.length} 步骤
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-sm mt-2">{template.name}</CardTitle>
-                  <CardDescription className="text-xs line-clamp-2">
-                    {template.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {template.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-[10px]">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground">
-                      {template.estimatedTime}
-                    </span>
-                    <Button
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUseTemplate(template);
-                      }}
-                    >
-                      使用模板
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {filteredTemplates.length === 0 && (
+        {isLoading && activeTab === "my" ? (
+          <div className="text-center py-12 text-muted-foreground">
+            加载中...
+          </div>
+        ) : filteredTemplates.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <FileSearch className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>未找到匹配的模板</p>
-            <p className="text-xs mt-1">尝试调整搜索条件</p>
+            {activeTab === "my" ? (
+              <>
+                <p>暂无自定义模板</p>
+                <p className="text-xs mt-1">在任务链面板中保存任务链为模板</p>
+              </>
+            ) : (
+              <>
+                <p>未找到匹配的模板</p>
+                <p className="text-xs mt-1">尝试调整搜索条件</p>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTemplates.map((template) => {
+              const Icon = templateIcons[template.icon] || FileText;
+              return (
+                <Card
+                  key={template.id}
+                  className="hover:border-primary/50 transition-colors cursor-pointer group relative"
+                  onClick={() => setPreviewTemplate(template)}
+                >
+                  {template.isCustom && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTemplateId(template.id);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div
+                        className={cn(
+                          "p-2 rounded-lg",
+                          categoryColors[template.category] || "bg-muted"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {template.isCustom && (
+                          <Badge variant="outline" className="text-[10px]">
+                            <User className="h-3 w-3 mr-1" />
+                            我的
+                          </Badge>
+                        )}
+                        {template.isShared && (
+                          <Badge variant="outline" className="text-[10px]">
+                            <Share2 className="h-3 w-3 mr-1" />
+                            共享
+                          </Badge>
+                        )}
+                        <Badge variant="secondary" className="text-[10px]">
+                          {template.executionMode === "sequential" && (
+                            <ArrowRight className="h-3 w-3 mr-1" />
+                          )}
+                          {template.executionMode === "parallel" && (
+                            <Layers className="h-3 w-3 mr-1" />
+                          )}
+                          {template.executionMode === "mixed" && (
+                            <GitBranch className="h-3 w-3 mr-1" />
+                          )}
+                          {template.steps.length} 步骤
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-sm mt-2">{template.name}</CardTitle>
+                    <CardDescription className="text-xs line-clamp-2">
+                      {template.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {template.tags && template.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {template.tags.slice(0, 3).map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-[10px]">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground">
+                        {template.estimatedTime}
+                      </span>
+                      <Button
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUseTemplate(template);
+                        }}
+                      >
+                        使用模板
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </ScrollArea>
@@ -718,7 +895,14 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
                     })()}
                   </div>
                   <div>
-                    <DialogTitle>{previewTemplate.name}</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2">
+                      {previewTemplate.name}
+                      {previewTemplate.isCustom && (
+                        <Badge variant="outline" className="text-[10px]">
+                          我的模板
+                        </Badge>
+                      )}
+                    </DialogTitle>
                     <DialogDescription>{previewTemplate.description}</DialogDescription>
                   </div>
                 </div>
@@ -737,13 +921,15 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-1">
-                  {previewTemplate.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                {previewTemplate.tags && previewTemplate.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {previewTemplate.tags.map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3 text-sm">执行步骤</h4>
@@ -792,6 +978,130 @@ export function TaskChainTemplates({ onSelectTemplate, onClose }: TaskChainTempl
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Save as Template Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>保存为模板</DialogTitle>
+            <DialogDescription>
+              将当前任务链保存为可复用的模板
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>模板名称</Label>
+              <Input
+                value={saveForm.name}
+                onChange={(e) => setSaveForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="输入模板名称"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>描述</Label>
+              <Textarea
+                value={saveForm.description}
+                onChange={(e) => setSaveForm((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="描述这个模板的用途"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>分类</Label>
+              <Select
+                value={saveForm.category}
+                onValueChange={(v) => setSaveForm((prev) => ({ ...prev, category: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">自定义</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>图标</Label>
+              <Select
+                value={saveForm.icon}
+                onValueChange={(v) => setSaveForm((prev) => ({ ...prev, icon: v as keyof typeof templateIcons }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(templateIcons).map((iconName) => {
+                    const Icon = templateIcons[iconName as keyof typeof templateIcons];
+                    return (
+                      <SelectItem key={iconName} value={iconName}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          {iconName}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>公开共享</Label>
+                <p className="text-xs text-muted-foreground">
+                  其他用户也可以使用此模板
+                </p>
+              </div>
+              <Switch
+                checked={saveForm.isShared}
+                onCheckedChange={(v) => setSaveForm((prev) => ({ ...prev, isShared: v }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              取消
+            </Button>
+            <Button 
+              onClick={handleSaveAsTemplate}
+              disabled={!saveForm.name || createTemplate.isPending}
+            >
+              {createTemplate.isPending ? "保存中..." : "保存模板"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTemplateId} onOpenChange={() => setDeleteTemplateId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除这个模板吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTemplate}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

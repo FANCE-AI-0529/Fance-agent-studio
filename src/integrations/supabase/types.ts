@@ -1032,6 +1032,45 @@ export type Database = {
           },
         ]
       }
+      task_chain_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_shared: boolean
+          name: string
+          steps: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_shared?: boolean
+          name: string
+          steps?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_shared?: boolean
+          name?: string
+          steps?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_chains: {
         Row: {
           collaboration_id: string | null
