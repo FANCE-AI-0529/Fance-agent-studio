@@ -14,6 +14,7 @@ import {
   Key,
   Settings2
 } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import { ExecutionHistoryPanel } from "@/components/runtime/ExecutionHistoryPane
 import { FormattedText } from "@/components/runtime/FormattedText";
 import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormattedText";
 import { TypingIndicator } from "@/components/runtime/TypingIndicator";
+import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -1134,8 +1136,14 @@ const Runtime = () => {
         {/* Input Area */}
         <div className="p-4 border-t border-border">
           <div className="flex gap-2">
+            <TooltipProvider>
+              <VoiceInputButton 
+                onTranscript={(text) => setInput(prev => prev ? `${prev} ${text}` : text)}
+                disabled={currentPhase !== "idle"}
+              />
+            </TooltipProvider>
             <Input
-              placeholder="试试: '读取配置文件' / '调用API' / '删除数据' / '执行脚本'"
+              placeholder="试试: '读取配置文件' / '调用API' / '删除数据' 或点击麦克风语音输入"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
