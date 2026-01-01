@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Sheet,
   SheetContent,
@@ -27,16 +27,34 @@ import {
   CloudOff,
   Trash2,
   Download,
-  Upload
+  Upload,
+  Variable
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, UserPrompt } from "@/hooks/useUserPrompts";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Extract variables from prompt using {{variable}} syntax
+const extractVariables = (prompt: string): string[] => {
+  const regex = /\{\{(\w+)\}\}/g;
+  const matches = new Set<string>();
+  let match;
+  while ((match = regex.exec(prompt)) !== null) {
+    matches.add(match[1]);
+  }
+  return Array.from(matches);
+};
+
+// Replace variables in prompt with values
+const replaceVariables = (prompt: string, variables: Record<string, string>): string => {
+  return prompt.replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] || `{{${key}}}`);
+};
+
 interface SystemPromptEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onVariablesChange?: (variables: Record<string, string>) => void;
   agentId?: string | null;
   agentName?: string;
   disabled?: boolean;
@@ -122,6 +140,7 @@ const promptTemplates = [
 export function SystemPromptEditor({ 
   value, 
   onChange, 
+  onVariablesChange,
   agentId,
   agentName,
   disabled 
@@ -133,6 +152,37 @@ export function SystemPromptEditor({
   const [copied, setCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+
+  // Extract variables from prompt
+  const detectedVariables = useMemo(() => extractVariables(localValue), [localValue]);
+
+  // Update variable values when variables change
+  useEffect(() => {
+    setVariableValues((prev) => {
+      const newValues: Record<string, string> = {};
+      detectedVariables.forEach((v) => {
+        newValues[v] = prev[v] || "";
+      });
+      return newValues;
+    });
+  }, [detectedVariables]);
+
+  // Notify parent when variables change
+  useEffect(() => {
+    if (onVariablesChange) {
+      onVariablesChange(variableValues);
+    }
+  }, [variableValues, onVariablesChange]);
+
+  const handleVariableChange = useCallback((variable: string, value: string) => {
+    setVariableValues((prev) => ({ ...prev, [variable]: value }));
+  }, []);
+
+  // Get the final prompt with variables replaced
+  const getFinalPrompt = useCallback(() => {
+    return replaceVariables(localValue, variableValues);
+  }, [localValue, variableValues]);
 
   // Fetch saved prompts
   const { data: savedPrompts = [], isLoading: isLoadingPrompts } = useUserPrompts(agentId);
@@ -455,6 +505,37 @@ export function SystemPromptEditor({
             </ScrollArea>
           </div>
 
+          {/* Variable Inputs */}
+          {detectedVariables.length > 0 && (
+            <div className="border rounded-lg p-3 bg-secondary/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Variable className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-medium">变量设置</Label>
+                <Badge variant="outline" className="text-xs">
+                  {detectedVariables.length} 个变量
+                </Badge>
+              </div>
+              <div className="grid gap-2">
+                {detectedVariables.map((variable) => (
+                  <div key={variable} className="flex items-center gap-2">
+                    <code className="text-xs bg-muted px-2 py-1 rounded min-w-[100px]">
+                      {`{{${variable}}}`}
+                    </code>
+                    <Input
+                      value={variableValues[variable] || ""}
+                      onChange={(e) => handleVariableChange(variable, e.target.value)}
+                      placeholder={`输入 ${variable} 的值...`}
+                      className="h-7 text-sm flex-1"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                运行时这些变量会被替换为实际值
+              </p>
+            </div>
+          )}
+
           {/* Tips */}
           <div className="bg-secondary/30 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">💡 提示词编写技巧：</p>
@@ -462,7 +543,7 @@ export function SystemPromptEditor({
               <li>明确定义 Agent 的角色和身份</li>
               <li>列出核心能力和限制条件</li>
               <li>规定回复的格式和风格</li>
-              <li>使用 Markdown 格式让提示词更清晰</li>
+              <li>使用 <code className="bg-muted px-1 rounded">{`{{variable}}`}</code> 语法定义动态变量</li>
             </ul>
           </div>
         </div>

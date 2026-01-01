@@ -393,6 +393,7 @@ const Runtime = () => {
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("google/gemini-2.5-flash");
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
+  const [promptVariables, setPromptVariables] = useState<Record<string, string>>({});
   const assistantContentRef = useRef("");
   const currentEventsRef = useRef<TraceEvent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -414,9 +415,14 @@ const Runtime = () => {
       }))
     : [];
 
-  // Determine the system prompt to use
-  const effectiveSystemPrompt = customSystemPrompt || 
+  // Determine the system prompt to use (with variable replacement)
+  const baseSystemPrompt = customSystemPrompt || 
     (selectedAgent ? (selectedAgent.manifest as any)?.system_prompt : undefined);
+  
+  // Replace variables in the system prompt
+  const effectiveSystemPrompt = baseSystemPrompt 
+    ? baseSystemPrompt.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => promptVariables[key] || `{{${key}}}`)
+    : undefined;
 
   const currentAgentConfig = {
     name: selectedAgent?.name,
@@ -979,8 +985,9 @@ const Runtime = () => {
               </Badge>
             )}
             <SystemPromptEditor
-              value={customSystemPrompt || effectiveSystemPrompt || ""}
+              value={customSystemPrompt || baseSystemPrompt || ""}
               onChange={setCustomSystemPrompt}
+              onVariablesChange={setPromptVariables}
               agentId={selectedAgent?.id}
               agentName={selectedAgent?.name || "Default Agent"}
               disabled={currentPhase !== "idle"}
