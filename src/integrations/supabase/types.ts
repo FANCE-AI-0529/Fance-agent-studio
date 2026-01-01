@@ -149,6 +149,65 @@ export type Database = {
         }
         Relationships: []
       }
+      circuit_breaker_state: {
+        Row: {
+          agent_id: string
+          created_at: string
+          failure_count: number
+          failure_threshold: number
+          half_opened_at: string | null
+          id: string
+          last_failure_at: string | null
+          opened_at: string | null
+          state: string
+          success_count: number
+          success_threshold: number
+          timeout_duration_ms: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          failure_count?: number
+          failure_threshold?: number
+          half_opened_at?: string | null
+          id?: string
+          last_failure_at?: string | null
+          opened_at?: string | null
+          state?: string
+          success_count?: number
+          success_threshold?: number
+          timeout_duration_ms?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          failure_count?: number
+          failure_threshold?: number
+          half_opened_at?: string | null
+          id?: string
+          last_failure_at?: string | null
+          opened_at?: string | null
+          state?: string
+          success_count?: number
+          success_threshold?: number
+          timeout_duration_ms?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_breaker_state_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collaboration_messages: {
         Row: {
           collaboration_id: string
@@ -504,6 +563,69 @@ export type Database = {
             columns: ["target_entity_id"]
             isOneToOne: false
             referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intent_history: {
+        Row: {
+          agent_id: string
+          created_at: string
+          current_intent: string
+          delta_score: number
+          drift_detected: boolean
+          id: string
+          intent_embedding: Json | null
+          message_content: string | null
+          original_intent: string
+          response_content: string | null
+          session_id: string | null
+          turn_number: number
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          current_intent: string
+          delta_score?: number
+          drift_detected?: boolean
+          id?: string
+          intent_embedding?: Json | null
+          message_content?: string | null
+          original_intent: string
+          response_content?: string | null
+          session_id?: string | null
+          turn_number?: number
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          current_intent?: string
+          delta_score?: number
+          drift_detected?: boolean
+          id?: string
+          intent_embedding?: Json | null
+          message_content?: string | null
+          original_intent?: string
+          response_content?: string | null
+          session_id?: string | null
+          turn_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intent_history_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intent_history_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]
