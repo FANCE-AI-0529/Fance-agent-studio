@@ -1,4 +1,11 @@
 import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -122,101 +129,130 @@ export function ExecutionHistoryPanel({ chainId, onReplay }: ExecutionHistoryPan
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <History className="h-4 w-4" />
-            执行历史
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            加载中...
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const runningCount = executions.filter(e => e.status === "running").length;
+  const completedCount = executions.filter(e => e.status === "completed").length;
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <History className="h-4 w-4" />
-              执行历史
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="relative">
+            <History className="h-4 w-4 mr-2" />
+            执行历史
+            {runningCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full text-[10px] text-white flex items-center justify-center animate-pulse">
+                {runningCount}
+              </span>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-[500px] sm:max-w-[500px]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              任务链执行历史
               {executions.length > 0 && (
-                <Badge variant="secondary" className="text-[10px]">
-                  {executions.length}
-                </Badge>
+                <Badge variant="secondary">{executions.length}</Badge>
               )}
-            </CardTitle>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => refetch()}>
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {executions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm px-4">
-              <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>暂无执行记录</p>
-              <p className="text-xs mt-1">执行任务链后将在此显示历史</p>
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-4">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2">
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <div className="text-xl font-bold text-blue-500">{runningCount}</div>
+                  <div className="text-xs text-muted-foreground">执行中</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <div className="text-xl font-bold text-green-500">{completedCount}</div>
+                  <div className="text-xs text-muted-foreground">已完成</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <div className="text-xl font-bold">{executions.length}</div>
+                  <div className="text-xs text-muted-foreground">总计</div>
+                </CardContent>
+              </Card>
             </div>
-          ) : (
-            <ScrollArea className="h-[300px]">
-              <div className="divide-y divide-border">
-                {executions.map((execution) => (
-                  <div
-                    key={execution.id}
-                    className="p-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => setSelectedExecution(execution)}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className={cn("text-[10px]", executionStatusColors[execution.status])}
-                          >
-                            {getStatusIcon(execution.status)}
-                            <span className="ml-1">{executionStatusLabels[execution.status]}</span>
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {execution.completed_steps}/{execution.total_steps} 步骤
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium mt-1 truncate">
-                          {execution.chain_name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Timer className="h-3 w-3" />
-                            {execution.duration_ms
-                              ? formatDuration(execution.duration_ms)
-                              : "进行中"}
-                          </span>
-                          <span>•</span>
-                          <span>
-                            {formatDistanceToNow(new Date(execution.started_at), {
-                              addSuffix: true,
-                              locale: zhCN,
-                            })}
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </div>
-                  </div>
-                ))}
+
+            {/* Actions */}
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                刷新
+              </Button>
+            </div>
+
+            {/* Execution List */}
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                加载中...
               </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+            ) : executions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>暂无执行记录</p>
+                <p className="text-xs mt-1">执行任务链后将在此显示历史</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[calc(100vh-300px)]">
+                <div className="space-y-2">
+                  {executions.map((execution) => (
+                    <Card
+                      key={execution.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setSelectedExecution(execution)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={cn("text-[10px]", executionStatusColors[execution.status])}
+                              >
+                                {getStatusIcon(execution.status)}
+                                <span className="ml-1">{executionStatusLabels[execution.status]}</span>
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {execution.completed_steps}/{execution.total_steps} 步骤
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium mt-1 truncate">
+                              {execution.chain_name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Timer className="h-3 w-3" />
+                                {execution.duration_ms
+                                  ? formatDuration(execution.duration_ms)
+                                  : "进行中"}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {formatDistanceToNow(new Date(execution.started_at), {
+                                  addSuffix: true,
+                                  locale: zhCN,
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Execution Detail Dialog */}
       <Dialog open={!!selectedExecution} onOpenChange={() => setSelectedExecution(null)}>
