@@ -47,6 +47,7 @@ import {
   Workflow,
   Edit3,
   Sparkles,
+  Save,
 } from "lucide-react";
 import { TaskChainVisualEditor } from "./TaskChainVisualEditor";
 import { TaskChainTemplates, type TaskChainTemplate } from "./TaskChainTemplates";
@@ -88,6 +89,8 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showVisualEditor, setShowVisualEditor] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [chainToSaveAsTemplate, setChainToSaveAsTemplate] = useState<TaskChain | null>(null);
   const [editingChain, setEditingChain] = useState<TaskChain | null>(null);
   const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
   
@@ -746,6 +749,18 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
                   执行
                 </Button>
               )}
+              {selectedChain && selectedChain.steps && selectedChain.steps.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setChainToSaveAsTemplate({ ...selectedChain, steps: selectedChain.steps });
+                    setShowSaveTemplateDialog(true);
+                  }}
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  保存为模板
+                </Button>
+              )}
               {["completed", "failed"].includes(selectedChain?.status || "") && (
                 <Button variant="outline" onClick={() => refetchChain()}>
                   <RefreshCw className="h-4 w-4 mr-1" />
@@ -780,6 +795,21 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
             <TaskChainTemplates
               onSelectTemplate={handleSelectTemplate}
               onClose={() => setShowTemplates(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Save as Template Dialog */}
+        <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+          <DialogContent className="max-w-4xl max-h-[85vh] p-0 overflow-hidden">
+            <TaskChainTemplates
+              onSelectTemplate={() => {}}
+              onClose={() => setShowSaveTemplateDialog(false)}
+              chainToSave={chainToSaveAsTemplate}
+              onSaveComplete={() => {
+                setShowSaveTemplateDialog(false);
+                setChainToSaveAsTemplate(null);
+              }}
             />
           </DialogContent>
         </Dialog>
