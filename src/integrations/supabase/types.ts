@@ -344,6 +344,44 @@ export type Database = {
         }
         Relationships: []
       }
+      variable_presets: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          values: Json
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+          values?: Json
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variable_presets_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
