@@ -12,6 +12,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Sidebar,
   SidebarContent,
@@ -153,6 +154,11 @@ export function AppSidebar() {
                 <div className="text-xs text-muted-foreground">{email}</div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <div className="cursor-pointer">
+                  <ThemeToggle />
+                </div>
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="h-4 w-4 mr-2" />
                 设置
