@@ -72,12 +72,16 @@ import {
   Repeat,
   Bug,
   CircleDot,
+  XCircle,
+  SkipForward,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import TaskStepNode, { type TaskStepNodeData } from "./TaskStepNode";
 import ConditionalNode, { type ConditionalNodeData, type ConditionRule } from "./ConditionalNode";
 import LoopNode, { type LoopNodeData } from "./LoopNode";
+import BreakNode, { type BreakNodeData } from "./BreakNode";
+import ContinueNode, { type ContinueNodeData } from "./ContinueNode";
 import DebugControlPanel from "./DebugControlPanel";
 import { useTaskChainDebug } from "@/hooks/useTaskChainDebug";
 import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from "@/hooks/useTaskChains";
@@ -153,6 +157,8 @@ const nodeTypes = {
   taskStep: TaskStepNode,
   conditional: ConditionalNode,
   loop: LoopNode,
+  break: BreakNode,
+  continue: ContinueNode,
 };
 
 const edgeTypes = {
@@ -569,6 +575,92 @@ function TaskChainVisualEditorInner({
     }
   }, [nodes, executionMode, handleEditNode, handleDeleteNode]);
 
+  // Add break node
+  const addBreakNode = useCallback(() => {
+    const nodeCount = nodes.length;
+    const newNodeId = `break-${Date.now()}`;
+    
+    const newNode: Node = {
+      id: newNodeId,
+      type: "break",
+      position: { x: 150, y: nodeCount * 180 + 50 },
+      data: {
+        id: newNodeId,
+        name: `Break ${nodes.filter(n => n.type === "break").length + 1}`,
+        description: "跳出当前循环",
+        condition: "",
+        targetLoopId: "",
+        breakType: "current" as const,
+        status: "pending" as const,
+        onEdit: handleEditNode,
+        onDelete: handleDeleteNode,
+      } satisfies BreakNodeData,
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+
+    // Auto-connect to previous node if sequential
+    if (executionMode === "sequential" && nodeCount > 0) {
+      const lastNode = nodes[nodeCount - 1];
+      setEdges((eds) => [
+        ...eds,
+        {
+          id: `edge-${lastNode.id}-${newNodeId}`,
+          source: lastNode.id,
+          target: newNodeId,
+          type: "animated",
+          markerEnd: { type: MarkerType.ArrowClosed },
+          data: { animated: false, completed: false },
+        },
+      ]);
+    }
+    
+    toast.success("Break 节点已添加", { description: "将在条件满足时中断循环" });
+  }, [nodes, executionMode, handleEditNode, handleDeleteNode]);
+
+  // Add continue node
+  const addContinueNode = useCallback(() => {
+    const nodeCount = nodes.length;
+    const newNodeId = `continue-${Date.now()}`;
+    
+    const newNode: Node = {
+      id: newNodeId,
+      type: "continue",
+      position: { x: 150, y: nodeCount * 180 + 50 },
+      data: {
+        id: newNodeId,
+        name: `Continue ${nodes.filter(n => n.type === "continue").length + 1}`,
+        description: "跳到下一次迭代",
+        condition: "",
+        targetLoopId: "",
+        skipCount: 1,
+        status: "pending" as const,
+        onEdit: handleEditNode,
+        onDelete: handleDeleteNode,
+      } satisfies ContinueNodeData,
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+
+    // Auto-connect to previous node if sequential
+    if (executionMode === "sequential" && nodeCount > 0) {
+      const lastNode = nodes[nodeCount - 1];
+      setEdges((eds) => [
+        ...eds,
+        {
+          id: `edge-${lastNode.id}-${newNodeId}`,
+          source: lastNode.id,
+          target: newNodeId,
+          type: "animated",
+          markerEnd: { type: MarkerType.ArrowClosed },
+          data: { animated: false, completed: false },
+        },
+      ]);
+    }
+    
+    toast.success("Continue 节点已添加", { description: "将跳过当前迭代继续下一次" });
+  }, [nodes, executionMode, handleEditNode, handleDeleteNode]);
+
   const saveStepChanges = useCallback(() => {
     if (!editingNodeId) return;
 
@@ -847,18 +939,26 @@ function TaskChainVisualEditorInner({
           <Badge variant="secondary">{nodes.length} 步骤</Badge>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={addNewStep}>
             <Plus className="h-4 w-4 mr-1" />
-            添加步骤
+            步骤
           </Button>
           <Button variant="outline" size="sm" onClick={addConditionalNode}>
             <GitBranch className="h-4 w-4 mr-1" />
-            条件分支
+            条件
           </Button>
           <Button variant="outline" size="sm" onClick={addLoopNode}>
             <Repeat className="h-4 w-4 mr-1" />
             循环
+          </Button>
+          <Button variant="outline" size="sm" onClick={addBreakNode} className="border-red-500/30 text-red-500 hover:bg-red-500/10">
+            <XCircle className="h-4 w-4 mr-1" />
+            Break
+          </Button>
+          <Button variant="outline" size="sm" onClick={addContinueNode} className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
+            <SkipForward className="h-4 w-4 mr-1" />
+            Continue
           </Button>
           <Button variant="outline" size="sm" onClick={exportChain}>
             <Download className="h-4 w-4 mr-1" />
