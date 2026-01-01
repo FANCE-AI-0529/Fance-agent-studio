@@ -12,6 +12,9 @@ export interface UserPrompt {
   agent_id: string | null;
   created_at: string;
   updated_at: string;
+  share_token?: string | null;
+  is_shared?: boolean;
+  share_count?: number;
 }
 
 export function useUserPrompts(agentId?: string | null) {
@@ -183,6 +186,85 @@ export function useDeletePrompt() {
     },
     onError: (error) => {
       toast.error(`删除失败: ${error.message}`);
+    },
+  });
+}
+
+// Generate share link for a prompt
+export function useSharePrompt() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (promptId: string) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // First check if prompt already has a share token
+      const { data: existing, error: fetchError } = await supabase
+        .from("user_prompts")
+        .select("share_token, is_shared")
+        .eq("id", promptId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (existing?.share_token && existing?.is_shared) {
+        // Return existing share token
+        return existing.share_token;
+      }
+
+      // Generate new share token using database function
+      const { data: tokenData, error: tokenError } = await supabase
+        .rpc("generate_share_token");
+
+      if (tokenError) throw tokenError;
+
+      // Update prompt with share token
+      const { error: updateError } = await supabase
+        .from("user_prompts")
+        .update({
+          share_token: tokenData,
+          is_shared: true,
+        })
+        .eq("id", promptId)
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      return tokenData as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-prompts"] });
+    },
+  });
+}
+
+// Stop sharing a prompt
+export function useUnsharePrompt() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (promptId: string) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const { error } = await supabase
+        .from("user_prompts")
+        .update({
+          is_shared: false,
+        })
+        .eq("id", promptId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-prompts"] });
+      toast.success("已取消分享");
+    },
+    onError: (error) => {
+      toast.error(`取消分享失败: ${error.message}`);
     },
   });
 }
