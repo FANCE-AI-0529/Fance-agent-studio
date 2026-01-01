@@ -29,6 +29,7 @@ import { AgentCollaborationPanel } from "@/components/runtime/AgentCollaboration
 import { CircuitBreakerPanel } from "@/components/runtime/CircuitBreakerPanel";
 import { TaskChainPanel } from "@/components/runtime/TaskChainPanel";
 import { ExecutionHistoryPanel } from "@/components/runtime/ExecutionHistoryPanel";
+import { FormattedText } from "@/components/runtime/FormattedText";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -1076,7 +1077,7 @@ const Runtime = () => {
                       ? "bg-primary text-primary-foreground"
                       : "bg-card border border-border"
                   }`}>
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <FormattedText content={message.content} className="text-sm" />
                   </div>
                   
                   {message.skill && (
