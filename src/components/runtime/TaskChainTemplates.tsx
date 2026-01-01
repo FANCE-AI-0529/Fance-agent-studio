@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   FileText,
   Users,
   ClipboardCheck,
@@ -58,8 +64,15 @@ import {
   Share2,
   User,
   Library,
+  Download,
+  Upload,
+  MoreVertical,
+  Copy,
+  FileDown,
+  FileUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { 
   useCustomTemplates, 
   useCreateCustomTemplate, 
@@ -606,6 +619,10 @@ export function TaskChainTemplates({
   const [activeTab, setActiveTab] = useState<string>(chainToSave ? "my" : "all");
   const [showSaveDialog, setShowSaveDialog] = useState(!!chainToSave);
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importJson, setImportJson] = useState("");
+  const [importError, setImportError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Save template form state
   const [saveForm, setSaveForm] = useState({
@@ -691,14 +708,215 @@ export function TaskChainTemplates({
     setDeleteTemplateId(null);
   };
 
+  // Export a single template
+  const handleExportTemplate = (template: TaskChainTemplate) => {
+    const exportData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      template: {
+        name: template.name,
+        description: template.description,
+        category: template.category,
+        icon: template.icon,
+        executionMode: template.executionMode,
+        steps: template.steps,
+        tags: template.tags || [],
+      },
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `template-${template.name.replace(/\s+/g, "-").toLowerCase()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("模板已导出");
+  };
+
+  // Export all custom templates
+  const handleExportAllTemplates = () => {
+    if (formattedCustomTemplates.length === 0) {
+      toast.error("暂无自定义模板可导出");
+      return;
+    }
+
+    const exportData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      templates: formattedCustomTemplates.map((t) => ({
+        name: t.name,
+        description: t.description,
+        category: t.category,
+        icon: t.icon,
+        executionMode: t.executionMode,
+        steps: t.steps,
+        tags: t.tags || [],
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `templates-export-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`已导出 ${formattedCustomTemplates.length} 个模板`);
+  };
+
+  // Handle file import
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setImportJson(content);
+      setImportError("");
+      setShowImportDialog(true);
+    };
+    reader.onerror = () => {
+      toast.error("读取文件失败");
+    };
+    reader.readAsText(file);
+    
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Validate and import templates
+  const handleImportTemplates = async () => {
+    try {
+      const data = JSON.parse(importJson);
+      
+      // Validate structure
+      if (!data.version) {
+        setImportError("无效的模板文件：缺少版本信息");
+        return;
+      }
+
+      const templatesToImport: Array<{
+        name: string;
+        description: string;
+        category: string;
+        icon: string;
+        steps: TemplateStep[];
+      }> = [];
+
+      // Handle single template or multiple templates
+      if (data.template) {
+        templatesToImport.push(data.template);
+      } else if (data.templates && Array.isArray(data.templates)) {
+        templatesToImport.push(...data.templates);
+      } else {
+        setImportError("无效的模板文件：缺少模板数据");
+        return;
+      }
+
+      // Validate each template
+      for (const template of templatesToImport) {
+        if (!template.name || !template.steps || !Array.isArray(template.steps)) {
+          setImportError(`无效的模板数据：${template.name || "未命名模板"} 缺少必要字段`);
+          return;
+        }
+      }
+
+      // Import templates one by one
+      let successCount = 0;
+      for (const template of templatesToImport) {
+        try {
+          await createTemplate.mutateAsync({
+            name: template.name,
+            description: template.description || "",
+            category: template.category || "custom",
+            icon: template.icon || "FileText",
+            steps: template.steps,
+            isShared: false,
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to import template ${template.name}:`, err);
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`成功导入 ${successCount} 个模板`);
+        setShowImportDialog(false);
+        setImportJson("");
+        setImportError("");
+      } else {
+        setImportError("导入失败，请检查模板格式");
+      }
+    } catch (err) {
+      setImportError("JSON 格式错误，请检查文件内容");
+    }
+  };
+
+  // Copy template to clipboard
+  const handleCopyTemplate = (template: TaskChainTemplate) => {
+    const exportData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      template: {
+        name: template.name,
+        description: template.description,
+        category: template.category,
+        icon: template.icon,
+        executionMode: template.executionMode,
+        steps: template.steps,
+        tags: template.tags || [],
+      },
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+    toast.success("模板已复制到剪贴板");
+  };
+
   return (
     <div className="flex flex-col h-full">
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileImport}
+        className="hidden"
+      />
+
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">任务链模板</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4 mr-1" />
+              导入
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-1" />
+                  导出
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportAllTemplates}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  导出全部自定义模板
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -788,19 +1006,39 @@ export function TaskChainTemplates({
                   className="hover:border-primary/50 transition-colors cursor-pointer group relative"
                   onClick={() => setPreviewTemplate(template)}
                 >
-                  {template.isCustom && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTemplateId(template.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  )}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleExportTemplate(template)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          导出模板
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleCopyTemplate(template)}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          复制到剪贴板
+                        </DropdownMenuItem>
+                        {template.isCustom && (
+                          <DropdownMenuItem
+                            onClick={() => setDeleteTemplateId(template.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            删除模板
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <div
@@ -1102,6 +1340,79 @@ export function TaskChainTemplates({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileUp className="h-5 w-5" />
+              导入模板
+            </DialogTitle>
+            <DialogDescription>
+              粘贴或编辑 JSON 格式的模板数据，支持导入单个或多个模板
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>模板数据 (JSON)</Label>
+              <Textarea
+                value={importJson}
+                onChange={(e) => {
+                  setImportJson(e.target.value);
+                  setImportError("");
+                }}
+                placeholder={`{
+  "version": "1.0",
+  "template": {
+    "name": "模板名称",
+    "description": "模板描述",
+    "category": "custom",
+    "icon": "FileText",
+    "steps": [
+      {
+        "name": "步骤1",
+        "description": "步骤描述",
+        "taskType": "general",
+        "outputKey": "step_0"
+      }
+    ]
+  }
+}`}
+                rows={12}
+                className="font-mono text-xs"
+              />
+            </div>
+
+            {importError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                {importError}
+              </div>
+            )}
+
+            <div className="text-xs text-muted-foreground">
+              <p className="font-medium mb-1">支持的格式：</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>单个模板：包含 "template" 字段</li>
+                <li>多个模板：包含 "templates" 数组</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+              取消
+            </Button>
+            <Button
+              onClick={handleImportTemplates}
+              disabled={!importJson || createTemplate.isPending}
+            >
+              {createTemplate.isPending ? "导入中..." : "导入模板"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
