@@ -1011,6 +1011,11 @@ const Runtime = () => {
                 currentAgentId={selectedAgent?.id}
                 currentAgentName={selectedAgent?.name}
               />
+              <TaskChainPanel />
+              <CircuitBreakerPanel
+                agentId={selectedAgent?.id}
+                agentName={selectedAgent?.name}
+              />
             </div>
           </div>
         </div>
