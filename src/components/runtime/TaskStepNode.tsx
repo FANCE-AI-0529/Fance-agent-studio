@@ -53,32 +53,63 @@ function TaskStepNode({ data, id, selected }: NodeProps) {
   const nodeData = data as unknown as TaskStepNodeData;
   const { icon: StatusIcon, color, label } = statusConfig[nodeData.status] || statusConfig.pending;
 
+  const isExecuting = nodeData.status === "in_progress";
+  const isCompleted = nodeData.status === "completed";
+  const isFailed = nodeData.status === "failed";
+
   return (
     <div
       className={cn(
         "bg-card border-2 rounded-lg shadow-lg min-w-[200px] max-w-[280px]",
-        "transition-all duration-200",
+        "transition-all duration-300",
         selected ? "border-primary ring-2 ring-primary/20" : "border-border",
-        nodeData.status === "in_progress" && "border-blue-500 ring-2 ring-blue-500/20"
+        // Execution animation styles
+        isExecuting && "border-blue-500 ring-4 ring-blue-500/30 animate-pulse shadow-[0_0_20px_rgba(59,130,246,0.5)]",
+        isCompleted && "border-green-500 ring-2 ring-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.3)]",
+        isFailed && "border-destructive ring-2 ring-destructive/20 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
       )}
     >
-      {/* Input Handle */}
+      {/* Input Handle with animation */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-primary-foreground"
+        className={cn(
+          "!w-3 !h-3 !border-2 !border-primary-foreground transition-all duration-300",
+          isExecuting ? "!bg-blue-500 !w-4 !h-4" : "!bg-primary"
+        )}
       />
 
       {/* Header */}
-      <div className="px-3 py-2 border-b border-border bg-muted/50 rounded-t-lg">
+      <div className={cn(
+        "px-3 py-2 border-b border-border rounded-t-lg transition-colors duration-300",
+        isExecuting ? "bg-blue-500/10" : isCompleted ? "bg-green-500/10" : "bg-muted/50"
+      )}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className={cn("p-1.5 rounded-md", nodeData.status === "completed" ? "bg-green-500/10" : "bg-muted")}>
-              <StatusIcon className={cn("h-4 w-4", color, nodeData.status === "in_progress" && "animate-spin")} />
+            <div className={cn(
+              "p-1.5 rounded-md transition-all duration-300",
+              isExecuting && "bg-blue-500/20 animate-pulse",
+              isCompleted && "bg-green-500/20",
+              isFailed && "bg-destructive/20",
+              !isExecuting && !isCompleted && !isFailed && "bg-muted"
+            )}>
+              <StatusIcon className={cn(
+                "h-4 w-4 transition-all duration-300",
+                color,
+                isExecuting && "animate-spin"
+              )} />
             </div>
-            <span className="font-medium text-sm truncate">{nodeData.name || "未命名步骤"}</span>
+            <span className={cn(
+              "font-medium text-sm truncate transition-colors duration-300",
+              isExecuting && "text-blue-500"
+            )}>
+              {nodeData.name || "未命名步骤"}
+            </span>
           </div>
-          <Badge variant="secondary" className="text-[10px] shrink-0">
+          <Badge variant="secondary" className={cn(
+            "text-[10px] shrink-0 transition-colors duration-300",
+            isExecuting && "bg-blue-500/20 text-blue-500"
+          )}>
             #{nodeData.stepOrder + 1}
           </Badge>
         </div>
@@ -123,14 +154,17 @@ function TaskStepNode({ data, id, selected }: NodeProps) {
       </div>
 
       {/* Footer Actions */}
-      <div className="px-3 py-2 border-t border-border flex items-center justify-between bg-muted/30 rounded-b-lg">
+      <div className={cn(
+        "px-3 py-2 border-t border-border flex items-center justify-between rounded-b-lg transition-colors duration-300",
+        isExecuting ? "bg-blue-500/5" : "bg-muted/30"
+      )}>
         <Badge
           variant="outline"
           className={cn(
-            "text-[10px]",
-            nodeData.status === "completed" && "border-green-500/50 text-green-500",
-            nodeData.status === "failed" && "border-destructive/50 text-destructive",
-            nodeData.status === "in_progress" && "border-blue-500/50 text-blue-500"
+            "text-[10px] transition-all duration-300",
+            isCompleted && "border-green-500/50 text-green-500 bg-green-500/10",
+            isFailed && "border-destructive/50 text-destructive bg-destructive/10",
+            isExecuting && "border-blue-500/50 text-blue-500 bg-blue-500/10 animate-pulse"
           )}
         >
           {label}
@@ -165,11 +199,14 @@ function TaskStepNode({ data, id, selected }: NodeProps) {
         </div>
       </div>
 
-      {/* Output Handle */}
+      {/* Output Handle with animation */}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-primary-foreground"
+        className={cn(
+          "!w-3 !h-3 !border-2 !border-primary-foreground transition-all duration-300",
+          isExecuting ? "!bg-blue-500 !w-4 !h-4" : isCompleted ? "!bg-green-500" : "!bg-primary"
+        )}
       />
     </div>
   );
