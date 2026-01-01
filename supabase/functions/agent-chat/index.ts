@@ -19,7 +19,17 @@ interface AgentConfig {
   mplpPolicy?: string;
 }
 
-// Available models
+// Multimodal message content types
+type TextContent = { type: "text"; text: string };
+type ImageContent = { type: "image_url"; image_url: { url: string } };
+type MessageContent = string | (TextContent | ImageContent)[];
+
+interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: MessageContent;
+}
+
+// Available models - all support multimodal
 const validModels = [
   "google/gemini-2.5-flash",
   "google/gemini-2.5-pro",
@@ -37,7 +47,17 @@ function getValidModel(requestedModel?: string): string {
   return "google/gemini-2.5-flash"; // default
 }
 
-function buildSystemPrompt(config?: AgentConfig): string {
+// Check if message contains multimodal content
+function hasMultimodalContent(messages: ChatMessage[]): boolean {
+  return messages.some(msg => {
+    if (Array.isArray(msg.content)) {
+      return msg.content.some(c => c.type === 'image_url');
+    }
+    return false;
+  });
+}
+
+function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean): string {
   const agentName = config?.name || "Agent OS Assistant";
   const skills = config?.skills || [];
   const mplpPolicy = config?.mplpPolicy || "standard";
@@ -49,9 +69,22 @@ function buildSystemPrompt(config?: AgentConfig): string {
       ).join('\n')}`
     : '';
 
+  // Multimodal instructions
+  const multimodalInstructions = isMultimodal ? `
+
+## 图像分析能力
+
+当用户发送图片时，请：
+1. 仔细观察图片的所有细节
+2. 描述图片的主要内容和关键元素
+3. 根据上下文提供有价值的分析和建议
+4. 如果是代码截图，提供代码相关的帮助
+5. 如果是图表/数据，提供数据分析
+6. 如果是设计稿，提供设计反馈` : '';
+
   // Custom system prompt takes precedence
   if (config?.systemPrompt) {
-    return `${config.systemPrompt}${skillsSection}`;
+    return `${config.systemPrompt}${skillsSection}${multimodalInstructions}`;
   }
 
   // Default Agent OS system prompt
@@ -74,6 +107,7 @@ function buildSystemPrompt(config?: AgentConfig): string {
 
 ## 当前 MPLP 策略: ${mplpPolicy}
 ${skillsSection}
+${multimodalInstructions}
 
 ## 回复格式要求
 
@@ -91,7 +125,11 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, agentConfig } = await req.json();
+    const { messages, agentConfig } = await req.json() as {
+      messages: ChatMessage[];
+      agentConfig?: AgentConfig;
+    };
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -99,11 +137,19 @@ serve(async (req) => {
       throw new Error("AI 服务未配置");
     }
 
-    const systemPrompt = buildSystemPrompt(agentConfig);
+    // Check if this is a multimodal request
+    const isMultimodal = hasMultimodalContent(messages);
+    const systemPrompt = buildSystemPrompt(agentConfig, isMultimodal);
     const model = getValidModel(agentConfig?.model);
 
-    console.log(`[agent-chat] Starting chat with model: ${model}, agent: ${agentConfig?.name || 'default'}`);
+    console.log(`[agent-chat] Starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${agentConfig?.name || 'default'}`);
     console.log(`[agent-chat] Message count: ${messages?.length || 0}`);
+
+    // Build messages array
+    const apiMessages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -113,10 +159,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
+        messages: apiMessages,
         stream: true,
       }),
     });
@@ -147,7 +190,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[agent-chat] Streaming response started with model: ${model}`);
+    console.log(`[agent-chat] Streaming response started with model: ${model}, multimodal: ${isMultimodal}`);
     
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
