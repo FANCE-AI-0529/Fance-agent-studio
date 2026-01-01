@@ -56,6 +56,7 @@ import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { BuilderWizard } from "@/components/builder/BuilderWizard";
+import { ConversationalCreator } from "@/components/builder/ConversationalCreator";
 import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { ApiAlertPanel } from "@/components/builder/ApiAlertPanel";
@@ -100,11 +101,20 @@ const Builder = () => {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [showConversational, setShowConversational] = useState(false);
   const [showApiPanel, setShowApiPanel] = useState(false);
   const [showWebhookPanel, setShowWebhookPanel] = useState(false);
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [showLLMConfig, setShowLLMConfig] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
+
+  // Check URL params for wizard mode
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("wizard") === "true") {
+      setShowConversational(true);
+    }
+  }, []);
 
   // Check if first time user
   useEffect(() => {
@@ -588,7 +598,7 @@ const Builder = () => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {leftPanelCollapsed ? "显示技能市场" : "隐藏技能市场"}
+                  {leftPanelCollapsed ? "显示能力市场" : "隐藏能力市场"}
                 </TooltipContent>
               </Tooltip>
 
