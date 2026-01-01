@@ -5,13 +5,89 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Key entity extracted from conversation
+interface KeyEntity {
+  name: string;
+  type: "person" | "organization" | "location" | "date" | "number" | "policy" | "document" | "other";
+  value?: string;
+  confidence?: number;
+  source?: string;
+}
+
+// Completed step in the workflow
+interface DoneStep {
+  stepId: string;
+  description: string;
+  completedAt: string;
+  result?: unknown;
+  agentId?: string;
+}
+
+// Artifact generated during the workflow
+interface Artifact {
+  id: string;
+  type: "document" | "report" | "form" | "calculation" | "data" | "image" | "other";
+  name: string;
+  url?: string;
+  content?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+// User preferences for the task
+interface UserPreferences {
+  language?: string;
+  responseFormat?: "brief" | "detailed" | "structured";
+  priorityFocus?: string[];
+  excludeTopics?: string[];
+  customPreferences?: Record<string, unknown>;
+}
+
+// Enhanced HandoffPacket following A2A protocol
 interface HandoffContext {
-  sessionSummary?: string;
-  keyEntities?: string[];
-  userPreferences?: Record<string, unknown>;
-  constraints?: string[];
+  // Core task context
+  goal?: string;
+  userQuery?: string;
+  urgency?: "low" | "normal" | "high" | "urgent";
+  
+  // Conversation context
+  conversationSummary?: string;
+  conversationId?: string;
+  turnCount?: number;
+  
+  // Completed work history
+  doneHistory?: DoneStep[];
   previousResults?: unknown[];
-  urgency?: string;
+  
+  // Key information extracted
+  keyEntities?: KeyEntity[];
+  
+  // Constraints and rules
+  constraints?: string[];
+  legalRequirements?: string[];
+  
+  // Generated artifacts
+  artifacts?: Artifact[];
+  
+  // User context
+  userPreferences?: UserPreferences;
+  userProfile?: {
+    department?: string;
+    role?: string;
+    accessLevel?: string;
+  };
+  
+  // Agent-specific context
+  sourceAgentContext?: {
+    agentId: string;
+    agentName: string;
+    capabilities: string[];
+    reasonForHandoff: string;
+  };
+  
+  // Metadata
+  handoffTimestamp?: string;
+  protocolVersion?: string;
 }
 
 interface DelegateTaskRequest {
@@ -102,7 +178,7 @@ Deno.serve(async (req) => {
               title,
               priority,
               task_type: taskType,
-              handoff_summary: handoffContext?.sessionSummary || "No context provided",
+              handoff_summary: handoffContext?.conversationSummary || handoffContext?.goal || "No context provided",
             },
           });
         }
