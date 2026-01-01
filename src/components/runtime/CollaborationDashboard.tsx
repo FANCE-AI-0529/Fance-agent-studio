@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -208,7 +208,7 @@ export function CollaborationDashboard({ open, onOpenChange }: CollaborationDash
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState(edges);
 
   // Update nodes when data changes
-  useMemo(() => {
+  useEffect(() => {
     setFlowNodes(nodes);
     setFlowEdges(edges);
   }, [nodes, edges, setFlowNodes, setFlowEdges]);
