@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.agent-api]
 verify_jwt = false
+
+[functions.agent-mcp]
+verify_jwt = false

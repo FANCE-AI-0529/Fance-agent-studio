@@ -20,6 +20,8 @@ import {
   Loader2,
   X,
   AlertTriangle,
+  Plug,
+  Boxes,
 } from "lucide-react";
 import {
   Dialog,
@@ -93,6 +95,7 @@ export function AgentApiPanel({
 
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiEndpoint = `${baseUrl}/functions/v1/agent-api`;
+  const mcpEndpoint = `${baseUrl}/functions/v1/agent-mcp`;
 
   const handleCreateKey = async () => {
     if (!agentId) return;
@@ -164,7 +167,11 @@ export function AgentApiPanel({
             </TabsTrigger>
             <TabsTrigger value="docs" className="gap-1.5">
               <FileText className="h-3.5 w-3.5" />
-              使用文档
+              REST API
+            </TabsTrigger>
+            <TabsTrigger value="mcp" className="gap-1.5">
+              <Plug className="h-3.5 w-3.5" />
+              MCP 协议
             </TabsTrigger>
             <TabsTrigger value="logs" className="gap-1.5">
               <Activity className="h-3.5 w-3.5" />
@@ -534,6 +541,207 @@ print(data["choices"][0]["message"]["content"])`}
   }
 }`}
                 </pre>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="mcp" className="flex-1 overflow-auto mt-0 pt-4">
+            <div className="space-y-6 max-w-3xl">
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-start gap-3">
+                  <Plug className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-medium mb-1">MCP (Model Context Protocol) 支持</h4>
+                    <p className="text-sm text-muted-foreground">
+                      您的智能体已支持 MCP 协议，可以作为 MCP Server 被 Claude Desktop、Cursor 等工具直接调用。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">MCP 端点</h3>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  <code className="text-sm flex-1 font-mono">{mcpEndpoint}</code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      navigator.clipboard.writeText(mcpEndpoint);
+                      toast.success("已复制 MCP 端点地址");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Claude Desktop 配置</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  在 Claude Desktop 的配置文件中添加以下内容：
+                </p>
+                <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto font-mono">
+{`{
+  "mcpServers": {
+    "${agentName || 'my-agent'}": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic-ai/mcp-remote-client",
+        "${mcpEndpoint}"
+      ],
+      "env": {
+        "MCP_API_KEY": "YOUR_API_KEY"
+      }
+    }
+  }
+}`}
+                </pre>
+                <p className="text-xs text-muted-foreground mt-2">
+                  配置文件位置：macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">支持的 MCP 方法</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3 font-medium">方法</th>
+                        <th className="text-left p-3 font-medium">说明</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      <tr>
+                        <td className="p-3 font-mono text-xs">initialize</td>
+                        <td className="p-3">初始化 MCP 会话，返回服务器能力</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono text-xs">tools/list</td>
+                        <td className="p-3">获取智能体提供的所有工具列表</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono text-xs">tools/call</td>
+                        <td className="p-3">调用指定工具执行任务</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono text-xs">resources/list</td>
+                        <td className="p-3">获取可用资源列表</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono text-xs">resources/read</td>
+                        <td className="p-3">读取指定资源内容</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono text-xs">prompts/list</td>
+                        <td className="p-3">获取预设 prompt 模板列表</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono text-xs">prompts/get</td>
+                        <td className="p-3">获取指定 prompt 详情</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">直接调用示例</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm text-muted-foreground mb-2 block">初始化连接</Label>
+                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto font-mono">
+{`curl -X POST "${mcpEndpoint}" \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": { "name": "my-client", "version": "1.0.0" }
+    }
+  }'`}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm text-muted-foreground mb-2 block">列出可用工具</Label>
+                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto font-mono">
+{`curl -X POST "${mcpEndpoint}" \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list"
+  }'`}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm text-muted-foreground mb-2 block">调用 chat 工具</Label>
+                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto font-mono">
+{`curl -X POST "${mcpEndpoint}" \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "chat",
+      "arguments": {
+        "message": "你好，请介绍一下你自己"
+      }
+    }
+  }'`}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">TypeScript/Node.js 客户端</h3>
+                <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto font-mono">
+{`import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { HttpClientTransport } from "@anthropic-ai/mcp-remote-client";
+
+const transport = new HttpClientTransport(
+  new URL("${mcpEndpoint}"),
+  { headers: { "x-api-key": "YOUR_API_KEY" } }
+);
+
+const client = new Client({ name: "my-app", version: "1.0.0" });
+await client.connect(transport);
+
+// 列出工具
+const tools = await client.listTools();
+console.log("Available tools:", tools);
+
+// 调用工具
+const result = await client.callTool("chat", {
+  message: "你好，请介绍一下你自己"
+});
+console.log("Response:", result);`}
+                </pre>
+              </div>
+
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Boxes className="h-4 w-4" />
+                  智能体技能自动转换
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  智能体配置的所有技能将自动转换为 MCP 工具。例如，名为 "文档分析" 的技能将可通过 
+                  <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">tools/call</code> 
+                  方法以 <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">skill_文档分析</code> 
+                  的名称调用。
+                </p>
               </div>
             </div>
           </TabsContent>
