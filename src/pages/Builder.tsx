@@ -29,6 +29,7 @@ import {
   ZoomIn,
   Maximize2,
   Key,
+  Webhook,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/S
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { BuilderWizard } from "@/components/builder/BuilderWizard";
 import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
+import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
@@ -87,6 +89,7 @@ const Builder = () => {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showApiPanel, setShowApiPanel] = useState(false);
+  const [showWebhookPanel, setShowWebhookPanel] = useState(false);
 
   // Check if first time user
   useEffect(() => {
@@ -633,19 +636,35 @@ const Builder = () => {
 
               {/* API Management Button */}
               {currentAgentId && existingAgent?.status === 'deployed' && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setShowApiPanel(true)}
-                    >
-                      <Key className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>API 管理</TooltipContent>
-                </Tooltip>
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowApiPanel(true)}
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>API 管理</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowWebhookPanel(true)}
+                      >
+                        <Webhook className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Webhook 管理</TooltipContent>
+                  </Tooltip>
+                </>
               )}
 
               {!user && (
@@ -816,6 +835,14 @@ const Builder = () => {
           agentName={agentConfig.name}
           isOpen={showApiPanel}
           onClose={() => setShowApiPanel(false)}
+        />
+
+        {/* Webhook Panel */}
+        <WebhookPanel
+          agentId={currentAgentId}
+          agentName={agentConfig.name}
+          isOpen={showWebhookPanel}
+          onClose={() => setShowWebhookPanel(false)}
         />
       </div>
     </TooltipProvider>

@@ -216,6 +216,74 @@ export type Database = {
           },
         ]
       }
+      agent_webhooks: {
+        Row: {
+          agent_id: string
+          created_at: string
+          events: string[]
+          failed_triggers: number
+          headers: Json | null
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          retry_count: number
+          secret: string | null
+          successful_triggers: number
+          timeout_ms: number
+          total_triggers: number
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          events?: string[]
+          failed_triggers?: number
+          headers?: Json | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          retry_count?: number
+          secret?: string | null
+          successful_triggers?: number
+          timeout_ms?: number
+          total_triggers?: number
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          events?: string[]
+          failed_triggers?: number
+          headers?: Json | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          retry_count?: number
+          secret?: string | null
+          successful_triggers?: number
+          timeout_ms?: number
+          total_triggers?: number
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_webhooks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           author_id: string | null
@@ -1609,6 +1677,62 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          agent_id: string
+          attempt_number: number
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          latency_ms: number | null
+          payload: Json | null
+          response_body: string | null
+          response_status: number | null
+          success: boolean
+          user_id: string
+          webhook_id: string
+        }
+        Insert: {
+          agent_id: string
+          attempt_number?: number
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          latency_ms?: number | null
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean
+          user_id: string
+          webhook_id: string
+        }
+        Update: {
+          agent_id?: string
+          attempt_number?: number
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          latency_ms?: number | null
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean
+          user_id?: string
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "agent_webhooks"
             referencedColumns: ["id"]
           },
         ]
