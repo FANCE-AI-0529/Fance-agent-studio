@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmCard, ConfirmAction } from "@/components/runtime/ConfirmCard";
-import { TraceTree, TraceSession, TraceEvent, TraceEventType } from "@/components/runtime/TraceTree";
+import { TraceTree } from "@/components/runtime/TraceTree";
+import { useTrace, TraceEventType, TraceSession, TraceEvent } from "@/components/runtime/trace";
 import { AgentSelector } from "@/components/runtime/AgentSelector";
 import { MPLPStepper, MPLPPhase } from "@/components/runtime/MPLPStepper";
 import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/ThinkingProcess";
@@ -406,9 +407,10 @@ const Runtime = () => {
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<ConfirmAction | null>(null);
   const [pendingScenario, setPendingScenario] = useState<MPLPScenario | null>(null);
-  const [traceSessions, setTraceSessions] = useState<TraceSession[]>([]);
-  const [currentTraceSessionId, setCurrentTraceSessionId] = useState<string | null>(null);
-  const currentTraceSessionIdRef = useRef<string | null>(null);
+  
+  // Use the new trace hook - single source of truth for trace state
+  const trace = useTrace();
+  
   const [showHistory, setShowHistory] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
@@ -491,10 +493,10 @@ const Runtime = () => {
   const handleAgentChange = useCallback((agent: Agent | null) => {
     setSelectedAgent(agent);
     setLocalMessages([]);
-    setTraceSessions([]);
+    trace.clearSessions();
     setContextMemory([]);
     setCurrentThinkingLogs([]);
-  }, []);
+  }, [trace]);
 
   const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
     if (type === "error") {
@@ -514,7 +516,7 @@ const Runtime = () => {
     return log;
   }, []);
 
-  // Add trace event to current session
+  // Add trace event to current session - now uses the trace hook
   const addTraceEvent = useCallback((type: TraceEventType, data: TraceEvent["data"]) => {
     const event: TraceEvent = {
       id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -522,51 +524,21 @@ const Runtime = () => {
       timestamp: new Date(),
       data,
     };
-
     currentEventsRef.current = [...currentEventsRef.current, event];
+    trace.addEvent(type, data);
+  }, [trace]);
 
-    const sessionId = currentTraceSessionIdRef.current;
-    if (!sessionId) return;
-
-    setTraceSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId
-          ? { ...session, events: [...session.events, event] }
-          : session
-      )
-    );
-  }, []);
-
-  // Start a new trace session
+  // Start a new trace session - now uses the trace hook
   const startTraceSession = useCallback((query: string) => {
-    const sessionId = `session-${Date.now()}`;
-    const newSession: TraceSession = {
-      id: sessionId,
-      query,
-      startTime: new Date(),
-      status: "running",
-      events: [],
-    };
-
-    currentTraceSessionIdRef.current = sessionId;
-    setTraceSessions((prev) => [newSession, ...prev]);
-    setCurrentTraceSessionId(sessionId);
     currentEventsRef.current = [];
     setCurrentThinkingLogs([]);
-    return sessionId;
-  }, []);
+    return trace.startSession(query);
+  }, [trace]);
 
-  // End current trace session
+  // End current trace session - now uses the trace hook
   const endTraceSession = useCallback((status: TraceSession["status"]) => {
-    const sessionId = currentTraceSessionIdRef.current;
-    if (!sessionId) return;
-
-    setTraceSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId ? { ...session, status, endTime: new Date() } : session
-      )
-    );
-  }, []);
+    trace.endSession(status);
+  }, [trace]);
 
   // Update context memory based on scenario
   const updateContextMemory = useCallback((scenario: MPLPScenario | null, userMessage: string) => {
@@ -914,7 +886,7 @@ const Runtime = () => {
       return;
     }
     await createSession();
-    setTraceSessions([]);
+    trace.clearSessions();
     setContextMemory([]);
     setCurrentThinkingLogs([]);
     toast.success("已创建新会话");
@@ -923,7 +895,7 @@ const Runtime = () => {
   const handleLoadSession = async (sessionId: string) => {
     await loadSession(sessionId);
     setShowHistory(false);
-    setTraceSessions([]);
+    trace.clearSessions();
     setContextMemory([]);
     setCurrentThinkingLogs([]);
   };
@@ -1261,17 +1233,14 @@ const Runtime = () => {
 
         <div className="flex-1 overflow-hidden p-2">
           <TraceTree 
-            sessions={traceSessions} 
-            currentSessionId={currentTraceSessionId || undefined}
+            sessions={trace.sessions} 
+            currentSessionId={trace.activeSessionId || undefined}
             onClearSessions={() => {
-              setTraceSessions([]);
-              setCurrentTraceSessionId(null);
-              currentTraceSessionIdRef.current = null;
+              trace.clearSessions();
               currentEventsRef.current = [];
             }}
             onRefresh={() => {
-              // Force re-render
-              setTraceSessions(prev => [...prev]);
+              // No-op, state is reactive
             }}
           />
         </div>
