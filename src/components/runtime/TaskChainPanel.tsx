@@ -1,4 +1,11 @@
 import { useState, useCallback } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -226,15 +233,35 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
     }
   };
 
+  const runningCount = chains.filter(c => c.status === "running").length;
+
   return (
-    <Card>
-      <CardHeader className="py-3">
-        <CardTitle className="text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link2 className="h-4 w-4 text-primary" />
-            任务链
-          </div>
-          <div className="flex gap-1">
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="sm" className="relative">
+          <Link2 className="h-4 w-4 mr-2" />
+          任务链
+          {runningCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full text-[10px] text-white flex items-center justify-center animate-pulse">
+              {runningCount}
+            </span>
+          )}
+          {chains.length > 0 && runningCount === 0 && (
+            <Badge variant="secondary" className="ml-1 text-[10px]">{chains.length}</Badge>
+          )}
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[600px] sm:max-w-[600px]">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5 text-primary" />
+            任务链管理
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          {/* Actions */}
+          <div className="flex gap-2">
             <Button 
               size="sm" 
               variant="outline"
@@ -258,23 +285,25 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
               <Plus className="h-4 w-4 mr-1" />
               新建
             </Button>
+            <Button size="sm" variant="ghost" onClick={() => refetchChains()}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {chainsLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : chains.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            <Layers className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>暂无任务链</p>
-            <p className="text-xs">创建任务链以自动串联多步骤任务</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
+
+          {/* Chain List */}
+          {chainsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : chains.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              <Layers className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>暂无任务链</p>
+              <p className="text-xs">创建任务链以自动串联多步骤任务</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[calc(100vh-250px)]">
+              <div className="space-y-2">
               {chains.map((chain) => (
                 <Card key={chain.id} className="hover:bg-muted/50 transition-colors">
                   <CardContent className="p-3">
@@ -813,7 +842,8 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
             />
           </DialogContent>
         </Dialog>
-      </CardContent>
-    </Card>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

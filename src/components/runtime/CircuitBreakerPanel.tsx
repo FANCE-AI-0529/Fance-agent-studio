@@ -1,4 +1,11 @@
 import { useState, useCallback } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,24 +112,41 @@ export function CircuitBreakerPanel({ agentId, agentName, sessionId }: CircuitBr
 
   const isLoading = cbLoading || intentLoading;
 
+  const hasIssues = cbState?.state === "open";
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5" />
-          <span className="font-semibold">熔断器 & 意图监控</span>
-          {agentName && <Badge variant="outline">{agentName}</Badge>}
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { refetchCB(); refetchIntent(); }}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowConfig(true)}>
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="sm" className="relative">
+          <Zap className="h-4 w-4 mr-2" />
+          熔断器
+          {hasIssues && (
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full text-[10px] text-white flex items-center justify-center">
+              !
+            </span>
+          )}
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[500px] sm:max-w-[500px]">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            熔断器 & 意图监控
+            {agentName && <Badge variant="outline">{agentName}</Badge>}
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => { refetchCB(); refetchIntent(); }}>
+              <RefreshCw className="h-4 w-4 mr-1" />
+              刷新
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowConfig(true)}>
+              <Settings className="h-4 w-4 mr-1" />
+              配置
+            </Button>
+          </div>
 
       <Tabs defaultValue="circuit">
         <TabsList className="grid w-full grid-cols-2">
@@ -394,6 +418,8 @@ export function CircuitBreakerPanel({ agentId, agentName, sessionId }: CircuitBr
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
