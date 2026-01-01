@@ -216,10 +216,12 @@ function TaskChainVisualEditorInner({
   const [showStepEditor, setShowStepEditor] = useState(false);
   const [showConditionEditor, setShowConditionEditor] = useState(false);
   const [showLoopEditor, setShowLoopEditor] = useState(false);
+  const [showBreakEditor, setShowBreakEditor] = useState(false);
+  const [showContinueEditor, setShowContinueEditor] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-  const [editingNodeType, setEditingNodeType] = useState<"step" | "conditional" | "loop">("step");
+  const [editingNodeType, setEditingNodeType] = useState<"step" | "conditional" | "loop" | "break" | "continue">("step");
   const [stepForm, setStepForm] = useState<StepFormData>(defaultStepForm);
   const [conditionForm, setConditionForm] = useState<{
     name: string;
@@ -254,6 +256,44 @@ function TaskChainVisualEditorInner({
     nestingLevel: 0,
     collectResults: false,
     resultsKey: "",
+  });
+  const [breakForm, setBreakForm] = useState<{
+    name: string;
+    description: string;
+    condition: string;
+    conditionSourceKey: string;
+    conditionOperator: string;
+    conditionValue: string;
+    targetLoopId: string;
+    breakType: "current" | "all";
+  }>({
+    name: "",
+    description: "",
+    condition: "",
+    conditionSourceKey: "",
+    conditionOperator: "equals",
+    conditionValue: "",
+    targetLoopId: "",
+    breakType: "current",
+  });
+  const [continueForm, setContinueForm] = useState<{
+    name: string;
+    description: string;
+    condition: string;
+    conditionSourceKey: string;
+    conditionOperator: string;
+    conditionValue: string;
+    targetLoopId: string;
+    skipCount: number;
+  }>({
+    name: "",
+    description: "",
+    condition: "",
+    conditionSourceKey: "",
+    conditionOperator: "equals",
+    conditionValue: "",
+    targetLoopId: "",
+    skipCount: 1,
   });
   const [inputMappingKey, setInputMappingKey] = useState("");
   const [inputMappingValue, setInputMappingValue] = useState("");
@@ -397,6 +437,60 @@ function TaskChainVisualEditorInner({
         setEditingNodeId(nodeId);
         setEditingNodeType("loop");
         setShowLoopEditor(true);
+      } else if (node.type === "break") {
+        const data = node.data as unknown as BreakNodeData;
+        // Parse condition if exists
+        let sourceKey = "";
+        let operator = "equals";
+        let value = "";
+        if (data.condition) {
+          const parts = data.condition.split(" ");
+          if (parts.length >= 3) {
+            sourceKey = parts[0];
+            operator = parts[1];
+            value = parts.slice(2).join(" ");
+          }
+        }
+        setBreakForm({
+          name: data.name,
+          description: data.description || "",
+          condition: data.condition || "",
+          conditionSourceKey: sourceKey,
+          conditionOperator: operator,
+          conditionValue: value,
+          targetLoopId: data.targetLoopId || "",
+          breakType: data.breakType || "current",
+        });
+        setEditingNodeId(nodeId);
+        setEditingNodeType("break");
+        setShowBreakEditor(true);
+      } else if (node.type === "continue") {
+        const data = node.data as unknown as ContinueNodeData;
+        // Parse condition if exists
+        let sourceKey = "";
+        let operator = "equals";
+        let value = "";
+        if (data.condition) {
+          const parts = data.condition.split(" ");
+          if (parts.length >= 3) {
+            sourceKey = parts[0];
+            operator = parts[1];
+            value = parts.slice(2).join(" ");
+          }
+        }
+        setContinueForm({
+          name: data.name,
+          description: data.description || "",
+          condition: data.condition || "",
+          conditionSourceKey: sourceKey,
+          conditionOperator: operator,
+          conditionValue: value,
+          targetLoopId: data.targetLoopId || "",
+          skipCount: data.skipCount || 1,
+        });
+        setEditingNodeId(nodeId);
+        setEditingNodeType("continue");
+        setShowContinueEditor(true);
       } else {
         const data = node.data as unknown as TaskStepNodeData;
         setStepForm({
@@ -766,6 +860,92 @@ function TaskChainVisualEditorInner({
       resultsKey: "",
     });
   }, [editingNodeId, loopForm]);
+
+  // Save break changes
+  const saveBreakChanges = useCallback(() => {
+    if (!editingNodeId) return;
+
+    // Build condition string from parts
+    const condition = breakForm.conditionSourceKey && breakForm.conditionValue
+      ? `${breakForm.conditionSourceKey} ${breakForm.conditionOperator} ${breakForm.conditionValue}`
+      : "";
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === editingNodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              name: breakForm.name,
+              description: breakForm.description,
+              condition,
+              targetLoopId: breakForm.targetLoopId,
+              breakType: breakForm.breakType,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setShowBreakEditor(false);
+    setEditingNodeId(null);
+    setBreakForm({
+      name: "",
+      description: "",
+      condition: "",
+      conditionSourceKey: "",
+      conditionOperator: "equals",
+      conditionValue: "",
+      targetLoopId: "",
+      breakType: "current",
+    });
+    toast.success("Break 节点已更新");
+  }, [editingNodeId, breakForm]);
+
+  // Save continue changes
+  const saveContinueChanges = useCallback(() => {
+    if (!editingNodeId) return;
+
+    // Build condition string from parts
+    const condition = continueForm.conditionSourceKey && continueForm.conditionValue
+      ? `${continueForm.conditionSourceKey} ${continueForm.conditionOperator} ${continueForm.conditionValue}`
+      : "";
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === editingNodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              name: continueForm.name,
+              description: continueForm.description,
+              condition,
+              targetLoopId: continueForm.targetLoopId,
+              skipCount: continueForm.skipCount,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setShowContinueEditor(false);
+    setEditingNodeId(null);
+    setContinueForm({
+      name: "",
+      description: "",
+      condition: "",
+      conditionSourceKey: "",
+      conditionOperator: "equals",
+      conditionValue: "",
+      targetLoopId: "",
+      skipCount: 1,
+    });
+    toast.success("Continue 节点已更新");
+  }, [editingNodeId, continueForm]);
 
   // Add a new condition rule
   const addConditionRule = useCallback(() => {
@@ -1658,6 +1838,290 @@ function TaskChainVisualEditorInner({
               </div>
 
               <Button className="w-full" onClick={saveLoopChanges}>
+                保存修改
+              </Button>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Break Editor Sheet */}
+      <Sheet open={showBreakEditor} onOpenChange={setShowBreakEditor}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+              编辑 Break 节点
+            </SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>节点名称</Label>
+                <Input
+                  value={breakForm.name}
+                  onChange={(e) => setBreakForm({ ...breakForm, name: e.target.value })}
+                  placeholder="例: 错误时中断"
+                />
+              </div>
+
+              <div>
+                <Label>节点描述</Label>
+                <Textarea
+                  value={breakForm.description}
+                  onChange={(e) => setBreakForm({ ...breakForm, description: e.target.value })}
+                  placeholder="描述何时应该中断循环..."
+                  rows={2}
+                />
+              </div>
+
+              {/* Condition Expression Builder */}
+              <div className="p-3 border border-red-500/30 rounded-lg bg-red-500/5">
+                <Label className="text-red-500 text-sm flex items-center gap-2 mb-3">
+                  触发条件
+                </Label>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">条件变量</Label>
+                    <Input
+                      value={breakForm.conditionSourceKey}
+                      onChange={(e) => setBreakForm({ ...breakForm, conditionSourceKey: e.target.value })}
+                      placeholder="例: item.status 或 result.error"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      留空则每次都触发
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">操作符</Label>
+                    <Select
+                      value={breakForm.conditionOperator}
+                      onValueChange={(v) => setBreakForm({ ...breakForm, conditionOperator: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equals">等于 (==)</SelectItem>
+                        <SelectItem value="not_equals">不等于 (!=)</SelectItem>
+                        <SelectItem value="contains">包含</SelectItem>
+                        <SelectItem value="greater_than">大于 (&gt;)</SelectItem>
+                        <SelectItem value="less_than">小于 (&lt;)</SelectItem>
+                        <SelectItem value="is_empty">为空</SelectItem>
+                        <SelectItem value="is_not_empty">不为空</SelectItem>
+                        <SelectItem value="is_true">为真</SelectItem>
+                        <SelectItem value="is_false">为假</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {!["is_empty", "is_not_empty", "is_true", "is_false"].includes(breakForm.conditionOperator) && (
+                    <div>
+                      <Label className="text-xs">比较值</Label>
+                      <Input
+                        value={breakForm.conditionValue}
+                        onChange={(e) => setBreakForm({ ...breakForm, conditionValue: e.target.value })}
+                        placeholder="例: error 或 true"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {breakForm.conditionSourceKey && (
+                    <div className="text-xs p-2 bg-muted/50 rounded border border-border">
+                      <span className="text-muted-foreground">预览条件：</span>
+                      <div className="font-mono text-red-500 mt-1">
+                        {breakForm.conditionSourceKey} {breakForm.conditionOperator} {breakForm.conditionValue}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Break Type */}
+              <div>
+                <Label>中断类型</Label>
+                <Select
+                  value={breakForm.breakType}
+                  onValueChange={(v: "current" | "all") => setBreakForm({ ...breakForm, breakType: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">中断当前循环</SelectItem>
+                    <SelectItem value="all">中断所有循环（包括外层）</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Loop (for nested) */}
+              <div>
+                <Label>目标循环 ID（可选）</Label>
+                <Input
+                  value={breakForm.targetLoopId}
+                  onChange={(e) => setBreakForm({ ...breakForm, targetLoopId: e.target.value })}
+                  placeholder="嵌套循环时指定要中断的循环"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  留空则中断最近的循环
+                </p>
+              </div>
+
+              <div className="p-3 border border-border rounded-lg bg-muted/20">
+                <Label className="text-xs text-muted-foreground">Break 说明</Label>
+                <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                  <li>满足条件时立即跳出循环</li>
+                  <li>循环后续的步骤将继续执行</li>
+                  <li>可用于错误处理或提前终止</li>
+                </ul>
+              </div>
+
+              <Button className="w-full" onClick={saveBreakChanges}>
+                保存修改
+              </Button>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Continue Editor Sheet */}
+      <Sheet open={showContinueEditor} onOpenChange={setShowContinueEditor}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <SkipForward className="h-5 w-5 text-amber-500" />
+              编辑 Continue 节点
+            </SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>节点名称</Label>
+                <Input
+                  value={continueForm.name}
+                  onChange={(e) => setContinueForm({ ...continueForm, name: e.target.value })}
+                  placeholder="例: 跳过无效项"
+                />
+              </div>
+
+              <div>
+                <Label>节点描述</Label>
+                <Textarea
+                  value={continueForm.description}
+                  onChange={(e) => setContinueForm({ ...continueForm, description: e.target.value })}
+                  placeholder="描述何时应该跳过当前迭代..."
+                  rows={2}
+                />
+              </div>
+
+              {/* Condition Expression Builder */}
+              <div className="p-3 border border-amber-500/30 rounded-lg bg-amber-500/5">
+                <Label className="text-amber-500 text-sm flex items-center gap-2 mb-3">
+                  触发条件
+                </Label>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">条件变量</Label>
+                    <Input
+                      value={continueForm.conditionSourceKey}
+                      onChange={(e) => setContinueForm({ ...continueForm, conditionSourceKey: e.target.value })}
+                      placeholder="例: item.valid 或 result.skip"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      留空则每次都触发
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">操作符</Label>
+                    <Select
+                      value={continueForm.conditionOperator}
+                      onValueChange={(v) => setContinueForm({ ...continueForm, conditionOperator: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equals">等于 (==)</SelectItem>
+                        <SelectItem value="not_equals">不等于 (!=)</SelectItem>
+                        <SelectItem value="contains">包含</SelectItem>
+                        <SelectItem value="greater_than">大于 (&gt;)</SelectItem>
+                        <SelectItem value="less_than">小于 (&lt;)</SelectItem>
+                        <SelectItem value="is_empty">为空</SelectItem>
+                        <SelectItem value="is_not_empty">不为空</SelectItem>
+                        <SelectItem value="is_true">为真</SelectItem>
+                        <SelectItem value="is_false">为假</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {!["is_empty", "is_not_empty", "is_true", "is_false"].includes(continueForm.conditionOperator) && (
+                    <div>
+                      <Label className="text-xs">比较值</Label>
+                      <Input
+                        value={continueForm.conditionValue}
+                        onChange={(e) => setContinueForm({ ...continueForm, conditionValue: e.target.value })}
+                        placeholder="例: false 或 skip"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {continueForm.conditionSourceKey && (
+                    <div className="text-xs p-2 bg-muted/50 rounded border border-border">
+                      <span className="text-muted-foreground">预览条件：</span>
+                      <div className="font-mono text-amber-500 mt-1">
+                        {continueForm.conditionSourceKey} {continueForm.conditionOperator} {continueForm.conditionValue}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Skip Count */}
+              <div>
+                <Label>跳过迭代次数</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={continueForm.skipCount}
+                  onChange={(e) => setContinueForm({ ...continueForm, skipCount: parseInt(e.target.value) || 1 })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  默认跳过 1 次，即直接进入下一次迭代
+                </p>
+              </div>
+
+              {/* Target Loop (for nested) */}
+              <div>
+                <Label>目标循环 ID（可选）</Label>
+                <Input
+                  value={continueForm.targetLoopId}
+                  onChange={(e) => setContinueForm({ ...continueForm, targetLoopId: e.target.value })}
+                  placeholder="嵌套循环时指定要跳过的循环"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  留空则跳过最近循环的当前迭代
+                </p>
+              </div>
+
+              <div className="p-3 border border-border rounded-lg bg-muted/20">
+                <Label className="text-xs text-muted-foreground">Continue 说明</Label>
+                <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                  <li>满足条件时跳过当前迭代的剩余步骤</li>
+                  <li>直接进入下一次迭代</li>
+                  <li>可用于过滤无效数据或跳过特定情况</li>
+                </ul>
+              </div>
+
+              <Button className="w-full" onClick={saveContinueChanges}>
                 保存修改
               </Button>
             </div>
