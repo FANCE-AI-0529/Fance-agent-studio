@@ -1,4 +1,4 @@
-import { Bot, User, CheckCircle2, Copy, RefreshCw, Check, Pencil, X } from "lucide-react";
+import { Bot, User, CheckCircle2, Copy, RefreshCw, Check, Pencil, X, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { useMessageFeedback } from "@/hooks/useMessageFeedback";
 
 interface MessageBubbleProps {
   id: string;
@@ -58,6 +59,9 @@ export function MessageBubble({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Feedback hook for assistant messages
+  const { feedback, isLoading: feedbackLoading, submitFeedback, isLiked, isDisliked } = useMessageFeedback(id);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -306,6 +310,43 @@ export function MessageBubble({
                 >
                   <RefreshCw className="h-3 w-3" />
                 </Button>
+              )}
+              
+              {/* Feedback buttons for assistant messages */}
+              {!isUser && (
+                <>
+                  <div className="w-px h-4 bg-border/50 mx-1" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-6 w-6 transition-colors",
+                      isLiked 
+                        ? "text-green-500 hover:text-green-600" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => submitFeedback("like")}
+                    disabled={feedbackLoading}
+                    title="有帮助"
+                  >
+                    <ThumbsUp className={cn("h-3 w-3", isLiked && "fill-current")} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-6 w-6 transition-colors",
+                      isDisliked 
+                        ? "text-red-500 hover:text-red-600" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => submitFeedback("dislike")}
+                    disabled={feedbackLoading}
+                    title="没有帮助"
+                  >
+                    <ThumbsDown className={cn("h-3 w-3", isDisliked && "fill-current")} />
+                  </Button>
+                </>
               )}
             </motion.div>
           </motion.div>
