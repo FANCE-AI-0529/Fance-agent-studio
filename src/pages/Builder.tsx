@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Brain, Save, Loader2, LogIn, Network } from "lucide-react";
+import { Brain, Save, Loader2, LogIn, Network, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
 import { AgentConfigPanel, AgentConfig, SkillConfigOverride, EnvironmentConfig } from "@/components/builder/AgentConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { SemanticGraphPanel } from "@/components/builder/SemanticGraphPanel";
+import AgentTemplates, { AgentTemplate } from "@/components/builder/AgentTemplates";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,6 +71,36 @@ const Builder = () => {
   const { data: existingAgent } = useAgent(agentIdParam || null);
   const saveAgent = useSaveAgentWithSkills();
   const deployAgent = useDeployAgent();
+
+  // Handle template selection
+  const handleSelectTemplate = useCallback((template: AgentTemplate) => {
+    setAgentConfig(prev => ({
+      ...prev,
+      name: template.name,
+      department: template.department,
+      systemPrompt: template.systemPrompt,
+    }));
+    
+    // Update agent node
+    setNodes(nds => nds.map(node => {
+      if (node.id === "agent-central") {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            name: template.name,
+            department: template.department,
+          },
+        };
+      }
+      return node;
+    }));
+
+    toast({
+      title: "模板已应用",
+      description: `已应用「${template.name}」模板，可根据需要调整配置`,
+    });
+  }, [setNodes]);
 
   // Load existing agent data
   useEffect(() => {
@@ -464,6 +495,15 @@ const Builder = () => {
                 拖拽中: {draggingSkill.name}
               </Badge>
             )}
+            <AgentTemplates
+              onSelectTemplate={handleSelectTemplate}
+              trigger={
+                <Button variant="outline" size="sm" className="gap-1.5 h-8">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  使用模板
+                </Button>
+              }
+            />
             <SemanticGraphPanel
               agentId={currentAgentId || undefined}
               agentName={agentConfig.name || undefined}
