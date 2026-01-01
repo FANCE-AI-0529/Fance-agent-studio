@@ -468,7 +468,7 @@ const Runtime = () => {
   // Initialize with welcome message if no session
   useEffect(() => {
     if (!chatSession && !isLoadingSession && localMessages.length === 0) {
-      const agentName = selectedAgent?.name || "MPLP Demo Agent";
+      const agentName = selectedAgent?.name || "MPLP 智能助手";
       setLocalMessages([
         {
           id: "welcome",

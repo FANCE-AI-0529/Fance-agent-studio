@@ -91,8 +91,8 @@ interface WelcomeGuideProps {
 }
 
 const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) => {
-  const agentName = agent?.name || "餐饮办证助手";
-  const agentDepartment = agent?.department || "市场监管局";
+  const agentName = agent?.name || "MPLP 智能助手";
+  const agentDepartment = agent?.department || "Agent OS 平台";
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
