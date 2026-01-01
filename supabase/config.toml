@@ -2,3 +2,15 @@ project_id = "izkiwlbxkeczzttryhbi"
 
 [functions.agent-chat]
 verify_jwt = false
+
+[functions.task-scheduler]
+verify_jwt = false
+
+[functions.generate-skill-template]
+verify_jwt = false
+
+[functions.entity-extraction]
+verify_jwt = false
+
+[functions.rss-query]
+verify_jwt = false

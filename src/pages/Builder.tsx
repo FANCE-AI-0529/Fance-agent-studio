@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Brain, Save, Loader2, LogIn } from "lucide-react";
+import { Brain, Save, Loader2, LogIn, Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +25,7 @@ import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
 import { AgentConfigPanel, AgentConfig, SkillConfigOverride, EnvironmentConfig } from "@/components/builder/AgentConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
+import { SemanticGraphPanel } from "@/components/builder/SemanticGraphPanel";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
@@ -463,6 +464,10 @@ const Builder = () => {
                 拖拽中: {draggingSkill.name}
               </Badge>
             )}
+            <SemanticGraphPanel
+              agentId={currentAgentId || undefined}
+              agentName={agentConfig.name || undefined}
+            />
             {!user && (
               <Button
                 variant="ghost"
