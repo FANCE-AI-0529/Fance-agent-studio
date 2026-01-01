@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -207,11 +207,26 @@ export function CollaborationDashboard({ open, onOpenChange }: CollaborationDash
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Update nodes when data changes
+  // Track previous values to avoid infinite loops
+  const prevNodesRef = useRef<Node[]>([]);
+  const prevEdgesRef = useRef<Edge[]>([]);
+
+  // Update nodes when data changes (avoid infinite loop by comparing JSON)
   useEffect(() => {
-    setFlowNodes(nodes);
-    setFlowEdges(edges);
-  }, [nodes, edges, setFlowNodes, setFlowEdges]);
+    const nodesJson = JSON.stringify(nodes);
+    const edgesJson = JSON.stringify(edges);
+    const prevNodesJson = JSON.stringify(prevNodesRef.current);
+    const prevEdgesJson = JSON.stringify(prevEdgesRef.current);
+
+    if (nodesJson !== prevNodesJson) {
+      prevNodesRef.current = nodes;
+      setFlowNodes(nodes);
+    }
+    if (edgesJson !== prevEdgesJson) {
+      prevEdgesRef.current = edges;
+      setFlowEdges(edges);
+    }
+  }, [nodes, edges]);
 
   // Get tasks for timeline
   const recentTasks = useMemo(() => {
