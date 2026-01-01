@@ -33,12 +33,14 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AgentAvatarPicker, AgentAvatar, AgentAvatarDisplay } from "./AgentAvatarPicker";
 
 export interface SimpleAgentConfig {
   name: string;
   department: string;
   model: "claude-3.5" | "gpt-4";
   systemPrompt: string;
+  avatar: AgentAvatar;
 }
 
 interface SimplifiedConfigPanelProps {
@@ -92,9 +94,7 @@ export function SimplifiedConfigPanel({
           <Settings className="h-5 w-5" />
         </Button>
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Bot className="h-4 w-4 text-primary" />
-          </div>
+          <AgentAvatarDisplay avatar={config.avatar} size="sm" />
           <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
             <span className="text-xs font-bold">{skills.length}</span>
           </div>
@@ -152,6 +152,21 @@ export function SimplifiedConfigPanel({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="pt-3 space-y-3">
+                {/* Avatar Picker */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">头像图标</Label>
+                  <div className="flex items-center gap-3">
+                    <AgentAvatarPicker
+                      avatar={config.avatar}
+                      onChange={(avatar) => onConfigChange({ ...config, avatar })}
+                      size="md"
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      点击选择图标和颜色
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">名称</Label>
                   <Input

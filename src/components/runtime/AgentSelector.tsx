@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Agent } from "@/hooks/useAgents";
+import { AgentAvatarDisplay, AgentAvatar, getAvatarIcon, getAvatarColor } from "@/components/builder/AgentAvatarPicker";
 
 interface AgentSelectorProps {
   agents: Agent[];
@@ -24,7 +25,20 @@ const defaultAgent = {
   department: "Agent OS 平台",
   model: "gemini-2.5-flash",
   status: "deployed",
+  avatar: { iconId: "bot", colorId: "primary" } as AgentAvatar,
 } as const;
+
+// Helper to get avatar from agent manifest
+function getAgentAvatar(agent: Agent | typeof defaultAgent): AgentAvatar {
+  if ('avatar' in agent && agent.avatar) {
+    return agent.avatar as AgentAvatar;
+  }
+  const manifest = (agent as Agent).manifest as any;
+  if (manifest?.avatar) {
+    return manifest.avatar as AgentAvatar;
+  }
+  return { iconId: "bot", colorId: "primary" };
+}
 
 export function AgentSelector({
   agents,
@@ -34,6 +48,7 @@ export function AgentSelector({
 }: AgentSelectorProps) {
   const displayAgent = selectedAgent || defaultAgent;
   const deployedAgents = agents.filter(a => a.status === "deployed");
+  const currentAvatar = selectedAgent ? getAgentAvatar(selectedAgent) : defaultAgent.avatar;
 
   return (
     <DropdownMenu>
@@ -43,13 +58,11 @@ export function AgentSelector({
           className="h-auto p-2 gap-3 hover:bg-accent/50"
           disabled={isLoading}
         >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Bot className="h-5 w-5 text-primary" />
-          </div>
+          <AgentAvatarDisplay avatar={currentAvatar} size="sm" />
           <div className="text-left">
             <div className="font-semibold text-sm flex items-center gap-2">
               {displayAgent.name}
-              {selectedAgent?.id !== "demo" && (
+              {selectedAgent?.id !== "demo" && selectedAgent && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                   自定义
                 </Badge>
@@ -72,9 +85,7 @@ export function AgentSelector({
           onClick={() => onSelectAgent(null)}
           className="flex items-start gap-3 p-3"
         >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Bot className="h-4 w-4 text-primary" />
-          </div>
+          <AgentAvatarDisplay avatar={defaultAgent.avatar} size="sm" />
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm">MPLP 智能助手</div>
             <div className="text-xs text-muted-foreground">Agent OS 平台 · 默认演示</div>
@@ -95,26 +106,27 @@ export function AgentSelector({
                 已部署的 Agent
               </span>
             </div>
-            {deployedAgents.map((agent) => (
-              <DropdownMenuItem
-                key={agent.id}
-                onClick={() => onSelectAgent(agent)}
-                className="flex items-center gap-3 p-3"
-              >
-                <div className="w-8 h-8 rounded-lg bg-cognitive/10 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-cognitive" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{agent.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {agent.department || "通用助手"}
+            {deployedAgents.map((agent) => {
+              const agentAvatar = getAgentAvatar(agent);
+              return (
+                <DropdownMenuItem
+                  key={agent.id}
+                  onClick={() => onSelectAgent(agent)}
+                  className="flex items-center gap-3 p-3"
+                >
+                  <AgentAvatarDisplay avatar={agentAvatar} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{agent.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {agent.department || "通用助手"}
+                    </div>
                   </div>
-                </div>
-                {selectedAgent?.id === agent.id && (
-                  <Badge variant="secondary" className="text-[10px]">当前</Badge>
-                )}
-              </DropdownMenuItem>
-            ))}
+                  {selectedAgent?.id === agent.id && (
+                    <Badge variant="secondary" className="text-[10px]">当前</Badge>
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
           </>
         )}
 

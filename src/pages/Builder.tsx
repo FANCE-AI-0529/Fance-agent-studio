@@ -99,6 +99,7 @@ const Builder = () => {
     department: "",
     model: "claude-3.5",
     systemPrompt: "",
+    avatar: { iconId: "bot", colorId: "primary" },
   });
 
   const { data: publishedSkills = [] } = usePublishedSkills();
@@ -115,6 +116,7 @@ const Builder = () => {
         department: existingAgent.department || "",
         model: existingAgent.model as "claude-3.5" | "gpt-4",
         systemPrompt: manifest?.system_prompt || "",
+        avatar: manifest?.avatar || { iconId: "bot", colorId: "primary" },
       });
       setCurrentAgentId(existingAgent.id);
 
@@ -319,6 +321,7 @@ const Builder = () => {
         created_at: existingAgent?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
+      avatar: { iconId: agentConfig.avatar.iconId, colorId: agentConfig.avatar.colorId },
       runtime: {
         provider: agentConfig.model === "claude-3.5" ? "anthropic" : "openai",
         model:
@@ -451,6 +454,7 @@ const Builder = () => {
       department: config.department,
       model: "claude-3.5",
       systemPrompt: config.systemPrompt,
+      avatar: { iconId: "bot", colorId: "primary" },
     });
 
     // Add selected skills as nodes
