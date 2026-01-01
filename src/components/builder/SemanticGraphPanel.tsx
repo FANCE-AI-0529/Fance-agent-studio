@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Node,
@@ -41,6 +41,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import {
   Network,
   Upload,
@@ -51,6 +53,10 @@ import {
   Zap,
   Plus,
   RefreshCw,
+  Eye,
+  EyeOff,
+  Target,
+  GitBranch,
 } from "lucide-react";
 import {
   useEntities,
@@ -71,6 +77,14 @@ interface SemanticGraphPanelProps {
   agentName?: string;
 }
 
+// Highlight colors for RSS visualization
+const HIGHLIGHT_COLORS = {
+  anchor: "#FF6B6B", // Red for anchor nodes
+  depth1: "#4ECDC4", // Teal for depth 1
+  depth2: "#45B7D1", // Blue for depth 2
+  relation: "#FFD93D", // Yellow for highlighted relations
+};
+
 export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("graph");
@@ -86,6 +100,15 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
     type: "requires",
     description: "",
   });
+  
+  // RSS visualization state
+  const [showRSSHighlight, setShowRSSHighlight] = useState(false);
+  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
+  const [highlightedEdgeIds, setHighlightedEdgeIds] = useState<Set<string>>(new Set());
+  const [anchorNodeIds, setAnchorNodeIds] = useState<Set<string>>(new Set());
+  const [nodeDepthMap, setNodeDepthMap] = useState<Map<string, number>>(new Map());
+  const [topK, setTopK] = useState(5);
+  const [traverseDepth, setTraverseDepth] = useState(2);
 
   const { data: entities = [], isLoading: entitiesLoading, refetch: refetchEntities } = useEntities(agentId);
   const { data: relations = [], refetch: refetchRelations } = useEntityRelations(
@@ -98,11 +121,96 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
   const deleteEntity = useDeleteEntity();
   const createRelation = useCreateRelation();
 
-  // Convert entities and relations to React Flow nodes and edges
+  // Update highlight state when RSS result changes
+  useEffect(() => {
+    if (rssResult && showRSSHighlight) {
+      const anchors = new Set(rssResult.anchors.map(a => a.entity_id));
+      const allHighlighted = new Set<string>();
+      const depthMap = new Map<string, number>();
+      
+      // Add anchors (depth 0)
+      rssResult.anchors.forEach(a => {
+        allHighlighted.add(a.entity_id);
+        depthMap.set(a.entity_id, 0);
+      });
+      
+      // Add subgraph nodes with their depths
+      rssResult.subgraph.forEach(node => {
+        allHighlighted.add(node.entity_id);
+        if (!depthMap.has(node.entity_id)) {
+          depthMap.set(node.entity_id, node.depth);
+        }
+      });
+      
+      // Find highlighted edges (relations between highlighted nodes)
+      const highlightedEdges = new Set<string>();
+      relations.forEach(rel => {
+        if (allHighlighted.has(rel.source_entity_id) && allHighlighted.has(rel.target_entity_id)) {
+          highlightedEdges.add(rel.id);
+        }
+      });
+      
+      setAnchorNodeIds(anchors);
+      setHighlightedNodeIds(allHighlighted);
+      setHighlightedEdgeIds(highlightedEdges);
+      setNodeDepthMap(depthMap);
+    } else {
+      setAnchorNodeIds(new Set());
+      setHighlightedNodeIds(new Set());
+      setHighlightedEdgeIds(new Set());
+      setNodeDepthMap(new Map());
+    }
+  }, [rssResult, showRSSHighlight, relations]);
+
+  // Convert entities and relations to React Flow nodes and edges with highlighting
   const { initialNodes, initialEdges } = useMemo(() => {
     const nodes: Node[] = entities.map((entity, index) => {
       const angle = (2 * Math.PI * index) / entities.length;
       const radius = Math.min(300, entities.length * 30);
+      
+      const isAnchor = anchorNodeIds.has(entity.id);
+      const isHighlighted = highlightedNodeIds.has(entity.id);
+      const depth = nodeDepthMap.get(entity.id) ?? -1;
+      
+      // Determine node style based on highlight state
+      let nodeStyle: React.CSSProperties = {
+        background: `${entityTypeColors[entity.entity_type] || "#888"}20`,
+        border: `2px solid ${entityTypeColors[entity.entity_type] || "#888"}`,
+        borderRadius: "8px",
+        padding: "4px",
+        minWidth: "80px",
+        transition: "all 0.3s ease",
+      };
+      
+      if (showRSSHighlight && rssResult) {
+        if (isAnchor) {
+          // Anchor nodes - prominent red glow
+          nodeStyle = {
+            ...nodeStyle,
+            background: `${HIGHLIGHT_COLORS.anchor}40`,
+            border: `3px solid ${HIGHLIGHT_COLORS.anchor}`,
+            boxShadow: `0 0 20px ${HIGHLIGHT_COLORS.anchor}80, 0 0 40px ${HIGHLIGHT_COLORS.anchor}40`,
+            transform: "scale(1.1)",
+            zIndex: 100,
+          };
+        } else if (isHighlighted) {
+          // Traversed nodes - color by depth
+          const depthColor = depth === 1 ? HIGHLIGHT_COLORS.depth1 : HIGHLIGHT_COLORS.depth2;
+          nodeStyle = {
+            ...nodeStyle,
+            background: `${depthColor}30`,
+            border: `2px solid ${depthColor}`,
+            boxShadow: `0 0 10px ${depthColor}60`,
+          };
+        } else {
+          // Non-highlighted nodes - dimmed
+          nodeStyle = {
+            ...nodeStyle,
+            opacity: 0.3,
+            filter: "grayscale(50%)",
+          };
+        }
+      }
 
       return {
         id: entity.id,
@@ -114,7 +222,12 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
         data: {
           label: (
             <div className="text-center p-1">
-              <div className="font-medium text-xs">{entity.name}</div>
+              <div className="font-medium text-xs flex items-center justify-center gap-1">
+                {isAnchor && showRSSHighlight && (
+                  <Target className="h-3 w-3" style={{ color: HIGHLIGHT_COLORS.anchor }} />
+                )}
+                {entity.name}
+              </div>
               <Badge
                 variant="outline"
                 className="text-[10px] mt-1"
@@ -125,48 +238,71 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
               >
                 {entity.entity_type}
               </Badge>
+              {showRSSHighlight && isHighlighted && depth >= 0 && (
+                <div className="text-[9px] mt-1 text-muted-foreground">
+                  {isAnchor ? "锚点" : `深度 ${depth}`}
+                </div>
+              )}
             </div>
           ),
         },
-        style: {
-          background: `${entityTypeColors[entity.entity_type] || "#888"}20`,
-          border: `2px solid ${entityTypeColors[entity.entity_type] || "#888"}`,
-          borderRadius: "8px",
-          padding: "4px",
-          minWidth: "80px",
+        style: nodeStyle,
+      };
+    });
+
+    const edges: Edge[] = relations.map((rel) => {
+      const isHighlighted = highlightedEdgeIds.has(rel.id);
+      
+      let edgeStyle: React.CSSProperties = {
+        strokeWidth: 2,
+        transition: "all 0.3s ease",
+      };
+      
+      if (showRSSHighlight && rssResult) {
+        if (isHighlighted) {
+          edgeStyle = {
+            strokeWidth: 3,
+            stroke: HIGHLIGHT_COLORS.relation,
+            filter: `drop-shadow(0 0 4px ${HIGHLIGHT_COLORS.relation})`,
+          };
+        } else {
+          edgeStyle = {
+            strokeWidth: 1,
+            opacity: 0.2,
+          };
+        }
+      }
+      
+      return {
+        id: rel.id,
+        source: rel.source_entity_id,
+        target: rel.target_entity_id,
+        label: relationTypeLabels[rel.relation_type] || rel.relation_type,
+        type: "smoothstep",
+        animated: isHighlighted && showRSSHighlight,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 15,
+          height: 15,
+          color: isHighlighted && showRSSHighlight ? HIGHLIGHT_COLORS.relation : undefined,
+        },
+        style: edgeStyle,
+        labelStyle: {
+          fontSize: 10,
+          fill: isHighlighted && showRSSHighlight ? HIGHLIGHT_COLORS.relation : "hsl(var(--muted-foreground))",
+          fontWeight: isHighlighted && showRSSHighlight ? "bold" : "normal",
         },
       };
     });
 
-    const edges: Edge[] = relations.map((rel) => ({
-      id: rel.id,
-      source: rel.source_entity_id,
-      target: rel.target_entity_id,
-      label: relationTypeLabels[rel.relation_type] || rel.relation_type,
-      type: "smoothstep",
-      animated: true,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 15,
-        height: 15,
-      },
-      style: {
-        strokeWidth: 2,
-      },
-      labelStyle: {
-        fontSize: 10,
-        fill: "hsl(var(--muted-foreground))",
-      },
-    }));
-
     return { initialNodes: nodes, initialEdges: edges };
-  }, [entities, relations]);
+  }, [entities, relations, showRSSHighlight, rssResult, anchorNodeIds, highlightedNodeIds, highlightedEdgeIds, nodeDepthMap]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Update nodes when entities change
-  useMemo(() => {
+  // Update nodes when entities change or highlight state changes
+  useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
@@ -192,11 +328,18 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
     const result = await rssQueryMutation.mutateAsync({
       query: rssQuery,
       agentId,
-      topK: 5,
-      traverseDepth: 2,
+      topK,
+      traverseDepth,
     });
 
     setRssResult(result);
+    setShowRSSHighlight(true);
+    setActiveTab("graph"); // Switch to graph view to see highlights
+  };
+
+  const handleClearHighlight = () => {
+    setShowRSSHighlight(false);
+    setRssResult(null);
   };
 
   const handleDeleteEntity = async (entityId: string) => {
@@ -252,13 +395,77 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="graph">图谱视图</TabsTrigger>
+            <TabsTrigger value="graph" className="relative">
+              图谱视图
+              {showRSSHighlight && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full animate-pulse" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="extract">实体抽取</TabsTrigger>
             <TabsTrigger value="rss">RSS 检索</TabsTrigger>
             <TabsTrigger value="history">处理历史</TabsTrigger>
           </TabsList>
 
           <TabsContent value="graph" className="mt-4">
+            {/* RSS Highlight Legend & Controls */}
+            {showRSSHighlight && rssResult && (
+              <Card className="mb-4 border-2" style={{ borderColor: HIGHLIGHT_COLORS.anchor }}>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: HIGHLIGHT_COLORS.anchor, boxShadow: `0 0 8px ${HIGHLIGHT_COLORS.anchor}` }}
+                        />
+                        <span className="text-xs">锚点实体 ({rssResult.stats.anchorCount})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: HIGHLIGHT_COLORS.depth1 }}
+                        />
+                        <span className="text-xs">深度 1</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: HIGHLIGHT_COLORS.depth2 }}
+                        />
+                        <span className="text-xs">深度 2</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-4 h-1 rounded" 
+                          style={{ backgroundColor: HIGHLIGHT_COLORS.relation }}
+                        />
+                        <span className="text-xs">关联边</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowRSSHighlight(!showRSSHighlight)}
+                      >
+                        {showRSSHighlight ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleClearHighlight}
+                      >
+                        清除高亮
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    查询: "{rssQuery}" | 子图节点: {rssResult.stats.subgraphNodes} | 关联边: {rssResult.stats.relationsCount}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <div className="h-[500px] border rounded-lg overflow-hidden">
               {entitiesLoading ? (
                 <div className="h-full flex items-center justify-center">
@@ -280,7 +487,19 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
                   fitView
                 >
                   <Controls />
-                  <MiniMap />
+                  <MiniMap 
+                    nodeColor={(node) => {
+                      if (showRSSHighlight && rssResult) {
+                        if (anchorNodeIds.has(node.id)) return HIGHLIGHT_COLORS.anchor;
+                        if (highlightedNodeIds.has(node.id)) {
+                          const depth = nodeDepthMap.get(node.id);
+                          return depth === 1 ? HIGHLIGHT_COLORS.depth1 : HIGHLIGHT_COLORS.depth2;
+                        }
+                        return "#666";
+                      }
+                      return entityTypeColors[(entities.find(e => e.id === node.id))?.entity_type || ""] || "#888";
+                    }}
+                  />
                   <Background />
                   <Panel position="top-right" className="flex gap-2">
                     <Button
@@ -324,7 +543,17 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
               <Card className="mt-4">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center justify-between">
-                    <span>{selectedEntity.name}</span>
+                    <span className="flex items-center gap-2">
+                      {selectedEntity.name}
+                      {showRSSHighlight && anchorNodeIds.has(selectedEntity.id) && (
+                        <Badge variant="destructive" className="text-xs">锚点</Badge>
+                      )}
+                      {showRSSHighlight && highlightedNodeIds.has(selectedEntity.id) && !anchorNodeIds.has(selectedEntity.id) && (
+                        <Badge variant="secondary" className="text-xs">
+                          深度 {nodeDepthMap.get(selectedEntity.id)}
+                        </Badge>
+                      )}
+                    </span>
                     <Button
                       size="sm"
                       variant="destructive"
@@ -448,6 +677,53 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
                     onChange={(e) => setRssQuery(e.target.value)}
                   />
                 </div>
+                
+                {/* Query Parameters */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs flex items-center gap-2">
+                      <Target className="h-3 w-3" />
+                      锚点数量 (Top-K): {topK}
+                    </Label>
+                    <Slider
+                      value={[topK]}
+                      onValueChange={([v]) => setTopK(v)}
+                      min={1}
+                      max={10}
+                      step={1}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs flex items-center gap-2">
+                      <GitBranch className="h-3 w-3" />
+                      遍历深度: {traverseDepth}
+                    </Label>
+                    <Slider
+                      value={[traverseDepth]}
+                      onValueChange={([v]) => setTraverseDepth(v)}
+                      min={1}
+                      max={4}
+                      step={1}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="auto-highlight"
+                      checked={showRSSHighlight}
+                      onCheckedChange={setShowRSSHighlight}
+                      disabled={!rssResult}
+                    />
+                    <Label htmlFor="auto-highlight" className="text-xs">
+                      在图谱中高亮显示结果
+                    </Label>
+                  </div>
+                </div>
+                
                 <Button
                   onClick={handleRSSQuery}
                   disabled={rssQueryMutation.isPending || !rssQuery.trim()}
@@ -461,7 +737,7 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
                   ) : (
                     <>
                       <Search className="h-4 w-4 mr-2" />
-                      执行 RSS 查询
+                      执行 RSS 查询并可视化
                     </>
                   )}
                 </Button>
@@ -471,46 +747,110 @@ export function SemanticGraphPanel({ agentId, agentName }: SemanticGraphPanelPro
             {rssResult && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">检索结果</CardTitle>
+                  <CardTitle className="text-sm flex items-center justify-between">
+                    <span>检索结果</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowRSSHighlight(true);
+                        setActiveTab("graph");
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      查看图谱
+                    </Button>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-4 gap-2 text-center text-sm">
-                    <div>
-                      <div className="font-bold">{rssResult.stats.anchorCount}</div>
+                    <div className="p-2 rounded" style={{ backgroundColor: `${HIGHLIGHT_COLORS.anchor}20` }}>
+                      <div className="font-bold" style={{ color: HIGHLIGHT_COLORS.anchor }}>{rssResult.stats.anchorCount}</div>
                       <div className="text-xs text-muted-foreground">锚点实体</div>
                     </div>
-                    <div>
-                      <div className="font-bold">{rssResult.stats.subgraphNodes}</div>
+                    <div className="p-2 rounded" style={{ backgroundColor: `${HIGHLIGHT_COLORS.depth1}20` }}>
+                      <div className="font-bold" style={{ color: HIGHLIGHT_COLORS.depth1 }}>{rssResult.stats.subgraphNodes}</div>
                       <div className="text-xs text-muted-foreground">子图节点</div>
                     </div>
-                    <div>
-                      <div className="font-bold">{rssResult.stats.relationsCount}</div>
+                    <div className="p-2 rounded" style={{ backgroundColor: `${HIGHLIGHT_COLORS.relation}20` }}>
+                      <div className="font-bold" style={{ color: HIGHLIGHT_COLORS.relation }}>{rssResult.stats.relationsCount}</div>
                       <div className="text-xs text-muted-foreground">相关关系</div>
                     </div>
-                    <div>
+                    <div className="p-2 rounded bg-muted">
                       <div className="font-bold">{rssResult.stats.contextLength}</div>
                       <div className="text-xs text-muted-foreground">上下文字符</div>
                     </div>
                   </div>
 
                   <div>
-                    <Label className="text-xs">核心相关实体</Label>
+                    <Label className="text-xs flex items-center gap-2">
+                      <Target className="h-3 w-3" style={{ color: HIGHLIGHT_COLORS.anchor }} />
+                      核心相关实体 (锚点)
+                    </Label>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {rssResult.anchors.map((anchor) => (
                         <Badge
                           key={anchor.entity_id}
-                          variant="secondary"
-                          className="text-xs"
+                          className="text-xs cursor-pointer hover:opacity-80"
+                          style={{ 
+                            backgroundColor: `${HIGHLIGHT_COLORS.anchor}20`,
+                            color: HIGHLIGHT_COLORS.anchor,
+                            borderColor: HIGHLIGHT_COLORS.anchor,
+                          }}
+                          onClick={() => {
+                            const entity = entities.find(e => e.id === anchor.entity_id);
+                            if (entity) setSelectedEntity(entity);
+                            setActiveTab("graph");
+                            setShowRSSHighlight(true);
+                          }}
                         >
                           {anchor.entity_name} ({(anchor.similarity * 100).toFixed(0)}%)
                         </Badge>
                       ))}
                     </div>
                   </div>
+                  
+                  {rssResult.subgraph.length > 0 && (
+                    <div>
+                      <Label className="text-xs flex items-center gap-2">
+                        <GitBranch className="h-3 w-3" style={{ color: HIGHLIGHT_COLORS.depth1 }} />
+                        遍历扩展节点
+                      </Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {rssResult.subgraph
+                          .filter(node => node.depth > 0)
+                          .slice(0, 10)
+                          .map((node) => (
+                            <Badge
+                              key={node.entity_id}
+                              variant="outline"
+                              className="text-xs cursor-pointer hover:opacity-80"
+                              style={{ 
+                                borderColor: node.depth === 1 ? HIGHLIGHT_COLORS.depth1 : HIGHLIGHT_COLORS.depth2,
+                                color: node.depth === 1 ? HIGHLIGHT_COLORS.depth1 : HIGHLIGHT_COLORS.depth2,
+                              }}
+                              onClick={() => {
+                                const entity = entities.find(e => e.id === node.entity_id);
+                                if (entity) setSelectedEntity(entity);
+                                setActiveTab("graph");
+                                setShowRSSHighlight(true);
+                              }}
+                            >
+                              {node.entity_name} (深度{node.depth})
+                            </Badge>
+                          ))}
+                        {rssResult.subgraph.filter(n => n.depth > 0).length > 10 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{rssResult.subgraph.filter(n => n.depth > 0).length - 10} 更多
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <Label className="text-xs">生成的上下文</Label>
-                    <ScrollArea className="h-[200px] mt-1">
+                    <ScrollArea className="h-[150px] mt-1">
                       <pre className="text-xs whitespace-pre-wrap bg-muted p-2 rounded">
                         {rssResult.context}
                       </pre>
