@@ -28,12 +28,21 @@ import {
   Trash2,
   Download,
   Upload,
-  Variable
+  Variable,
+  Plus,
+  Bookmark
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, UserPrompt } from "@/hooks/useUserPrompts";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Variable preset type
+interface VariablePreset {
+  id: string;
+  name: string;
+  values: Record<string, string>;
+}
 
 // Extract variables from prompt using {{variable}} syntax
 const extractVariables = (prompt: string): string[] => {
@@ -153,6 +162,29 @@ export function SystemPromptEditor({
   const [hasChanges, setHasChanges] = useState(false);
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+  const [variablePresets, setVariablePresets] = useState<VariablePreset[]>([]);
+  const [newPresetName, setNewPresetName] = useState("");
+  const [showPresetInput, setShowPresetInput] = useState(false);
+
+  // Load presets from localStorage
+  useEffect(() => {
+    const storageKey = `variable-presets-${agentId || 'default'}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        setVariablePresets(JSON.parse(stored));
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [agentId]);
+
+  // Save presets to localStorage
+  const savePresetsToStorage = useCallback((presets: VariablePreset[]) => {
+    const storageKey = `variable-presets-${agentId || 'default'}`;
+    localStorage.setItem(storageKey, JSON.stringify(presets));
+    setVariablePresets(presets);
+  }, [agentId]);
 
   // Extract variables from prompt
   const detectedVariables = useMemo(() => extractVariables(localValue), [localValue]);
@@ -178,6 +210,50 @@ export function SystemPromptEditor({
   const handleVariableChange = useCallback((variable: string, value: string) => {
     setVariableValues((prev) => ({ ...prev, [variable]: value }));
   }, []);
+
+  // Save current variables as a preset
+  const handleSavePreset = useCallback(() => {
+    if (!newPresetName.trim()) {
+      toast.error("请输入预设名称");
+      return;
+    }
+    const hasValues = Object.values(variableValues).some(v => v.trim());
+    if (!hasValues) {
+      toast.error("请至少填写一个变量值");
+      return;
+    }
+    const newPreset: VariablePreset = {
+      id: `preset-${Date.now()}`,
+      name: newPresetName.trim(),
+      values: { ...variableValues },
+    };
+    savePresetsToStorage([...variablePresets, newPreset]);
+    setNewPresetName("");
+    setShowPresetInput(false);
+    toast.success(`预设「${newPreset.name}」已保存`);
+  }, [newPresetName, variableValues, variablePresets, savePresetsToStorage]);
+
+  // Load a preset
+  const handleLoadPreset = useCallback((preset: VariablePreset) => {
+    setVariableValues((prev) => {
+      const newValues = { ...prev };
+      Object.keys(newValues).forEach(key => {
+        if (preset.values[key] !== undefined) {
+          newValues[key] = preset.values[key];
+        }
+      });
+      return newValues;
+    });
+    toast.success(`已加载预设「${preset.name}」`);
+  }, []);
+
+  // Delete a preset
+  const handleDeletePreset = useCallback((presetId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = variablePresets.filter(p => p.id !== presetId);
+    savePresetsToStorage(updated);
+    toast.success("预设已删除");
+  }, [variablePresets, savePresetsToStorage]);
 
   // Get the final prompt with variables replaced
   const getFinalPrompt = useCallback(() => {
@@ -508,13 +584,80 @@ export function SystemPromptEditor({
           {/* Variable Inputs */}
           {detectedVariables.length > 0 && (
             <div className="border rounded-lg p-3 bg-secondary/20">
-              <div className="flex items-center gap-2 mb-3">
-                <Variable className="h-4 w-4 text-primary" />
-                <Label className="text-sm font-medium">变量设置</Label>
-                <Badge variant="outline" className="text-xs">
-                  {detectedVariables.length} 个变量
-                </Badge>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Variable className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">变量设置</Label>
+                  <Badge variant="outline" className="text-xs">
+                    {detectedVariables.length} 个变量
+                  </Badge>
+                </div>
+                {!showPresetInput ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs gap-1"
+                    onClick={() => setShowPresetInput(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    保存预设
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      value={newPresetName}
+                      onChange={(e) => setNewPresetName(e.target.value)}
+                      placeholder="预设名称"
+                      className="h-6 text-xs w-24"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSavePreset()}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={handleSavePreset}
+                    >
+                      <Check className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => { setShowPresetInput(false); setNewPresetName(""); }}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
+
+              {/* Variable Presets */}
+              {variablePresets.length > 0 && (
+                <div className="mb-3">
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">
+                    <Bookmark className="h-3 w-3 inline mr-1" />
+                    已保存预设
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {variablePresets.map((preset) => (
+                      <Button
+                        key={preset.id}
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs gap-1 group"
+                        onClick={() => handleLoadPreset(preset)}
+                      >
+                        {preset.name}
+                        <Trash2
+                          className="h-3 w-3 opacity-0 group-hover:opacity-100 text-destructive ml-1 transition-opacity"
+                          onClick={(e) => handleDeletePreset(preset.id, e)}
+                        />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-2">
                 {detectedVariables.map((variable) => (
                   <div key={variable} className="flex items-center gap-2">
