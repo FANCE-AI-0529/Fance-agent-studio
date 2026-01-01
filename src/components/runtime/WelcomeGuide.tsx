@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Agent } from "@/hooks/useAgents";
 import { cn } from "@/lib/utils";
+import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 
 interface QuickAction {
   icon: React.ReactNode;
@@ -90,17 +91,28 @@ interface WelcomeGuideProps {
   onCommandClick: (command: string) => void;
 }
 
+// Helper to get avatar from agent manifest
+function getAgentAvatar(agent: Agent | null): AgentAvatar {
+  if (!agent) return { iconId: "bot", colorId: "primary" };
+  const manifest = agent.manifest as any;
+  if (manifest?.avatar) {
+    return manifest.avatar as AgentAvatar;
+  }
+  return { iconId: "bot", colorId: "primary" };
+}
+
 const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) => {
   const agentName = agent?.name || "MPLP 智能助手";
   const agentDepartment = agent?.department || "Agent OS 平台";
+  const avatar = getAgentAvatar(agent);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
       <div className="max-w-2xl w-full space-y-6">
         {/* Agent Introduction */}
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
-            <Bot className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center">
+            <AgentAvatarDisplay avatar={avatar} size="lg" className="w-16 h-16" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">{agentName}</h1>
