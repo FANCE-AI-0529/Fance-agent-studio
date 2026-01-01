@@ -941,6 +941,77 @@ export type Database = {
         }
         Relationships: []
       }
+      task_chain_executions: {
+        Row: {
+          chain_description: string | null
+          chain_id: string
+          chain_name: string
+          completed_at: string | null
+          completed_steps: number
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          execution_mode: string
+          failed_steps: number
+          final_result: Json | null
+          id: string
+          started_at: string
+          status: string
+          step_logs: Json
+          total_steps: number
+          user_id: string
+          variables_used: Json | null
+        }
+        Insert: {
+          chain_description?: string | null
+          chain_id: string
+          chain_name: string
+          completed_at?: string | null
+          completed_steps?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          execution_mode?: string
+          failed_steps?: number
+          final_result?: Json | null
+          id?: string
+          started_at?: string
+          status?: string
+          step_logs?: Json
+          total_steps?: number
+          user_id: string
+          variables_used?: Json | null
+        }
+        Update: {
+          chain_description?: string | null
+          chain_id?: string
+          chain_name?: string
+          completed_at?: string | null
+          completed_steps?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          execution_mode?: string
+          failed_steps?: number
+          final_result?: Json | null
+          id?: string
+          started_at?: string
+          status?: string
+          step_logs?: Json
+          total_steps?: number
+          user_id?: string
+          variables_used?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_chain_executions_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "task_chains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_chain_steps: {
         Row: {
           chain_id: string
