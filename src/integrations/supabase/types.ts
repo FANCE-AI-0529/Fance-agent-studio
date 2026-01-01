@@ -323,6 +323,127 @@ export type Database = {
         }
         Relationships: []
       }
+      api_alert_logs: {
+        Row: {
+          actual_value: number
+          agent_id: string
+          alert_rule_id: string
+          alert_type: string
+          created_at: string
+          id: string
+          notification_error: string | null
+          notification_sent: boolean | null
+          sample_size: number | null
+          threshold_value: number
+          time_window_end: string
+          time_window_start: string
+          user_id: string
+        }
+        Insert: {
+          actual_value: number
+          agent_id: string
+          alert_rule_id: string
+          alert_type: string
+          created_at?: string
+          id?: string
+          notification_error?: string | null
+          notification_sent?: boolean | null
+          sample_size?: number | null
+          threshold_value: number
+          time_window_end: string
+          time_window_start: string
+          user_id: string
+        }
+        Update: {
+          actual_value?: number
+          agent_id?: string
+          alert_rule_id?: string
+          alert_type?: string
+          created_at?: string
+          id?: string
+          notification_error?: string | null
+          notification_sent?: boolean | null
+          sample_size?: number | null
+          threshold_value?: number
+          time_window_end?: string
+          time_window_start?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_alert_logs_alert_rule_id_fkey"
+            columns: ["alert_rule_id"]
+            isOneToOne: false
+            referencedRelation: "api_alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_alert_rules: {
+        Row: {
+          agent_id: string
+          cooldown_minutes: number | null
+          created_at: string
+          error_count_threshold: number | null
+          error_rate_threshold: number | null
+          id: string
+          is_active: boolean | null
+          last_triggered_at: string | null
+          latency_threshold_ms: number | null
+          name: string
+          notification_email: string
+          notification_enabled: boolean | null
+          time_window_minutes: number | null
+          total_alerts_sent: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          cooldown_minutes?: number | null
+          created_at?: string
+          error_count_threshold?: number | null
+          error_rate_threshold?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          latency_threshold_ms?: number | null
+          name?: string
+          notification_email: string
+          notification_enabled?: boolean | null
+          time_window_minutes?: number | null
+          total_alerts_sent?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          cooldown_minutes?: number | null
+          created_at?: string
+          error_count_threshold?: number | null
+          error_rate_threshold?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          latency_threshold_ms?: number | null
+          name?: string
+          notification_email?: string
+          notification_enabled?: boolean | null
+          time_window_minutes?: number | null
+          total_alerts_sent?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_alert_rules_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circuit_breaker_state: {
         Row: {
           agent_id: string
