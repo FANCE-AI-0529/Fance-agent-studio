@@ -782,7 +782,7 @@ const Runtime = () => {
       id: file.id,
       type: file.type === 'image' ? 'image' : 'document',
       name: file.name,
-      url: file.url, // Use local data URL or uploaded URL
+      url: file.preview, // Use local data URL (base64 preview)
       mimeType: file.file.type,
     }));
     clearFiles();
@@ -1118,7 +1118,11 @@ const Runtime = () => {
                             <Bot className="h-4 w-4 text-cognitive" />
                           </div>
                           <div className="flex-1">
-                            <TypingIndicator />
+                            <TypingIndicator phase={
+                              currentPhase === "confirm" ? "executing" : 
+                              currentPhase === "idle" ? "executing" : 
+                              currentPhase
+                            } />
                           </div>
                         </div>
                       )}
@@ -1136,11 +1140,11 @@ const Runtime = () => {
                       <QuickCommandMenu
                         isOpen={showQuickCommands}
                         onClose={() => setShowQuickCommands(false)}
-                        onSelectCommand={(cmd) => {
+                        onSelect={(cmd) => {
                           setInput(cmd);
                           setShowQuickCommands(false);
                         }}
-                        searchQuery={input.slice(1)}
+                        filter={input.slice(1)}
                       />
                     </div>
                   )}
