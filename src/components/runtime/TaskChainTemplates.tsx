@@ -71,6 +71,7 @@ import {
   FileDown,
   FileUp,
   Variable,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -82,6 +83,7 @@ import {
 } from "@/hooks/useCustomTemplates";
 import type { TaskChain } from "@/hooks/useTaskChains";
 import { TemplateVariableDialog } from "./TemplateVariableDialog";
+import { TemplateVersionHistory } from "./TemplateVersionHistory";
 
 export interface TemplateVariable {
   name: string;
@@ -682,6 +684,10 @@ export function TaskChainTemplates({
   // Variable dialog state
   const [variableDialogTemplate, setVariableDialogTemplate] = useState<TaskChainTemplate | null>(null);
   const [showVariableDialog, setShowVariableDialog] = useState(false);
+  
+  // Version history state
+  const [versionHistoryTemplate, setVersionHistoryTemplate] = useState<CustomTemplate | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   // Save template form state
   const [saveForm, setSaveForm] = useState({
@@ -1138,13 +1144,27 @@ export function TaskChainTemplates({
                           复制到剪贴板
                         </DropdownMenuItem>
                         {template.isCustom && (
-                          <DropdownMenuItem
-                            onClick={() => setDeleteTemplateId(template.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            删除模板
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const customTemplate = customTemplates.find(t => t.id === template.id);
+                                if (customTemplate) {
+                                  setVersionHistoryTemplate(customTemplate);
+                                  setShowVersionHistory(true);
+                                }
+                              }}
+                            >
+                              <History className="h-4 w-4 mr-2" />
+                              版本历史
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeleteTemplateId(template.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              删除模板
+                            </DropdownMenuItem>
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1554,6 +1574,13 @@ export function TaskChainTemplates({
         onOpenChange={setShowVariableDialog}
         template={variableDialogTemplate}
         onConfirm={handleVariableConfirm}
+      />
+
+      {/* Template Version History */}
+      <TemplateVersionHistory
+        template={versionHistoryTemplate}
+        open={showVersionHistory}
+        onOpenChange={setShowVersionHistory}
       />
     </div>
   );
