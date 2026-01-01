@@ -15,6 +15,9 @@ import {
   BackgroundVariant,
   useReactFlow,
   ReactFlowProvider,
+  EdgeProps,
+  getBezierPath,
+  getSmoothStepPath,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -69,8 +72,76 @@ import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from 
 import { useDeployedAgents } from "@/hooks/useAgents";
 import { taskTypeLabels } from "@/hooks/useTaskDelegation";
 
+// Custom animated edge component
+function AnimatedEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+  data,
+}: EdgeProps) {
+  const [edgePath] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const isAnimated = data?.animated === true;
+  const isCompleted = data?.completed === true;
+
+  return (
+    <>
+      {/* Background path */}
+      <path
+        id={id}
+        className="react-flow__edge-path"
+        d={edgePath}
+        style={{
+          ...style,
+          stroke: isCompleted ? "hsl(var(--primary))" : isAnimated ? "#3b82f6" : "hsl(var(--border))",
+          strokeWidth: isAnimated ? 3 : 2,
+          transition: "stroke 0.3s, stroke-width 0.3s",
+        }}
+        markerEnd={markerEnd}
+      />
+      {/* Animated flow particles */}
+      {isAnimated && (
+        <>
+          <circle r="4" fill="#3b82f6" filter="url(#glow)">
+            <animateMotion dur="1.5s" repeatCount="indefinite" path={edgePath} />
+          </circle>
+          <circle r="4" fill="#3b82f6" filter="url(#glow)">
+            <animateMotion dur="1.5s" repeatCount="indefinite" path={edgePath} begin="0.5s" />
+          </circle>
+          <circle r="4" fill="#3b82f6" filter="url(#glow)">
+            <animateMotion dur="1.5s" repeatCount="indefinite" path={edgePath} begin="1s" />
+          </circle>
+        </>
+      )}
+      {/* Completed flow indicator */}
+      {isCompleted && !isAnimated && (
+        <circle r="3" fill="hsl(var(--primary))" opacity="0.7">
+          <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} />
+        </circle>
+      )}
+    </>
+  );
+}
+
 const nodeTypes = {
   taskStep: TaskStepNode,
+};
+
+const edgeTypes = {
+  animated: AnimatedEdge,
 };
 
 interface TaskChainVisualEditorProps {
@@ -155,17 +226,24 @@ function TaskChainVisualEditorInner({
         } satisfies TaskStepNodeData,
       }));
 
-      // Create edges based on step_order
+      // Create edges based on step_order with animation data
       const initialEdges: Edge[] = [];
       for (let i = 0; i < chain.steps.length - 1; i++) {
+        const sourceStep = chain.steps[i];
+        const targetStep = chain.steps[i + 1];
+        const isSourceCompleted = sourceStep.status === "completed";
+        const isTargetInProgress = targetStep.status === "in_progress";
+        
         initialEdges.push({
-          id: `edge-${chain.steps[i].id}-${chain.steps[i + 1].id}`,
-          source: chain.steps[i].id,
-          target: chain.steps[i + 1].id,
-          type: "smoothstep",
-          markerEnd: { type: MarkerType.ArrowClosed },
-          style: { strokeWidth: 2 },
-          animated: chain.status === "running",
+          id: `edge-${sourceStep.id}-${targetStep.id}`,
+          source: sourceStep.id,
+          target: targetStep.id,
+          type: "animated",
+          markerEnd: { type: MarkerType.ArrowClosed, color: isSourceCompleted ? "hsl(var(--primary))" : isTargetInProgress ? "#3b82f6" : "hsl(var(--border))" },
+          data: { 
+            animated: isTargetInProgress,
+            completed: isSourceCompleted,
+          },
         });
       }
 
@@ -203,9 +281,9 @@ function TaskChainVisualEditorInner({
         addEdge(
           {
             ...params,
-            type: "smoothstep",
+            type: "animated",
             markerEnd: { type: MarkerType.ArrowClosed },
-            style: { strokeWidth: 2 },
+            data: { animated: false, completed: false },
           },
           eds
         )
@@ -250,9 +328,9 @@ function TaskChainVisualEditorInner({
           id: `edge-${lastNode.id}-${newNodeId}`,
           source: lastNode.id,
           target: newNodeId,
-          type: "smoothstep",
+          type: "animated",
           markerEnd: { type: MarkerType.ArrowClosed },
-          style: { strokeWidth: 2 },
+          data: { animated: false, completed: false },
         },
       ]);
     }
@@ -458,14 +536,28 @@ function TaskChainVisualEditorInner({
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           snapToGrid
           snapGrid={[15, 15]}
           defaultEdgeOptions={{
-            type: "smoothstep",
+            type: "animated",
             markerEnd: { type: MarkerType.ArrowClosed },
           }}
         >
+          {/* SVG Defs for glow effect */}
+          <svg style={{ position: "absolute", width: 0, height: 0 }}>
+            <defs>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
+          
           <Controls />
           <MiniMap
             nodeColor={(node) => {
