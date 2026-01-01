@@ -89,6 +89,163 @@ export type Database = {
         }
         Relationships: []
       }
+      document_processing: {
+        Row: {
+          agent_id: string | null
+          completed_at: string | null
+          created_at: string
+          document_content: string | null
+          document_name: string
+          entities_count: number | null
+          error_message: string | null
+          id: string
+          relations_count: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          document_content?: string | null
+          document_name: string
+          entities_count?: number | null
+          error_message?: string | null
+          id?: string
+          relations_count?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          document_content?: string | null
+          document_name?: string
+          entities_count?: number | null
+          error_message?: string | null
+          id?: string
+          relations_count?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_processing_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entities: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          description: string | null
+          embedding: Json | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          name: string
+          source_content: string | null
+          source_document: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          description?: string | null
+          embedding?: Json | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          source_content?: string | null
+          source_document?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          description?: string | null
+          embedding?: Json | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          source_content?: string | null
+          source_document?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entities_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_relations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_bidirectional: boolean | null
+          metadata: Json | null
+          relation_type: string
+          source_entity_id: string
+          strength: number | null
+          target_entity_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          metadata?: Json | null
+          relation_type: string
+          source_entity_id: string
+          strength?: number | null
+          target_entity_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          metadata?: Json | null
+          relation_type?: string
+          source_entity_id?: string
+          strength?: number | null
+          target_entity_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_relations_source_entity_id_fkey"
+            columns: ["source_entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_relations_target_entity_id_fkey"
+            columns: ["target_entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -618,6 +775,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cosine_similarity: { Args: { a: Json; b: Json }; Returns: number }
+      find_similar_entities: {
+        Args: {
+          p_agent_id?: string
+          p_limit?: number
+          p_query_embedding: Json
+          p_user_id: string
+        }
+        Returns: {
+          description: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          similarity: number
+        }[]
+      }
       generate_share_token: { Args: never; Returns: string }
       get_next_skill_version_number: {
         Args: { p_skill_id: string }
@@ -629,6 +802,21 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      traverse_entity_graph: {
+        Args: {
+          p_depth?: number
+          p_entity_ids: string[]
+          p_relation_types?: string[]
+        }
+        Returns: {
+          depth: number
+          description: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          relation_path: string
+        }[]
       }
     }
     Enums: {
