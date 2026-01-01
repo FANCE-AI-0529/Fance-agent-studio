@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Users,
   Handshake,
@@ -43,6 +45,10 @@ import {
   Check,
   X,
   Loader2,
+  Send,
+  Network,
+  Play,
+  XCircle,
 } from "lucide-react";
 import {
   useAgentCollaborations,
@@ -62,7 +68,24 @@ import {
   type CollaborationMessage,
   type DriftLog,
 } from "@/hooks/useAgentCollaboration";
+import {
+  useDelegatedTasks,
+  useDelegateTask,
+  useAcceptTask,
+  useRejectTask,
+  useStartTask,
+  useCompleteTask,
+  useCancelTask,
+  taskStatusColors,
+  taskStatusLabels,
+  taskPriorityColors,
+  taskPriorityLabels,
+  taskTypeLabels,
+  useRealtimeTaskUpdates,
+  type DelegatedTask,
+} from "@/hooks/useTaskDelegation";
 import { useDeployedAgents } from "@/hooks/useAgents";
+import { CollaborationDashboard } from "./CollaborationDashboard";
 
 interface AgentCollaborationPanelProps {
   currentAgentId?: string;
@@ -76,14 +99,24 @@ export function AgentCollaborationPanel({
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("collaborations");
   const [showNewCollab, setShowNewCollab] = useState(false);
+  const [showNewTask, setShowNewTask] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const [selectedCollabId, setSelectedCollabId] = useState<string | null>(null);
   const [selectedTargetAgent, setSelectedTargetAgent] = useState<string>("");
   const [realtimeMessages, setRealtimeMessages] = useState<CollaborationMessage[]>([]);
+  
+  // New task form state
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<"low" | "normal" | "high" | "urgent">("normal");
+  const [newTaskType, setNewTaskType] = useState<"general" | "analysis" | "generation" | "query" | "validation">("general");
+  const [newTaskTargetAgent, setNewTaskTargetAgent] = useState("");
 
   const { data: collaborations = [], isLoading: collabLoading, refetch: refetchCollabs } = useAgentCollaborations();
   const { data: agents = [] } = useDeployedAgents();
   const { data: messages = [] } = useCollaborationMessages(selectedCollabId);
   const { data: driftLogs = [], refetch: refetchDrifts } = useDriftLogs(currentAgentId);
+  const { data: delegatedTasks = [], refetch: refetchTasks } = useDelegatedTasks(currentAgentId);
 
   const initiateHandshake = useInitiateHandshake();
   const acceptHandshake = useAcceptHandshake();
@@ -91,6 +124,14 @@ export function AgentCollaborationPanel({
   const disconnectCollab = useDisconnectCollaboration();
   const checkDrift = useCheckDrift();
   const resolveDrift = useResolveDrift();
+  
+  // Task mutations
+  const delegateTask = useDelegateTask();
+  const acceptTask = useAcceptTask();
+  const rejectTask = useRejectTask();
+  const startTask = useStartTask();
+  const completeTask = useCompleteTask();
+  const cancelTask = useCancelTask();
 
   // Real-time message handler
   const handleNewMessage = useCallback((message: CollaborationMessage) => {
@@ -105,6 +146,13 @@ export function AgentCollaborationPanel({
   }, [refetchDrifts]);
 
   useRealtimeDriftAlerts(currentAgentId || null, handleNewDrift);
+  
+  // Real-time task handler
+  const handleTaskUpdate = useCallback((task: DelegatedTask) => {
+    refetchTasks();
+  }, [refetchTasks]);
+
+  useRealtimeTaskUpdates(currentAgentId || null, handleTaskUpdate);
 
   // Get available agents for collaboration (exclude current agent)
   const availableAgents = agents.filter(
@@ -119,6 +167,43 @@ export function AgentCollaborationPanel({
   const pendingCollabs = myCollaborations.filter((c: any) => c.status === "pending");
   const activeCollabs = myCollaborations.filter((c: any) => c.status === "connected");
   const unresolvedDrifts = driftLogs.filter((d) => !d.resolved);
+  
+  // Task filtering
+  const myTasks = delegatedTasks.filter(
+    (t) => t.source_agent_id === currentAgentId || t.target_agent_id === currentAgentId
+  );
+  const pendingTasks = myTasks.filter((t) => t.status === "pending" && t.target_agent_id === currentAgentId);
+  const inProgressTasks = myTasks.filter((t) => t.status === "in_progress" || t.status === "accepted");
+
+  const handleDelegateTask = async () => {
+    if (!currentAgentId || !newTaskTargetAgent || !newTaskTitle) return;
+
+    // Find collaboration with target agent
+    const collab = activeCollabs.find(
+      (c: any) => c.initiator_agent_id === newTaskTargetAgent || c.target_agent_id === newTaskTargetAgent
+    );
+
+    await delegateTask.mutateAsync({
+      sourceAgentId: currentAgentId,
+      targetAgentId: newTaskTargetAgent,
+      collaborationId: collab?.id,
+      title: newTaskTitle,
+      description: newTaskDescription,
+      priority: newTaskPriority,
+      taskType: newTaskType,
+      handoffContext: {
+        sessionSummary: "Task delegated from collaboration panel",
+        urgency: newTaskPriority,
+      },
+    });
+
+    setShowNewTask(false);
+    setNewTaskTitle("");
+    setNewTaskDescription("");
+    setNewTaskPriority("normal");
+    setNewTaskType("general");
+    setNewTaskTargetAgent("");
+  };
 
   const handleInitiateHandshake = async () => {
     if (!currentAgentId || !selectedTargetAgent) return;
@@ -158,13 +243,16 @@ export function AgentCollaborationPanel({
         <Button variant="outline" size="sm" className="relative">
           <Users className="h-4 w-4 mr-2" />
           协作
-          {(pendingCollabs.length > 0 || unresolvedDrifts.length > 0) && (
+          {(pendingCollabs.length > 0 || unresolvedDrifts.length > 0 || pendingTasks.length > 0) && (
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full text-[10px] text-white flex items-center justify-center">
-              {pendingCollabs.length + unresolvedDrifts.length}
+              {pendingCollabs.length + unresolvedDrifts.length + pendingTasks.length}
             </span>
           )}
         </Button>
       </SheetTrigger>
+      
+      {/* Collaboration Dashboard */}
+      <CollaborationDashboard open={showDashboard} onOpenChange={setShowDashboard} />
       <SheetContent side="right" className="w-[800px] sm:max-w-[800px]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
@@ -179,21 +267,35 @@ export function AgentCollaborationPanel({
         </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="collaborations" className="relative">
-              协作管理
+              协作
               {pendingCollabs.length > 0 && (
                 <span className="ml-1 text-xs text-destructive">({pendingCollabs.length})</span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="messages">通信记录</TabsTrigger>
+            <TabsTrigger value="tasks" className="relative">
+              任务
+              {pendingTasks.length > 0 && (
+                <span className="ml-1 text-xs text-destructive">({pendingTasks.length})</span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="messages">通信</TabsTrigger>
             <TabsTrigger value="drift" className="relative">
-              漂移检测
+              漂移
               {unresolvedDrifts.length > 0 && (
                 <span className="ml-1 text-xs text-destructive">({unresolvedDrifts.length})</span>
               )}
             </TabsTrigger>
           </TabsList>
+          
+          {/* Dashboard button */}
+          <div className="flex justify-end mt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowDashboard(true)}>
+              <Network className="h-4 w-4 mr-1" />
+              网络拓扑
+            </Button>
+          </div>
 
           <TabsContent value="collaborations" className="mt-4 space-y-4">
             {/* Stats Overview */}
@@ -338,6 +440,73 @@ export function AgentCollaborationPanel({
                               </div>
                             </div>
                           )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="mt-4 space-y-4">
+            <div className="flex gap-2">
+              <Button onClick={() => setShowNewTask(true)} disabled={!currentAgentId || activeCollabs.length === 0}>
+                <Send className="h-4 w-4 mr-1" />
+                委派任务
+              </Button>
+              <Button variant="outline" onClick={() => refetchTasks()}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-2">
+                {myTasks.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>暂无任务</p>
+                  </div>
+                ) : (
+                  myTasks.map((task) => {
+                    const isReceiver = task.target_agent_id === currentAgentId;
+                    return (
+                      <Card key={task.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge style={{ backgroundColor: taskStatusColors[task.status], color: "#fff" }}>
+                                  {taskStatusLabels[task.status]}
+                                </Badge>
+                                <Badge variant="outline" style={{ borderColor: taskPriorityColors[task.priority] }}>
+                                  {taskPriorityLabels[task.priority]}
+                                </Badge>
+                              </div>
+                              <div className="font-medium mt-1">{task.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {isReceiver ? `来自: ${task.source_agent?.name}` : `发送至: ${task.target_agent?.name}`}
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              {isReceiver && task.status === "pending" && (
+                                <>
+                                  <Button size="sm" variant="outline" onClick={() => acceptTask.mutate(task.id)}><Check className="h-4 w-4" /></Button>
+                                  <Button size="sm" variant="outline" onClick={() => rejectTask.mutate({ taskId: task.id })}><X className="h-4 w-4" /></Button>
+                                </>
+                              )}
+                              {isReceiver && task.status === "accepted" && (
+                                <Button size="sm" variant="outline" onClick={() => startTask.mutate(task.id)}><Play className="h-4 w-4" /></Button>
+                              )}
+                              {isReceiver && task.status === "in_progress" && (
+                                <Button size="sm" variant="outline" onClick={() => completeTask.mutate({ taskId: task.id })}><CheckCircle className="h-4 w-4" /></Button>
+                              )}
+                              {!isReceiver && task.status === "pending" && (
+                                <Button size="sm" variant="ghost" onClick={() => cancelTask.mutate(task.id)}><XCircle className="h-4 w-4" /></Button>
+                              )}
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     );

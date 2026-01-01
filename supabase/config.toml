@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.drift-detection]
 verify_jwt = false
+
+[functions.task-delegation]
+verify_jwt = false

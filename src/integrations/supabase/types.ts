@@ -204,6 +204,100 @@ export type Database = {
           },
         ]
       }
+      delegated_tasks: {
+        Row: {
+          accepted_at: string | null
+          actual_duration_ms: number | null
+          collaboration_id: string | null
+          completed_at: string | null
+          created_at: string
+          deadline: string | null
+          description: string | null
+          error_message: string | null
+          estimated_duration_ms: number | null
+          handoff_context: Json | null
+          id: string
+          priority: string
+          result: Json | null
+          source_agent_id: string
+          started_at: string | null
+          status: string
+          target_agent_id: string
+          task_type: string
+          title: string
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          actual_duration_ms?: number | null
+          collaboration_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          error_message?: string | null
+          estimated_duration_ms?: number | null
+          handoff_context?: Json | null
+          id?: string
+          priority?: string
+          result?: Json | null
+          source_agent_id: string
+          started_at?: string | null
+          status?: string
+          target_agent_id: string
+          task_type?: string
+          title: string
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          actual_duration_ms?: number | null
+          collaboration_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          error_message?: string | null
+          estimated_duration_ms?: number | null
+          handoff_context?: Json | null
+          id?: string
+          priority?: string
+          result?: Json | null
+          source_agent_id?: string
+          started_at?: string | null
+          status?: string
+          target_agent_id?: string
+          task_type?: string
+          title?: string
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegated_tasks_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "agent_collaborations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegated_tasks_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegated_tasks_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_processing: {
         Row: {
           agent_id: string | null
