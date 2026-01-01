@@ -288,8 +288,11 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean
+          is_shared: boolean
           name: string
           prompt: string
+          share_count: number
+          share_token: string | null
           updated_at: string
           user_id: string
         }
@@ -298,8 +301,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          is_shared?: boolean
           name?: string
           prompt: string
+          share_count?: number
+          share_token?: string | null
           updated_at?: string
           user_id: string
         }
@@ -308,8 +314,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          is_shared?: boolean
           name?: string
           prompt?: string
+          share_count?: number
+          share_token?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -387,6 +396,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_share_token: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

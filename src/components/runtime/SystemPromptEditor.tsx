@@ -30,11 +30,14 @@ import {
   Upload,
   Variable,
   Plus,
-  Bookmark
+  Bookmark,
+  Share2,
+  Link,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, UserPrompt } from "@/hooks/useUserPrompts";
+import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, useSharePrompt, useUnsharePrompt, UserPrompt } from "@/hooks/useUserPrompts";
 import { useVariablePresets, useSaveVariablePreset, useDeleteVariablePreset, VariablePreset } from "@/hooks/useVariablePresets";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -299,6 +302,10 @@ export function SystemPromptEditor({
   const { data: defaultPrompt, isLoading: isLoadingDefault } = useDefaultPrompt(agentId);
   const savePromptMutation = useSavePrompt();
   const deletePromptMutation = useDeletePrompt();
+  const sharePromptMutation = useSharePrompt();
+  const unsharePromptMutation = useUnsharePrompt();
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
   // Load default prompt on mount
   useEffect(() => {
@@ -380,6 +387,35 @@ export function SystemPromptEditor({
     if (currentPromptId === promptId) {
       setCurrentPromptId(null);
     }
+  };
+
+  const handleSharePrompt = async (promptId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const token = await sharePromptMutation.mutateAsync(promptId);
+      const link = `${window.location.origin}/share/${token}`;
+      setShareLink(link);
+      await navigator.clipboard.writeText(link);
+      setShareLinkCopied(true);
+      setTimeout(() => setShareLinkCopied(false), 2000);
+      toast.success("分享链接已复制到剪贴板");
+    } catch (error) {
+      toast.error(`生成分享链接失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  };
+
+  const handleUnsharePrompt = async (promptId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await unsharePromptMutation.mutateAsync(promptId);
+    setShareLink(null);
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!shareLink) return;
+    await navigator.clipboard.writeText(shareLink);
+    setShareLinkCopied(true);
+    setTimeout(() => setShareLinkCopied(false), 2000);
+    toast.success("分享链接已复制");
   };
 
   const handleCopy = async () => {
@@ -503,6 +539,16 @@ export function SystemPromptEditor({
                         默认
                       </Badge>
                     )}
+                    {prompt.is_shared && (
+                      <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3 ml-1">
+                        <Link className="h-2 w-2 mr-0.5" />
+                        分享中
+                      </Badge>
+                    )}
+                    <Share2
+                      className="h-3 w-3 opacity-0 group-hover:opacity-100 text-primary ml-1 transition-opacity"
+                      onClick={(e) => handleSharePrompt(prompt.id, e)}
+                    />
                     <Trash2 
                       className="h-3 w-3 opacity-0 group-hover:opacity-100 text-destructive ml-1 transition-opacity"
                       onClick={(e) => handleDeleteSavedPrompt(prompt.id, e)}
@@ -510,6 +556,34 @@ export function SystemPromptEditor({
                   </Button>
                 ))}
               </div>
+
+              {/* Share Link Display */}
+              {shareLink && (
+                <div className="mt-3 p-2 border rounded-lg bg-secondary/30 flex items-center gap-2">
+                  <Link className="h-4 w-4 text-primary flex-shrink-0" />
+                  <code className="text-xs flex-1 truncate">{shareLink}</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={handleCopyShareLink}
+                  >
+                    {shareLinkCopied ? (
+                      <Check className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => setShareLink(null)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

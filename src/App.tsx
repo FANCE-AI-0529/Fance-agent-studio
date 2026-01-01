@@ -11,6 +11,7 @@ import Foundry from "./pages/Foundry";
 import Runtime from "./pages/Runtime";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import SharedPrompt from "./pages/SharedPrompt";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ function AppRoutes() {
           </AuthRoute>
         }
       />
+      <Route path="/share/:token" element={<SharedPrompt />} />
       <Route
         path="/"
         element={
