@@ -46,8 +46,10 @@ import {
   RefreshCw,
   Workflow,
   Edit3,
+  Sparkles,
 } from "lucide-react";
 import { TaskChainVisualEditor } from "./TaskChainVisualEditor";
+import { TaskChainTemplates, type TaskChainTemplate } from "./TaskChainTemplates";
 import {
   useTaskChains,
   useTaskChain,
@@ -85,6 +87,7 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showVisualEditor, setShowVisualEditor] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [editingChain, setEditingChain] = useState<TaskChain | null>(null);
   const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
   
@@ -170,6 +173,26 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
     setInitialContext("");
   };
 
+  const handleSelectTemplate = async (template: TaskChainTemplate) => {
+    // Create chain directly from template
+    await createChain.mutateAsync({
+      name: template.name,
+      description: template.description,
+      executionMode: template.executionMode,
+      sourceAgentId: currentAgentId,
+      steps: template.steps.map((s, i) => ({
+        name: s.name,
+        description: s.description,
+        taskType: s.taskType,
+        targetAgentId: currentAgentId,
+        inputMapping: s.inputMapping || {},
+        outputKey: s.outputKey || `step_${i}`,
+        parallelGroup: s.parallelGroup ?? i,
+      })),
+    });
+    setShowTemplates(false);
+  };
+
   const handleExecute = async (chainId: string) => {
     let context = {};
     if (initialContext) {
@@ -209,6 +232,14 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
             任务链
           </div>
           <div className="flex gap-1">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setShowTemplates(true)}
+            >
+              <Sparkles className="h-4 w-4 mr-1" />
+              模板
+            </Button>
             <Button 
               size="sm" 
               variant="outline"
@@ -739,6 +770,16 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
                 setEditingChain(null);
                 refetchChains();
               }}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Templates Dialog */}
+        <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
+          <DialogContent className="max-w-4xl max-h-[85vh] p-0 overflow-hidden">
+            <TaskChainTemplates
+              onSelectTemplate={handleSelectTemplate}
+              onClose={() => setShowTemplates(false)}
             />
           </DialogContent>
         </Dialog>
