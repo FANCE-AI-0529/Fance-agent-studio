@@ -31,6 +31,7 @@ import {
   Key,
   Webhook,
   Bell,
+  Cpu,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ import { BuilderWizard } from "@/components/builder/BuilderWizard";
 import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { ApiAlertPanel } from "@/components/builder/ApiAlertPanel";
+import { LLMConfigPanel } from "@/components/builder/LLMConfigPanel";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,6 +95,7 @@ const Builder = () => {
   const [showApiPanel, setShowApiPanel] = useState(false);
   const [showWebhookPanel, setShowWebhookPanel] = useState(false);
   const [showAlertPanel, setShowAlertPanel] = useState(false);
+  const [showLLMConfig, setShowLLMConfig] = useState(false);
 
   // Check if first time user
   useEffect(() => {
@@ -681,6 +684,20 @@ const Builder = () => {
                     </TooltipTrigger>
                     <TooltipContent>告警管理</TooltipContent>
                   </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowLLMConfig(true)}
+                      >
+                        <Cpu className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>大模型配置</TooltipContent>
+                  </Tooltip>
                 </>
               )}
 
@@ -868,6 +885,14 @@ const Builder = () => {
           agentName={agentConfig.name}
           isOpen={showAlertPanel}
           onClose={() => setShowAlertPanel(false)}
+        />
+
+        {/* LLM Config Panel */}
+        <LLMConfigPanel
+          agentId={currentAgentId}
+          agentName={agentConfig.name}
+          isOpen={showLLMConfig}
+          onClose={() => setShowLLMConfig(false)}
         />
       </div>
     </TooltipProvider>
