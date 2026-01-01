@@ -24,6 +24,7 @@ import { MPLPStepper, MPLPPhase } from "@/components/runtime/MPLPStepper";
 import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/ThinkingProcess";
 import { ModelSelector, availableModels } from "@/components/runtime/ModelSelector";
 import { SystemPromptEditor } from "@/components/runtime/SystemPromptEditor";
+import { ModelRoutingConfig } from "@/components/runtime/ModelRoutingConfig";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -998,6 +999,10 @@ const Runtime = () => {
                 value={selectedModelId}
                 onChange={setSelectedModelId}
                 disabled={currentPhase !== "idle"}
+              />
+              <ModelRoutingConfig 
+                agentId={selectedAgent?.id}
+                agentName={selectedAgent?.name}
               />
             </div>
           </div>
