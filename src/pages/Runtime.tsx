@@ -28,6 +28,7 @@ import { ModelRoutingConfig } from "@/components/runtime/ModelRoutingConfig";
 import { AgentCollaborationPanel } from "@/components/runtime/AgentCollaborationPanel";
 import { CircuitBreakerPanel } from "@/components/runtime/CircuitBreakerPanel";
 import { TaskChainPanel } from "@/components/runtime/TaskChainPanel";
+import { ExecutionHistoryPanel } from "@/components/runtime/ExecutionHistoryPanel";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -1012,6 +1013,7 @@ const Runtime = () => {
                 currentAgentName={selectedAgent?.name}
               />
               <TaskChainPanel />
+              <ExecutionHistoryPanel />
               <CircuitBreakerPanel
                 agentId={selectedAgent?.id}
                 agentName={selectedAgent?.name}
