@@ -12,7 +12,8 @@ import {
   Database,
   FileCode,
   Key,
-  Settings2
+  Settings2,
+  HelpCircle
 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormatte
 import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import WelcomeGuide from "@/components/runtime/WelcomeGuide";
+import OnboardingTour, { useOnboardingTour } from "@/components/runtime/OnboardingTour";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -380,6 +382,9 @@ const Runtime = () => {
   const { user } = useAuth();
   const { data: deployedAgents = [], isLoading: isLoadingAgents } = useDeployedAgents();
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  
+  // Onboarding tour
+  const { showTour, completeTour, resetTour } = useOnboardingTour();
   
   const {
     session: chatSession,
@@ -915,6 +920,10 @@ const Runtime = () => {
   };
 
   return (
+    <>
+      {/* Onboarding Tour */}
+      <OnboardingTour onComplete={completeTour} forceShow={showTour} />
+      
     <div className="h-full flex">
       {/* History Sidebar */}
       {showHistory && user && (
@@ -1028,6 +1037,17 @@ const Runtime = () => {
                 agentId={selectedAgent?.id}
                 agentName={selectedAgent?.name}
               />
+              <TooltipProvider>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={resetTour}
+                  title="查看使用教程"
+                >
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </TooltipProvider>
             </div>
           </div>
         </div>
@@ -1196,6 +1216,7 @@ const Runtime = () => {
       {/* Context Panel */}
       <ContextPanel agent={selectedAgent} memory={contextMemory} />
     </div>
+    </>
   );
 };
 
