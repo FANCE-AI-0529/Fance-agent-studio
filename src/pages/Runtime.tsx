@@ -34,6 +34,7 @@ import { FormattedText } from "@/components/runtime/FormattedText";
 import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormattedText";
 import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import VoiceInputButton from "@/components/runtime/VoiceInputButton";
+import WelcomeGuide from "@/components/runtime/WelcomeGuide";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -1036,8 +1037,17 @@ const Runtime = () => {
           <MPLPStepper currentPhase={currentPhase} />
         </div>
 
-        {/* Messages */}
+        {/* Messages or Welcome Guide */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {localMessages.length === 0 && currentPhase === "idle" ? (
+            <WelcomeGuide 
+              agent={selectedAgent} 
+              onCommandClick={(command) => {
+                setInput(command);
+              }}
+            />
+          ) : (
+            <>
           {localMessages.map(message => {
             // Render Thinking Process card
             if (message.role === "system" && message.thinkingLogs && message.thinkingLogs.length > 0) {
@@ -1131,6 +1141,8 @@ const Runtime = () => {
           )}
           
           <div ref={messagesEndRef} />
+          </>
+          )}
         </div>
 
         {/* Input Area */}

@@ -62,20 +62,28 @@ export function AgentSelector({
           <ChevronDown className="h-4 w-4 text-muted-foreground ml-2" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="w-72">
+        <div className="px-3 py-2 border-b border-border">
+          <p className="text-xs text-muted-foreground">
+            选择一个智能体开始对话，智能体会根据您的指令自动执行任务
+          </p>
+        </div>
         <DropdownMenuItem
           onClick={() => onSelectAgent(null)}
-          className="flex items-center gap-3 p-3"
+          className="flex items-start gap-3 p-3"
         >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Bot className="h-4 w-4 text-primary" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="font-medium text-sm">餐饮办证助手</div>
-            <div className="text-xs text-muted-foreground">市场监管局 · 默认</div>
+            <div className="text-xs text-muted-foreground">市场监管局 · 默认演示</div>
+            <div className="text-[10px] text-muted-foreground mt-1">
+              支持：文件读取、数据查询、表单生成、API调用等
+            </div>
           </div>
           {!selectedAgent && (
-            <Badge variant="secondary" className="text-[10px]">当前</Badge>
+            <Badge variant="secondary" className="text-[10px] flex-shrink-0">当前</Badge>
           )}
         </DropdownMenuItem>
 
