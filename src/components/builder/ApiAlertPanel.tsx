@@ -17,6 +17,10 @@ import {
   Loader2,
   Play,
   History,
+  Layers,
+  Shield,
+  Gauge,
+  Server,
 } from "lucide-react";
 import {
   Dialog,
@@ -180,6 +184,90 @@ export function ApiAlertPanel({
     error_count: "个",
   };
 
+  // Alert rule templates
+  const alertTemplates = [
+    {
+      id: "strict",
+      name: "严格监控",
+      description: "高敏感度，适合生产环境关键服务",
+      icon: Shield,
+      color: "text-red-500",
+      config: {
+        errorRate: "1",
+        latency: "1000",
+        errorCount: "3",
+        timeWindow: "3",
+        cooldown: "15",
+      },
+    },
+    {
+      id: "standard",
+      name: "标准监控",
+      description: "平衡的监控策略，适合大多数场景",
+      icon: Gauge,
+      color: "text-blue-500",
+      config: {
+        errorRate: "5",
+        latency: "3000",
+        errorCount: "10",
+        timeWindow: "5",
+        cooldown: "30",
+      },
+    },
+    {
+      id: "relaxed",
+      name: "宽松监控",
+      description: "低敏感度，适合开发测试环境",
+      icon: Server,
+      color: "text-green-500",
+      config: {
+        errorRate: "15",
+        latency: "5000",
+        errorCount: "30",
+        timeWindow: "10",
+        cooldown: "60",
+      },
+    },
+    {
+      id: "latency-focus",
+      name: "延迟优先",
+      description: "专注延迟监控，适合实时性要求高的服务",
+      icon: Clock,
+      color: "text-yellow-500",
+      config: {
+        errorRate: "",
+        latency: "500",
+        errorCount: "",
+        timeWindow: "3",
+        cooldown: "15",
+      },
+    },
+    {
+      id: "error-focus",
+      name: "错误优先",
+      description: "专注错误监控，适合稳定性要求高的服务",
+      icon: AlertTriangle,
+      color: "text-orange-500",
+      config: {
+        errorRate: "2",
+        latency: "",
+        errorCount: "5",
+        timeWindow: "5",
+        cooldown: "20",
+      },
+    },
+  ];
+
+  const applyTemplate = (template: typeof alertTemplates[0]) => {
+    setFormName(template.name);
+    setFormErrorRate(template.config.errorRate);
+    setFormLatency(template.config.latency);
+    setFormErrorCount(template.config.errorCount);
+    setFormTimeWindow(template.config.timeWindow);
+    setFormCooldown(template.config.cooldown);
+    setShowCreateDialog(true);
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -196,6 +284,10 @@ export function ApiAlertPanel({
 
           <Tabs defaultValue="rules" className="flex-1 overflow-hidden flex flex-col">
             <TabsList className="w-full justify-start">
+              <TabsTrigger value="templates" className="gap-1.5">
+                <Layers className="h-3.5 w-3.5" />
+                快速模板
+              </TabsTrigger>
               <TabsTrigger value="rules" className="gap-1.5">
                 <Bell className="h-3.5 w-3.5" />
                 告警规则
@@ -205,6 +297,64 @@ export function ApiAlertPanel({
                 告警历史
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="templates" className="flex-1 overflow-auto mt-0 pt-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium">告警模板</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      选择预设模板快速创建告警规则
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {alertTemplates.map((template) => {
+                    const IconComponent = template.icon;
+                    return (
+                      <motion.div
+                        key={template.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.02 }}
+                        className="p-4 rounded-lg border bg-card hover:border-primary/50 cursor-pointer transition-all"
+                        onClick={() => applyTemplate(template)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={cn("p-2 rounded-lg bg-muted", template.color)}>
+                            <IconComponent className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm">{template.name}</h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {template.description}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {template.config.errorRate && (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  错误率 &gt; {template.config.errorRate}%
+                                </Badge>
+                              )}
+                              {template.config.latency && (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  延迟 &gt; {template.config.latency}ms
+                                </Badge>
+                              )}
+                              {template.config.errorCount && (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  错误数 &gt; {template.config.errorCount}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="rules" className="flex-1 overflow-hidden mt-0 pt-4">
               <div className="flex flex-col h-full">
