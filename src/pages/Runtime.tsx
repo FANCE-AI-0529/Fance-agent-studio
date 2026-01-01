@@ -30,6 +30,8 @@ import { CircuitBreakerPanel } from "@/components/runtime/CircuitBreakerPanel";
 import { TaskChainPanel } from "@/components/runtime/TaskChainPanel";
 import { ExecutionHistoryPanel } from "@/components/runtime/ExecutionHistoryPanel";
 import { FormattedText } from "@/components/runtime/FormattedText";
+import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormattedText";
+import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -50,6 +52,7 @@ interface Message {
   confirmAction?: ConfirmAction;
   traceEvents?: TraceEvent[];
   thinkingLogs?: LogEntry[];
+  isNew?: boolean; // Flag for typewriter effect
 }
 
 interface MemoryItem {
@@ -628,6 +631,7 @@ const Runtime = () => {
       skill: scenario.skillName,
       status: "idle",
       traceEvents: events,
+      isNew: true,
     };
 
     setLocalMessages(prev => [...prev, response]);
@@ -754,6 +758,7 @@ const Runtime = () => {
             skill: "AI 对话",
             status: "idle" as const,
             traceEvents: [],
+            isNew: true,
           }];
         });
       };
@@ -837,6 +842,7 @@ const Runtime = () => {
       timestamp: new Date(),
       status: "idle",
       traceEvents: events,
+      isNew: true,
     };
 
     setLocalMessages(prev => [...prev, response]);
@@ -1072,12 +1078,21 @@ const Runtime = () => {
                 </div>
                 
                 <div className={`max-w-[70%] ${message.role === "user" ? "text-right" : ""}`}>
-                  <div className={`p-3 rounded-lg ${
+                  <div className={cn(
+                    "p-3 rounded-lg",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-card border border-border"
-                  }`}>
-                    <FormattedText content={message.content} className="text-sm" />
+                  )}>
+                    {message.role === "assistant" && message.isNew ? (
+                      <TypewriterFormattedText 
+                        content={message.content} 
+                        className="text-sm" 
+                        speed={12}
+                      />
+                    ) : (
+                      <FormattedText content={message.content} className="text-sm" />
+                    )}
                   </div>
                   
                   {message.skill && (
@@ -1108,18 +1123,9 @@ const Runtime = () => {
 
           {/* Typing indicator */}
           {currentPhase !== "idle" && currentPhase !== "confirm" && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </div>
-              <div className="p-3 rounded-lg bg-card border border-border">
-                <span className="text-sm text-muted-foreground">
-                  {currentPhase === "planning" && "正在分析意图并选择技能..."}
-                  {currentPhase === "executing" && "正在执行任务..."}
-                  {currentPhase === "trace" && "正在记录执行结果..."}
-                </span>
-              </div>
-            </div>
+            <TypingIndicator 
+              phase={currentPhase === "planning" ? "planning" : currentPhase === "executing" ? "executing" : "trace"} 
+            />
           )}
           
           <div ref={messagesEndRef} />
