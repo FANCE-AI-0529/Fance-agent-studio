@@ -38,6 +38,7 @@ import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import WelcomeGuide from "@/components/runtime/WelcomeGuide";
 import OnboardingTour, { useOnboardingTour } from "@/components/runtime/OnboardingTour";
+import { QuickCommandMenu, MessageTemplates } from "@/components/runtime/QuickCommandMenu";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useDeployedAgents, Agent } from "@/hooks/useAgents";
@@ -400,6 +401,7 @@ const Runtime = () => {
 
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [showQuickCommands, setShowQuickCommands] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<MPLPPhase>("idle");
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<ConfirmAction | null>(null);
@@ -1171,7 +1173,28 @@ const Runtime = () => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border relative">
+          {/* Quick Command Menu */}
+          <QuickCommandMenu
+            isOpen={showQuickCommands}
+            onClose={() => setShowQuickCommands(false)}
+            onSelect={(prompt) => {
+              setInput(prompt);
+              setShowQuickCommands(false);
+            }}
+            filter={input.startsWith("/") ? input.slice(1) : ""}
+          />
+          
+          {/* Message templates for empty state */}
+          {localMessages.length <= 1 && !input && (
+            <div className="mb-3">
+              <p className="text-xs text-muted-foreground mb-2">快速开始：</p>
+              <MessageTemplates 
+                onSelect={(content) => setInput(content)} 
+              />
+            </div>
+          )}
+          
           <div className="flex gap-2">
             <TooltipProvider>
               <VoiceInputButton 
@@ -1180,10 +1203,24 @@ const Runtime = () => {
               />
             </TooltipProvider>
             <Input
-              placeholder="试试: '读取配置文件' / '调用API' / '删除数据' 或点击麦克风语音输入"
+              placeholder="输入消息，或输入 / 打开快捷命令菜单..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Show quick commands when typing /
+                if (e.target.value.startsWith("/")) {
+                  setShowQuickCommands(true);
+                } else {
+                  setShowQuickCommands(false);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !showQuickCommands) {
+                  handleSend();
+                } else if (e.key === "Escape") {
+                  setShowQuickCommands(false);
+                }
+              }}
               className="bg-card"
               disabled={currentPhase !== "idle"}
             />
@@ -1195,6 +1232,10 @@ const Runtime = () => {
               <Send className="h-4 w-4" />
             </Button>
           </div>
+          
+          <p className="text-[10px] text-muted-foreground mt-2 text-center">
+            输入 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">/</kbd> 打开快捷命令 · 按 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Enter</kbd> 发送
+          </p>
         </div>
       </div>
 
