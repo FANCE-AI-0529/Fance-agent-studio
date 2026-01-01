@@ -28,6 +28,7 @@ import {
   HelpCircle,
   ZoomIn,
   Maximize2,
+  Key,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { BuilderWizard } from "@/components/builder/BuilderWizard";
+import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,6 +86,7 @@ const Builder = () => {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [showApiPanel, setShowApiPanel] = useState(false);
 
   // Check if first time user
   useEffect(() => {
@@ -628,6 +631,23 @@ const Builder = () => {
                 <TooltipContent>适应画布</TooltipContent>
               </Tooltip>
 
+              {/* API Management Button */}
+              {currentAgentId && existingAgent?.status === 'deployed' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setShowApiPanel(true)}
+                    >
+                      <Key className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>API 管理</TooltipContent>
+                </Tooltip>
+              )}
+
               {!user && (
                 <Button
                   variant="ghost"
@@ -788,6 +808,14 @@ const Builder = () => {
           isOpen={showManifest}
           onClose={() => setShowManifest(false)}
           manifest={showManifest ? generateManifest() : null}
+        />
+
+        {/* API Management Panel */}
+        <AgentApiPanel
+          agentId={currentAgentId}
+          agentName={agentConfig.name}
+          isOpen={showApiPanel}
+          onClose={() => setShowApiPanel(false)}
         />
       </div>
     </TooltipProvider>
