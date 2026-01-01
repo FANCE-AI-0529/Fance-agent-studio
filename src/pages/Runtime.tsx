@@ -1130,6 +1130,23 @@ const Runtime = () => {
                       }
                     : undefined
                 }
+                onEdit={
+                  message.role === "user" && currentPhase === "idle"
+                    ? (newContent: string) => {
+                        const messageIndex = localMessages.findIndex(m => m.id === message.id);
+                        // Update the user message content
+                        setLocalMessages(prev => {
+                          const updated = [...prev];
+                          // Update the edited message
+                          updated[messageIndex] = { ...updated[messageIndex], content: newContent };
+                          // Remove all messages after this one (including AI responses)
+                          return updated.slice(0, messageIndex + 1);
+                        });
+                        // Regenerate response with edited content
+                        sendMessage(newContent);
+                      }
+                    : undefined
+                }
               />
             );
           })}

@@ -1,11 +1,12 @@
-import { Bot, User, CheckCircle2, Copy, RefreshCw, Check } from "lucide-react";
+import { Bot, User, CheckCircle2, Copy, RefreshCw, Check, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { FormattedText } from "./FormattedText";
 import { TypewriterFormattedText } from "./TypewriterFormattedText";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 
 interface MessageBubbleProps {
@@ -20,6 +21,7 @@ interface MessageBubbleProps {
     colorId: string;
   };
   onRegenerate?: () => void;
+  onEdit?: (newContent: string) => void;
 }
 
 // Agent avatar color themes
@@ -47,11 +49,22 @@ export function MessageBubble({
   isNew,
   agentAvatar,
   onRegenerate,
+  onEdit,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const colorTheme = agentAvatar?.colorId ? avatarColors[agentAvatar.colorId] : avatarColors.blue;
   const [copied, setCopied] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(content);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(editContent.length, editContent.length);
+    }
+  }, [isEditing]);
 
   const handleCopy = async () => {
     try {
@@ -67,6 +80,32 @@ export function MessageBubble({
   const handleRegenerate = () => {
     if (onRegenerate) {
       onRegenerate();
+    }
+  };
+
+  const handleStartEdit = () => {
+    setEditContent(content);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(content);
+  };
+
+  const handleSaveEdit = () => {
+    if (editContent.trim() && editContent !== content && onEdit) {
+      onEdit(editContent.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveEdit();
+    } else if (e.key === "Escape") {
+      handleCancelEdit();
     }
   };
 
@@ -104,116 +143,173 @@ export function MessageBubble({
       
       {/* Message Content */}
       <div className={cn("max-w-[75%] space-y-1.5", isUser ? "items-end" : "items-start")}>
-        <motion.div
-          initial={{ opacity: 0, x: isUser ? 20 : -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.05, duration: 0.25 }}
-          className={cn(
-            "relative px-4 py-3 rounded-2xl shadow-sm",
-            isUser
-              ? "bg-primary text-primary-foreground rounded-br-md"
-              : "bg-card border border-border rounded-bl-md"
-          )}
-        >
-          {/* Message tail effect */}
-          <div
-            className={cn(
-              "absolute bottom-0 w-3 h-3",
-              isUser
-                ? "-right-1.5 bg-primary"
-                : "-left-1.5 bg-card border-l border-b border-border",
-              isUser ? "clip-path-user" : "clip-path-assistant"
-            )}
-            style={{
-              clipPath: isUser 
-                ? "polygon(0 0, 0% 100%, 100% 100%)"
-                : "polygon(100% 0, 0% 100%, 100% 100%)"
-            }}
-          />
-          
-          {/* Content */}
-          <div className={cn("relative z-10", isUser ? "text-right" : "")}>
-            {role === "assistant" && isNew ? (
-              <TypewriterFormattedText 
-                content={content} 
-                className="text-sm leading-relaxed" 
-                speed={10}
+        <AnimatePresence mode="wait">
+          {isEditing ? (
+            <motion.div
+              key="editing"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-2"
+            >
+              <Textarea
+                ref={textareaRef}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="min-h-[80px] resize-none bg-card border-primary/50 focus-visible:ring-primary"
+                placeholder="编辑消息..."
               />
-            ) : (
-              <FormattedText 
-                content={content} 
+              <div className="flex items-center gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  className="h-7 px-2 text-muted-foreground"
+                >
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  取消
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  disabled={!editContent.trim() || editContent === content}
+                  className="h-7 px-2"
+                >
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  保存并重新生成
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="display"
+              initial={{ opacity: 0, x: isUser ? 20 : -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 0.05, duration: 0.25 }}
+              className={cn(
+                "relative px-4 py-3 rounded-2xl shadow-sm",
+                isUser
+                  ? "bg-primary text-primary-foreground rounded-br-md"
+                  : "bg-card border border-border rounded-bl-md"
+              )}
+            >
+              {/* Message tail effect */}
+              <div
                 className={cn(
-                  "text-sm leading-relaxed",
-                  isUser && "text-primary-foreground"
-                )} 
+                  "absolute bottom-0 w-3 h-3",
+                  isUser
+                    ? "-right-1.5 bg-primary"
+                    : "-left-1.5 bg-card border-l border-b border-border",
+                  isUser ? "clip-path-user" : "clip-path-assistant"
+                )}
+                style={{
+                  clipPath: isUser 
+                    ? "polygon(0 0, 0% 100%, 100% 100%)"
+                    : "polygon(100% 0, 0% 100%, 100% 100%)"
+                }}
               />
-            )}
-          </div>
-        </motion.div>
+              
+              {/* Content */}
+              <div className={cn("relative z-10", isUser ? "text-right" : "")}>
+                {role === "assistant" && isNew ? (
+                  <TypewriterFormattedText 
+                    content={content} 
+                    className="text-sm leading-relaxed" 
+                    speed={10}
+                  />
+                ) : (
+                  <FormattedText 
+                    content={content} 
+                    className={cn(
+                      "text-sm leading-relaxed",
+                      isUser && "text-primary-foreground"
+                    )} 
+                  />
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Meta info and action buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className={cn(
-            "flex items-center gap-2 px-1",
-            isUser ? "justify-end" : "justify-start"
-          )}
-        >
-          {skill && (
-            <Badge 
-              variant="outline" 
-              className="text-[10px] gap-1 h-5 bg-background/50 backdrop-blur-sm border-border/50"
-            >
-              <CheckCircle2 className="h-2.5 w-2.5 text-status-executing" />
-              {skill}
-            </Badge>
-          )}
-          <span className="text-[10px] text-muted-foreground/70">
-            {timestamp.toLocaleTimeString("zh-CN", { 
-              hour: "2-digit", 
-              minute: "2-digit" 
-            })}
-          </span>
-          
-          {/* Action buttons - show on hover */}
+        {!isEditing && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: isHovered ? 1 : 0, 
-              scale: isHovered ? 1 : 0.8 
-            }}
-            transition={{ duration: 0.15 }}
-            className="flex items-center gap-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className={cn(
+              "flex items-center gap-2 px-1",
+              isUser ? "justify-end" : "justify-start"
+            )}
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-              onClick={handleCopy}
-              title="复制内容"
-            >
-              {copied ? (
-                <Check className="h-3 w-3 text-green-500" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </Button>
+            {skill && (
+              <Badge 
+                variant="outline" 
+                className="text-[10px] gap-1 h-5 bg-background/50 backdrop-blur-sm border-border/50"
+              >
+                <CheckCircle2 className="h-2.5 w-2.5 text-status-executing" />
+                {skill}
+              </Badge>
+            )}
+            <span className="text-[10px] text-muted-foreground/70">
+              {timestamp.toLocaleTimeString("zh-CN", { 
+                hour: "2-digit", 
+                minute: "2-digit" 
+              })}
+            </span>
             
-            {!isUser && onRegenerate && (
+            {/* Action buttons - show on hover */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ 
+                opacity: isHovered ? 1 : 0, 
+                scale: isHovered ? 1 : 0.8 
+              }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-1"
+            >
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                onClick={handleRegenerate}
-                title="重新生成"
+                onClick={handleCopy}
+                title="复制内容"
               >
-                <RefreshCw className="h-3 w-3" />
+                {copied ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
               </Button>
-            )}
+              
+              {isUser && onEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={handleStartEdit}
+                  title="编辑消息"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
+              
+              {!isUser && onRegenerate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={handleRegenerate}
+                  title="重新生成"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              )}
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
       </div>
     </motion.div>
   );
