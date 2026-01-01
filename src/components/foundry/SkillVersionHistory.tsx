@@ -36,14 +36,20 @@ interface SkillVersionHistoryProps {
   skillId: string | null;
   skillName?: string;
   currentContent?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function SkillVersionHistory({
   skillId,
   skillName,
   currentContent,
+  open: controlledOpen,
+  onOpenChange,
 }: SkillVersionHistoryProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [selectedVersion, setSelectedVersion] = useState<SkillVersion | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareVersion, setCompareVersion] = useState<SkillVersion | null>(null);
