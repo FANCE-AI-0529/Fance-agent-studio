@@ -408,6 +408,7 @@ const Runtime = () => {
   const [pendingScenario, setPendingScenario] = useState<MPLPScenario | null>(null);
   const [traceSessions, setTraceSessions] = useState<TraceSession[]>([]);
   const [currentTraceSessionId, setCurrentTraceSessionId] = useState<string | null>(null);
+  const currentTraceSessionIdRef = useRef<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
@@ -524,12 +525,17 @@ const Runtime = () => {
 
     currentEventsRef.current = [...currentEventsRef.current, event];
 
-    setTraceSessions(prev => prev.map(session => 
-      session.id === currentTraceSessionId
-        ? { ...session, events: [...session.events, event] }
-        : session
-    ));
-  }, [currentTraceSessionId]);
+    const sessionId = currentTraceSessionIdRef.current;
+    if (!sessionId) return;
+
+    setTraceSessions((prev) =>
+      prev.map((session) =>
+        session.id === sessionId
+          ? { ...session, events: [...session.events, event] }
+          : session
+      )
+    );
+  }, []);
 
   // Start a new trace session
   const startTraceSession = useCallback((query: string) => {
@@ -541,7 +547,9 @@ const Runtime = () => {
       status: "running",
       events: [],
     };
-    setTraceSessions(prev => [newSession, ...prev]);
+
+    currentTraceSessionIdRef.current = sessionId;
+    setTraceSessions((prev) => [newSession, ...prev]);
     setCurrentTraceSessionId(sessionId);
     currentEventsRef.current = [];
     setCurrentThinkingLogs([]);
@@ -550,12 +558,15 @@ const Runtime = () => {
 
   // End current trace session
   const endTraceSession = useCallback((status: TraceSession["status"]) => {
-    setTraceSessions(prev => prev.map(session =>
-      session.id === currentTraceSessionId
-        ? { ...session, status, endTime: new Date() }
-        : session
-    ));
-  }, [currentTraceSessionId]);
+    const sessionId = currentTraceSessionIdRef.current;
+    if (!sessionId) return;
+
+    setTraceSessions((prev) =>
+      prev.map((session) =>
+        session.id === sessionId ? { ...session, status, endTime: new Date() } : session
+      )
+    );
+  }, []);
 
   // Update context memory based on scenario
   const updateContextMemory = useCallback((scenario: MPLPScenario | null, userMessage: string) => {
@@ -1255,6 +1266,8 @@ const Runtime = () => {
             onClearSessions={() => {
               setTraceSessions([]);
               setCurrentTraceSessionId(null);
+              currentTraceSessionIdRef.current = null;
+              currentEventsRef.current = [];
             }}
             onRefresh={() => {
               // Force re-render

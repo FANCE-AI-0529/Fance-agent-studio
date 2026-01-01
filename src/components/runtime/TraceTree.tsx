@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Brain,
   CheckCircle2,
@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+
+const formatTime = (ts: Date | string | number) => {
+  const date = ts instanceof Date ? ts : new Date(ts);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString();
+};
 
 export type TraceEventType = 
   | "intent_detected"
@@ -43,7 +49,7 @@ export type TraceEventType =
 export interface TraceEvent {
   id: string;
   type: TraceEventType;
-  timestamp: Date;
+  timestamp: Date | string | number;
   data: {
     skillName?: string;
     intent?: string;
@@ -176,7 +182,7 @@ function TraceEventItem({ event, isLast }: { event: TraceEvent; isLast: boolean 
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-medium">{config.label}</span>
           <span className="text-[9px] text-muted-foreground">
-            {event.timestamp.toLocaleTimeString()}
+            {formatTime(event.timestamp)}
           </span>
         </div>
         
@@ -239,6 +245,11 @@ function TraceSessionItem({
   isActive: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(isActive);
+
+  // Keep expanded state in sync with active session
+  useEffect(() => {
+    if (isActive) setIsExpanded(true);
+  }, [isActive]);
 
   const statusColors = {
     running: "bg-status-planning/20 text-status-planning border-status-planning/30",
