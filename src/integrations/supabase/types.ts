@@ -299,6 +299,59 @@ export type Database = {
           },
         ]
       }
+      skill_versions: {
+        Row: {
+          change_summary: string | null
+          change_type: string
+          config_yaml: string | null
+          content: string
+          created_at: string
+          created_by: string
+          handler_code: string | null
+          id: string
+          metadata: Json
+          skill_id: string
+          version: string
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          change_type?: string
+          config_yaml?: string | null
+          content: string
+          created_at?: string
+          created_by: string
+          handler_code?: string | null
+          id?: string
+          metadata?: Json
+          skill_id: string
+          version: string
+          version_number: number
+        }
+        Update: {
+          change_summary?: string | null
+          change_type?: string
+          config_yaml?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string
+          handler_code?: string | null
+          id?: string
+          metadata?: Json
+          skill_id?: string
+          version?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_versions_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skills: {
         Row: {
           author_id: string | null
@@ -566,6 +619,10 @@ export type Database = {
     }
     Functions: {
       generate_share_token: { Args: never; Returns: string }
+      get_next_skill_version_number: {
+        Args: { p_skill_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

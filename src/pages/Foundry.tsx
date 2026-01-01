@@ -48,6 +48,8 @@ import { SkillTemplatesDialog, SkillTemplate } from "@/components/foundry/SkillT
 import { DependencyManager } from "@/components/foundry/DependencyManager";
 import { SkillTestSandbox } from "@/components/foundry/SkillTestSandbox";
 import { SkillImportExport } from "@/components/foundry/SkillImportExport";
+import { SkillMetadataEditor } from "@/components/foundry/SkillMetadataEditor";
+import { SkillVersionHistory } from "@/components/foundry/SkillVersionHistory";
 import {
   useMySkills,
   useCreateSkill,
@@ -570,6 +572,12 @@ const Foundry = () => {
             onImport={handleImport}
           />
           <div className="w-px h-6 bg-border" />
+          <SkillVersionHistory
+            skillId={activeSkillId}
+            skillName={validation.metadata?.name}
+            currentContent={contents["file-skill"]}
+          />
+          <div className="w-px h-6 bg-border" />
           <SkillTestSandbox
             metadata={validation.metadata}
             trigger={
@@ -689,6 +697,13 @@ const Foundry = () => {
                       编辑器
                     </TabsTrigger>
                     <TabsTrigger
+                      value="visual"
+                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-8 px-0 gap-1.5"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      可视化
+                    </TabsTrigger>
+                    <TabsTrigger
                       value="preview"
                       className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-8 px-0 gap-1.5"
                     >
@@ -704,6 +719,24 @@ const Foundry = () => {
                     onChange={handleContentChange}
                     language={getLanguage()}
                   />
+                </TabsContent>
+
+                <TabsContent value="visual" className="flex-1 m-0 p-0 min-h-0">
+                  {activeFileId === "file-skill" ? (
+                    <SkillMetadataEditor
+                      content={contents["file-skill"]}
+                      onChange={(newContent) => {
+                        setContents(prev => ({ ...prev, "file-skill": newContent }));
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                      <Settings className="h-8 w-8 mb-2 opacity-50" />
+                      <p className="text-sm">可视化编辑仅支持 SKILL.md 文件</p>
+                      <p className="text-xs mt-1">请在左侧选择 SKILL.md</p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="preview" className="flex-1 m-0 p-4 overflow-y-auto">
