@@ -1240,21 +1240,26 @@ const Runtime = () => {
       </div>
 
       {/* Right Panel - Trace Tree */}
-      <div className="w-80 border-l border-border bg-card/50 hidden lg:flex flex-col">
-        <div className="panel-header">
+      <div className="w-72 border-l border-border bg-card/50 hidden lg:flex flex-col">
+        <div className="panel-header border-b border-border">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-cognitive" />
             <span className="font-semibold text-sm">决策追踪</span>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {traceSessions.length} 会话
-          </Badge>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex-1 overflow-hidden p-2">
           <TraceTree 
             sessions={traceSessions} 
             currentSessionId={currentTraceSessionId || undefined}
+            onClearSessions={() => {
+              setTraceSessions([]);
+              setCurrentTraceSessionId(null);
+            }}
+            onRefresh={() => {
+              // Force re-render
+              setTraceSessions(prev => [...prev]);
+            }}
           />
         </div>
       </div>
