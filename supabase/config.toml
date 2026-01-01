@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.api-alert-check]
 verify_jwt = false
+
+[functions.llm-gateway]
+verify_jwt = false

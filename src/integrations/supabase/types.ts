@@ -925,6 +925,198 @@ export type Database = {
           },
         ]
       }
+      llm_model_configs: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          frequency_penalty: number | null
+          id: string
+          is_active: boolean | null
+          max_tokens: number | null
+          model_name: string
+          module_type: string
+          presence_penalty: number | null
+          priority: number | null
+          provider_id: string
+          settings: Json | null
+          system_prompt_override: string | null
+          temperature: number | null
+          top_p: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          frequency_penalty?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model_name: string
+          module_type: string
+          presence_penalty?: number | null
+          priority?: number | null
+          provider_id: string
+          settings?: Json | null
+          system_prompt_override?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          frequency_penalty?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model_name?: string
+          module_type?: string
+          presence_penalty?: number | null
+          priority?: number | null
+          provider_id?: string
+          settings?: Json | null
+          system_prompt_override?: string | null
+          temperature?: number | null
+          top_p?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_model_configs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llm_model_configs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "llm_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      llm_providers: {
+        Row: {
+          api_endpoint: string
+          api_key_name: string
+          available_models: Json | null
+          created_at: string
+          default_model: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          provider_type: string
+          settings: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_endpoint: string
+          api_key_name: string
+          available_models?: Json | null
+          created_at?: string
+          default_model?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          provider_type: string
+          settings?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_endpoint?: string
+          api_key_name?: string
+          available_models?: Json | null
+          created_at?: string
+          default_model?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          provider_type?: string
+          settings?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      llm_usage_logs: {
+        Row: {
+          agent_id: string | null
+          completion_tokens: number | null
+          created_at: string
+          error_message: string | null
+          estimated_cost: number | null
+          id: string
+          latency_ms: number | null
+          model_name: string
+          module_type: string
+          prompt_tokens: number | null
+          provider_id: string | null
+          success: boolean | null
+          total_tokens: number | null
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          estimated_cost?: number | null
+          id?: string
+          latency_ms?: number | null
+          model_name: string
+          module_type: string
+          prompt_tokens?: number | null
+          provider_id?: string | null
+          success?: boolean | null
+          total_tokens?: number | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          estimated_cost?: number | null
+          id?: string
+          latency_ms?: number | null
+          model_name?: string
+          module_type?: string
+          prompt_tokens?: number | null
+          provider_id?: string | null
+          success?: boolean | null
+          total_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_usage_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llm_usage_logs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "llm_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_feedback: {
         Row: {
           created_at: string
