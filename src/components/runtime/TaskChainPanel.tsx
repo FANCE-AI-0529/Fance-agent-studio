@@ -44,7 +44,10 @@ import {
   Layers,
   Eye,
   RefreshCw,
+  Workflow,
+  Edit3,
 } from "lucide-react";
+import { TaskChainVisualEditor } from "./TaskChainVisualEditor";
 import {
   useTaskChains,
   useTaskChain,
@@ -81,6 +84,8 @@ interface StepConfig {
 export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showVisualEditor, setShowVisualEditor] = useState(false);
+  const [editingChain, setEditingChain] = useState<TaskChain | null>(null);
   const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
   
   // Create form state
@@ -203,10 +208,23 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
             <Link2 className="h-4 w-4 text-primary" />
             任务链
           </div>
-          <Button size="sm" onClick={() => setShowCreateDialog(true)} disabled={!currentAgentId}>
-            <Plus className="h-4 w-4 mr-1" />
-            新建
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => {
+                setEditingChain(null);
+                setShowVisualEditor(true);
+              }}
+            >
+              <Workflow className="h-4 w-4 mr-1" />
+              可视化
+            </Button>
+            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              新建
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -266,6 +284,19 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        {chain.status === "draft" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedChainId(chain.id);
+                              setEditingChain(chain);
+                              setShowVisualEditor(true);
+                            }}
+                          >
+                            <Edit3 className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
                         {chain.status === "draft" && (
                           <Button
                             variant="ghost"
@@ -694,6 +725,21 @@ export function TaskChainPanel({ currentAgentId }: TaskChainPanelProps) {
                 关闭
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Visual Editor Dialog */}
+        <Dialog open={showVisualEditor} onOpenChange={setShowVisualEditor}>
+          <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] max-h-[90vh] p-0">
+            <TaskChainVisualEditor
+              chain={editingChain ? { ...editingChain, steps: selectedChain?.steps } : null}
+              sourceAgentId={currentAgentId}
+              onClose={() => {
+                setShowVisualEditor(false);
+                setEditingChain(null);
+                refetchChains();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </CardContent>
