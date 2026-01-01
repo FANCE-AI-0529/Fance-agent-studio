@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Bot, 
@@ -14,7 +14,10 @@ import {
   Loader2,
   CheckCircle2,
   Clock,
-  Upload
+  Upload,
+  Sparkles,
+  Target,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +25,7 @@ import { useMyAgents, useDeployedAgents } from "@/hooks/useAgents";
 import { useMySkills, usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
 import { EmptyState, PulseIndicator } from "@/components/ui/empty-state";
+import { OnboardingCard } from "@/components/ui/onboarding-card";
 
 const quickActions = [
   {
@@ -48,6 +52,7 @@ const quickActions = [
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
   const { data: deployedAgents = [] } = useDeployedAgents();
@@ -117,6 +122,80 @@ const Index = () => {
       </div>
 
       <div className="p-6 space-y-6">
+        {/* Onboarding Card for new users */}
+        {!user && (
+          <OnboardingCard
+            id="welcome-guest"
+            title="欢迎来到 Agent OS Studio"
+            description="企业级智能体构建平台，三步快速上手"
+            steps={[
+              {
+                title: "第一步：创建您的智能体",
+                description: "在构建器中通过拖拽技能卡片，快速组装您的专属 AI 助手",
+                icon: <Bot className="h-4 w-4 text-primary" />,
+                action: {
+                  label: "开始创建",
+                  href: "/builder",
+                },
+              },
+              {
+                title: "第二步：开发或选择技能",
+                description: "从技能市场选择现成技能，或在铸造厂开发自定义技能",
+                icon: <Hammer className="h-4 w-4 text-primary" />,
+                action: {
+                  label: "浏览技能市场",
+                  href: "/foundry",
+                },
+              },
+              {
+                title: "第三步：部署并对话",
+                description: "一键部署智能体，在运行时环境中与它进行实时对话",
+                icon: <Play className="h-4 w-4 text-primary" />,
+                action: {
+                  label: "进入运行环境",
+                  href: "/runtime",
+                },
+              },
+            ]}
+          />
+        )}
+
+        {user && myAgents.length === 0 && mySkills.length === 0 && (
+          <OnboardingCard
+            id="welcome-new-user"
+            title="开始您的第一个项目"
+            description="让我们一起创建您的第一个智能体"
+            steps={[
+              {
+                title: "快速创建智能体",
+                description: "使用向导模式，只需回答几个问题即可自动生成智能体配置",
+                icon: <Sparkles className="h-4 w-4 text-primary" />,
+                action: {
+                  label: "启动创建向导",
+                  onClick: () => navigate("/builder"),
+                },
+              },
+              {
+                title: "选择预设模板",
+                description: "从客服助手、数据分析师、文档处理等模板快速开始",
+                icon: <Target className="h-4 w-4 text-primary" />,
+                action: {
+                  label: "浏览模板库",
+                  onClick: () => navigate("/builder"),
+                },
+              },
+              {
+                title: "从技能开始",
+                description: "先开发一个简单的技能，然后再组装成完整的智能体",
+                icon: <Zap className="h-4 w-4 text-primary" />,
+                action: {
+                  label: "创建技能",
+                  onClick: () => navigate("/foundry"),
+                },
+              },
+            ]}
+          />
+        )}
         {/* Dual Engine Status */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="panel p-4 rounded-lg">
