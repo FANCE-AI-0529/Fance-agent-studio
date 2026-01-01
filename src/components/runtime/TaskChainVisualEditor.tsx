@@ -68,6 +68,7 @@ import {
 import { toast } from "sonner";
 
 import TaskStepNode, { type TaskStepNodeData } from "./TaskStepNode";
+import ConditionalNode, { type ConditionalNodeData, type ConditionRule } from "./ConditionalNode";
 import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from "@/hooks/useTaskChains";
 import { useDeployedAgents } from "@/hooks/useAgents";
 import { taskTypeLabels } from "@/hooks/useTaskDelegation";
@@ -138,6 +139,7 @@ function AnimatedEdge({
 
 const nodeTypes = {
   taskStep: TaskStepNode,
+  conditional: ConditionalNode,
 };
 
 const edgeTypes = {
@@ -193,8 +195,21 @@ function TaskChainVisualEditorInner({
 
   // UI state
   const [showStepEditor, setShowStepEditor] = useState(false);
+  const [showConditionEditor, setShowConditionEditor] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingNodeType, setEditingNodeType] = useState<"step" | "conditional">("step");
   const [stepForm, setStepForm] = useState<StepFormData>(defaultStepForm);
+  const [conditionForm, setConditionForm] = useState<{
+    name: string;
+    description: string;
+    conditions: ConditionRule[];
+    defaultHandle: string;
+  }>({
+    name: "",
+    description: "",
+    conditions: [],
+    defaultHandle: "default",
+  });
   const [inputMappingKey, setInputMappingKey] = useState("");
   const [inputMappingValue, setInputMappingValue] = useState("");
 
@@ -255,18 +270,32 @@ function TaskChainVisualEditorInner({
   const handleEditNode = useCallback((nodeId: string) => {
     const node = getNodes().find((n) => n.id === nodeId);
     if (node) {
-      const data = node.data as unknown as TaskStepNodeData;
-      setStepForm({
-        name: data.name,
-        description: data.description || "",
-        taskType: data.taskType,
-        targetAgentId: data.targetAgentId || "",
-        inputMapping: data.inputMapping || {},
-        outputKey: data.outputKey || "",
-        parallelGroup: data.parallelGroup,
-      });
-      setEditingNodeId(nodeId);
-      setShowStepEditor(true);
+      if (node.type === "conditional") {
+        const data = node.data as unknown as ConditionalNodeData;
+        setConditionForm({
+          name: data.name,
+          description: data.description || "",
+          conditions: data.conditions || [],
+          defaultHandle: data.defaultHandle || "default",
+        });
+        setEditingNodeId(nodeId);
+        setEditingNodeType("conditional");
+        setShowConditionEditor(true);
+      } else {
+        const data = node.data as unknown as TaskStepNodeData;
+        setStepForm({
+          name: data.name,
+          description: data.description || "",
+          taskType: data.taskType,
+          targetAgentId: data.targetAgentId || "",
+          inputMapping: data.inputMapping || {},
+          outputKey: data.outputKey || "",
+          parallelGroup: data.parallelGroup,
+        });
+        setEditingNodeId(nodeId);
+        setEditingNodeType("step");
+        setShowStepEditor(true);
+      }
     }
   }, [getNodes]);
 
@@ -336,6 +365,54 @@ function TaskChainVisualEditorInner({
     }
   }, [nodes, executionMode, sourceAgentId, agents, handleEditNode, handleDeleteNode]);
 
+  // Add conditional branch node
+  const addConditionalNode = useCallback(() => {
+    const nodeCount = nodes.length;
+    const newNodeId = `condition-${Date.now()}`;
+    
+    const newNode: Node = {
+      id: newNodeId,
+      type: "conditional",
+      position: { x: 150, y: nodeCount * 180 + 50 },
+      data: {
+        id: newNodeId,
+        name: `条件分支 ${nodes.filter(n => n.type === "conditional").length + 1}`,
+        description: "",
+        conditions: [
+          {
+            id: `cond-${Date.now()}`,
+            sourceKey: "result",
+            operator: "equals",
+            value: "success",
+            targetHandle: "branch-1",
+          },
+        ],
+        defaultHandle: "default",
+        status: "pending" as const,
+        onEdit: handleEditNode,
+        onDelete: handleDeleteNode,
+      } satisfies ConditionalNodeData,
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+
+    // Auto-connect to previous node if sequential
+    if (executionMode === "sequential" && nodeCount > 0) {
+      const lastNode = nodes[nodeCount - 1];
+      setEdges((eds) => [
+        ...eds,
+        {
+          id: `edge-${lastNode.id}-${newNodeId}`,
+          source: lastNode.id,
+          target: newNodeId,
+          type: "animated",
+          markerEnd: { type: MarkerType.ArrowClosed },
+          data: { animated: false, completed: false },
+        },
+      ]);
+    }
+  }, [nodes, executionMode, handleEditNode, handleDeleteNode]);
+
   const saveStepChanges = useCallback(() => {
     if (!editingNodeId) return;
 
@@ -365,6 +442,71 @@ function TaskChainVisualEditorInner({
     setEditingNodeId(null);
     setStepForm(defaultStepForm);
   }, [editingNodeId, stepForm, agents]);
+
+  // Save condition changes
+  const saveConditionChanges = useCallback(() => {
+    if (!editingNodeId) return;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === editingNodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              name: conditionForm.name,
+              description: conditionForm.description,
+              conditions: conditionForm.conditions,
+              defaultHandle: conditionForm.defaultHandle,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setShowConditionEditor(false);
+    setEditingNodeId(null);
+    setConditionForm({
+      name: "",
+      description: "",
+      conditions: [],
+      defaultHandle: "default",
+    });
+  }, [editingNodeId, conditionForm]);
+
+  // Add a new condition rule
+  const addConditionRule = useCallback(() => {
+    const newCondition: ConditionRule = {
+      id: `cond-${Date.now()}`,
+      sourceKey: "",
+      operator: "equals",
+      value: "",
+      targetHandle: `branch-${conditionForm.conditions.length + 1}`,
+    };
+    setConditionForm((prev) => ({
+      ...prev,
+      conditions: [...prev.conditions, newCondition],
+    }));
+  }, [conditionForm.conditions.length]);
+
+  // Remove a condition rule
+  const removeConditionRule = useCallback((conditionId: string) => {
+    setConditionForm((prev) => ({
+      ...prev,
+      conditions: prev.conditions.filter((c) => c.id !== conditionId),
+    }));
+  }, []);
+
+  // Update a condition rule
+  const updateConditionRule = useCallback((conditionId: string, field: keyof ConditionRule, value: string) => {
+    setConditionForm((prev) => ({
+      ...prev,
+      conditions: prev.conditions.map((c) =>
+        c.id === conditionId ? { ...c, [field]: value } : c
+      ),
+    }));
+  }, []);
 
   const addInputMapping = useCallback(() => {
     if (!inputMappingKey || !inputMappingValue) return;
@@ -509,6 +651,10 @@ function TaskChainVisualEditorInner({
           <Button variant="outline" size="sm" onClick={addNewStep}>
             <Plus className="h-4 w-4 mr-1" />
             添加步骤
+          </Button>
+          <Button variant="outline" size="sm" onClick={addConditionalNode}>
+            <GitBranch className="h-4 w-4 mr-1" />
+            条件分支
           </Button>
           <Button variant="outline" size="sm" onClick={exportChain}>
             <Download className="h-4 w-4 mr-1" />
@@ -747,6 +893,148 @@ function TaskChainVisualEditorInner({
               </div>
 
               <Button className="w-full" onClick={saveStepChanges}>
+                保存修改
+              </Button>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Condition Editor Sheet */}
+      <Sheet open={showConditionEditor} onOpenChange={setShowConditionEditor}>
+        <SheetContent className="sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5 text-amber-500" />
+              编辑条件分支
+            </SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>分支名称</Label>
+                <Input
+                  value={conditionForm.name}
+                  onChange={(e) => setConditionForm({ ...conditionForm, name: e.target.value })}
+                  placeholder="例: 结果判断"
+                />
+              </div>
+
+              <div>
+                <Label>分支描述</Label>
+                <Textarea
+                  value={conditionForm.description}
+                  onChange={(e) => setConditionForm({ ...conditionForm, description: e.target.value })}
+                  placeholder="描述这个条件分支的用途..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>条件规则</Label>
+                  <Button variant="outline" size="sm" onClick={addConditionRule}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    添加条件
+                  </Button>
+                </div>
+
+                {conditionForm.conditions.map((condition, index) => (
+                  <div key={condition.id} className="p-3 border border-border rounded-lg space-y-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-amber-500 border-amber-500/50">
+                        条件 {index + 1}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive"
+                        onClick={() => removeConditionRule(condition.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">来源键名</Label>
+                        <Input
+                          value={condition.sourceKey}
+                          onChange={(e) => updateConditionRule(condition.id, "sourceKey", e.target.value)}
+                          placeholder="例: result"
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">操作符</Label>
+                        <Select
+                          value={condition.operator}
+                          onValueChange={(v) => updateConditionRule(condition.id, "operator", v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="equals">等于</SelectItem>
+                            <SelectItem value="not_equals">不等于</SelectItem>
+                            <SelectItem value="contains">包含</SelectItem>
+                            <SelectItem value="greater_than">大于</SelectItem>
+                            <SelectItem value="less_than">小于</SelectItem>
+                            <SelectItem value="is_empty">为空</SelectItem>
+                            <SelectItem value="is_not_empty">不为空</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {!["is_empty", "is_not_empty"].includes(condition.operator) && (
+                      <div>
+                        <Label className="text-xs">比较值</Label>
+                        <Input
+                          value={condition.value}
+                          onChange={(e) => updateConditionRule(condition.id, "value", e.target.value)}
+                          placeholder="例: success"
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <Label className="text-xs">分支标识</Label>
+                      <Input
+                        value={condition.targetHandle}
+                        onChange={(e) => updateConditionRule(condition.id, "targetHandle", e.target.value)}
+                        placeholder="例: branch-1"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {conditionForm.conditions.length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground text-sm border border-dashed border-border rounded-lg">
+                    暂无条件规则，点击"添加条件"创建
+                  </div>
+                )}
+
+                <div className="p-3 border border-border rounded-lg bg-muted/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="text-xs">默认分支</Badge>
+                    <span className="text-xs text-muted-foreground">当所有条件都不满足时执行</span>
+                  </div>
+                  <div>
+                    <Label className="text-xs">默认分支标识</Label>
+                    <Input
+                      value={conditionForm.defaultHandle}
+                      onChange={(e) => setConditionForm({ ...conditionForm, defaultHandle: e.target.value })}
+                      placeholder="例: default"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button className="w-full" onClick={saveConditionChanges}>
                 保存修改
               </Button>
             </div>
