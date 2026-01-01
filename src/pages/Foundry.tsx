@@ -39,6 +39,7 @@ import { SkillTestSandbox } from "@/components/foundry/SkillTestSandbox";
 import { SkillImportExport } from "@/components/foundry/SkillImportExport";
 import { SkillMetadataEditor } from "@/components/foundry/SkillMetadataEditor";
 import { SkillVersionHistory } from "@/components/foundry/SkillVersionHistory";
+import { AISkillGenerator } from "@/components/foundry/AISkillGenerator";
 import {
   useMySkills,
   useCreateSkill,
@@ -418,6 +419,21 @@ const Foundry = () => {
     setShowImportExport(false);
   };
 
+  const handleAIGenerated = (
+    files: { skillMd: string; handlerPy: string; configYaml: string },
+    skillName: string
+  ) => {
+    setContents({
+      "file-skill": files.skillMd,
+      "file-handler": files.handlerPy,
+      "file-config": files.configYaml,
+    });
+    setFiles(createInitialFiles(skillName));
+    setActiveSkillId(null);
+    setActiveFileId("file-skill");
+    setHasUnsavedChanges(true);
+  };
+
   const handleSave = async () => {
     if (!user) {
       toast({
@@ -578,6 +594,8 @@ const Foundry = () => {
                   登录
                 </Button>
               )}
+
+              <AISkillGenerator onGenerated={handleAIGenerated} />
 
               <SkillTestSandbox
                 metadata={validation.metadata}

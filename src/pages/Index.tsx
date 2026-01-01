@@ -7,10 +7,7 @@ import {
   ArrowRight, 
   Brain, 
   Shield, 
-  Activity,
-  Users,
   FileCode,
-  TrendingUp,
   Loader2,
   CheckCircle2,
   Clock,
@@ -26,6 +23,7 @@ import { useMySkills, usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
 import { EmptyState, PulseIndicator } from "@/components/ui/empty-state";
 import { OnboardingCard } from "@/components/ui/onboarding-card";
+import { UsageStatsPanel } from "@/components/dashboard/UsageStatsPanel";
 
 const quickActions = [
   {
@@ -413,6 +411,9 @@ const Index = () => {
             ))}
           </div>
         </div>
+
+        {/* Usage Stats Panel */}
+        <UsageStatsPanel />
 
         {/* Recent Activity */}
         <div>
