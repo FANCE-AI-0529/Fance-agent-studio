@@ -13,7 +13,9 @@ import {
   FileCode,
   Key,
   Settings2,
-  HelpCircle
+  HelpCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -263,120 +265,139 @@ function matchScenario(message: string): MPLPScenario | null {
 // Context Panel Component
 function ContextPanel({ 
   agent, 
-  memory 
+  memory,
+  collapsed,
+  onToggle,
 }: { 
   agent: Agent | null; 
   memory: MemoryItem[];
+  collapsed: boolean;
+  onToggle: () => void;
 }) {
   const skills = agent ? ((agent.manifest as any)?.skills?.details || []) : [];
   
   return (
-    <div className="w-72 border-l border-border bg-card/50 hidden xl:flex flex-col">
-      <div className="panel-header">
-        <div className="flex items-center gap-2">
-          <Cpu className="h-4 w-4 text-governance" />
-          <span className="font-semibold text-sm">运行上下文</span>
-        </div>
+    <div className={cn(
+      "border-l border-border bg-card/50 hidden xl:flex flex-col transition-all duration-300",
+      collapsed ? "w-10" : "w-72"
+    )}>
+      <div className="panel-header flex justify-between items-center">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-governance" />
+            <span className="font-semibold text-sm">运行上下文</span>
+          </div>
+        )}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={cn("h-7 w-7", collapsed && "mx-auto")}
+          onClick={onToggle}
+        >
+          {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {/* Agent Info */}
-        <div className="p-3 border-b border-border">
-          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-            当前 Agent
-          </label>
-          <div className="mt-2 p-2 rounded-lg bg-secondary/30 border border-border">
-            {agent ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-cognitive" />
-                  <span className="text-sm font-medium">{agent.name}</span>
-                </div>
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-                  <span>{agent.department || '通用'}</span>
-                  <span>•</span>
-                  <span>{agent.model}</span>
-                </div>
-              </>
-            ) : (
-              <div className="text-xs text-muted-foreground">使用默认 Demo Agent</div>
-            )}
-          </div>
-        </div>
-
-        {/* Loaded Skills */}
-        <div className="p-3 border-b border-border">
-          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-            已加载技能
-          </label>
-          <div className="mt-2 space-y-1.5">
-            {skills.length > 0 ? (
-              skills.map((skill: any) => (
-                <div 
-                  key={skill.id} 
-                  className="flex items-center gap-2 p-1.5 rounded bg-cognitive/5 border border-cognitive/20"
-                >
-                  <FileCode className="h-3 w-3 text-cognitive" />
-                  <span className="text-xs">{skill.name}</span>
-                  {skill.permissions?.length > 0 && (
-                    <div className="flex gap-0.5 ml-auto">
-                      {skill.permissions.slice(0, 2).map((p: string) => (
-                        <Badge key={p} variant="outline" className="text-[8px] px-1 py-0 h-3">
-                          {p}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="text-xs text-muted-foreground text-center py-2">
-                无已加载技能
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Memory / Context */}
-        <div className="p-3">
-          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-            <Database className="h-3 w-3" />
-            Memory / Context
-          </label>
-          <div className="mt-2 space-y-1">
-            {memory.length > 0 ? (
-              memory.map((item, idx) => (
-                <div 
-                  key={idx}
-                  className="flex items-start gap-2 p-1.5 rounded bg-secondary/30 border border-border/50"
-                >
-                  <Key className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-muted-foreground">{item.key}</div>
-                    <div className="text-xs truncate">{item.value}</div>
+      {!collapsed && (
+        <div className="flex-1 overflow-y-auto">
+          {/* Agent Info */}
+          <div className="p-3 border-b border-border">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              当前 Agent
+            </label>
+            <div className="mt-2 p-2 rounded-lg bg-secondary/30 border border-border">
+              {agent ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-cognitive" />
+                    <span className="text-sm font-medium">{agent.name}</span>
                   </div>
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      "text-[8px] px-1 py-0 h-3",
-                      item.type === 'entity' && 'border-cognitive/50 text-cognitive',
-                      item.type === 'fact' && 'border-governance/50 text-governance',
-                      item.type === 'context' && 'border-primary/50 text-primary'
-                    )}
+                  <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <span>{agent.department || '通用'}</span>
+                    <span>•</span>
+                    <span>{agent.model}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-muted-foreground">使用默认 Demo Agent</div>
+              )}
+            </div>
+          </div>
+
+          {/* Loaded Skills */}
+          <div className="p-3 border-b border-border">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              已加载技能
+            </label>
+            <div className="mt-2 space-y-1.5">
+              {skills.length > 0 ? (
+                skills.map((skill: any) => (
+                  <div 
+                    key={skill.id} 
+                    className="flex items-center gap-2 p-1.5 rounded bg-cognitive/5 border border-cognitive/20"
                   >
-                    {item.type}
-                  </Badge>
+                    <FileCode className="h-3 w-3 text-cognitive" />
+                    <span className="text-xs">{skill.name}</span>
+                    {skill.permissions?.length > 0 && (
+                      <div className="flex gap-0.5 ml-auto">
+                        {skill.permissions.slice(0, 2).map((p: string) => (
+                          <Badge key={p} variant="outline" className="text-[8px] px-1 py-0 h-3">
+                            {p}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-muted-foreground text-center py-2">
+                  无已加载技能
                 </div>
-              ))
-            ) : (
-              <div className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded-lg">
-                <Database className="h-5 w-5 mx-auto mb-1 opacity-50" />
-                对话开始后将显示上下文
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+
+          {/* Memory / Context */}
+          <div className="p-3">
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+              <Database className="h-3 w-3" />
+              Memory / Context
+            </label>
+            <div className="mt-2 space-y-1">
+              {memory.length > 0 ? (
+                memory.map((item, idx) => (
+                  <div 
+                    key={idx}
+                    className="flex items-start gap-2 p-1.5 rounded bg-secondary/30 border border-border/50"
+                  >
+                    <Key className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-medium text-muted-foreground">{item.key}</div>
+                      <div className="text-xs truncate">{item.value}</div>
+                    </div>
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-[8px] px-1 py-0 h-3",
+                        item.type === 'entity' && 'border-cognitive/50 text-cognitive',
+                        item.type === 'fact' && 'border-governance/50 text-governance',
+                        item.type === 'context' && 'border-primary/50 text-primary'
+                      )}
+                    >
+                      {item.type}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded-lg">
+                  <Database className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                  对话开始后将显示上下文
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -412,6 +433,7 @@ const Runtime = () => {
   const trace = useTrace();
   
   const [showHistory, setShowHistory] = useState(false);
+  const [isContextPanelCollapsed, setIsContextPanelCollapsed] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("google/gemini-2.5-flash");
@@ -1247,7 +1269,12 @@ const Runtime = () => {
       </div>
 
       {/* Context Panel */}
-      <ContextPanel agent={selectedAgent} memory={contextMemory} />
+      <ContextPanel 
+        agent={selectedAgent} 
+        memory={contextMemory} 
+        collapsed={isContextPanelCollapsed}
+        onToggle={() => setIsContextPanelCollapsed(!isContextPanelCollapsed)}
+      />
     </div>
     </>
   );
