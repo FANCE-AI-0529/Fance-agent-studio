@@ -16,7 +16,11 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
+  Code2,
+  MessageCircle,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -434,6 +438,7 @@ const Runtime = () => {
   
   const [showHistory, setShowHistory] = useState(false);
   const [isContextPanelCollapsed, setIsContextPanelCollapsed] = useState(false);
+  const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("google/gemini-2.5-flash");
@@ -1016,35 +1021,56 @@ const Runtime = () => {
                 {activeSkill}
               </Badge>
             )}
-            <SystemPromptEditor
-              value={customSystemPrompt || baseSystemPrompt || ""}
-              onChange={setCustomSystemPrompt}
-              onVariablesChange={setPromptVariables}
-              agentId={selectedAgent?.id}
-              agentName={selectedAgent?.name || "Default Agent"}
-              disabled={currentPhase !== "idle"}
-            />
-            <div className="flex items-center gap-1.5">
-              <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <ModelSelector
-                value={selectedModelId}
-                onChange={setSelectedModelId}
+            {isDeveloperMode && (
+              <SystemPromptEditor
+                value={customSystemPrompt || baseSystemPrompt || ""}
+                onChange={setCustomSystemPrompt}
+                onVariablesChange={setPromptVariables}
+                agentId={selectedAgent?.id}
+                agentName={selectedAgent?.name || "Default Agent"}
                 disabled={currentPhase !== "idle"}
               />
-              <ModelRoutingConfig 
-                agentId={selectedAgent?.id}
-                agentName={selectedAgent?.name}
-              />
-              <AgentCollaborationPanel
-                currentAgentId={selectedAgent?.id}
-                currentAgentName={selectedAgent?.name}
-              />
-              <TaskChainPanel />
-              <ExecutionHistoryPanel />
-              <CircuitBreakerPanel
-                agentId={selectedAgent?.id}
-                agentName={selectedAgent?.name}
-              />
+            )}
+            <div className="flex items-center gap-1.5">
+              {isDeveloperMode && (
+                <>
+                  <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ModelSelector
+                    value={selectedModelId}
+                    onChange={setSelectedModelId}
+                    disabled={currentPhase !== "idle"}
+                  />
+                  <ModelRoutingConfig 
+                    agentId={selectedAgent?.id}
+                    agentName={selectedAgent?.name}
+                  />
+                  <AgentCollaborationPanel
+                    currentAgentId={selectedAgent?.id}
+                    currentAgentName={selectedAgent?.name}
+                  />
+                  <TaskChainPanel />
+                  <ExecutionHistoryPanel />
+                </>
+              )}
+              {isDeveloperMode && (
+                <CircuitBreakerPanel
+                  agentId={selectedAgent?.id}
+                  agentName={selectedAgent?.name}
+                />
+              )}
+              
+              {/* Developer Mode Toggle */}
+              <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-secondary/50 border border-border">
+                <MessageCircle className={cn("h-3.5 w-3.5", !isDeveloperMode && "text-primary")} />
+                <Switch
+                  id="developer-mode"
+                  checked={isDeveloperMode}
+                  onCheckedChange={setIsDeveloperMode}
+                  className="scale-75"
+                />
+                <Code2 className={cn("h-3.5 w-3.5", isDeveloperMode && "text-primary")} />
+              </div>
+              
               <TooltipProvider>
                 <Button
                   variant="ghost"
@@ -1060,10 +1086,12 @@ const Runtime = () => {
           </div>
         </div>
 
-        {/* MPLP Protocol Status Bar (Stepper) */}
-        <div className="px-4 py-3 bg-secondary/30 border-b border-border flex items-center justify-center">
-          <MPLPStepper currentPhase={currentPhase} />
-        </div>
+        {/* MPLP Protocol Status Bar (Stepper) - Only in Developer Mode */}
+        {isDeveloperMode && (
+          <div className="px-4 py-3 bg-secondary/30 border-b border-border flex items-center justify-center">
+            <MPLPStepper currentPhase={currentPhase} />
+          </div>
+        )}
 
         {/* Messages or Welcome Guide */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -1078,7 +1106,9 @@ const Runtime = () => {
             <>
           {localMessages.map(message => {
             // Render Thinking Process card
+            // Render Thinking Process card - Only in Developer Mode
             if (message.role === "system" && message.thinkingLogs && message.thinkingLogs.length > 0) {
+              if (!isDeveloperMode) return null;
               return (
                 <div key={message.id} className="max-w-[85%]">
                   <ThinkingProcess logs={message.thinkingLogs} />
@@ -1158,8 +1188,8 @@ const Runtime = () => {
             );
           })}
 
-          {/* Inline Thinking Process during processing */}
-          {currentPhase !== "idle" && currentPhase !== "confirm" && currentThinkingLogs.length > 0 && (
+          {/* Inline Thinking Process during processing - Only in Developer Mode */}
+          {isDeveloperMode && currentPhase !== "idle" && currentPhase !== "confirm" && currentThinkingLogs.length > 0 && (
             <div className="max-w-[85%]">
               <ThinkingProcess logs={currentThinkingLogs} />
             </div>
@@ -1244,37 +1274,41 @@ const Runtime = () => {
         </div>
       </div>
 
-      {/* Right Panel - Trace Tree */}
-      <div className="w-72 border-l border-border bg-card/50 hidden lg:flex flex-col">
-        <div className="panel-header border-b border-border">
-          <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-cognitive" />
-            <span className="font-semibold text-sm">决策追踪</span>
+      {/* Right Panel - Trace Tree - Only in Developer Mode */}
+      {isDeveloperMode && (
+        <div className="w-72 border-l border-border bg-card/50 hidden lg:flex flex-col">
+          <div className="panel-header border-b border-border">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-cognitive" />
+              <span className="font-semibold text-sm">决策追踪</span>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden p-2">
+            <TraceTree 
+              sessions={trace.sessions} 
+              currentSessionId={trace.activeSessionId || undefined}
+              onClearSessions={() => {
+                trace.clearSessions();
+                currentEventsRef.current = [];
+              }}
+              onRefresh={() => {
+                // No-op, state is reactive
+              }}
+            />
           </div>
         </div>
+      )}
 
-        <div className="flex-1 overflow-hidden p-2">
-          <TraceTree 
-            sessions={trace.sessions} 
-            currentSessionId={trace.activeSessionId || undefined}
-            onClearSessions={() => {
-              trace.clearSessions();
-              currentEventsRef.current = [];
-            }}
-            onRefresh={() => {
-              // No-op, state is reactive
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Context Panel */}
-      <ContextPanel 
-        agent={selectedAgent} 
-        memory={contextMemory} 
-        collapsed={isContextPanelCollapsed}
-        onToggle={() => setIsContextPanelCollapsed(!isContextPanelCollapsed)}
-      />
+      {/* Context Panel - Only in Developer Mode */}
+      {isDeveloperMode && (
+        <ContextPanel 
+          agent={selectedAgent} 
+          memory={contextMemory} 
+          collapsed={isContextPanelCollapsed}
+          onToggle={() => setIsContextPanelCollapsed(!isContextPanelCollapsed)}
+        />
+      )}
     </div>
     </>
   );
