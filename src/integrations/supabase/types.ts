@@ -662,6 +662,50 @@ export type Database = {
           },
         ]
       }
+      bundle_purchases: {
+        Row: {
+          amount: number
+          bundle_id: string
+          created_at: string
+          id: string
+          purchased_at: string | null
+          status: string
+          stripe_payment_id: string | null
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          bundle_id: string
+          created_at?: string
+          id?: string
+          purchased_at?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          purchased_at?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "skill_bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_entries: {
         Row: {
           agent_id: string | null

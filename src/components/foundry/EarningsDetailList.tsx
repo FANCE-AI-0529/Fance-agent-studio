@@ -1,4 +1,4 @@
-import { DollarSign, ArrowUpRight, ArrowDownRight, Package } from "lucide-react";
+import { DollarSign, ArrowUpRight, ArrowDownRight, Package, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +8,8 @@ import { format, parseISO } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
 const transactionTypeLabels: Record<string, string> = {
-  sale: "销售",
+  sale: "技能销售",
+  bundle_sale: "能力包销售",
   tip: "打赏",
   subscription: "订阅",
   refund: "退款",
@@ -55,6 +56,9 @@ export function EarningsDetailList() {
             <div className="divide-y divide-border">
               {earnings.map((earning) => {
                 const isPositive = earning.amount >= 0;
+                const isBundleSale = earning.transaction_type === "bundle_sale";
+                const displayName = isBundleSale ? earning.bundle_name : earning.skill_name;
+                
                 return (
                   <div
                     key={earning.id}
@@ -76,14 +80,21 @@ export function EarningsDetailList() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-[10px] ${isBundleSale ? "bg-primary/20 text-primary" : ""}`}
+                          >
                             {transactionTypeLabels[earning.transaction_type] ||
                               earning.transaction_type}
                           </Badge>
-                          {earning.skill_name && (
+                          {displayName && (
                             <span className="text-sm flex items-center gap-1 text-muted-foreground">
-                              <Package className="h-3 w-3" />
-                              {earning.skill_name}
+                              {isBundleSale ? (
+                                <Layers className="h-3 w-3" />
+                              ) : (
+                                <Package className="h-3 w-3" />
+                              )}
+                              {displayName}
                             </span>
                           )}
                         </div>

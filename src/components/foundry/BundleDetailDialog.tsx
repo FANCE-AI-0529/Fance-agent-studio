@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +17,15 @@ import {
   Download, 
   Star, 
   User,
+  Loader2,
+  CreditCard,
   Check,
-  Loader2 
+  ShoppingCart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
+import { useIsBundlePurchased, useBundleCheckout, useVerifyPurchase } from "@/hooks/useBundlePurchase";
+import { useAuth } from "@/contexts/AuthContext";
 import type { SkillBundle } from "@/hooks/useSkillBundles";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +40,27 @@ export function BundleDetailDialog({
   open,
   onOpenChange,
 }: BundleDetailDialogProps) {
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const installBundle = useInstallBundle();
+  const checkout = useBundleCheckout();
+  const verifyPurchase = useVerifyPurchase();
+  
+  const { data: isPurchased = false, isLoading: checkingPurchase } = useIsBundlePurchased(bundle?.id);
+
+  // Check for purchase success from URL params
+  useEffect(() => {
+    const purchaseStatus = searchParams.get("purchase");
+    const purchasedBundleId = searchParams.get("bundle_id");
+    
+    if (purchaseStatus === "success" && purchasedBundleId && bundle?.id === purchasedBundleId) {
+      verifyPurchase.mutate({ bundleId: purchasedBundleId });
+      // Clean up URL params
+      searchParams.delete("purchase");
+      searchParams.delete("bundle_id");
+      setSearchParams(searchParams);
+    }
+  }, [searchParams, bundle?.id]);
 
   // Fetch skills included in the bundle
   const { data: skills = [], isLoading: loadingSkills } = useQuery({
@@ -84,12 +110,28 @@ export function BundleDetailDialog({
     return `¥${price}`;
   };
 
+  const isFreeBundle = bundle.is_free || !bundle.price || bundle.price === 0;
+  const canInstall = isFreeBundle || isPurchased;
+
   const handleInstall = () => {
     if (!bundle.skill_ids || bundle.skill_ids.length === 0) return;
 
     installBundle.mutate({
       bundleId: bundle.id,
       skillIds: bundle.skill_ids,
+    });
+  };
+
+  const handlePurchase = () => {
+    if (!user) {
+      window.location.href = "/auth";
+      return;
+    }
+
+    checkout.mutate({
+      bundleId: bundle.id,
+      bundleName: bundle.name,
+      bundlePrice: bundle.price || 0,
     });
   };
 
@@ -130,6 +172,12 @@ export function BundleDetailDialog({
                       精选
                     </Badge>
                   )}
+                  {isPurchased && (
+                    <Badge variant="outline" className="text-status-executing border-status-executing">
+                      <Check className="h-3 w-3 mr-1" />
+                      已购买
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-muted-foreground mt-1">
                   {bundle.description || "暂无描述"}
@@ -138,7 +186,7 @@ export function BundleDetailDialog({
               <span
                 className={cn(
                   "text-xl font-bold",
-                  bundle.is_free ? "text-status-executing" : "text-primary"
+                  isFreeBundle ? "text-status-executing" : "text-primary"
                 )}
               >
                 {formatPrice(bundle.price, bundle.is_free)}
@@ -215,27 +263,48 @@ export function BundleDetailDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             关闭
           </Button>
-          <Button
-            onClick={handleInstall}
-            disabled={installBundle.isPending || !bundle.skill_ids?.length}
-            className="gap-2"
-          >
-            {installBundle.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                安装中...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                安装全部 ({bundle.skill_ids?.length || 0} 个能力)
-              </>
-            )}
-          </Button>
+          
+          {canInstall ? (
+            <Button
+              onClick={handleInstall}
+              disabled={installBundle.isPending || !bundle.skill_ids?.length}
+              className="gap-2"
+            >
+              {installBundle.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  安装中...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  安装全部 ({bundle.skill_ids?.length || 0} 个能力)
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={handlePurchase}
+              disabled={checkout.isPending || checkingPurchase}
+              className="gap-2"
+            >
+              {checkout.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  处理中...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-4 w-4" />
+                  立即购买 {formatPrice(bundle.price, bundle.is_free)}
+                </>
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

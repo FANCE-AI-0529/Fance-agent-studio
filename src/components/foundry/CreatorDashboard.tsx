@@ -67,7 +67,7 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
       {/* 统计卡片 */}
       <div className="p-6 border-b border-border">
         <h2 className="text-xl font-semibold mb-4">创作者中心</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <StatCard
             icon={<Package className="h-5 w-5" />}
             label="我的能力"
@@ -93,6 +93,13 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
             label="平均评分"
             value={skillStats?.avgRating || 0}
             loading={loadingStats}
+          />
+          <StatCard
+            icon={<TrendingUp className="h-5 w-5" />}
+            label="能力包收益"
+            value={`¥${(earningsStats?.byType?.bundle_sale || 0).toFixed(2)}`}
+            subValue="本月销售"
+            loading={loadingEarnings}
           />
           <StatCard
             icon={<DollarSign className="h-5 w-5" />}
