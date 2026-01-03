@@ -10,6 +10,7 @@ import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 import { HelpCenter } from "@/components/help/HelpCenter";
 import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logoIcon from "@/assets/logo-icon.png";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -45,9 +46,7 @@ function MobileLayout({ children }: { children: ReactNode }) {
         </Sheet>
         
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-xs font-bold text-primary-foreground">F</span>
-          </div>
+          <img src={logoIcon} alt="F" className="w-7 h-7 rounded-lg" />
           <span className="font-semibold text-sm">Fance OS</span>
         </div>
         
