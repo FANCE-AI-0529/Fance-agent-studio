@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, User, ArrowRight, Loader2, Phone, Sparkles } from "lucide-react";
-import logoFull from "@/assets/logo-full.png";
+import { FanceLogoLarge } from "@/components/ui/FanceLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,6 @@ import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { PhoneLoginForm } from "@/components/auth/PhoneLoginForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
-
 const emailSchema = z.string().email("请输入有效的邮箱地址");
 const passwordSchema = z.string().min(6, "密码至少需要6个字符");
 
@@ -349,9 +348,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src={logoFull} alt="FANCE.AI" className="h-16 mx-auto mb-4" />
-          <p className="text-muted-foreground text-sm mt-1 flex items-center justify-center gap-1">
-            <Sparkles className="h-3 w-3" />
+          <FanceLogoLarge className="mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm flex items-center justify-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-primary" />
             技能驱动，智能无限
           </p>
         </div>

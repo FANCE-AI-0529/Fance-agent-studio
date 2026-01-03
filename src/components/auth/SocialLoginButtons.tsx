@@ -85,11 +85,17 @@ export function SocialLoginButtons({ onGuestMode }: SocialLoginButtonsProps) {
     }
   };
 
-  const handleWeChatLogin = async () => {
-    // 微信登录需要特殊配置，这里显示提示
+  const handleWeChatLogin = () => {
     toast({
-      title: "微信登录",
+      title: "即将开放",
       description: "微信登录功能即将开放，敬请期待",
+    });
+  };
+
+  const handleAppleLoginClick = () => {
+    toast({
+      title: "即将开放",
+      description: "Apple 登录功能即将开放，敬请期待",
     });
   };
 
@@ -107,15 +113,14 @@ export function SocialLoginButtons({ onGuestMode }: SocialLoginButtonsProps) {
       <div className="grid grid-cols-3 gap-3">
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full relative group"
           onClick={handleWeChatLogin}
           disabled={!!loadingProvider}
         >
-          {loadingProvider === "wechat" ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <WeChatIcon />
-          )}
+          <WeChatIcon />
+          <span className="absolute -top-2 -right-2 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            即将开放
+          </span>
         </Button>
         <Button
           variant="outline"
@@ -131,15 +136,14 @@ export function SocialLoginButtons({ onGuestMode }: SocialLoginButtonsProps) {
         </Button>
         <Button
           variant="outline"
-          className="w-full"
-          onClick={handleAppleLogin}
+          className="w-full relative group"
+          onClick={handleAppleLoginClick}
           disabled={!!loadingProvider}
         >
-          {loadingProvider === "apple" ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <AppleIcon />
-          )}
+          <AppleIcon />
+          <span className="absolute -top-2 -right-2 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            即将开放
+          </span>
         </Button>
       </div>
 
