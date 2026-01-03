@@ -662,6 +662,151 @@ export type Database = {
           },
         ]
       }
+      challenge_entries: {
+        Row: {
+          agent_id: string | null
+          challenge_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_winner: boolean | null
+          rank: number | null
+          title: string | null
+          user_id: string
+          votes_count: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          challenge_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_winner?: boolean | null
+          rank?: number | null
+          title?: string | null
+          user_id: string
+          votes_count?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          challenge_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_winner?: boolean | null
+          rank?: number | null
+          title?: string | null
+          user_id?: string
+          votes_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_entries_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_votes: {
+        Row: {
+          created_at: string | null
+          entry_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          entry_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          entry_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_votes_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          banner_url: string | null
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_at: string
+          entries_count: number | null
+          id: string
+          prize_description: string | null
+          rules: string | null
+          start_at: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          banner_url?: string | null
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_at: string
+          entries_count?: number | null
+          id?: string
+          prize_description?: string | null
+          rules?: string | null
+          start_at: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          banner_url?: string | null
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_at?: string
+          entries_count?: number | null
+          id?: string
+          prize_description?: string | null
+          rules?: string | null
+          start_at?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       circuit_breaker_state: {
         Row: {
           agent_id: string
@@ -1435,6 +1580,42 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          id: string
+          invite_code: string
+          invited_email: string | null
+          invited_user_id: string | null
+          inviter_id: string
+          reward_points: number | null
+          status: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          invite_code: string
+          invited_email?: string | null
+          invited_user_id?: string | null
+          inviter_id: string
+          reward_points?: number | null
+          status?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          invite_code?: string
+          invited_email?: string | null
+          invited_user_id?: string | null
+          inviter_id?: string
+          reward_points?: number | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       llm_model_configs: {
         Row: {
           agent_id: string | null
@@ -1804,16 +1985,51 @@ export type Database = {
           },
         ]
       }
+      point_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           badges: Json | null
           bio: string | null
+          cover_image_url: string | null
           created_at: string
           creator_level: number | null
           department: string | null
           display_name: string | null
+          followers_count: number | null
+          following_count: number | null
           id: string
+          is_verified: boolean | null
+          social_links: Json | null
           total_agents: number | null
           total_likes_received: number | null
           updated_at: string
@@ -1822,11 +2038,16 @@ export type Database = {
           avatar_url?: string | null
           badges?: Json | null
           bio?: string | null
+          cover_image_url?: string | null
           created_at?: string
           creator_level?: number | null
           department?: string | null
           display_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
           id: string
+          is_verified?: boolean | null
+          social_links?: Json | null
           total_agents?: number | null
           total_likes_received?: number | null
           updated_at?: string
@@ -1835,11 +2056,16 @@ export type Database = {
           avatar_url?: string | null
           badges?: Json | null
           bio?: string | null
+          cover_image_url?: string | null
           created_at?: string
           creator_level?: number | null
           department?: string | null
           display_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
           id?: string
+          is_verified?: boolean | null
+          social_links?: Json | null
           total_agents?: number | null
           total_likes_received?: number | null
           updated_at?: string
@@ -2728,6 +2954,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_follows: {
+        Row: {
+          created_at: string | null
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_memories: {
         Row: {
           agent_id: string | null
@@ -2791,6 +3068,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_points: {
+        Row: {
+          id: string
+          last_daily_bonus: string | null
+          lifetime_points: number | null
+          points: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_daily_bonus?: string | null
+          lifetime_points?: number | null
+          points?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_daily_bonus?: string | null
+          lifetime_points?: number | null
+          points?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_prompts: {
         Row: {
