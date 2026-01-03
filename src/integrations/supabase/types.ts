@@ -478,6 +478,7 @@ export type Database = {
           model: string
           mplp_policy: string
           name: string
+          personality_config: Json | null
           rating: number | null
           status: string
           tags: string[] | null
@@ -497,6 +498,7 @@ export type Database = {
           model?: string
           mplp_policy?: string
           name: string
+          personality_config?: Json | null
           rating?: number | null
           status?: string
           tags?: string[] | null
@@ -516,6 +518,7 @@ export type Database = {
           model?: string
           mplp_policy?: string
           name?: string
+          personality_config?: Json | null
           rating?: number | null
           status?: string
           tags?: string[] | null

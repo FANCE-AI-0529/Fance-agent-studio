@@ -36,6 +36,9 @@ import {
   CheckCircle,
   Play,
   FileCode,
+  Mic,
+  MessageSquare,
+  TestTube2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,11 +70,16 @@ import { WebhookPanel } from "@/components/builder/WebhookPanel";
 import { ApiAlertPanel } from "@/components/builder/ApiAlertPanel";
 import { LLMConfigPanel } from "@/components/builder/LLMConfigPanel";
 import { ApiStatsDashboard } from "@/components/builder/ApiStatsDashboard";
+import CreationModeSelector, { CreationMode } from "@/components/builder/CreationModeSelector";
+import LiveTestPanel from "@/components/builder/LiveTestPanel";
+import PersonalityConfigurator from "@/components/builder/PersonalityConfigurator";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { findTemplateById } from "@/data/agentTemplates";
+import { PersonalityConfig, getDefaultPersonalityConfig, mergePersonalityWithPrompt } from "@/utils/personalityToPrompt";
+import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
@@ -109,6 +117,9 @@ const Builder = () => {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showConversational, setShowConversational] = useState(false);
+  const [showVoiceCreator, setShowVoiceCreator] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
+  const [showLiveTest, setShowLiveTest] = useState(false);
   const [showApiPanel, setShowApiPanel] = useState(false);
   const [showWebhookPanel, setShowWebhookPanel] = useState(false);
   const [showAlertPanel, setShowAlertPanel] = useState(false);
@@ -116,6 +127,9 @@ const Builder = () => {
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [templateApplied, setTemplateApplied] = useState(false);
   const [showDeploySuccessDialog, setShowDeploySuccessDialog] = useState(false);
+  const [personalityConfig, setPersonalityConfig] = useState<PersonalityConfig>(getDefaultPersonalityConfig());
+
+  const { parseAdjustment, applyAdjustment } = useConfigAdjustment();
 
   // Check URL params for wizard mode
   useEffect(() => {
@@ -586,6 +600,7 @@ const Builder = () => {
     department: string;
     systemPrompt: string;
     selectedSkillIds: string[];
+    personalityConfig?: PersonalityConfig;
   }) => {
     setAgentConfig({
       name: config.name,
@@ -594,6 +609,10 @@ const Builder = () => {
       systemPrompt: config.systemPrompt,
       avatar: { iconId: "bot", colorId: "primary" },
     });
+
+    if (config.personalityConfig) {
+      setPersonalityConfig(config.personalityConfig);
+    }
 
     // Add selected skills as nodes
     const selectedSkills = publishedSkills.filter((s) =>
@@ -637,10 +656,41 @@ const Builder = () => {
     }
 
     setShowWizard(false);
+    setShowConversational(false);
+    setShowVoiceCreator(false);
     toast({
       title: "配置完成",
       description: "你可以继续在画布中调整智能体配置",
     });
+  };
+
+  // Handle mode selection
+  const handleModeSelect = (mode: CreationMode) => {
+    setShowModeSelector(false);
+    switch (mode) {
+      case "voice":
+        setShowVoiceCreator(true);
+        break;
+      case "chat":
+        setShowConversational(true);
+        break;
+      case "visual":
+        // Stay in current visual mode
+        break;
+    }
+  };
+
+  // Handle adjustment from live test panel
+  const handleAdjustmentRequest = (adjustment: string) => {
+    const result = parseAdjustment(adjustment, personalityConfig);
+    if (result) {
+      const newConfig = applyAdjustment(personalityConfig, result.adjustedConfig);
+      setPersonalityConfig(newConfig);
+      toast({
+        title: "已调整性格",
+        description: result.description,
+      });
+    }
   };
 
   const canDeploy = agentConfig.name.trim() !== "" && addedSkills.length > 0;
@@ -738,6 +788,35 @@ const Builder = () => {
 
               <div className="h-5 w-px bg-border" />
 
+              {/* Creation mode buttons */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowVoiceCreator(true)}
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>语音创建</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowConversational(true)}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>对话创建</TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -765,6 +844,23 @@ const Builder = () => {
                 </TooltipTrigger>
                 <TooltipContent>适应画布</TooltipContent>
               </Tooltip>
+
+              {/* Live Test Button */}
+              {agentConfig.name && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={showLiveTest ? "default" : "ghost"}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setShowLiveTest(!showLiveTest)}
+                    >
+                      <TestTube2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>实时测试</TooltipContent>
+                </Tooltip>
+              )}
 
               {/* API Management Button */}
               {currentAgentId && existingAgent?.status === 'deployed' && (
@@ -955,17 +1051,26 @@ const Builder = () => {
                       开始构建你的智能体
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      从左侧技能市场拖拽技能到画布，或使用向导模式快速开始
+                      从左侧技能市场拖拽技能到画布，或选择创建方式
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-4 pointer-events-auto"
-                      onClick={() => setShowWizard(true)}
-                    >
-                      <Wand2 className="mr-2 h-4 w-4" />
-                      使用向导
-                    </Button>
+                    <div className="mt-4 flex gap-2 pointer-events-auto">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setShowVoiceCreator(true)}
+                      >
+                        <Mic className="mr-2 h-4 w-4" />
+                        语音创建
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowConversational(true)}
+                      >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        对话创建
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -995,6 +1100,36 @@ const Builder = () => {
           onComplete={handleWizardComplete}
           availableSkills={availableSkillsForWizard}
         />
+
+        {/* Conversational Creator (Chat Mode) */}
+        <ConversationalCreator
+          isOpen={showConversational}
+          onClose={() => setShowConversational(false)}
+          onComplete={handleWizardComplete}
+          useVoice={false}
+        />
+
+        {/* Voice Creator Mode */}
+        <ConversationalCreator
+          isOpen={showVoiceCreator}
+          onClose={() => setShowVoiceCreator(false)}
+          onComplete={handleWizardComplete}
+          useVoice={true}
+        />
+
+        {/* Live Test Panel */}
+        {showLiveTest && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <LiveTestPanel
+              agentName={agentConfig.name}
+              systemPrompt={mergePersonalityWithPrompt(agentConfig.systemPrompt, personalityConfig)}
+              personalityConfig={personalityConfig}
+              isOpen={showLiveTest}
+              onClose={() => setShowLiveTest(false)}
+              onAdjustmentRequest={handleAdjustmentRequest}
+            />
+          </div>
+        )}
 
         {/* Manifest Preview Modal */}
         <ManifestPreview

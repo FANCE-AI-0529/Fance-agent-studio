@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.llm-gateway]
 verify_jwt = false
+
+[functions.agent-config-generator]
+verify_jwt = false
