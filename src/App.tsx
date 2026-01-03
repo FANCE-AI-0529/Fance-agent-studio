@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
+import SharedConversation from "./pages/SharedConversation";
 import ApiHub from "./pages/ApiHub";
 import { Loader2 } from "lucide-react";
 
@@ -74,6 +75,7 @@ function AppRoutes() {
         }
       />
       <Route path="/share/:token" element={<SharedPrompt />} />
+      <Route path="/conversation/:token" element={<SharedConversation />} />
       <Route
         path="/"
         element={

@@ -20,6 +20,8 @@ import {
   MessageCircle,
   PanelBottomClose,
   PanelBottomOpen,
+  Sparkles,
+  Brain,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -52,7 +54,12 @@ import { AttachmentPreview } from "@/components/runtime/AttachmentPreview";
 import { DevToolsPanel } from "@/components/runtime/DevToolsPanel";
 import { CircuitBreakerContent } from "@/components/runtime/CircuitBreakerContent";
 import { ContextPanelContent } from "@/components/runtime/ContextPanelContent";
+import { AgentAvatarAnimated } from "@/components/runtime/AgentAvatarAnimated";
+import { SceneBackground, scenePresets } from "@/components/runtime/SceneBackground";
+import { ScenarioSelector } from "@/components/runtime/ScenarioSelector";
+import { MemoryPanel } from "@/components/runtime/MemoryPanel";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
+import { useScenarios, Scenario } from "@/hooks/useScenarios";
 import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
 import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { useChatSession } from "@/hooks/useChatSession";
@@ -286,6 +293,7 @@ const Runtime = () => {
   
   const [showHistory, setShowHistory] = useState(false);
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+  const [activeScenario, setActiveScenario] = useState<Scenario | null>(null);
   const [contextMemory, setContextMemory] = useState<MemoryItem[]>([]);
   const [currentThinkingLogs, setCurrentThinkingLogs] = useState<LogEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("google/gemini-2.5-flash");
