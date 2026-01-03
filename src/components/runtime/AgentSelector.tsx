@@ -18,14 +18,14 @@ interface AgentSelectorProps {
   isLoading?: boolean;
 }
 
-// Default demo agent
+// Default demo agent - Fance 智能助手 (平台向导)
 const defaultAgent = {
-  id: "demo",
-  name: "MPLP 智能助手",
-  department: "Fance OS 平台",
+  id: "fance-guide",
+  name: "Fance 智能助手",
+  department: "平台向导",
   model: "gemini-2.5-flash",
   status: "deployed",
-  avatar: { iconId: "bot", colorId: "primary" } as AgentAvatar,
+  avatar: { iconId: "sparkles", colorId: "primary" } as AgentAvatar,
 } as const;
 
 // Helper to get avatar from agent manifest
@@ -87,10 +87,10 @@ export function AgentSelector({
         >
           <AgentAvatarDisplay avatar={defaultAgent.avatar} size="sm" />
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm">MPLP 智能助手</div>
-            <div className="text-xs text-muted-foreground">Fance OS 平台 · 默认演示</div>
+            <div className="font-medium text-sm">Fance 智能助手</div>
+            <div className="text-xs text-muted-foreground">平台向导 · 智能体构建顾问</div>
             <div className="text-[10px] text-muted-foreground mt-1">
-              支持：文件读取、数据查询、表单生成、API调用等
+              帮助您了解平台功能、构建智能体、探索技能商店
             </div>
           </div>
           {!selectedAgent && (
