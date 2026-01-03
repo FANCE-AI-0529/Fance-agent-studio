@@ -72,6 +72,13 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agent_api_keys_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agent_api_logs: {
@@ -123,6 +130,73 @@ export type Database = {
             columns: ["api_key_id"]
             isOneToOne: false
             referencedRelation: "agent_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_clones: {
+        Row: {
+          cloned_agent_id: string | null
+          created_at: string | null
+          id: string
+          source_agent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cloned_agent_id?: string | null
+          created_at?: string | null
+          id?: string
+          source_agent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cloned_agent_id?: string | null
+          created_at?: string | null
+          id?: string
+          source_agent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_clones_cloned_agent_id_fkey"
+            columns: ["cloned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_clones_cloned_agent_id_fkey"
+            columns: ["cloned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_clones_cloned_agent_id_fkey"
+            columns: ["cloned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_clones_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_clones_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_clones_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -186,6 +260,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "agent_collaborations_initiator_agent_id_fkey"
+            columns: ["initiator_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "agent_collaborations_target_agent_id_fkey"
             columns: ["target_agent_id"]
             isOneToOne: false
@@ -197,6 +278,56 @@ export type Database = {
             columns: ["target_agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_collaborations_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_likes: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_likes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_likes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_likes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -233,6 +364,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_skills_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
           {
@@ -317,44 +455,72 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agent_webhooks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agents: {
         Row: {
           author_id: string | null
+          category: string | null
+          clones_count: number | null
           created_at: string
           department: string | null
           id: string
+          is_featured: boolean | null
+          likes_count: number | null
           manifest: Json | null
           model: string
           mplp_policy: string
           name: string
+          rating: number | null
           status: string
+          tags: string[] | null
           updated_at: string
+          usage_count: number | null
         }
         Insert: {
           author_id?: string | null
+          category?: string | null
+          clones_count?: number | null
           created_at?: string
           department?: string | null
           id?: string
+          is_featured?: boolean | null
+          likes_count?: number | null
           manifest?: Json | null
           model?: string
           mplp_policy?: string
           name: string
+          rating?: number | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
+          usage_count?: number | null
         }
         Update: {
           author_id?: string | null
+          category?: string | null
+          clones_count?: number | null
           created_at?: string
           department?: string | null
           id?: string
+          is_featured?: boolean | null
+          likes_count?: number | null
           manifest?: Json | null
           model?: string
           mplp_policy?: string
           name?: string
+          rating?: number | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
+          usage_count?: number | null
         }
         Relationships: []
       }
@@ -484,6 +650,13 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "api_alert_rules_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       circuit_breaker_state: {
@@ -550,6 +723,13 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "circuit_breaker_state_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       collaboration_messages: {
@@ -606,6 +786,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "collaboration_messages_receiver_agent_id_fkey"
+            columns: ["receiver_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "collaboration_messages_sender_agent_id_fkey"
             columns: ["sender_agent_id"]
             isOneToOne: false
@@ -617,6 +804,80 @@ export type Database = {
             columns: ["sender_agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_messages_sender_agent_id_fkey"
+            columns: ["sender_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_inspiration: {
+        Row: {
+          agent_id: string | null
+          author_id: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          featured_date: string | null
+          id: string
+          image_url: string | null
+          story_content: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          author_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          featured_date?: string | null
+          id?: string
+          image_url?: string | null
+          story_content?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          author_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          featured_date?: string | null
+          id?: string
+          image_url?: string | null
+          story_content?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_inspiration_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_inspiration_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_inspiration_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -714,6 +975,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "delegated_tasks_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "delegated_tasks_target_agent_id_fkey"
             columns: ["target_agent_id"]
             isOneToOne: false
@@ -725,6 +993,13 @@ export type Database = {
             columns: ["target_agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegated_tasks_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -782,6 +1057,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_processing_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -844,6 +1126,13 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "drift_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       entities: {
@@ -902,6 +1191,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entities_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -1022,6 +1318,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "intent_history_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "intent_history_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -1101,6 +1404,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llm_model_configs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
           {
@@ -1225,6 +1535,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llm_usage_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
           {
@@ -1376,31 +1693,53 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "model_routing_rules_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          badges: Json | null
+          bio: string | null
           created_at: string
+          creator_level: number | null
           department: string | null
           display_name: string | null
           id: string
+          total_agents: number | null
+          total_likes_received: number | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          badges?: Json | null
+          bio?: string | null
           created_at?: string
+          creator_level?: number | null
           department?: string | null
           display_name?: string | null
           id: string
+          total_agents?: number | null
+          total_likes_received?: number | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          badges?: Json | null
+          bio?: string | null
           created_at?: string
+          creator_level?: number | null
           department?: string | null
           display_name?: string | null
           id?: string
+          total_agents?: number | null
+          total_likes_received?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -1742,6 +2081,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "task_chain_steps_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "task_chain_steps_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
@@ -1867,6 +2213,13 @@ export type Database = {
             columns: ["source_agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_chains_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -2025,6 +2378,33 @@ export type Database = {
           },
         ]
       }
+      user_achievements: {
+        Row: {
+          achievement_level: number | null
+          achievement_type: string
+          earned_at: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          achievement_level?: number | null
+          achievement_type: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          achievement_level?: number | null
+          achievement_type?: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_prompts: {
         Row: {
           agent_id: string | null
@@ -2078,6 +2458,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_prompts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -2146,6 +2533,13 @@ export type Database = {
             referencedRelation: "public_agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "variable_presets_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       webhook_logs: {
@@ -2206,6 +2600,15 @@ export type Database = {
       }
     }
     Views: {
+      community_stats: {
+        Row: {
+          daily_active_sessions: number | null
+          total_agents: number | null
+          total_conversations: number | null
+          total_creators: number | null
+        }
+        Relationships: []
+      }
       public_agents: {
         Row: {
           created_at: string | null
@@ -2242,8 +2645,29 @@ export type Database = {
         }
         Relationships: []
       }
+      trending_agents: {
+        Row: {
+          author_avatar: string | null
+          author_id: string | null
+          author_name: string | null
+          category: string | null
+          clones_count: number | null
+          created_at: string | null
+          department: string | null
+          id: string | null
+          is_featured: boolean | null
+          likes_count: number | null
+          manifest: Json | null
+          name: string | null
+          rating: number | null
+          tags: string[] | null
+          usage_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      clone_agent: { Args: { source_id: string }; Returns: string }
       cosine_similarity: { Args: { a: Json; b: Json }; Returns: number }
       find_similar_entities: {
         Args: {
@@ -2273,6 +2697,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_agent_usage: {
+        Args: { target_agent_id: string }
+        Returns: undefined
+      }
+      toggle_agent_like: { Args: { target_agent_id: string }; Returns: boolean }
       traverse_entity_graph: {
         Args: {
           p_depth?: number

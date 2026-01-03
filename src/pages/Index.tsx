@@ -5,23 +5,23 @@ import {
   Play, 
   ArrowRight, 
   Loader2,
-  Sparkles,
-  Users,
-  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useMyAgents, useDeployedAgents } from "@/hooks/useAgents";
+import { useMyAgents } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
-import { ScenarioCards, HotTemplates } from "@/components/dashboard/ScenarioCards";
+import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
 import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
+import { DailyInspiration } from "@/components/dashboard/DailyInspiration";
+import { TrendingAgents } from "@/components/dashboard/TrendingAgents";
+import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase";
+import { CommunityStats } from "@/components/dashboard/CommunityStats";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
-  const { data: deployedAgents = [] } = useDeployedAgents();
 
   const hasAgents = myAgents.length > 0;
 
@@ -60,11 +60,20 @@ const Index = () => {
       </div>
 
       <div className="p-6 space-y-8">
+        {/* Daily Inspiration - New Section */}
+        <DailyInspiration />
+
         {/* Quick Start Guide */}
         <QuickStartGuide 
           hasAgents={hasAgents} 
           onStartWizard={handleStartWizard}
         />
+
+        {/* Trending Agents - New Section */}
+        <TrendingAgents />
+
+        {/* Achievement Showcase - New Section (logged in users only) */}
+        {user && <AchievementShowcase />}
 
         {/* User Stats */}
         {user && (
@@ -152,46 +161,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Hot Templates */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">热门模板</h2>
-              <Badge variant="secondary" className="text-[10px] gap-1">
-                <TrendingUp className="h-3 w-3" />
-                本周最受欢迎
-              </Badge>
-            </div>
-            <Link to="/builder">
-              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                查看全部
-                <ArrowRight className="h-3 w-3" />
-              </Button>
-            </Link>
-          </div>
-          <HotTemplates />
-        </div>
-
-        {/* Community Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center justify-center gap-8 py-8 border-t border-border"
-        >
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span className="text-sm">12,345+ 用户正在使用</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Bot className="h-4 w-4" />
-            <span className="text-sm">8,765+ 助手已创建</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-sm">1,234,567+ 次对话</span>
-          </div>
-        </motion.div>
+        {/* Community Stats - Now using real data */}
+        <CommunityStats />
       </div>
     </div>
   );
