@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { subDays, format } from "date-fns";
 
 export interface DailyDownload {
@@ -35,6 +36,7 @@ export interface EarningRecord {
   amount: number;
   transaction_type: string;
   skill_name: string | null;
+  bundle_name: string | null;
   created_at: string;
 }
 
@@ -44,10 +46,35 @@ export function useEarningsDetails(limit: number = 20) {
   return useQuery({
     queryKey: ["earnings-details", user?.id, limit],
     queryFn: async (): Promise<EarningRecord[]> => {
-      // Return empty array - actual data would come from creator_earnings table
-      return [];
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("creator_earnings")
+        .select(`
+          id,
+          amount,
+          transaction_type,
+          created_at,
+          skill_id,
+          bundle_id,
+          skills:skill_id (name),
+          skill_bundles:bundle_id (name)
+        `)
+        .eq("creator_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      return (data || []).map((item) => ({
+        id: item.id,
+        amount: Number(item.amount),
+        transaction_type: item.transaction_type,
+        skill_name: (item.skills as { name: string } | null)?.name || null,
+        bundle_name: (item.skill_bundles as { name: string } | null)?.name || null,
+        created_at: item.created_at,
+      }));
     },
     enabled: !!user?.id,
   });
 }
-

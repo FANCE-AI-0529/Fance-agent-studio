@@ -1,9 +1,19 @@
-import { Package, Download, Star, ChevronRight, Edit2 } from "lucide-react";
+import { Package, Download, ChevronRight, Edit2, ShoppingCart, Check } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { SkillBundle } from "@/hooks/useSkillBundles";
+
+// Category gradient mapping
+const categoryGradients: Record<string, string> = {
+  general: "from-slate-500/20 to-slate-600/10",
+  development: "from-blue-500/20 to-blue-600/10",
+  data: "from-emerald-500/20 to-emerald-600/10",
+  content: "from-purple-500/20 to-purple-600/10",
+  automation: "from-orange-500/20 to-orange-600/10",
+  business: "from-rose-500/20 to-rose-600/10",
+};
 
 interface SkillBundleCardProps {
   bundle: SkillBundle;
@@ -11,6 +21,7 @@ interface SkillBundleCardProps {
   onInstall?: () => void;
   isInstalling?: boolean;
   onEdit?: () => void;
+  isPurchased?: boolean;
 }
 
 export function SkillBundleCard({
@@ -19,6 +30,7 @@ export function SkillBundleCard({
   onInstall,
   isInstalling,
   onEdit,
+  isPurchased,
 }: SkillBundleCardProps) {
   const formatDownloads = (count: number | null) => {
     if (!count) return "0";
@@ -33,21 +45,39 @@ export function SkillBundleCard({
   };
 
   const skillCount = bundle.skill_ids?.length || 0;
+  const isFreeBundle = bundle.is_free || !bundle.price || bundle.price === 0;
+  const gradientClass = categoryGradients[bundle.category || "general"] || categoryGradients.general;
 
   return (
     <Card className="group hover:shadow-md transition-all overflow-hidden">
       {/* 封面图 */}
       {bundle.cover_image ? (
-        <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
+        <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden relative">
           <img
             src={bundle.cover_image}
             alt={bundle.name}
             className="w-full h-full object-cover"
           />
+          {isPurchased && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary" className="bg-status-executing/90 text-white border-0 gap-1">
+                <Check className="h-3 w-3" />
+                已购买
+              </Badge>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-          <Package className="h-12 w-12 text-primary/40" />
+        <div className={cn("h-32 bg-gradient-to-br flex items-center justify-center relative", gradientClass)}>
+          <Package className="h-12 w-12 text-foreground/30" />
+          {isPurchased && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary" className="bg-status-executing/90 text-white border-0 gap-1">
+                <Check className="h-3 w-3" />
+                已购买
+              </Badge>
+            </div>
+          )}
         </div>
       )}
 
@@ -86,7 +116,7 @@ export function SkillBundleCard({
         <span
           className={cn(
             "font-medium",
-            bundle.is_free ? "text-status-executing" : "text-primary"
+            isFreeBundle ? "text-status-executing" : "text-primary"
           )}
         >
           {formatPrice(bundle.price, bundle.is_free)}
@@ -104,11 +134,20 @@ export function SkillBundleCard({
           </Button>
           <Button
             size="sm"
-            onClick={onInstall}
+            onClick={onView}
             disabled={isInstalling}
           >
-            <Download className="h-3 w-3 mr-1" />
-            安装全部
+            {isFreeBundle || isPurchased ? (
+              <>
+                <Download className="h-3 w-3 mr-1" />
+                安装
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-3 w-3 mr-1" />
+                购买
+              </>
+            )}
           </Button>
         </div>
       </CardFooter>
