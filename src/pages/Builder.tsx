@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, DragEvent, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ReactFlow,
@@ -1032,47 +1033,41 @@ const Builder = () => {
                 className="!bg-card !border-border !rounded-lg"
               />
 
-              {/* Empty state overlay */}
+              {/* Compact empty state hint */}
               {addedSkills.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                  <div className="text-center max-w-md mx-auto px-8">
-                    <div className="relative mb-6">
-                      <div className="w-24 h-24 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/30">
-                        <Sparkles className="h-10 w-10 text-primary/50" />
-                      </div>
-                      <div className="absolute -top-2 -right-8 animate-bounce">
-                        <div className="bg-card px-3 py-1.5 rounded-full border shadow-lg text-xs flex items-center gap-1.5">
-                          <ChevronLeft className="h-3 w-3" />
-                          拖拽技能到这里
-                        </div>
-                      </div>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-auto"
+                >
+                  <div className="flex items-center gap-3 bg-card/95 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ChevronLeft className="h-4 w-4 text-primary animate-pulse" />
+                      <span>从左侧拖拽技能到画布</span>
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      开始构建你的智能体
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      从左侧技能市场拖拽技能到画布，或选择创建方式
-                    </p>
-                    <div className="mt-4 flex gap-2 pointer-events-auto">
+                    <div className="h-4 w-px bg-border" />
+                    <div className="flex items-center gap-1">
                       <Button
-                        variant="default"
+                        variant="ghost"
                         size="sm"
+                        className="h-7 px-2 text-xs gap-1"
                         onClick={() => setShowVoiceCreator(true)}
                       >
-                        <Mic className="mr-2 h-4 w-4" />
-                        语音创建
+                        <Mic className="h-3.5 w-3.5" />
+                        语音
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
+                        className="h-7 px-2 text-xs gap-1"
                         onClick={() => setShowConversational(true)}
                       >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        对话创建
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        对话
                       </Button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
             </ReactFlow>
           </div>

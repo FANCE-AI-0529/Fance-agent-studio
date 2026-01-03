@@ -206,11 +206,23 @@ export function HelpCenter() {
               还有问题？
             </h3>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full justify-start gap-2">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  window.open("https://crisp.chat/", "_blank");
+                }}
+              >
                 <MessageSquare className="h-4 w-4" />
                 在线客服
               </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  window.location.href = "mailto:support@example.com?subject=平台反馈&body=您好，我想反馈以下问题：%0A%0A";
+                }}
+              >
                 <Mail className="h-4 w-4" />
                 发送邮件
               </Button>

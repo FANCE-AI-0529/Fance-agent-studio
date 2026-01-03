@@ -18,6 +18,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Invite from "./pages/Invite";
 import Challenges from "./pages/Challenges";
 import ChallengeDetail from "./pages/ChallengeDetail";
+import InspirationDetail from "./pages/InspirationDetail";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
@@ -192,6 +193,14 @@ function AppRoutes() {
             <MainLayout>
               <Profile />
             </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inspiration/:id"
+        element={
+          <ProtectedRoute>
+            <InspirationDetail />
           </ProtectedRoute>
         }
       />

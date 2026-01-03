@@ -6,7 +6,6 @@ import {
   Star,
   DollarSign,
   Package,
-  Eye,
   Settings,
   Plus,
 } from "lucide-react";
@@ -16,10 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { useMySkills, usePublishSkill, useUpdateSkill } from "@/hooks/useSkills";
 import { useEarningsStats, useCreatorSkillStats } from "@/hooks/useCreatorEarnings";
 import { useAuth } from "@/contexts/AuthContext";
+import { DownloadTrendChart } from "./DownloadTrendChart";
+import { EarningsDetailList } from "./EarningsDetailList";
 
 interface CreatorDashboardProps {
   onCreateNew?: () => void;
@@ -199,34 +199,10 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
             <TabsContent value="analytics" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 下载趋势 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      下载趋势
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-40 flex items-center justify-center text-muted-foreground">
-                      <p className="text-sm">数据统计功能即将上线</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <DownloadTrendChart days={7} />
 
                 {/* 收益明细 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      收益明细
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-40 flex items-center justify-center text-muted-foreground">
-                      <p className="text-sm">收益功能即将上线</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EarningsDetailList />
               </div>
             </TabsContent>
           </ScrollArea>

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { toPng } from "html-to-image";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Share2,
   Link,
@@ -10,6 +12,7 @@ import {
   Mail,
   ExternalLink,
   Clock,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCreateSharedConversation } from "@/hooks/useSharedConversation";
+import { ShareCardPreview } from "./ShareCardPreview";
 
 interface Message {
   role: "user" | "assistant";
@@ -68,6 +72,9 @@ export function ShareDialog({
   const [copied, setCopied] = useState(false);
   const [includeUser, setIncludeUser] = useState(true);
   const [expiresIn, setExpiresIn] = useState<string>("7");
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const createShare = useCreateSharedConversation();
 
@@ -120,12 +127,38 @@ export function ShareDialog({
   };
 
   const downloadAsImage = async () => {
-    toast.info("生成图片中...");
-    // TODO: Implement html2canvas
-    setTimeout(() => {
+    if (!cardRef.current) {
+      toast.error("无法生成图片");
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        quality: 0.95,
+        pixelRatio: 2,
+      });
+      
+      const link = document.createElement("a");
+      link.download = `chat-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+      
       toast.success("图片已保存");
-      setOpen(false);
-    }, 1000);
+    } catch (err) {
+      console.error("Failed to generate image:", err);
+      toast.error("生成图片失败");
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const sendByEmail = () => {
+    const subject = encodeURIComponent(`分享对话: ${sessionTitle || "AI对话"}`);
+    const body = encodeURIComponent(
+      `我想和你分享一段有趣的AI对话：\n\n${shareLink || "请先生成分享链接"}\n\n来自 AI Agent Platform`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const openShareLink = () => {
@@ -247,14 +280,20 @@ export function ShareDialog({
                 variant="outline"
                 className="flex-col gap-1 h-16"
                 onClick={downloadAsImage}
+                disabled={isGeneratingImage}
               >
-                <Image className="h-5 w-5" />
+                {isGeneratingImage ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Download className="h-5 w-5" />
+                )}
                 <span className="text-xs">保存图片</span>
               </Button>
               <Button
                 variant="outline"
-                className="flex-col gap-1 h-16"
-                disabled
+                className={cn("flex-col gap-1 h-16", showQrCode && "border-primary")}
+                onClick={() => setShowQrCode(!showQrCode)}
+                disabled={!shareLink}
               >
                 <QrCode className="h-5 w-5" />
                 <span className="text-xs">二维码</span>
@@ -262,12 +301,30 @@ export function ShareDialog({
               <Button
                 variant="outline"
                 className="flex-col gap-1 h-16"
-                disabled
+                onClick={sendByEmail}
               >
                 <Mail className="h-5 w-5" />
                 <span className="text-xs">邮件</span>
               </Button>
             </div>
+          </div>
+
+          {/* QR Code Display */}
+          {showQrCode && shareLink && (
+            <div className="flex justify-center p-4 bg-white rounded-lg">
+              <QRCodeSVG value={shareLink} size={160} level="M" />
+            </div>
+          )}
+
+          {/* Hidden card for image generation */}
+          <div className="fixed -left-[9999px]">
+            <ShareCardPreview
+              ref={cardRef}
+              messages={messages}
+              shareUrl={shareLink}
+              agentName={agentName}
+              includeUser={includeUser}
+            />
           </div>
         </div>
       </DialogContent>
