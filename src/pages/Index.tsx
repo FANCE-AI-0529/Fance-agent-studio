@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMyAgents } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
+import { useLogActivity } from "@/hooks/useAchievements";
 import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
 import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
@@ -24,6 +26,14 @@ const Index = () => {
   const { user } = useAuth();
   const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
   const { data: userStats, isLoading: statsLoading } = useUserStats();
+  const logActivity = useLogActivity();
+
+  // Log activity when user visits dashboard
+  useEffect(() => {
+    if (user) {
+      logActivity();
+    }
+  }, [user]);
 
   const hasAgents = myAgents.length > 0;
 

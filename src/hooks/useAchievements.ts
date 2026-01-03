@@ -135,11 +135,18 @@ export function useAchievementProgress() {
       const totalUsage = agents?.reduce((sum, a) => sum + (a.usage_count || 0), 0) || 0;
       const totalClones = agents?.reduce((sum, a) => sum + (a.clones_count || 0), 0) || 0;
 
+      // Get active days count
+      const { count: activeDays } = await supabase
+        .from("user_activity_log")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
       return {
         totalAgents: profile?.total_agents || 0,
         totalLikes: profile?.total_likes_received || 0,
         totalUsage,
         totalClones,
+        activeDays: activeDays || 0,
       };
     },
     enabled: !!user,
@@ -148,7 +155,7 @@ export function useAchievementProgress() {
 
 export function getNextAchievement(
   achievements: Achievement[],
-  progress: { totalAgents: number; totalLikes: number; totalUsage: number; totalClones: number } | null
+  progress: { totalAgents: number; totalLikes: number; totalUsage: number; totalClones: number; activeDays?: number } | null
 ): { definition: AchievementDefinition; nextLevel: number; current: number; required: number } | null {
   if (!progress) return null;
 
@@ -174,6 +181,9 @@ export function getNextAchievement(
         case "clone_master":
           current = progress.totalClones;
           break;
+        case "active_user":
+          current = progress.activeDays || 0;
+          break;
         default:
           current = 0;
       }
@@ -190,4 +200,25 @@ export function getNextAchievement(
   }
 
   return null;
+}
+
+// Hook to log user activity
+export function useLogActivity() {
+  const { user } = useAuth();
+
+  const logActivity = async () => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from("user_activity_log")
+        .insert({ user_id: user.id })
+        .select()
+        .single();
+    } catch {
+      // Ignore duplicate key errors (already logged today)
+    }
+  };
+
+  return logActivity;
 }

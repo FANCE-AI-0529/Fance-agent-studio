@@ -2987,6 +2987,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_log: {
+        Row: {
+          activity_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_follows: {
         Row: {
           created_at: string | null
@@ -3361,6 +3382,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_and_grant_achievements: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       clone_agent: { Args: { source_id: string }; Returns: string }
       cosine_similarity: { Args: { a: Json; b: Json }; Returns: number }
       find_similar_entities: {

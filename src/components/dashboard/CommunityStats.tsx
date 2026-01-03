@@ -2,8 +2,10 @@ import { motion } from "framer-motion";
 import { Users, Bot, Sparkles, MessageCircle } from "lucide-react";
 import { useCommunityStats } from "@/hooks/useCommunityStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 export function CommunityStats() {
+  const navigate = useNavigate();
   const { data: stats, isLoading } = useCommunityStats();
 
   if (isLoading) {
@@ -22,24 +24,28 @@ export function CommunityStats() {
       value: formatLargeNumber(stats?.total_creators || 0),
       label: "创作者",
       suffix: "+",
+      path: "/leaderboard",
     },
     {
       icon: Bot,
       value: formatLargeNumber(stats?.total_agents || 0),
       label: "Agent 已创建",
       suffix: "+",
+      path: "/builder",
     },
     {
       icon: Sparkles,
       value: formatLargeNumber(stats?.total_conversations || 0),
       label: "次对话",
       suffix: "+",
+      path: "/runtime",
     },
     {
       icon: MessageCircle,
       value: stats?.daily_active_sessions || 0,
       label: "今日活跃",
       suffix: "",
+      path: undefined,
     },
   ];
 
@@ -56,7 +62,8 @@ export function CommunityStats() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 + index * 0.1 }}
-          className="flex items-center gap-2 text-muted-foreground"
+          className={`flex items-center gap-2 text-muted-foreground ${item.path ? "cursor-pointer hover:text-foreground transition-colors" : ""}`}
+          onClick={() => item.path && navigate(item.path)}
         >
           <item.icon className="h-4 w-4" />
           <span className="text-sm">
