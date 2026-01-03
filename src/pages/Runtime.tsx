@@ -57,6 +57,7 @@ import { ContextPanelContent } from "@/components/runtime/ContextPanelContent";
 import { AgentAvatarAnimated, AvatarState } from "@/components/runtime/AgentAvatarAnimated";
 import { SceneBackground, scenePresets } from "@/components/runtime/SceneBackground";
 import { ScenarioSelector } from "@/components/runtime/ScenarioSelector";
+import { ScenarioPrompts } from "@/components/runtime/ScenarioPrompts";
 import { MemoryPanel } from "@/components/runtime/MemoryPanel";
 import { ImmersiveHeader } from "@/components/runtime/ImmersiveHeader";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
@@ -882,13 +883,24 @@ const Runtime = () => {
     setActiveScenario(scenario);
     
     if (scenario) {
-      // Add opening message if available
+      // Add enhanced opening message if available
       if (scenario.openingLines && scenario.openingLines.length > 0) {
         const opening = scenario.openingLines[Math.floor(Math.random() * scenario.openingLines.length)];
+        const roleInfo = [];
+        if (scenario.agentRole) roleInfo.push(`🤖 AI扮演: **${scenario.agentRole}**`);
+        if (scenario.userRole) roleInfo.push(`👤 你扮演: **${scenario.userRole}**`);
+        
+        const welcomeContent = [
+          `🎭 **${scenario.name}**`,
+          scenario.description ? `\n${scenario.description}` : "",
+          roleInfo.length > 0 ? `\n\n${roleInfo.join(" | ")}` : "",
+          `\n\n---\n\n${opening}`,
+        ].filter(Boolean).join("");
+        
         setLocalMessages(prev => [...prev, {
           id: `scenario-welcome-${Date.now()}`,
           role: "assistant" as const,
-          content: `**${scenario.name}**\n\n${opening}`,
+          content: welcomeContent,
           timestamp: new Date(),
           isNew: true,
         }]);
@@ -1009,7 +1021,7 @@ const Runtime = () => {
                 {!isDeveloperMode && activeScenario && (
                   <SceneBackground
                     scene={(activeScenario.sceneBackground?.preset as string) || "default"}
-                    className="absolute inset-0"
+                    className="absolute inset-0 z-0 pointer-events-none"
                   />
                 )}
                 
@@ -1152,7 +1164,7 @@ const Runtime = () => {
                 )}
 
                 {/* Messages or Welcome Guide */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-10">
                   {localMessages.length === 0 && currentPhase === "idle" ? (
                     <WelcomeGuide 
                       agent={selectedAgent} 
@@ -1263,7 +1275,18 @@ const Runtime = () => {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-border bg-card/30">
+                <div className="p-4 border-t border-border bg-card/80 backdrop-blur-sm relative z-20">
+                  {/* Scenario Quick Prompts */}
+                  {activeScenario?.suggestedPrompts && activeScenario.suggestedPrompts.length > 0 && currentPhase === "idle" && (
+                    <ScenarioPrompts
+                      prompts={activeScenario.suggestedPrompts}
+                      onSelect={(prompt) => {
+                        setInput(prompt);
+                      }}
+                      disabled={currentPhase !== "idle"}
+                    />
+                  )}
+                  
                   {/* Quick Commands */}
                   {showQuickCommands && (
                     <div className="mb-3">
