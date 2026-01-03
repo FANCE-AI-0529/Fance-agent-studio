@@ -3,6 +3,7 @@ import { Trophy, ChevronRight, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   useUserAchievements, 
   useAchievementProgress, 
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 
 export function AchievementShowcase() {
+  const navigate = useNavigate();
   const { data: achievements = [], isLoading: achievementsLoading } = useUserAchievements();
   const { data: progress, isLoading: progressLoading } = useAchievementProgress();
 
@@ -46,10 +48,12 @@ export function AchievementShowcase() {
             ({achievements.length}/{ACHIEVEMENT_DEFINITIONS.reduce((sum, d) => sum + d.levels.length, 0)})
           </span>
         </div>
-        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-          查看全部
-          <ChevronRight className="h-3 w-3" />
-        </Button>
+        <Link to="/achievements">
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
+            查看全部
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        </Link>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
@@ -135,7 +139,11 @@ export function AchievementShowcase() {
             <p className="text-sm text-muted-foreground mb-2">
               开始创建你的第一个 Agent，解锁第一个成就！
             </p>
-            <Button size="sm" variant="outline">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => navigate("/builder?wizard=true")}
+            >
               立即开始
             </Button>
           </div>

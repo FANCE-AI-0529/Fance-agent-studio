@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { MessageCircle, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 interface UserStat {
   label: string;
@@ -9,6 +10,7 @@ interface UserStat {
   trend?: "up" | "down" | "neutral";
   icon: typeof MessageCircle;
   color: string;
+  path?: string;
 }
 
 interface UserStatsCardsProps {
@@ -26,6 +28,8 @@ export function UserStatsCards({
   weeklyGrowth = 0,
   isLoading = false,
 }: UserStatsCardsProps) {
+  const navigate = useNavigate();
+  
   const stats: UserStat[] = [
     {
       label: "今日对话",
@@ -34,6 +38,7 @@ export function UserStatsCards({
       trend: conversationsToday > 0 ? "up" : "neutral",
       icon: MessageCircle,
       color: "primary",
+      path: "/runtime",
     },
     {
       label: "节省时间",
@@ -44,6 +49,7 @@ export function UserStatsCards({
       trend: timeSavedMinutes > 0 ? "up" : "neutral",
       icon: Clock,
       color: "cognitive",
+      path: "/runtime",
     },
     {
       label: "完成任务",
@@ -52,6 +58,7 @@ export function UserStatsCards({
       trend: tasksCompleted > 0 ? "up" : "neutral",
       icon: CheckCircle2,
       color: "governance",
+      path: "/runtime",
     },
     {
       label: "效率提升",
@@ -60,6 +67,7 @@ export function UserStatsCards({
       trend: weeklyGrowth > 0 ? "up" : "neutral",
       icon: TrendingUp,
       color: "status-executing",
+      path: "/profile",
     },
   ];
 
@@ -82,10 +90,11 @@ export function UserStatsCards({
       {stats.map((stat, index) => (
         <motion.div
           key={stat.label}
-          className="panel p-4 rounded-xl"
+          className="panel p-4 rounded-xl cursor-pointer hover:border-primary/50 transition-colors"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
+          onClick={() => stat.path && navigate(stat.path)}
         >
           <div className="flex items-center justify-between mb-3">
             <div className={`w-10 h-10 rounded-lg bg-${stat.color}/10 flex items-center justify-center`}>

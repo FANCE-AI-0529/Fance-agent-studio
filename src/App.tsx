@@ -19,6 +19,7 @@ import Invite from "./pages/Invite";
 import Challenges from "./pages/Challenges";
 import ChallengeDetail from "./pages/ChallengeDetail";
 import InspirationDetail from "./pages/InspirationDetail";
+import Achievements from "./pages/Achievements";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
@@ -192,6 +193,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <MainLayout>
               <Profile />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/achievements"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Achievements />
             </MainLayout>
           </ProtectedRoute>
         }
