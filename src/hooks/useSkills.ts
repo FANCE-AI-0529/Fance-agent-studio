@@ -13,14 +13,12 @@ export function usePublishedSkills() {
   return useQuery({
     queryKey: ["skills", "published"],
     queryFn: async () => {
-      console.log("[usePublishedSkills] Fetching published skills...");
       const { data, error } = await supabase
         .from("skills")
         .select("*")
         .eq("is_published", true)
-        .order("created_at", { ascending: false });
+        .order("downloads_count", { ascending: false });
 
-      console.log("[usePublishedSkills] Result:", { data, error });
       if (error) throw error;
       return data;
     },

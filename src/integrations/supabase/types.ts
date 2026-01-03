@@ -818,6 +818,51 @@ export type Database = {
           },
         ]
       }
+      creator_earnings: {
+        Row: {
+          amount: number
+          bundle_id: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          skill_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          bundle_id?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          skill_id?: string | null
+          transaction_type?: string
+        }
+        Update: {
+          amount?: number
+          bundle_id?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          skill_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_earnings_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "skill_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_inspiration: {
         Row: {
           agent_id: string | null
@@ -1822,6 +1867,118 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_bundles: {
+        Row: {
+          author_id: string | null
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          downloads_count: number | null
+          id: string
+          is_featured: boolean | null
+          is_free: boolean | null
+          name: string
+          price: number | null
+          skill_ids: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          downloads_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_free?: boolean | null
+          name: string
+          price?: number | null
+          skill_ids?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          downloads_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_free?: boolean | null
+          name?: string
+          price?: number | null
+          skill_ids?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      skill_installs: {
+        Row: {
+          id: string
+          installed_at: string
+          skill_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          installed_at?: string
+          skill_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          installed_at?: string
+          skill_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_installs_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          skill_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          skill_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          skill_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_ratings_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_versions: {
         Row: {
           change_summary: string | null
@@ -1879,45 +2036,75 @@ export type Database = {
         Row: {
           author_id: string | null
           category: string
+          changelog: string | null
           content: string | null
           created_at: string
           description: string | null
+          downloads_count: number | null
           id: string
           inputs: Json | null
+          is_featured: boolean | null
+          is_free: boolean | null
           is_published: boolean
+          is_verified: boolean | null
           name: string
           outputs: Json | null
           permissions: string[]
+          preview_images: string[] | null
+          price: number | null
+          rating: number | null
+          ratings_count: number | null
+          tags: string[] | null
           updated_at: string
           version: string
         }
         Insert: {
           author_id?: string | null
           category?: string
+          changelog?: string | null
           content?: string | null
           created_at?: string
           description?: string | null
+          downloads_count?: number | null
           id?: string
           inputs?: Json | null
+          is_featured?: boolean | null
+          is_free?: boolean | null
           is_published?: boolean
+          is_verified?: boolean | null
           name: string
           outputs?: Json | null
           permissions?: string[]
+          preview_images?: string[] | null
+          price?: number | null
+          rating?: number | null
+          ratings_count?: number | null
+          tags?: string[] | null
           updated_at?: string
           version?: string
         }
         Update: {
           author_id?: string | null
           category?: string
+          changelog?: string | null
           content?: string | null
           created_at?: string
           description?: string | null
+          downloads_count?: number | null
           id?: string
           inputs?: Json | null
+          is_featured?: boolean | null
+          is_free?: boolean | null
           is_published?: boolean
+          is_verified?: boolean | null
           name?: string
           outputs?: Json | null
           permissions?: string[]
+          preview_images?: string[] | null
+          price?: number | null
+          rating?: number | null
+          ratings_count?: number | null
+          tags?: string[] | null
           updated_at?: string
           version?: string
         }
@@ -2702,6 +2889,11 @@ export type Database = {
       }
       increment_agent_usage: {
         Args: { target_agent_id: string }
+        Returns: undefined
+      }
+      install_skill: { Args: { p_skill_id: string }; Returns: undefined }
+      submit_skill_rating: {
+        Args: { p_rating: number; p_review?: string; p_skill_id: string }
         Returns: undefined
       }
       toggle_agent_like: { Args: { target_agent_id: string }; Returns: boolean }
