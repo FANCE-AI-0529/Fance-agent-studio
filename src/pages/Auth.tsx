@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bot, Mail, Lock, User, ArrowRight, Loader2, Phone, Sparkles } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Loader2, Phone, Sparkles } from "lucide-react";
+import logoFull from "@/assets/logo-full.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -348,10 +349,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 border border-primary/20">
-            <Bot className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold">Fance OS</h1>
+          <img src={logoFull} alt="FANCE.AI" className="h-16 mx-auto mb-4" />
           <p className="text-muted-foreground text-sm mt-1 flex items-center justify-center gap-1">
             <Sparkles className="h-3 w-3" />
             技能驱动，智能无限

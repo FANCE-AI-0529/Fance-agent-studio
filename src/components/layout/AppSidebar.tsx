@@ -10,6 +10,7 @@ import {
   User,
   Plug,
 } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,19 +69,15 @@ export function AppSidebar() {
         <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Bot className="h-5 w-5 text-primary-foreground" />
-              </div>
+              <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg" />
               <div>
-                <div className="font-semibold text-sm">Fance OS</div>
+                <div className="font-semibold text-sm">Fance</div>
                 <div className="text-[10px] text-muted-foreground">v1.0</div>
               </div>
             </div>
           )}
           {collapsed && (
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-              <Bot className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg mx-auto" />
           )}
         </div>
 
