@@ -1,11 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Wrench, Sparkles, MessageSquare, User } from "lucide-react";
+import { Home, Wrench, Trophy, MessageSquare, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "/", label: "首页", labelEn: "Home", icon: Home },
   { path: "/builder", label: "创建", labelEn: "Build", icon: Wrench },
-  { path: "/foundry", label: "能力", labelEn: "Skills", icon: Sparkles },
+  { path: "/leaderboard", label: "榜单", labelEn: "Rank", icon: Trophy },
   { path: "/runtime", label: "对话", labelEn: "Chat", icon: MessageSquare },
   { path: "/profile", label: "我的", labelEn: "Me", icon: User },
 ];

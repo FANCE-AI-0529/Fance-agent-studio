@@ -8,7 +8,9 @@ import {
   LayoutDashboard,
   LogOut,
   User,
-  Plug
+  Plug,
+  Trophy,
+  Gift
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -40,6 +42,7 @@ const mainNavItems = [
   { title: "Agent 构建器", url: "/builder", icon: Bot },
   { title: "技能工坊", url: "/foundry", icon: Hammer },
   { title: "运行环境", url: "/runtime", icon: Play },
+  { title: "排行榜", url: "/leaderboard", icon: Trophy },
   { title: "API 中心", url: "/api-hub", icon: Plug },
 ];
 

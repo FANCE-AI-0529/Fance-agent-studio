@@ -13,6 +13,8 @@ import Builder from "./pages/Builder";
 import Foundry from "./pages/Foundry";
 import Runtime from "./pages/Runtime";
 import Profile from "./pages/Profile";
+import Creator from "./pages/Creator";
+import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
@@ -122,6 +124,26 @@ function AppRoutes() {
           <ProtectedRoute>
             <MainLayout>
               <Runtime />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Leaderboard />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/creator/:id"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Creator />
             </MainLayout>
           </ProtectedRoute>
         }
