@@ -124,7 +124,7 @@ const promptTemplates = [
     id: "mplp",
     name: "MPLP Agent",
     description: "遵循MPLP协议的安全Agent",
-    prompt: `你是运行在 Agent OS 平台上的智能助手，严格遵循 MPLP 协议。
+    prompt: `你是运行在 Fance OS 平台上的智能助手，严格遵循 MPLP 协议。
 
 ## MPLP 权限级别
 - 🟢 低风险 (read): 读取、查询 - 可直接执行

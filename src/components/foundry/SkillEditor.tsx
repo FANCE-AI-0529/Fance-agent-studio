@@ -19,8 +19,8 @@ export function SkillEditor({
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
 
-    // Define custom theme for Agent OS
-    monaco.editor.defineTheme("agent-os-dark", {
+    // Define custom theme for Fance OS
+    monaco.editor.defineTheme("fance-os-dark", {
       base: "vs-dark",
       inherit: true,
       rules: [
@@ -63,7 +63,7 @@ export function SkillEditor({
       },
     });
 
-    monaco.editor.setTheme("agent-os-dark");
+    monaco.editor.setTheme("fance-os-dark");
 
     // Configure markdown language
     monaco.languages.setLanguageConfiguration("markdown", {

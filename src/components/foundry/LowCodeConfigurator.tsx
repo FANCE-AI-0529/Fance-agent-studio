@@ -174,7 +174,7 @@ export function LowCodeConfigurator({
 name: "${config.name}"
 version: "1.0.0"
 description: "${config.description}"
-author: "Agent OS Studio"
+author: "Fance OS"
 permissions:
 ${config.permissions.map(p => `  - ${p}`).join("\n")}
 inputs:
