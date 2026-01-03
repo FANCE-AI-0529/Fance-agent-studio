@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lightbulb, ArrowRight, Sparkles } from "lucide-react";
+import { Lightbulb, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useDailyInspiration } from "@/hooks/useDailyInspiration";
+import { useDailyInspiration, useIncrementInspirationView } from "@/hooks/useDailyInspiration";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Carousel,
   CarouselContent,
@@ -21,7 +25,30 @@ const categoryColors: Record<string, string> = {
 };
 
 export function DailyInspiration() {
-  const { data: inspirations, isLoading } = useDailyInspiration(3);
+  const navigate = useNavigate();
+  const { data: inspirations, isLoading, refetch } = useDailyInspiration(3);
+  const incrementView = useIncrementInspirationView();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateNew = async () => {
+    setIsGenerating(true);
+    try {
+      const { error } = await supabase.functions.invoke('generate-daily-inspiration');
+      if (error) throw error;
+      toast.success("今日灵感已更新");
+      refetch();
+    } catch (err) {
+      console.error('Failed to generate inspiration:', err);
+      toast.error("生成失败，请稍后重试");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCardClick = (inspirationId: string) => {
+    incrementView(inspirationId);
+    navigate(`/inspiration/${inspirationId}`);
+  };
 
   if (isLoading) {
     return (
@@ -54,12 +81,27 @@ export function DailyInspiration() {
             每日更新
           </Badge>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          onClick={handleGenerateNew}
+          disabled={isGenerating}
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+          {isGenerating ? '生成中...' : '刷新灵感'}
+        </Button>
       </div>
 
       {/* Desktop: Grid layout */}
       <div className="hidden md:grid md:grid-cols-3 gap-4">
         {inspirations.map((inspiration, index) => (
-          <InspirationCard key={inspiration.id} inspiration={inspiration} index={index} />
+          <InspirationCard 
+            key={inspiration.id} 
+            inspiration={inspiration} 
+            index={index}
+            onClick={() => handleCardClick(inspiration.id)}
+          />
         ))}
       </div>
 
@@ -69,7 +111,11 @@ export function DailyInspiration() {
           <CarouselContent>
             {inspirations.map((inspiration, index) => (
               <CarouselItem key={inspiration.id}>
-                <InspirationCard inspiration={inspiration} index={index} />
+                <InspirationCard 
+                  inspiration={inspiration} 
+                  index={index}
+                  onClick={() => handleCardClick(inspiration.id)}
+                />
               </CarouselItem>
             ))}
           </CarouselContent>
@@ -91,9 +137,10 @@ interface InspirationCardProps {
     view_count: number;
   };
   index: number;
+  onClick: () => void;
 }
 
-function InspirationCard({ inspiration, index }: InspirationCardProps) {
+function InspirationCard({ inspiration, index, onClick }: InspirationCardProps) {
   const colorClass = categoryColors[inspiration.category] || categoryColors.general;
 
   return (
@@ -101,6 +148,7 @@ function InspirationCard({ inspiration, index }: InspirationCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
+      onClick={onClick}
       className="group relative overflow-hidden rounded-xl border border-border bg-card p-5 hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer"
     >
       {/* Category Badge */}
