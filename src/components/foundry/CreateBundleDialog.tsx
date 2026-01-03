@@ -15,9 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package, Search, X, ImageIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMySkills } from "@/hooks/useSkills";
 import { useCreateBundle } from "@/hooks/useSkillBundles";
 import { toast } from "@/hooks/use-toast";
+import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter";
 
 interface CreateBundleDialogProps {
   open: boolean;
@@ -30,6 +38,7 @@ export function CreateBundleDialog({ open, onOpenChange }: CreateBundleDialogPro
   const [coverImage, setCoverImage] = useState("");
   const [isFree, setIsFree] = useState(true);
   const [price, setPrice] = useState("");
+  const [category, setCategory] = useState<BundleCategory>("general");
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -76,6 +85,7 @@ export function CreateBundleDialog({ open, onOpenChange }: CreateBundleDialogPro
         cover_image: coverImage.trim() || null,
         is_free: isFree,
         price: isFree ? null : parseFloat(price) || null,
+        category,
         skill_ids: selectedSkillIds,
       },
       {
@@ -93,6 +103,7 @@ export function CreateBundleDialog({ open, onOpenChange }: CreateBundleDialogPro
     setCoverImage("");
     setIsFree(true);
     setPrice("");
+    setCategory("general");
     setSelectedSkillIds([]);
     setSearchQuery("");
   };
@@ -163,6 +174,24 @@ export function CreateBundleDialog({ open, onOpenChange }: CreateBundleDialogPro
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">分类</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as BundleCategory)}>
+                <SelectTrigger id="category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(BUNDLE_CATEGORIES)
+                    .filter(([key]) => key !== "all")
+                    .map(([key, { label }]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
