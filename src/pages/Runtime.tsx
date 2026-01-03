@@ -390,14 +390,21 @@ const Runtime = () => {
   // Initialize with welcome message if no session
   useEffect(() => {
     if (!chatSession && !isLoadingSession && localMessages.length === 0) {
-      const agentName = selectedAgent?.name || "MPLP 智能助手";
+      const agentName = selectedAgent?.name || "Fance 智能助手";
+      const isDefaultAgent = !selectedAgent;
+      
+      // Different welcome messages for default Fance guide vs custom agents
+      const welcomeContent = user
+        ? isDefaultAgent
+          ? `您好！我是 **${agentName}**，您的专属平台向导。\n\n我可以帮您：\n- 了解如何快速创建您的第一个智能体\n- 探索平台上的各种技能和能力包\n- 解答关于 Fance OS 的任何问题\n- 推荐适合您需求的智能体模板\n\n请问有什么我可以帮您的吗？`
+          : `您好！我是 **${agentName}**，很高兴为您服务。\n\n请告诉我您需要什么帮助，我会尽力协助您完成任务。`
+        : `您好！我是 **${agentName}**。请先登录以保存对话历史。`;
+      
       setLocalMessages([
         {
           id: "welcome",
           role: "assistant",
-          content: user 
-            ? `您好！我是 **${agentName}**，运行在 Fance OS 平台上。\n\n🤖 **真实 AI 对话已启用** - 使用 Lovable AI Gateway 提供智能响应\n\n您可以尝试以下操作来体验不同的权限级别：\n\n🟢 **低风险**：查看文件、搜索数据\n🟡 **中风险**：调用API、生成表单、发送邮件\n🔴 **高风险**：删除数据、执行脚本、支付处理\n\n或者直接向我提问任何问题！`
-            : `您好！我是 **${agentName}**。请先登录以保存对话历史。`,
+          content: welcomeContent,
           timestamp: new Date(),
           status: "idle",
         },

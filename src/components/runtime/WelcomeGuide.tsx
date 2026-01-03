@@ -1,16 +1,16 @@
 import React from "react";
 import { 
-  Bot, 
   Sparkles, 
-  FileText, 
-  Database, 
-  Globe, 
-  Shield, 
-  Zap,
   ArrowRight,
   MessageSquare,
   Settings,
-  Lightbulb
+  Lightbulb,
+  Blocks,
+  BookOpen,
+  Rocket,
+  Layers,
+  Wand2,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,67 +23,65 @@ interface QuickAction {
   icon: React.ReactNode;
   label: string;
   command: string;
-  category: "read" | "network" | "write" | "admin";
+  category: "guide" | "explore" | "learn";
   description: string;
 }
 
 const quickActions: QuickAction[] = [
   {
-    icon: <FileText className="h-4 w-4" />,
-    label: "读取配置文件",
-    command: "帮我读取系统配置文件",
-    category: "read",
-    description: "安全读取本地文件内容",
+    icon: <Rocket className="h-4 w-4" />,
+    label: "创建第一个智能体",
+    command: "如何创建我的第一个智能体？",
+    category: "guide",
+    description: "分步指导构建流程",
   },
   {
-    icon: <Database className="h-4 w-4" />,
-    label: "查询数据",
-    command: "查询今日的处理数据统计",
-    category: "read",
-    description: "从数据库检索信息",
+    icon: <Blocks className="h-4 w-4" />,
+    label: "探索技能商店",
+    command: "有哪些可用的技能？",
+    category: "explore",
+    description: "展示平台技能能力",
   },
   {
-    icon: <Globe className="h-4 w-4" />,
-    label: "调用API",
-    command: "调用外部API获取最新数据",
-    category: "network",
-    description: "发起网络请求（需确认）",
+    icon: <BookOpen className="h-4 w-4" />,
+    label: "智能体模板",
+    command: "推荐一些适合新手的智能体模板",
+    category: "guide",
+    description: "快速上手模板推荐",
   },
   {
-    icon: <FileText className="h-4 w-4" />,
-    label: "生成申请表",
-    command: "帮我生成一份餐饮经营许可证申请表",
-    category: "write",
-    description: "创建表单文档（需确认）",
+    icon: <Layers className="h-4 w-4" />,
+    label: "能力包介绍",
+    command: "什么是能力包？如何使用？",
+    category: "learn",
+    description: "能力包功能说明",
   },
   {
-    icon: <Zap className="h-4 w-4" />,
-    label: "执行脚本",
-    command: "执行自动化部署脚本",
-    category: "admin",
-    description: "运行系统脚本（高风险）",
+    icon: <Wand2 className="h-4 w-4" />,
+    label: "系统提示词技巧",
+    command: "如何编写好的系统提示词？",
+    category: "learn",
+    description: "提示词最佳实践",
   },
   {
-    icon: <Shield className="h-4 w-4" />,
-    label: "删除数据",
-    command: "删除过期的临时数据",
-    category: "admin",
-    description: "删除操作（高风险）",
+    icon: <HelpCircle className="h-4 w-4" />,
+    label: "常见问题",
+    command: "Fance OS 平台有哪些常见问题？",
+    category: "learn",
+    description: "平台使用FAQ",
   },
 ];
 
 const categoryColors = {
-  read: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  network: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  write: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  admin: "bg-red-500/10 text-red-600 border-red-500/20",
+  guide: "bg-primary/10 text-primary border-primary/20",
+  explore: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  learn: "bg-amber-500/10 text-amber-600 border-amber-500/20",
 };
 
 const categoryLabels = {
-  read: "低风险",
-  network: "中风险",
-  write: "中风险",
-  admin: "高风险",
+  guide: "引导",
+  explore: "探索",
+  learn: "学习",
 };
 
 interface WelcomeGuideProps {
@@ -93,17 +91,17 @@ interface WelcomeGuideProps {
 
 // Helper to get avatar from agent manifest
 function getAgentAvatar(agent: Agent | null): AgentAvatar {
-  if (!agent) return { iconId: "bot", colorId: "primary" };
+  if (!agent) return { iconId: "sparkles", colorId: "primary" };
   const manifest = agent.manifest as any;
   if (manifest?.avatar) {
     return manifest.avatar as AgentAvatar;
   }
-  return { iconId: "bot", colorId: "primary" };
+  return { iconId: "sparkles", colorId: "primary" };
 }
 
 const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) => {
-  const agentName = agent?.name || "MPLP 智能助手";
-  const agentDepartment = agent?.department || "Fance OS 平台";
+  const agentName = agent?.name || "Fance 智能助手";
+  const agentDepartment = agent?.department || "平台向导";
   const avatar = getAgentAvatar(agent);
 
   return (
@@ -120,18 +118,18 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
           </div>
         </div>
 
-        {/* What is an Agent */}
+        {/* What is Fance OS */}
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-primary" />
-              什么是智能体 (Agent)?
+              欢迎来到 Fance OS
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              <span className="font-medium text-foreground">智能体</span> 是一个可以理解自然语言、执行任务的 AI 助手。
-              它具备多种技能，可以帮助您完成各种工作。
+              我是您的<span className="font-medium text-foreground">专属平台向导</span>，
+              可以帮助您了解如何构建智能体、探索各种技能和能力包。
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               <Badge variant="outline" className="gap-1">
@@ -140,26 +138,26 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
               </Badge>
               <Badge variant="outline" className="gap-1">
                 <Sparkles className="h-3 w-3" />
-                智能理解
+                智能引导
               </Badge>
               <Badge variant="outline" className="gap-1">
-                <Shield className="h-3 w-3" />
-                安全确认
+                <Blocks className="h-3 w-3" />
+                技能探索
               </Badge>
               <Badge variant="outline" className="gap-1">
                 <Settings className="h-3 w-3" />
-                可配置技能
+                构建指导
               </Badge>
             </div>
           </CardContent>
         </Card>
 
-        {/* How to Use */}
+        {/* Quick Actions - Building Guide */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">如何使用智能体?</CardTitle>
+            <CardTitle className="text-base">我可以帮您...</CardTitle>
             <CardDescription>
-              直接用自然语言告诉我您需要什么，我会自动选择合适的技能来完成
+              点击下方任意选项开始，或直接输入您的问题
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -204,21 +202,9 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
           </CardContent>
         </Card>
 
-        {/* Security Notice */}
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-          <Shield className="h-5 w-5 text-governance flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium">安全提示</p>
-            <p className="text-muted-foreground mt-1">
-              涉及敏感操作（如网络请求、文件写入、数据删除）时，智能体会先向您确认，
-              您可以查看详情后决定是否执行。
-            </p>
-          </div>
-        </div>
-
         {/* Start Prompt */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>点击上方示例或在下方输入框中输入您的需求开始对话</p>
+          <p>有任何关于 Fance OS 的问题，都可以问我！</p>
         </div>
       </div>
     </div>
