@@ -652,7 +652,7 @@ const Foundry = () => {
       <TooltipProvider>
         <div className="h-full flex flex-col">
           {/* 顶部导航栏 */}
-          <div className="h-14 px-6 flex items-center justify-between border-b border-border bg-card/80">
+          <div className="h-14 px-6 flex items-center justify-between border-b border-border bg-card">
             <div className="flex items-center gap-6">
               <h1 className="text-lg font-semibold">能力工坊</h1>
               <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
@@ -749,12 +749,12 @@ const Foundry = () => {
             )}
             
             {consumerView === "bundles" && (
-              <div className="p-6 space-y-6 overflow-y-auto h-full">
+              <div className="p-6 space-y-8 overflow-y-auto h-full">
                 {/* 头部 */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pb-4 border-b border-border">
                   <div>
                     <h2 className="text-xl font-semibold">能力包</h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mt-1">
                       打包多个相关能力，一键安装
                     </p>
                   </div>
@@ -817,7 +817,7 @@ const Foundry = () => {
                       value={bundleSearch}
                       onChange={(e) => setBundleSearch(e.target.value)}
                       placeholder="搜索能力包..."
-                      className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full h-10 pl-10 pr-4 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
@@ -831,7 +831,7 @@ const Foundry = () => {
                 {loadingBundles ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-64 bg-muted/50 rounded-lg animate-pulse" />
+                      <div key={i} className="h-64 bg-card border border-border rounded-xl animate-pulse" />
                     ))}
                   </div>
                 ) : bundles.length > 0 ? (

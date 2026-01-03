@@ -23,11 +23,11 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6"
+        className="bg-card rounded-xl border border-border p-6"
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
               <MessageCircle className="h-7 w-7 text-primary" />
             </div>
             <div>
@@ -50,16 +50,17 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-cognitive/5 to-governance/5 border border-border p-6"
+      className="bg-card rounded-xl border border-border p-6 relative overflow-hidden"
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-cognitive/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
       
       <div className="relative">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium text-primary">新用户专享</span>
+          <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4" />
+            新用户专享
+          </div>
         </div>
         
         <h2 className="text-2xl font-bold mb-2">
@@ -70,7 +71,7 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50 border border-border">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-bold text-primary">1</span>
             </div>
@@ -80,9 +81,9 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
             </div>
           </div>
           
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-card/50 border border-border/50">
-            <div className="w-8 h-8 rounded-lg bg-cognitive/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-cognitive">2</span>
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50 border border-border">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-primary">2</span>
             </div>
             <div>
               <h4 className="font-medium text-sm mb-1">AI自动配置</h4>
@@ -90,9 +91,9 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
             </div>
           </div>
           
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-card/50 border border-border/50">
-            <div className="w-8 h-8 rounded-lg bg-governance/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-governance">3</span>
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50 border border-border">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-primary">3</span>
             </div>
             <div>
               <h4 className="font-medium text-sm mb-1">开始使用</h4>

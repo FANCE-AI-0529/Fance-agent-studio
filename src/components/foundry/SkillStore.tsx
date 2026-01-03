@@ -222,7 +222,7 @@ export function SkillStore({ onInstall, onCreateNew }: SkillStoreProps) {
               {/* 创建自己的能力 */}
               <section>
                 <Card
-                  className="border-dashed border-2 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                  className="border-dashed border-2 bg-card hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer rounded-xl"
                   onClick={onCreateNew}
                 >
                   <CardContent className="flex flex-col items-center justify-center py-8">
@@ -380,7 +380,7 @@ function SkillCard({
   const icon = getCategoryIcon(skill.category);
 
   return (
-    <Card className="group hover:shadow-md transition-all">
+    <Card className="group hover:border-primary/50 hover:shadow-lg transition-all rounded-xl">
       <CardHeader className="pb-2">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
@@ -451,7 +451,7 @@ function SkillCard({
 
 function SkillCardSkeleton() {
   return (
-    <Card>
+    <Card className="rounded-xl">
       <CardHeader className="pb-2">
         <div className="flex items-start gap-3">
           <Skeleton className="w-12 h-12 rounded-xl" />

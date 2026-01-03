@@ -5,14 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { SkillBundle } from "@/hooks/useSkillBundles";
 
-// Category gradient mapping
-const categoryGradients: Record<string, string> = {
-  general: "from-slate-500/20 to-slate-600/10",
-  development: "from-blue-500/20 to-blue-600/10",
-  data: "from-emerald-500/20 to-emerald-600/10",
-  content: "from-purple-500/20 to-purple-600/10",
-  automation: "from-orange-500/20 to-orange-600/10",
-  business: "from-rose-500/20 to-rose-600/10",
+// Category color mapping using design tokens
+const categoryColors: Record<string, string> = {
+  general: "bg-muted",
+  development: "bg-primary/10",
+  data: "bg-primary/10",
+  content: "bg-primary/10",
+  automation: "bg-primary/10",
+  business: "bg-primary/10",
 };
 
 interface SkillBundleCardProps {
@@ -46,13 +46,13 @@ export function SkillBundleCard({
 
   const skillCount = bundle.skill_ids?.length || 0;
   const isFreeBundle = bundle.is_free || !bundle.price || bundle.price === 0;
-  const gradientClass = categoryGradients[bundle.category || "general"] || categoryGradients.general;
+  const colorClass = categoryColors[bundle.category || "general"] || categoryColors.general;
 
   return (
-    <Card className="group hover:shadow-md transition-all overflow-hidden">
+    <Card className="group hover:border-primary/50 hover:shadow-lg transition-all overflow-hidden rounded-xl">
       {/* 封面图 */}
       {bundle.cover_image ? (
-        <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden relative">
+        <div className="h-32 bg-muted flex items-center justify-center overflow-hidden relative">
           <img
             src={bundle.cover_image}
             alt={bundle.name}
@@ -68,7 +68,7 @@ export function SkillBundleCard({
           )}
         </div>
       ) : (
-        <div className={cn("h-32 bg-gradient-to-br flex items-center justify-center relative", gradientClass)}>
+        <div className={cn("h-32 flex items-center justify-center relative", colorClass)}>
           <Package className="h-12 w-12 text-foreground/30" />
           {isPurchased && (
             <div className="absolute top-2 right-2">
