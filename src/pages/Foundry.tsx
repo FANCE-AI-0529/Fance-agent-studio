@@ -55,7 +55,11 @@ import { CreatorDashboard } from "@/components/foundry/CreatorDashboard";
 import { SkillBundleCard } from "@/components/foundry/SkillBundleCard";
 import { CreateBundleDialog } from "@/components/foundry/CreateBundleDialog";
 import { BundleDetailDialog } from "@/components/foundry/BundleDetailDialog";
-import { useSkillBundles, SkillBundle } from "@/hooks/useSkillBundles";
+import { EditBundleDialog } from "@/components/foundry/EditBundleDialog";
+import { MyBundlesPanel } from "@/components/foundry/MyBundlesPanel";
+import { BundleCategoryFilter, BundleCategory, BUNDLE_CATEGORIES } from "@/components/foundry/BundleCategoryFilter";
+import { useFeaturedBundles, SkillBundle } from "@/hooks/useSkillBundles";
+import { useBundlesByCategory } from "@/hooks/useBundlesByCategory";
 import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
 import {
   useMySkills,
@@ -307,7 +311,7 @@ function ValidationStatusCard({ validation }: { validation: ValidationResult }) 
 }
 
 // C端消费者视图类型
-type ConsumerView = "store" | "bundles" | "create" | "lowcode" | "creator";
+type ConsumerView = "store" | "bundles" | "myBundles" | "create" | "lowcode" | "creator";
 
 const Foundry = () => {
   const navigate = useNavigate();
@@ -319,13 +323,20 @@ const Foundry = () => {
   const [consumerView, setConsumerView] = useState<ConsumerView>("store");
   
   // Fetch bundles for the bundles tab
-  const { data: bundles = [], isLoading: loadingBundles } = useSkillBundles();
+  const [bundleCategory, setBundleCategory] = useState<BundleCategory>("all");
+  const [bundleSearch, setBundleSearch] = useState("");
+  const { data: bundles = [], isLoading: loadingBundles } = useBundlesByCategory(
+    bundleCategory,
+    bundleSearch
+  );
+  const { data: featuredBundles = [] } = useFeaturedBundles(4);
   const installBundle = useInstallBundle();
   
   // Bundle dialogs state
   const [showCreateBundle, setShowCreateBundle] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<SkillBundle | null>(null);
   const [showBundleDetail, setShowBundleDetail] = useState(false);
+  const [editBundle, setEditBundle] = useState<SkillBundle | null>(null);
   
   // 开发者模式状态
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
@@ -738,7 +749,8 @@ const Foundry = () => {
             )}
             
             {consumerView === "bundles" && (
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-6 overflow-y-auto h-full">
+                {/* 头部 */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-semibold">能力包</h2>
@@ -746,13 +758,76 @@ const Foundry = () => {
                       打包多个相关能力，一键安装
                     </p>
                   </div>
-                  {user && (
-                    <Button onClick={() => setShowCreateBundle(true)} className="gap-2">
-                      <Package className="h-4 w-4" />
-                      创建能力包
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {user && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setConsumerView("myBundles")}
+                          className="gap-2"
+                        >
+                          <User className="h-4 w-4" />
+                          我的能力包
+                        </Button>
+                        <Button onClick={() => setShowCreateBundle(true)} className="gap-2">
+                          <Package className="h-4 w-4" />
+                          创建能力包
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
+
+                {/* 精选能力包 */}
+                {featuredBundles.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      精选推荐
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {featuredBundles.map((bundle) => (
+                        <SkillBundleCard
+                          key={bundle.id}
+                          bundle={bundle}
+                          onView={() => {
+                            setSelectedBundle(bundle);
+                            setShowBundleDetail(true);
+                          }}
+                          onInstall={() => {
+                            if (bundle.skill_ids && bundle.skill_ids.length > 0) {
+                              installBundle.mutate({
+                                bundleId: bundle.id,
+                                skillIds: bundle.skill_ids,
+                              });
+                            }
+                          }}
+                          isInstalling={installBundle.isPending}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 搜索和筛选 */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <input
+                      type="text"
+                      value={bundleSearch}
+                      onChange={(e) => setBundleSearch(e.target.value)}
+                      placeholder="搜索能力包..."
+                      className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <BundleCategoryFilter
+                    activeCategory={bundleCategory}
+                    onCategoryChange={setBundleCategory}
+                  />
+                </div>
+
+                {/* 能力包列表 */}
                 {loadingBundles ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3].map((i) => (
@@ -778,17 +853,24 @@ const Foundry = () => {
                           }
                         }}
                         isInstalling={installBundle.isPending}
+                        onEdit={user && bundle.author_id === user.id ? () => setEditBundle(bundle) : undefined}
                       />
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-12">
                     <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                    <p className="text-muted-foreground">暂无能力包</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      创作者可以将多个相关能力打包成能力包
+                    <p className="text-muted-foreground">
+                      {bundleSearch || bundleCategory !== "all" 
+                        ? "没有找到匹配的能力包" 
+                        : "暂无能力包"}
                     </p>
-                    {user && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {bundleSearch || bundleCategory !== "all"
+                        ? "试试其他搜索条件"
+                        : "创作者可以将多个相关能力打包成能力包"}
+                    </p>
+                    {user && !bundleSearch && bundleCategory === "all" && (
                       <Button 
                         onClick={() => setShowCreateBundle(true)} 
                         variant="outline" 
@@ -800,6 +882,22 @@ const Foundry = () => {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {consumerView === "myBundles" && (
+              <div className="p-6 overflow-y-auto h-full">
+                <div className="mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setConsumerView("bundles")}
+                    className="gap-2"
+                  >
+                    ← 返回能力包
+                  </Button>
+                </div>
+                <MyBundlesPanel />
               </div>
             )}
             
@@ -826,6 +924,19 @@ const Foundry = () => {
               />
             )}
           </div>
+
+          {/* Dialogs */}
+          <CreateBundleDialog open={showCreateBundle} onOpenChange={setShowCreateBundle} />
+          <BundleDetailDialog
+            bundle={selectedBundle}
+            open={showBundleDetail}
+            onOpenChange={setShowBundleDetail}
+          />
+          <EditBundleDialog
+            bundle={editBundle}
+            open={!!editBundle}
+            onOpenChange={(open) => !open && setEditBundle(null)}
+          />
         </div>
       </TooltipProvider>
     );

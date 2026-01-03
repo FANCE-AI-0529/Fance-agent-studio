@@ -8,6 +8,7 @@ import {
   Package,
   Settings,
   Plus,
+  Layers,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMySkills, usePublishSkill, useUpdateSkill } from "@/hooks/useSkills";
 import { useEarningsStats, useCreatorSkillStats } from "@/hooks/useCreatorEarnings";
+import { useMyBundles } from "@/hooks/useSkillBundles";
 import { useAuth } from "@/contexts/AuthContext";
 import { DownloadTrendChart } from "./DownloadTrendChart";
 import { EarningsDetailList } from "./EarningsDetailList";
+import { MyBundlesPanel } from "./MyBundlesPanel";
 
 interface CreatorDashboardProps {
   onCreateNew?: () => void;
@@ -29,10 +32,16 @@ interface CreatorDashboardProps {
 export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardProps) {
   const { user } = useAuth();
   const { data: mySkills = [], isLoading: loadingSkills } = useMySkills();
+  const { data: myBundles = [], isLoading: loadingBundles } = useMyBundles();
   const { data: earningsStats, isLoading: loadingEarnings } = useEarningsStats();
   const { data: skillStats, isLoading: loadingStats } = useCreatorSkillStats();
   const publishSkill = usePublishSkill();
   const updateSkill = useUpdateSkill();
+
+  const totalBundleDownloads = myBundles.reduce(
+    (sum, b) => sum + (b.downloads_count || 0),
+    0
+  );
 
   if (!user) {
     return (
@@ -58,7 +67,7 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
       {/* 统计卡片 */}
       <div className="p-6 border-b border-border">
         <h2 className="text-xl font-semibold mb-4">创作者中心</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard
             icon={<Package className="h-5 w-5" />}
             label="我的能力"
@@ -67,10 +76,17 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
             loading={loadingStats}
           />
           <StatCard
+            icon={<Layers className="h-5 w-5" />}
+            label="能力包"
+            value={myBundles.length}
+            subValue={`${totalBundleDownloads} 次安装`}
+            loading={loadingBundles}
+          />
+          <StatCard
             icon={<Download className="h-5 w-5" />}
             label="总安装量"
-            value={skillStats?.totalDownloads || 0}
-            loading={loadingStats}
+            value={(skillStats?.totalDownloads || 0) + totalBundleDownloads}
+            loading={loadingStats || loadingBundles}
           />
           <StatCard
             icon={<Star className="h-5 w-5" />}
@@ -97,6 +113,10 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
                 <TabsTrigger value="skills" className="gap-2">
                   <Package className="h-4 w-4" />
                   我的能力
+                </TabsTrigger>
+                <TabsTrigger value="bundles" className="gap-2">
+                  <Layers className="h-4 w-4" />
+                  能力包
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="gap-2">
                   <BarChart3 className="h-4 w-4" />
@@ -194,6 +214,10 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
                   </Button>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="bundles" className="mt-0">
+              <MyBundlesPanel />
             </TabsContent>
 
             <TabsContent value="analytics" className="mt-0">

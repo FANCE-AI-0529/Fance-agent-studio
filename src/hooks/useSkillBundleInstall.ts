@@ -42,18 +42,11 @@ export function useInstallBundle() {
         if (installError) throw installError;
       }
 
-      // Increment bundle download count directly
-      const { error: updateError } = await supabase
-        .from("skill_bundles")
-        .update({ 
-          downloads_count: (await supabase
-            .from("skill_bundles")
-            .select("downloads_count")
-            .eq("id", bundleId)
-            .single()
-          ).data?.downloads_count ?? 0 + 1 
-        })
-        .eq("id", bundleId);
+      // Increment bundle download count using atomic RPC
+      const { error: updateError } = await supabase.rpc(
+        "increment_bundle_downloads",
+        { p_bundle_id: bundleId }
+      );
 
       if (updateError) {
         console.warn("Failed to increment downloads:", updateError);
