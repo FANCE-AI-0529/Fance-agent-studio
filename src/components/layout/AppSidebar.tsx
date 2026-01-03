@@ -10,7 +10,7 @@ import {
   User,
   Plug,
 } from "lucide-react";
-import { FanceLogoIcon, FanceLogoFull } from "@/components/ui/FanceLogo";
+import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,11 +66,18 @@ export function AppSidebar() {
     >
       <div className="h-full flex flex-col bg-sidebar">
         {/* Logo */}
-        <div className="p-4 border-b border-sidebar-border flex items-center justify-center">
-          {!collapsed ? (
-            <FanceLogoFull iconSize={32} showVersion />
-          ) : (
-            <FanceLogoIcon size={32} />
+        <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg" />
+              <div>
+                <div className="font-semibold text-sm">Fance</div>
+                <div className="text-[10px] text-muted-foreground">v1.0</div>
+              </div>
+            </div>
+          )}
+          {collapsed && (
+            <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg mx-auto" />
           )}
         </div>
 
