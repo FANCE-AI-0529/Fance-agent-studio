@@ -51,33 +51,32 @@ export function useUploadAvatar() {
     mutationFn: async (file: File) => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const timestamp = Date.now();
+      const fileName = `${user.id}/avatar_${timestamp}.${fileExt}`;
 
-      // Delete old avatar if exists
-      await supabase.storage
-        .from("avatars")
-        .remove([fileName]);
-
-      // Upload new avatar
+      // Upload new avatar (with upsert to handle overwrites)
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, file, { 
+          upsert: true,
+          contentType: file.type 
+        });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache buster
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")
         .getPublicUrl(fileName);
 
-      return publicUrl;
+      return `${publicUrl}?t=${timestamp}`;
     },
     onError: (error) => {
       console.error("Error uploading avatar:", error);
       toast({
         title: "上传失败",
-        description: "头像上传失败，请重试",
+        description: error instanceof Error ? error.message : "头像上传失败，请重试",
         variant: "destructive",
       });
     },
