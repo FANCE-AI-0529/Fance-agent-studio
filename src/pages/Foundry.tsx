@@ -17,6 +17,8 @@ import {
   Wand2,
   Wrench,
   Sparkles,
+  Package,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +51,9 @@ import { AISkillGenerator } from "@/components/foundry/AISkillGenerator";
 import { SkillStore } from "@/components/foundry/SkillStore";
 import { NaturalLanguageCreator } from "@/components/foundry/NaturalLanguageCreator";
 import { LowCodeConfigurator } from "@/components/foundry/LowCodeConfigurator";
+import { CreatorDashboard } from "@/components/foundry/CreatorDashboard";
+import { SkillBundleCard } from "@/components/foundry/SkillBundleCard";
+import { useSkillBundles } from "@/hooks/useSkillBundles";
 import {
   useMySkills,
   useCreateSkill,
@@ -299,7 +304,7 @@ function ValidationStatusCard({ validation }: { validation: ValidationResult }) 
 }
 
 // C端消费者视图类型
-type ConsumerView = "store" | "create" | "lowcode";
+type ConsumerView = "store" | "bundles" | "create" | "lowcode" | "creator";
 
 const Foundry = () => {
   const navigate = useNavigate();
@@ -309,6 +314,9 @@ const Foundry = () => {
   // 默认使用消费者模式（非开发者模式）
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [consumerView, setConsumerView] = useState<ConsumerView>("store");
+  
+  // Fetch bundles for the bundles tab
+  const { data: bundles = [], isLoading: loadingBundles } = useSkillBundles();
   
   // 开发者模式状态
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
@@ -638,6 +646,15 @@ const Foundry = () => {
                   能力商店
                 </Button>
                 <Button
+                  variant={consumerView === "bundles" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setConsumerView("bundles")}
+                  className="gap-2"
+                >
+                  <Package className="h-4 w-4" />
+                  能力包
+                </Button>
+                <Button
                   variant={consumerView === "create" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setConsumerView("create")}
@@ -655,6 +672,17 @@ const Foundry = () => {
                   <Settings className="h-4 w-4" />
                   可视化配置
                 </Button>
+                {user && (
+                  <Button
+                    variant={consumerView === "creator" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setConsumerView("creator")}
+                    className="gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    创作者中心
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -700,6 +728,53 @@ const Foundry = () => {
               />
             )}
             
+            {consumerView === "bundles" && (
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">能力包</h2>
+                  <p className="text-sm text-muted-foreground">
+                    打包多个相关能力，一键安装
+                  </p>
+                </div>
+                {loadingBundles ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-64 bg-muted/50 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                ) : bundles.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {bundles.map((bundle) => (
+                      <SkillBundleCard
+                        key={bundle.id}
+                        bundle={bundle}
+                        onView={() => {
+                          toast({
+                            title: "即将上线",
+                            description: "能力包详情功能即将上线",
+                          });
+                        }}
+                        onInstall={() => {
+                          toast({
+                            title: "即将上线",
+                            description: "能力包安装功能即将上线",
+                          });
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground">暂无能力包</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      创作者可以将多个相关能力打包成能力包
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {consumerView === "create" && (
               <NaturalLanguageCreator
                 onGenerated={handleAIGenerated}
@@ -710,6 +785,16 @@ const Foundry = () => {
               <LowCodeConfigurator
                 onSave={handleLowCodeSave}
                 onCancel={() => setConsumerView("store")}
+              />
+            )}
+            
+            {consumerView === "creator" && (
+              <CreatorDashboard
+                onCreateNew={() => setConsumerView("create")}
+                onEditSkill={(skillId) => {
+                  setActiveSkillId(skillId);
+                  setIsDeveloperMode(true);
+                }}
               />
             )}
           </div>
