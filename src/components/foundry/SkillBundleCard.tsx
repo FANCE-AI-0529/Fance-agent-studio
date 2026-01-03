@@ -1,4 +1,4 @@
-import { Package, Download, Star, ChevronRight } from "lucide-react";
+import { Package, Download, Star, ChevronRight, Edit2 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ interface SkillBundleCardProps {
   onView?: () => void;
   onInstall?: () => void;
   isInstalling?: boolean;
+  onEdit?: () => void;
 }
 
 export function SkillBundleCard({
@@ -17,6 +18,7 @@ export function SkillBundleCard({
   onView,
   onInstall,
   isInstalling,
+  onEdit,
 }: SkillBundleCardProps) {
   const formatDownloads = (count: number | null) => {
     if (!count) return "0";
@@ -90,6 +92,12 @@ export function SkillBundleCard({
           {formatPrice(bundle.price, bundle.is_free)}
         </span>
         <div className="flex items-center gap-2">
+          {onEdit && (
+            <Button variant="ghost" size="sm" onClick={onEdit} className="gap-1">
+              <Edit2 className="h-3 w-3" />
+              编辑
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={onView} className="gap-1">
             查看详情
             <ChevronRight className="h-3 w-3" />

@@ -2232,6 +2232,7 @@ export type Database = {
       skill_bundles: {
         Row: {
           author_id: string | null
+          category: string | null
           cover_image: string | null
           created_at: string
           description: string | null
@@ -2246,6 +2247,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          category?: string | null
           cover_image?: string | null
           created_at?: string
           description?: string | null
@@ -2260,6 +2262,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          category?: string | null
           cover_image?: string | null
           created_at?: string
           description?: string | null
@@ -3419,6 +3422,10 @@ export type Database = {
       }
       increment_agent_usage: {
         Args: { target_agent_id: string }
+        Returns: undefined
+      }
+      increment_bundle_downloads: {
+        Args: { p_bundle_id: string }
         Returns: undefined
       }
       increment_share_view_count: {
