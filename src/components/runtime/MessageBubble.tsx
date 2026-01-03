@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormattedText } from "./FormattedText";
 import { TypewriterFormattedText } from "./TypewriterFormattedText";
+import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
@@ -32,6 +33,10 @@ interface MessageBubbleProps {
   attachments?: MessageAttachment[];
   onRegenerate?: () => void;
   onEdit?: (newContent: string) => void;
+  // Roleplay mode props
+  isRoleplay?: boolean;
+  roleName?: string;
+  avatarState?: "idle" | "thinking" | "speaking" | "listening" | "happy" | "confused";
 }
 
 // Agent avatar color themes
@@ -61,6 +66,9 @@ export function MessageBubble({
   attachments,
   onRegenerate,
   onEdit,
+  isRoleplay,
+  roleName,
+  avatarState = "idle",
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const colorTheme = agentAvatar?.colorId ? avatarColors[agentAvatar.colorId] : avatarColors.blue;
@@ -137,26 +145,42 @@ export function MessageBubble({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Avatar */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.1, type: "spring", stiffness: 400, damping: 15 }}
-        className={cn(
-          "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm",
-          isUser 
-            ? "bg-primary text-primary-foreground" 
-            : cn("border border-border", colorTheme.bg)
-        )}
-      >
-        {isUser ? (
-          <User className="h-4 w-4" />
-        ) : (
-          <Bot className={cn("h-4 w-4", colorTheme.text)} />
-        )}
-      </motion.div>
+      {!isUser && agentAvatar ? (
+        <AgentAvatarAnimated
+          iconId={agentAvatar.iconId}
+          colorId={agentAvatar.colorId}
+          state={avatarState as AvatarState}
+          size="sm"
+          showGlow={avatarState === "speaking" || avatarState === "thinking"}
+        />
+      ) : (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 400, damping: 15 }}
+          className={cn(
+            "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm",
+            isUser 
+              ? "bg-primary text-primary-foreground" 
+              : cn("border border-border", colorTheme.bg)
+          )}
+        >
+          {isUser ? (
+            <User className="h-4 w-4" />
+          ) : (
+            <Bot className={cn("h-4 w-4", colorTheme.text)} />
+          )}
+        </motion.div>
+      )}
       
       {/* Message Content */}
-      <div className={cn("max-w-[75%] space-y-1.5", isUser ? "items-end" : "items-start")}>
+      <div className={cn("max-w-[75%] space-y-1.5 flex flex-col", isUser ? "items-end" : "items-start")}>
+        {/* Role Name for Roleplay Mode */}
+        {isRoleplay && roleName && (
+          <span className="text-xs font-medium text-muted-foreground px-1">
+            {roleName}
+          </span>
+        )}
         <AnimatePresence mode="wait">
           {isEditing ? (
             <motion.div
