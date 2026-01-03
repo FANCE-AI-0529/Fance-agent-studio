@@ -818,6 +818,60 @@ export type Database = {
           },
         ]
       }
+      conversation_scenarios: {
+        Row: {
+          agent_role: string | null
+          author_id: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          downloads_count: number | null
+          id: string
+          is_multi_agent: boolean | null
+          is_public: boolean | null
+          name: string
+          opening_lines: string[] | null
+          scene_background: Json | null
+          suggested_prompts: string[] | null
+          updated_at: string | null
+          user_role: string | null
+        }
+        Insert: {
+          agent_role?: string | null
+          author_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          downloads_count?: number | null
+          id?: string
+          is_multi_agent?: boolean | null
+          is_public?: boolean | null
+          name: string
+          opening_lines?: string[] | null
+          scene_background?: Json | null
+          suggested_prompts?: string[] | null
+          updated_at?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          agent_role?: string | null
+          author_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          downloads_count?: number | null
+          id?: string
+          is_multi_agent?: boolean | null
+          is_public?: boolean | null
+          name?: string
+          opening_lines?: string[] | null
+          scene_background?: Json | null
+          suggested_prompts?: string[] | null
+          updated_at?: string | null
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       creator_earnings: {
         Row: {
           amount: number
@@ -1845,7 +1899,11 @@ export type Database = {
           agent_id: string | null
           created_at: string
           id: string
+          is_roleplay: boolean | null
+          scenario_id: string | null
+          scene_config: Json | null
           status: string
+          title: string | null
           updated_at: string
           user_id: string
         }
@@ -1853,7 +1911,11 @@ export type Database = {
           agent_id?: string | null
           created_at?: string
           id?: string
+          is_roleplay?: boolean | null
+          scenario_id?: string | null
+          scene_config?: Json | null
           status?: string
+          title?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1861,11 +1923,82 @@ export type Database = {
           agent_id?: string | null
           created_at?: string
           id?: string
+          is_roleplay?: boolean | null
+          scenario_id?: string | null
+          scene_config?: Json | null
           status?: string
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sessions_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_conversations: {
+        Row: {
+          agent_avatar: Json | null
+          agent_name: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          include_user_messages: boolean | null
+          is_public: boolean | null
+          message_count: number | null
+          preview: string | null
+          session_id: string | null
+          share_token: string
+          title: string | null
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          agent_avatar?: Json | null
+          agent_name?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          include_user_messages?: boolean | null
+          is_public?: boolean | null
+          message_count?: number | null
+          preview?: string | null
+          session_id?: string | null
+          share_token: string
+          title?: string | null
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          agent_avatar?: Json | null
+          agent_name?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          include_user_messages?: boolean | null
+          is_public?: boolean | null
+          message_count?: number | null
+          preview?: string | null
+          session_id?: string | null
+          share_token?: string
+          title?: string | null
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_conversations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skill_bundles: {
         Row: {
@@ -2595,6 +2728,70 @@ export type Database = {
         }
         Relationships: []
       }
+      user_memories: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          id: string
+          importance: number | null
+          key: string
+          last_accessed: string | null
+          memory_type: string
+          source: string | null
+          updated_at: string | null
+          user_id: string
+          value: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          id?: string
+          importance?: number | null
+          key: string
+          last_accessed?: string | null
+          memory_type: string
+          source?: string | null
+          updated_at?: string | null
+          user_id: string
+          value: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          id?: string
+          importance?: number | null
+          key?: string
+          last_accessed?: string | null
+          memory_type?: string
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_memories_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_memories_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_memories_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_prompts: {
         Row: {
           agent_id: string | null
@@ -2875,6 +3072,7 @@ export type Database = {
         }[]
       }
       generate_agent_api_key: { Args: never; Returns: string }
+      generate_conversation_share_token: { Args: never; Returns: string }
       generate_share_token: { Args: never; Returns: string }
       get_next_skill_version_number: {
         Args: { p_skill_id: string }
@@ -2889,6 +3087,10 @@ export type Database = {
       }
       increment_agent_usage: {
         Args: { target_agent_id: string }
+        Returns: undefined
+      }
+      increment_share_view_count: {
+        Args: { p_share_token: string }
         Returns: undefined
       }
       install_skill: { Args: { p_skill_id: string }; Returns: undefined }

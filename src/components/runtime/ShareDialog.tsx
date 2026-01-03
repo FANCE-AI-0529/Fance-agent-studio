@@ -5,12 +5,11 @@ import {
   Image,
   Copy,
   Check,
-  Download,
-  Twitter,
-  MessageCircle,
-  Mail,
   QrCode,
   Loader2,
+  Mail,
+  ExternalLink,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +27,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useCreateSharedConversation } from "@/hooks/useSharedConversation";
 
 interface Message {
   role: "user" | "assistant";
@@ -41,25 +48,49 @@ interface Message {
 
 interface ShareDialogProps {
   messages: Message[];
+  sessionId?: string;
   sessionTitle?: string;
+  agentName?: string;
+  agentAvatar?: Record<string, unknown>;
   trigger?: React.ReactNode;
 }
 
-export function ShareDialog({ messages, sessionTitle, trigger }: ShareDialogProps) {
+export function ShareDialog({ 
+  messages, 
+  sessionId,
+  sessionTitle, 
+  agentName,
+  agentAvatar,
+  trigger,
+}: ShareDialogProps) {
   const [open, setOpen] = useState(false);
   const [shareLink, setShareLink] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [includeUser, setIncludeUser] = useState(true);
-  const [includeTimestamp, setIncludeTimestamp] = useState(false);
+  const [expiresIn, setExpiresIn] = useState<string>("7");
+
+  const createShare = useCreateSharedConversation();
 
   const generateShareLink = async () => {
-    setIsGenerating(true);
-    // 模拟生成分享链接
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const mockId = Math.random().toString(36).substring(7);
-    setShareLink(`https://app.example.com/share/${mockId}`);
-    setIsGenerating(false);
+    if (!sessionId) {
+      toast.error("请先保存会话");
+      return;
+    }
+
+    try {
+      const result = await createShare.mutateAsync({
+        sessionId,
+        title: sessionTitle,
+        agentName,
+        agentAvatar,
+        includeUserMessages: includeUser,
+        expiresInDays: expiresIn === "never" ? undefined : parseInt(expiresIn),
+      });
+      setShareLink(result.shareUrl);
+      toast.success("分享链接已生成");
+    } catch {
+      toast.error("生成链接失败");
+    }
   };
 
   const copyToClipboard = async () => {
@@ -67,16 +98,9 @@ export function ShareDialog({ messages, sessionTitle, trigger }: ShareDialogProp
       await navigator.clipboard.writeText(shareLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "已复制",
-        description: "分享链接已复制到剪贴板",
-      });
-    } catch (err) {
-      toast({
-        title: "复制失败",
-        description: "请手动复制链接",
-        variant: "destructive",
-      });
+      toast.success("链接已复制到剪贴板");
+    } catch {
+      toast.error("复制失败");
     }
   };
 
@@ -88,32 +112,26 @@ export function ShareDialog({ messages, sessionTitle, trigger }: ShareDialogProp
     
     try {
       await navigator.clipboard.writeText(text);
-      toast({
-        title: "已复制",
-        description: "对话内容已复制到剪贴板",
-      });
+      toast.success("对话内容已复制");
       setOpen(false);
-    } catch (err) {
-      toast({
-        title: "复制失败",
-        variant: "destructive",
-      });
+    } catch {
+      toast.error("复制失败");
     }
   };
 
   const downloadAsImage = async () => {
-    toast({
-      title: "生成图片中",
-      description: "正在生成对话截图...",
-    });
-    // 实际实现需要使用 html2canvas 或类似库
+    toast.info("生成图片中...");
+    // TODO: Implement html2canvas
     setTimeout(() => {
-      toast({
-        title: "图片已生成",
-        description: "对话截图已保存",
-      });
+      toast.success("图片已保存");
       setOpen(false);
     }, 1000);
+  };
+
+  const openShareLink = () => {
+    if (shareLink) {
+      window.open(shareLink, "_blank");
+    }
   };
 
   return (
@@ -137,7 +155,7 @@ export function ShareDialog({ messages, sessionTitle, trigger }: ShareDialogProp
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          {/* 分享选项 */}
+          {/* Share options */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="include-user" className="text-sm">包含用户消息</Label>
@@ -148,51 +166,72 @@ export function ShareDialog({ messages, sessionTitle, trigger }: ShareDialogProp
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="include-timestamp" className="text-sm">显示时间戳</Label>
-              <Switch
-                id="include-timestamp"
-                checked={includeTimestamp}
-                onCheckedChange={setIncludeTimestamp}
-              />
+              <Label className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                有效期
+              </Label>
+              <Select value={expiresIn} onValueChange={setExpiresIn}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 天</SelectItem>
+                  <SelectItem value="7">7 天</SelectItem>
+                  <SelectItem value="30">30 天</SelectItem>
+                  <SelectItem value="never">永久</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* 生成链接 */}
+          {/* Generate link */}
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">分享链接</Label>
             {shareLink ? (
-              <div className="flex gap-2">
-                <Input value={shareLink} readOnly className="flex-1" />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={copyToClipboard}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-status-executing" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input value={shareLink} readOnly className="flex-1 text-xs" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={copyToClipboard}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={openShareLink}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  点击右侧按钮复制或在新窗口打开
+                </p>
               </div>
             ) : (
               <Button
                 variant="outline"
                 className="w-full gap-2"
                 onClick={generateShareLink}
-                disabled={isGenerating}
+                disabled={createShare.isPending || !sessionId}
               >
-                {isGenerating ? (
+                {createShare.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Link className="h-4 w-4" />
                 )}
-                生成分享链接
+                {!sessionId ? "请先保存会话" : "生成分享链接"}
               </Button>
             )}
           </div>
 
-          {/* 快速分享方式 */}
+          {/* Quick share methods */}
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">快速分享</Label>
             <div className="grid grid-cols-4 gap-2">
@@ -230,32 +269,31 @@ export function ShareDialog({ messages, sessionTitle, trigger }: ShareDialogProp
               </Button>
             </div>
           </div>
-
-          <p className="text-xs text-muted-foreground text-center">
-            分享链接有效期 7 天，可随时删除
-          </p>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-// 快捷分享按钮
+// Quick share button
 export function QuickShareButton({
   messages,
+  sessionId,
+  agentName,
+  agentAvatar,
   className,
 }: {
   messages: Message[];
+  sessionId?: string;
+  agentName?: string;
+  agentAvatar?: Record<string, unknown>;
   className?: string;
 }) {
   const copyLastResponse = async () => {
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
     if (lastAssistant) {
       await navigator.clipboard.writeText(lastAssistant.content);
-      toast({
-        title: "已复制",
-        description: "最后一条回复已复制",
-      });
+      toast.success("最后一条回复已复制");
     }
   };
 
@@ -278,6 +316,9 @@ export function QuickShareButton({
         <DropdownMenuSeparator />
         <ShareDialog
           messages={messages}
+          sessionId={sessionId}
+          agentName={agentName}
+          agentAvatar={agentAvatar}
           trigger={
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <Link className="h-4 w-4 mr-2" />
