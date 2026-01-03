@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateProfile, useUploadAvatar } from "@/hooks/useProfileUpdate";
 import { useQuery } from "@tanstack/react-query";
@@ -49,14 +49,15 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
 
-  // Update form when profile loads
-  useState(() => {
-    if (profile) {
+  // Update form when profile loads or dialog opens
+  useEffect(() => {
+    if (profile && open) {
       setDisplayName(profile.display_name || "");
       setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || "");
+      setAvatarPreview("");
     }
-  });
+  }, [profile, open]);
 
   // Reset form when dialog opens with profile data
   const handleOpenChange = (newOpen: boolean) => {
@@ -73,6 +74,20 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert("文件大小不能超过 5MB");
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("仅支持 JPG, PNG, GIF, WebP 格式");
+      return;
+    }
+
     // Show preview immediately
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -81,8 +96,12 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
     reader.readAsDataURL(file);
 
     // Upload file
-    const publicUrl = await uploadAvatar.mutateAsync(file);
-    setAvatarUrl(publicUrl);
+    try {
+      const publicUrl = await uploadAvatar.mutateAsync(file);
+      setAvatarUrl(publicUrl);
+    } catch (error) {
+      setAvatarPreview("");
+    }
   };
 
   const handleSave = async () => {
