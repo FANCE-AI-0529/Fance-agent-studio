@@ -96,7 +96,7 @@ export function PhoneLoginForm({ onSuccess }: PhoneLoginFormProps) {
 
       toast({
         title: "登录成功",
-        description: "欢迎使用 Agent OS Studio！",
+        description: "欢迎使用 Fance OS！",
       });
       onSuccess?.();
     } catch (error: any) {

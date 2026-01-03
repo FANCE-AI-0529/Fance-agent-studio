@@ -25,7 +25,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 const defaultSteps: OnboardingStep[] = [
   {
     id: "welcome",
-    title: "欢迎来到 Agent OS Studio",
+    title: "欢迎来到 Fance OS",
     description: "让我们花1分钟快速了解如何创建你的专属AI助手",
   },
   {

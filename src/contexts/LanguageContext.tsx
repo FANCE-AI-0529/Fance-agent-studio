@@ -10,6 +10,11 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   zh: {
+    // 品牌
+    "brand.name": "Fance OS",
+    "brand.slogan": "技能驱动，智能无限",
+    "brand.description": "Agent Skills 驱动的智能体构建平台",
+    
     // 导航
     "nav.home": "首页",
     "nav.builder": "创建",
@@ -34,10 +39,6 @@ const translations: Record<Language, Record<string, string>> = {
     "builder.conversational": "对话式创建",
     "builder.templates": "从模板开始",
     "builder.advanced": "高级配置",
-    
-    // 能力
-    "foundry.title": "能力商店",
-    "foundry.search": "搜索能力...",
     "foundry.categories": "分类",
     "foundry.installed": "已安装",
     "foundry.create": "创建能力",
@@ -82,13 +83,17 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.current": "当前计划",
   },
   en: {
+    // Brand
+    "brand.name": "Fance OS",
+    "brand.slogan": "Skill-driven, Intelligence Unlimited",
+    "brand.description": "AI agent building platform powered by Agent Skills",
+    
     // Navigation
     "nav.home": "Home",
     "nav.builder": "Build",
     "nav.foundry": "Skills",
     "nav.runtime": "Chat",
     "nav.profile": "Profile",
-    
     // Home
     "home.title": "Build Your AI Assistant",
     "home.subtitle": "Get started in 10 minutes, no coding required",

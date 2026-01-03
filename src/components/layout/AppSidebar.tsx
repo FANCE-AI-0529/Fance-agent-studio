@@ -72,8 +72,8 @@ export function AppSidebar() {
                 <Bot className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <div className="font-semibold text-sm">Agent OS</div>
-                <div className="text-[10px] text-muted-foreground">Studio v1.0</div>
+                <div className="font-semibold text-sm">Fance OS</div>
+                <div className="text-[10px] text-muted-foreground">v1.0</div>
               </div>
             </div>
           )}

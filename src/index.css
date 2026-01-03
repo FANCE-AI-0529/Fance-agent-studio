@@ -5,7 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Agent OS Studio Design System - Refined Enterprise Dark Theme */
+/* Fance OS Design System - Refined Enterprise Dark Theme */
 
 @layer base {
   :root {
@@ -40,7 +40,7 @@
 
     --radius: 0.5rem;
 
-    /* Agent OS specific tokens */
+    /* Fance OS specific tokens */
     --status-planning: 38 92% 50%;
     --status-confirm: 25 95% 53%;
     --status-executing: 152 69% 45%;
@@ -95,7 +95,7 @@
     --input: 217 33% 17%;
     --ring: 217 91% 60%;
 
-    /* Agent OS specific tokens - enhanced for dark mode */
+    /* Fance OS specific tokens - enhanced for dark mode */
     --status-planning: 38 92% 55%;
     --status-confirm: 25 95% 58%;
     --status-executing: 152 76% 50%;

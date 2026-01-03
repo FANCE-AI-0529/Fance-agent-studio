@@ -22,7 +22,7 @@ interface AgentSelectorProps {
 const defaultAgent = {
   id: "demo",
   name: "MPLP 智能助手",
-  department: "Agent OS 平台",
+  department: "Fance OS 平台",
   model: "gemini-2.5-flash",
   status: "deployed",
   avatar: { iconId: "bot", colorId: "primary" } as AgentAvatar,
@@ -88,7 +88,7 @@ export function AgentSelector({
           <AgentAvatarDisplay avatar={defaultAgent.avatar} size="sm" />
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm">MPLP 智能助手</div>
-            <div className="text-xs text-muted-foreground">Agent OS 平台 · 默认演示</div>
+            <div className="text-xs text-muted-foreground">Fance OS 平台 · 默认演示</div>
             <div className="text-[10px] text-muted-foreground mt-1">
               支持：文件读取、数据查询、表单生成、API调用等
             </div>

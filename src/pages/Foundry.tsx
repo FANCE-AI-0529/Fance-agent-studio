@@ -64,7 +64,7 @@ const anthropicSkillTemplate = `---
 name: "new-skill"
 version: "1.0.0"
 description: "Description here"
-author: "Agent OS Studio"
+author: "Fance OS"
 permissions:
   - internet_access
   - read
@@ -111,7 +111,7 @@ const defaultSkillMd = `---
 name: "新技能"
 version: "1.0.0"
 description: "技能描述"
-author: "Agent OS Studio"
+author: "Fance OS"
 permissions:
   - read
 inputs:

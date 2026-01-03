@@ -351,10 +351,10 @@ const Auth = () => {
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 border border-primary/20">
             <Bot className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Agent OS Studio</h1>
+          <h1 className="text-2xl font-bold">Fance OS</h1>
           <p className="text-muted-foreground text-sm mt-1 flex items-center justify-center gap-1">
             <Sparkles className="h-3 w-3" />
-            打造你的专属AI助手
+            技能驱动，智能无限
           </p>
         </div>
 

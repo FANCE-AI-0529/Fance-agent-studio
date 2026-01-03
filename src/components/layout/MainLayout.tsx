@@ -46,9 +46,9 @@ function MobileLayout({ children }: { children: ReactNode }) {
         
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-xs font-bold text-primary-foreground">A</span>
+            <span className="text-xs font-bold text-primary-foreground">F</span>
           </div>
-          <span className="font-semibold text-sm">Agent OS</span>
+          <span className="font-semibold text-sm">Fance OS</span>
         </div>
         
         <div className="flex items-center gap-1">
