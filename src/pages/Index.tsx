@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useMyAgents } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserStats } from "@/hooks/useUserStats";
 import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
 import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
@@ -22,16 +23,9 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
+  const { data: userStats, isLoading: statsLoading } = useUserStats();
 
   const hasAgents = myAgents.length > 0;
-
-  // Mock user stats - in real app, fetch from API
-  const userStats = {
-    conversationsToday: hasAgents ? 12 : 0,
-    timeSavedMinutes: hasAgents ? 45 : 0,
-    tasksCompleted: hasAgents ? 8 : 0,
-    weeklyGrowth: hasAgents ? 23 : 0,
-  };
 
   const handleStartWizard = () => {
     navigate("/builder?wizard=true");
@@ -79,7 +73,13 @@ const Index = () => {
         {user && (
           <div>
             <h2 className="text-lg font-semibold mb-4">使用统计</h2>
-            <UserStatsCards {...userStats} />
+            <UserStatsCards 
+              conversationsToday={userStats?.conversationsToday ?? 0}
+              timeSavedMinutes={userStats?.timeSavedMinutes ?? 0}
+              tasksCompleted={userStats?.tasksCompleted ?? 0}
+              weeklyGrowth={userStats?.weeklyGrowth ?? 0}
+              isLoading={statsLoading}
+            />
           </div>
         )}
 

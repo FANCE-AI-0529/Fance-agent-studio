@@ -2029,6 +2029,7 @@ export type Database = {
           following_count: number | null
           id: string
           is_verified: boolean | null
+          notification_preferences: Json | null
           social_links: Json | null
           total_agents: number | null
           total_likes_received: number | null
@@ -2047,6 +2048,7 @@ export type Database = {
           following_count?: number | null
           id: string
           is_verified?: boolean | null
+          notification_preferences?: Json | null
           social_links?: Json | null
           total_agents?: number | null
           total_likes_received?: number | null
@@ -2065,6 +2067,7 @@ export type Database = {
           following_count?: number | null
           id?: string
           is_verified?: boolean | null
+          notification_preferences?: Json | null
           social_links?: Json | null
           total_agents?: number | null
           total_likes_received?: number | null

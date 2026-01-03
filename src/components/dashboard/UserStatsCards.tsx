@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { MessageCircle, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserStat {
   label: string;
@@ -15,6 +16,7 @@ interface UserStatsCardsProps {
   timeSavedMinutes?: number;
   tasksCompleted?: number;
   weeklyGrowth?: number;
+  isLoading?: boolean;
 }
 
 export function UserStatsCards({
@@ -22,6 +24,7 @@ export function UserStatsCards({
   timeSavedMinutes = 0,
   tasksCompleted = 0,
   weeklyGrowth = 0,
+  isLoading = false,
 }: UserStatsCardsProps) {
   const stats: UserStat[] = [
     {
@@ -59,6 +62,20 @@ export function UserStatsCards({
       color: "status-executing",
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="panel p-4 rounded-xl">
+            <Skeleton className="h-10 w-10 rounded-lg mb-3" />
+            <Skeleton className="h-8 w-16 mb-1" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

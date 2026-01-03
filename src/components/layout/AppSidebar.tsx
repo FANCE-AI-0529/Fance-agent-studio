@@ -43,6 +43,8 @@ const mainNavItems = [
   { title: "技能工坊", url: "/foundry", icon: Hammer },
   { title: "运行环境", url: "/runtime", icon: Play },
   { title: "排行榜", url: "/leaderboard", icon: Trophy },
+  { title: "挑战活动", url: "/challenges", icon: Trophy },
+  { title: "邀请好友", url: "/invite", icon: Gift },
   { title: "API 中心", url: "/api-hub", icon: Plug },
 ];
 

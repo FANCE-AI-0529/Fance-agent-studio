@@ -15,6 +15,9 @@ import Runtime from "./pages/Runtime";
 import Profile from "./pages/Profile";
 import Creator from "./pages/Creator";
 import Leaderboard from "./pages/Leaderboard";
+import Invite from "./pages/Invite";
+import Challenges from "./pages/Challenges";
+import ChallengeDetail from "./pages/ChallengeDetail";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
@@ -155,6 +158,30 @@ function AppRoutes() {
             <MainLayout>
               <ApiHub />
             </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/invite"
+        element={
+          <ProtectedRoute>
+            <Invite />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/challenges"
+        element={
+          <ProtectedRoute>
+            <Challenges />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/challenges/:id"
+        element={
+          <ProtectedRoute>
+            <ChallengeDetail />
           </ProtectedRoute>
         }
       />

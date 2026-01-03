@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,10 @@ import {
 import { useTheme } from "next-themes";
 import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
 import { PricingPlans } from "@/components/pricing/PricingPlans";
+import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
+import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export default function Profile() {
@@ -29,6 +33,32 @@ export default function Profile() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("account");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Fetch user profile
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Notification preferences
+  const { data: notifPrefs } = useNotificationPreferences();
+  const updateNotifPrefs = useUpdateNotificationPreferences();
+
+  const handleNotifChange = (key: "push" | "email" | "marketing", value: boolean) => {
+    if (notifPrefs) {
+      updateNotifPrefs.mutate({ ...notifPrefs, [key]: value });
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,14 +78,17 @@ export default function Profile() {
         <div className="bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
               <AvatarFallback className="text-xl bg-primary text-primary-foreground">
                 {userInitial}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-xl font-bold">{displayName}</h1>
+              <h1 className="text-xl font-bold">{profile?.display_name || displayName}</h1>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
+              {profile?.bio && (
+                <p className="text-sm text-muted-foreground mt-1">{profile.bio}</p>
+              )}
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary">
                   <Crown className="h-3 w-3 mr-1" />
@@ -63,11 +96,13 @@ export default function Profile() {
                 </Badge>
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
               编辑资料
             </Button>
           </div>
         </div>
+
+        <EditProfileDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} />
 
         {/* 设置标签页 */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -166,7 +201,6 @@ export default function Profile() {
             </div>
           </TabsContent>
 
-          {/* 通知设置 */}
           <TabsContent value="notifications" className="space-y-4 mt-6">
             <div className="bg-card border border-border rounded-xl divide-y divide-border">
               <div className="flex items-center justify-between p-4">
@@ -174,21 +208,33 @@ export default function Profile() {
                   <p className="font-medium">推送通知</p>
                   <p className="text-sm text-muted-foreground">接收重要更新和提醒</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={notifPrefs?.push ?? true}
+                  onCheckedChange={(checked) => handleNotifChange("push", checked)}
+                  disabled={updateNotifPrefs.isPending}
+                />
               </div>
               <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-medium">邮件通知</p>
                   <p className="text-sm text-muted-foreground">接收周报和活动通知</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={notifPrefs?.email ?? true}
+                  onCheckedChange={(checked) => handleNotifChange("email", checked)}
+                  disabled={updateNotifPrefs.isPending}
+                />
               </div>
               <div className="flex items-center justify-between p-4">
                 <div>
                   <p className="font-medium">营销邮件</p>
                   <p className="text-sm text-muted-foreground">接收产品更新和优惠信息</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={notifPrefs?.marketing ?? false}
+                  onCheckedChange={(checked) => handleNotifChange("marketing", checked)}
+                  disabled={updateNotifPrefs.isPending}
+                />
               </div>
             </div>
           </TabsContent>
