@@ -54,12 +54,14 @@ import { AttachmentPreview } from "@/components/runtime/AttachmentPreview";
 import { DevToolsPanel } from "@/components/runtime/DevToolsPanel";
 import { CircuitBreakerContent } from "@/components/runtime/CircuitBreakerContent";
 import { ContextPanelContent } from "@/components/runtime/ContextPanelContent";
-import { AgentAvatarAnimated } from "@/components/runtime/AgentAvatarAnimated";
+import { AgentAvatarAnimated, AvatarState } from "@/components/runtime/AgentAvatarAnimated";
 import { SceneBackground, scenePresets } from "@/components/runtime/SceneBackground";
 import { ScenarioSelector } from "@/components/runtime/ScenarioSelector";
 import { MemoryPanel } from "@/components/runtime/MemoryPanel";
+import { ImmersiveHeader } from "@/components/runtime/ImmersiveHeader";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
-import { useScenarios, Scenario } from "@/hooks/useScenarios";
+import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "@/hooks/useScenarios";
+import { useMemoryContext } from "@/hooks/useMemory";
 import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
 import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { useChatSession } from "@/hooks/useChatSession";
@@ -309,6 +311,12 @@ const Runtime = () => {
   // File upload hook
   const { files: pendingFiles, isUploading, addFiles, removeFile, clearFiles } = useFileUpload();
 
+  // Scenario management
+  const setSessionScenario = useSetSessionScenario();
+  
+  // Memory context for AI
+  const { generateContext: generateMemoryContext, hasMemories } = useMemoryContext(selectedAgent?.id);
+
   // Get selected model info
   const selectedModel = availableModels.find(m => m.id === selectedModelId) || availableModels[0];
 
@@ -343,13 +351,21 @@ const Runtime = () => {
     (selectedAgent ? (selectedAgent.manifest as any)?.system_prompt : undefined);
   
   // Replace variables in the system prompt
-  const effectiveSystemPrompt = baseSystemPrompt 
+  const variableReplacedPrompt = baseSystemPrompt 
     ? baseSystemPrompt.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => promptVariables[key] || `{{${key}}}`)
     : undefined;
+  
+  // Inject memory context into system prompt
+  const memoryContext = generateMemoryContext();
+  const effectiveSystemPrompt = [
+    variableReplacedPrompt,
+    memoryContext,
+    activeScenario ? `\n\n【当前场景】${activeScenario.name}\n${activeScenario.description || ""}\n你扮演: ${activeScenario.agentRole || "智能助手"}\n用户扮演: ${activeScenario.userRole || "用户"}` : "",
+  ].filter(Boolean).join("\n\n");
 
   const currentAgentConfig = {
     name: selectedAgent?.name,
-    systemPrompt: effectiveSystemPrompt,
+    systemPrompt: effectiveSystemPrompt || undefined,
     model: selectedModelId,
     skills: agentSkills,
     mplpPolicy: selectedAgent?.mplp_policy,
@@ -408,6 +424,13 @@ const Runtime = () => {
     agentConfig: currentAgentConfig,
     onTraceEvent: handleTraceEvent,
   });
+
+  // Compute avatar state based on current phase
+  const avatarState: AvatarState = isAILoading || currentPhase === "executing" 
+    ? "thinking" 
+    : currentPhase === "planning" 
+      ? "listening"
+      : "idle";
 
   // Add thinking log
   const addThinkingLog = useCallback((module: string, message: string, level: LogEntry["level"] = "info") => {
@@ -847,6 +870,46 @@ const Runtime = () => {
     toast.success("已删除会话");
   };
 
+  // Handle scenario selection
+  const handleSelectScenario = async (scenario: Scenario | null) => {
+    setActiveScenario(scenario);
+    
+    if (scenario) {
+      // Add opening message if available
+      if (scenario.openingLines && scenario.openingLines.length > 0) {
+        const opening = scenario.openingLines[Math.floor(Math.random() * scenario.openingLines.length)];
+        setLocalMessages(prev => [...prev, {
+          id: `scenario-welcome-${Date.now()}`,
+          role: "assistant" as const,
+          content: `**${scenario.name}**\n\n${opening}`,
+          timestamp: new Date(),
+          isNew: true,
+        }]);
+      }
+      
+      // Update session with scenario
+      if (chatSession) {
+        await setSessionScenario.mutateAsync({
+          sessionId: chatSession.id,
+          scenarioId: scenario.id,
+          sceneConfig: (scenario.sceneBackground as Record<string, unknown>) || undefined,
+        });
+      }
+      
+      toast.success(`已进入「${scenario.name}」场景`);
+    } else {
+      // Clear scenario
+      if (chatSession) {
+        await setSessionScenario.mutateAsync({
+          sessionId: chatSession.id,
+          scenarioId: null,
+          sceneConfig: undefined,
+        });
+      }
+      toast.info("已退出场景模式");
+    }
+  };
+
   // Render DevTools content panels
   const renderTraceContent = () => (
     <TraceTree 
@@ -934,79 +997,117 @@ const Runtime = () => {
               )}
 
               {/* Main Chat Area */}
-              <div className="flex-1 flex flex-col min-w-0">
-                {/* Header */}
-                <div className="panel-header border-b border-border">
-                  <div className="flex items-center gap-2">
-                    {user && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowHistory(!showHistory)}
-                      >
-                        <History className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <AgentSelector
-                      agents={deployedAgents}
-                      selectedAgent={selectedAgent}
-                      onSelectAgent={handleAgentChange}
-                      isLoading={isLoadingAgents}
-                    />
-                    {chatSession && (
-                      <Badge variant="secondary" className="text-xs">已保存</Badge>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {activeSkill && (
-                      <Badge variant="outline" className="text-xs gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        {activeSkill}
-                      </Badge>
-                    )}
-                    
-                    {/* Developer Mode Config - Simplified */}
-                    {isDeveloperMode && (
-                      <>
-                        <SystemPromptEditor
-                          value={customSystemPrompt || baseSystemPrompt || ""}
-                          onChange={setCustomSystemPrompt}
-                          onVariablesChange={setPromptVariables}
-                          agentId={selectedAgent?.id}
-                          agentName={selectedAgent?.name || "Default Agent"}
-                          disabled={currentPhase !== "idle"}
-                        />
-                        <div className="flex items-center gap-1.5">
-                          <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          <ModelSelector
-                            value={selectedModelId}
-                            onChange={setSelectedModelId}
-                            disabled={currentPhase !== "idle"}
-                          />
-                          <ModelRoutingConfig 
-                            agentId={selectedAgent?.id}
-                            agentName={selectedAgent?.name}
-                          />
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Developer Mode Toggle */}
-                    <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-secondary/50 border border-border">
-                      <MessageCircle className={cn("h-3.5 w-3.5", !isDeveloperMode && "text-primary")} />
-                      <Switch
-                        id="developer-mode"
-                        checked={isDeveloperMode}
-                        onCheckedChange={setIsDeveloperMode}
-                        className="scale-75"
+              <div className="flex-1 flex flex-col min-w-0 relative">
+                {/* Scene Background - Only in Immersive Mode with active scenario */}
+                {!isDeveloperMode && activeScenario && (
+                  <SceneBackground
+                    scene={(activeScenario.sceneBackground?.preset as string) || "default"}
+                    className="absolute inset-0"
+                  />
+                )}
+                
+                {/* Header - Different for Immersive vs Expert Mode */}
+                {!isDeveloperMode ? (
+                  <ImmersiveHeader
+                    isDeveloperMode={isDeveloperMode}
+                    onToggleMode={setIsDeveloperMode}
+                    showHistory={showHistory}
+                    onToggleHistory={() => setShowHistory(!showHistory)}
+                    isLoggedIn={!!user}
+                    agents={deployedAgents}
+                    selectedAgent={selectedAgent}
+                    onSelectAgent={handleAgentChange}
+                    isLoadingAgents={isLoadingAgents}
+                    hasActiveSession={!!chatSession}
+                    activeScenario={activeScenario}
+                    onSelectScenario={handleSelectScenario}
+                    isIdle={currentPhase === "idle"}
+                    messages={localMessages}
+                    sessionId={chatSession?.id}
+                  />
+                ) : (
+                  <div className="panel-header border-b border-border">
+                    <div className="flex items-center gap-2">
+                      {user && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setShowHistory(!showHistory)}
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <AgentSelector
+                        agents={deployedAgents}
+                        selectedAgent={selectedAgent}
+                        onSelectAgent={handleAgentChange}
+                        isLoading={isLoadingAgents}
                       />
-                      <Code2 className={cn("h-3.5 w-3.5", isDeveloperMode && "text-primary")} />
+                      {chatSession && (
+                        <Badge variant="secondary" className="text-xs">已保存</Badge>
+                      )}
                     </div>
                     
-                    {/* DevTools Panel Toggle (in developer mode) */}
-                    {isDeveloperMode && (
+                    <div className="flex items-center gap-2">
+                      {activeSkill && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          {activeSkill}
+                        </Badge>
+                      )}
+                      
+                      {/* Developer Mode Config */}
+                      <SystemPromptEditor
+                        value={customSystemPrompt || baseSystemPrompt || ""}
+                        onChange={setCustomSystemPrompt}
+                        onVariablesChange={setPromptVariables}
+                        agentId={selectedAgent?.id}
+                        agentName={selectedAgent?.name || "Default Agent"}
+                        disabled={currentPhase !== "idle"}
+                      />
+                      <div className="flex items-center gap-1.5">
+                        <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <ModelSelector
+                          value={selectedModelId}
+                          onChange={setSelectedModelId}
+                          disabled={currentPhase !== "idle"}
+                        />
+                        <ModelRoutingConfig 
+                          agentId={selectedAgent?.id}
+                          agentName={selectedAgent?.name}
+                        />
+                      </div>
+                      
+                      {/* Mode Toggle - Segmented Controller */}
+                      <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50 border border-border/50">
+                        <Button
+                          variant={!isDeveloperMode ? "default" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "h-7 gap-1.5 text-xs rounded-md transition-all",
+                            !isDeveloperMode && "shadow-sm"
+                          )}
+                          onClick={() => setIsDeveloperMode(false)}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">沉浸</span>
+                        </Button>
+                        <Button
+                          variant={isDeveloperMode ? "default" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "h-7 gap-1.5 text-xs rounded-md transition-all",
+                            isDeveloperMode && "shadow-sm"
+                          )}
+                          onClick={() => setIsDeveloperMode(true)}
+                        >
+                          <Code2 className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">专家</span>
+                        </Button>
+                      </div>
+                      
+                      {/* DevTools Panel Toggle */}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1020,21 +1121,21 @@ const Runtime = () => {
                           <PanelBottomClose className="h-4 w-4" />
                         )}
                       </Button>
-                    )}
-                    
-                    <TooltipProvider>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={resetTour}
-                        title="查看使用教程"
-                      >
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={resetTour}
+                          title="查看使用教程"
+                        >
+                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </TooltipProvider>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* MPLP Protocol Status Bar (Stepper) - Only in Developer Mode */}
                 {isDeveloperMode && (
@@ -1098,6 +1199,16 @@ const Runtime = () => {
                                   }
                                 : undefined
                             }
+                            // Roleplay mode props
+                            isRoleplay={!!activeScenario?.isMultiAgent}
+                            roleName={
+                              activeScenario?.isMultiAgent 
+                                ? message.role === "user" 
+                                  ? activeScenario.userRole || "用户"
+                                  : activeScenario.agentRole || "Agent"
+                                : undefined
+                            }
+                            avatarState={message.isNew && message.role === "assistant" ? avatarState : "idle"}
                             onRegenerate={
                               message.role === "assistant" && currentPhase === "idle"
                                 ? () => {
@@ -1119,12 +1230,16 @@ const Runtime = () => {
                         );
                       })}
                       
-                      {/* Typing Indicator */}
+                      {/* Typing Indicator with Animated Avatar */}
                       {(currentPhase === "executing" || isAILoading) && (
                         <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-full bg-cognitive/10 flex items-center justify-center shrink-0">
-                            <Bot className="h-4 w-4 text-cognitive" />
-                          </div>
+                          <AgentAvatarAnimated
+                            iconId={(selectedAgent?.manifest as any)?.iconId || "bot"}
+                            colorId={(selectedAgent?.manifest as any)?.colorId || "blue"}
+                            state="thinking"
+                            size="sm"
+                            showGlow={true}
+                          />
                           <div className="flex-1">
                             <TypingIndicator phase={
                               currentPhase === "confirm" ? "executing" : 
