@@ -18,6 +18,9 @@ import {
   Crown,
   Moon,
   Sun,
+  Trophy,
+  Target,
+  Gift,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
@@ -99,6 +102,43 @@ export default function Profile() {
             <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
               编辑资料
             </Button>
+          </div>
+        </div>
+
+        {/* 快捷入口 */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground px-1">快捷入口</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => navigate("/leaderboard")}
+              className="bg-card border border-border rounded-xl p-4 hover:bg-muted/50 transition-colors text-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
+                <Trophy className="h-5 w-5 text-amber-500" />
+              </div>
+              <p className="font-medium text-sm">排行榜</p>
+              <p className="text-xs text-muted-foreground mt-0.5">查看榜单</p>
+            </button>
+            <button
+              onClick={() => navigate("/challenges")}
+              className="bg-card border border-border rounded-xl p-4 hover:bg-muted/50 transition-colors text-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                <Target className="h-5 w-5 text-primary" />
+              </div>
+              <p className="font-medium text-sm">挑战活动</p>
+              <p className="text-xs text-muted-foreground mt-0.5">参与活动</p>
+            </button>
+            <button
+              onClick={() => navigate("/invite")}
+              className="bg-card border border-border rounded-xl p-4 hover:bg-muted/50 transition-colors text-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-2">
+                <Gift className="h-5 w-5 text-emerald-500" />
+              </div>
+              <p className="font-medium text-sm">邀请好友</p>
+              <p className="text-xs text-muted-foreground mt-0.5">得奖励</p>
+            </button>
           </div>
         </div>
 

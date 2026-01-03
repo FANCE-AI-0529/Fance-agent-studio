@@ -53,7 +53,10 @@ import { NaturalLanguageCreator } from "@/components/foundry/NaturalLanguageCrea
 import { LowCodeConfigurator } from "@/components/foundry/LowCodeConfigurator";
 import { CreatorDashboard } from "@/components/foundry/CreatorDashboard";
 import { SkillBundleCard } from "@/components/foundry/SkillBundleCard";
-import { useSkillBundles } from "@/hooks/useSkillBundles";
+import { CreateBundleDialog } from "@/components/foundry/CreateBundleDialog";
+import { BundleDetailDialog } from "@/components/foundry/BundleDetailDialog";
+import { useSkillBundles, SkillBundle } from "@/hooks/useSkillBundles";
+import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
 import {
   useMySkills,
   useCreateSkill,
@@ -317,6 +320,12 @@ const Foundry = () => {
   
   // Fetch bundles for the bundles tab
   const { data: bundles = [], isLoading: loadingBundles } = useSkillBundles();
+  const installBundle = useInstallBundle();
+  
+  // Bundle dialogs state
+  const [showCreateBundle, setShowCreateBundle] = useState(false);
+  const [selectedBundle, setSelectedBundle] = useState<SkillBundle | null>(null);
+  const [showBundleDetail, setShowBundleDetail] = useState(false);
   
   // 开发者模式状态
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
@@ -731,10 +740,18 @@ const Foundry = () => {
             {consumerView === "bundles" && (
               <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">能力包</h2>
-                  <p className="text-sm text-muted-foreground">
-                    打包多个相关能力，一键安装
-                  </p>
+                  <div>
+                    <h2 className="text-xl font-semibold">能力包</h2>
+                    <p className="text-sm text-muted-foreground">
+                      打包多个相关能力，一键安装
+                    </p>
+                  </div>
+                  {user && (
+                    <Button onClick={() => setShowCreateBundle(true)} className="gap-2">
+                      <Package className="h-4 w-4" />
+                      创建能力包
+                    </Button>
+                  )}
                 </div>
                 {loadingBundles ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -749,17 +766,18 @@ const Foundry = () => {
                         key={bundle.id}
                         bundle={bundle}
                         onView={() => {
-                          toast({
-                            title: "即将上线",
-                            description: "能力包详情功能即将上线",
-                          });
+                          setSelectedBundle(bundle);
+                          setShowBundleDetail(true);
                         }}
                         onInstall={() => {
-                          toast({
-                            title: "即将上线",
-                            description: "能力包安装功能即将上线",
-                          });
+                          if (bundle.skill_ids && bundle.skill_ids.length > 0) {
+                            installBundle.mutate({
+                              bundleId: bundle.id,
+                              skillIds: bundle.skill_ids,
+                            });
+                          }
                         }}
+                        isInstalling={installBundle.isPending}
                       />
                     ))}
                   </div>
@@ -770,6 +788,16 @@ const Foundry = () => {
                     <p className="text-sm text-muted-foreground mt-1">
                       创作者可以将多个相关能力打包成能力包
                     </p>
+                    {user && (
+                      <Button 
+                        onClick={() => setShowCreateBundle(true)} 
+                        variant="outline" 
+                        className="mt-4 gap-2"
+                      >
+                        <Package className="h-4 w-4" />
+                        创建第一个能力包
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1130,6 +1158,18 @@ const Foundry = () => {
           currentContent={contents["file-skill"]}
           open={showVersionHistory}
           onOpenChange={setShowVersionHistory}
+        />
+
+        {/* Bundle Dialogs */}
+        <CreateBundleDialog
+          open={showCreateBundle}
+          onOpenChange={setShowCreateBundle}
+        />
+
+        <BundleDetailDialog
+          bundle={selectedBundle}
+          open={showBundleDetail}
+          onOpenChange={setShowBundleDetail}
         />
       </div>
     </TooltipProvider>
