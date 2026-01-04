@@ -253,7 +253,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("RSS query error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An internal error occurred. Please try again later.", code: "RSS_QUERY_ERROR" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
