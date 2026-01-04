@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Mail, Lock, User, ArrowRight, Loader2, Phone, Sparkles } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Loader2, Sparkles, Ticket, CheckCircle2, XCircle } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,28 +9,45 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
-import { PhoneLoginForm } from "@/components/auth/PhoneLoginForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
+import { useInviteValidation, acceptInvitationOnSignup } from "@/hooks/useInviteValidation";
+import { supabase } from "@/integrations/supabase/client";
 
 const emailSchema = z.string().email("请输入有效的邮箱地址");
 const passwordSchema = z.string().min(6, "密码至少需要6个字符");
+const inviteCodeSchema = z.string().min(6, "邀请码至少6位").max(10, "邀请码最多10位");
 
-type AuthView = "main" | "phone" | "forgot" | "reset";
+type AuthView = "main" | "forgot" | "reset";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [view, setView] = useState<AuthView>("main");
 
-  // 检查是否是密码重置流程
+  // Check if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  // Check for password reset flow
   useEffect(() => {
     if (searchParams.get("reset") === "true") {
       setView("reset");
+    }
+  }, [searchParams]);
+
+  // Check for invite code in URL
+  useEffect(() => {
+    const inviteFromUrl = searchParams.get("invite");
+    if (inviteFromUrl) {
+      setInviteCode(inviteFromUrl.toUpperCase());
+      setActiveTab("signup");
     }
   }, [searchParams]);
 
@@ -39,20 +56,14 @@ const Auth = () => {
   const [loginPassword, setLoginPassword] = useState("");
 
   // Signup form state
+  const [inviteCode, setInviteCode] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
 
-  const handleGuestMode = () => {
-    // 存储访客状态
-    sessionStorage.setItem("guestMode", "true");
-    toast({
-      title: "体验模式",
-      description: "您正在以访客身份体验，部分功能受限",
-    });
-    navigate("/");
-  };
+  // Invite code validation
+  const { isValid: isInviteValid, isLoading: isValidating, error: inviteError } = useInviteValidation(inviteCode);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +110,29 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate invite code first
+    try {
+      inviteCodeSchema.parse(inviteCode);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({
+          title: "邀请码错误",
+          description: err.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (!isInviteValid) {
+      toast({
+        title: "邀请码无效",
+        description: inviteError || "请输入有效的邀请码",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       emailSchema.parse(signupEmail);
       passwordSchema.parse(signupPassword);
@@ -123,10 +157,12 @@ const Auth = () => {
     }
 
     setLoading(true);
+    
+    // Sign up the user
     const { error } = await signUp(signupEmail, signupPassword, displayName);
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       let message = "注册失败，请重试";
       if (error.message.includes("User already registered")) {
         message = "该邮箱已被注册";
@@ -136,32 +172,41 @@ const Auth = () => {
         description: message,
         variant: "destructive",
       });
+      return;
+    }
+
+    // Wait for auth state to update and get user
+    const { data: { user: newUser } } = await supabase.auth.getUser();
+    
+    if (newUser) {
+      // Accept the invitation
+      const result = await acceptInvitationOnSignup(inviteCode, newUser.id);
+      
+      if (result.success) {
+        toast({
+          title: "注册成功",
+          description: "欢迎加入！您已获得 50 积分奖励",
+        });
+      } else {
+        toast({
+          title: "注册成功",
+          description: "欢迎加入！",
+        });
+      }
     } else {
       toast({
         title: "注册成功",
         description: "欢迎加入！",
       });
-      navigate("/");
     }
+
+    setLoading(false);
+    navigate("/");
   };
 
-  // 渲染不同视图
+  // Render different views
   const renderContent = () => {
     switch (view) {
-      case "phone":
-        return (
-          <div className="bg-card border border-border rounded-xl p-6">
-            <PhoneLoginForm onSuccess={() => navigate("/")} />
-            <Button
-              variant="ghost"
-              className="w-full mt-4"
-              onClick={() => setView("main")}
-            >
-              返回其他登录方式
-            </Button>
-          </div>
-        );
-
       case "forgot":
         return (
           <div className="bg-card border border-border rounded-xl p-6">
@@ -242,21 +287,46 @@ const Auth = () => {
                       )}
                     </Button>
                   </form>
-
-                  {/* 手机号登录入口 */}
-                  <Button
-                    variant="outline"
-                    className="w-full mt-3 gap-2"
-                    onClick={() => setView("phone")}
-                  >
-                    <Phone className="h-4 w-4" />
-                    手机号登录
-                  </Button>
                 </TabsContent>
 
                 {/* Signup Tab */}
                 <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-4">
+                    {/* Invite Code - Required */}
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-code" className="flex items-center gap-1">
+                        邀请码 <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="invite-code"
+                          type="text"
+                          placeholder="请输入邀请码"
+                          className="pl-10 pr-10 uppercase"
+                          value={inviteCode}
+                          onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                          required
+                        />
+                        {inviteCode.length >= 6 && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            {isValidating ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : isInviteValid ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {inviteCode.length >= 6 && !isValidating && (
+                        <p className={`text-xs ${isInviteValid ? "text-green-500" : "text-destructive"}`}>
+                          {isInviteValid ? "邀请码有效" : inviteError}
+                        </p>
+                      )}
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="display-name">昵称</Label>
                       <div className="relative">
@@ -320,7 +390,11 @@ const Auth = () => {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full gap-2" disabled={loading}>
+                    <Button 
+                      type="submit" 
+                      className="w-full gap-2" 
+                      disabled={loading || !isInviteValid}
+                    >
                       {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
@@ -331,13 +405,15 @@ const Auth = () => {
                       )}
                     </Button>
                   </form>
+
+                  {/* Invite required notice */}
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground text-center">
+                      🎫 注册需要有效的邀请码，请联系已注册用户获取
+                    </p>
+                  </div>
                 </TabsContent>
               </Tabs>
-
-              {/* 社交登录 */}
-              <div className="mt-6">
-                <SocialLoginButtons onGuestMode={handleGuestMode} />
-              </div>
             </div>
           </>
         );
