@@ -327,7 +327,7 @@ serve(async (req: Request) => {
     console.error("LLM Gateway error:", error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An internal error occurred. Please try again later.", code: "LLM_GATEWAY_ERROR" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

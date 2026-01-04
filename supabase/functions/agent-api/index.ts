@@ -266,7 +266,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error"
+        code: "AGENT_API_ERROR"
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

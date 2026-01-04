@@ -130,7 +130,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("MCP error:", error);
-    return jsonRpcError(null, -32603, error instanceof Error ? error.message : "Internal error");
+    return jsonRpcError(null, -32603, "An internal error occurred. Please try again later.");
   }
 });
 

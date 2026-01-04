@@ -390,7 +390,8 @@ serve(async (req) => {
     console.error("[task-scheduler] Error:", error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "An internal error occurred. Please try again later.",
+        code: "TASK_SCHEDULER_ERROR"
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
