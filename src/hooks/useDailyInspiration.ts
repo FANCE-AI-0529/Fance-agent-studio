@@ -58,33 +58,40 @@ export function useDailyInspiration(limit: number = 3) {
   return useQuery({
     queryKey: ["daily-inspiration", limit],
     queryFn: async (): Promise<DailyInspiration[]> => {
-      const today = new Date().toISOString().split("T")[0];
-      
-      // Try to get today's featured content first
-      const { data: featured, error: featuredError } = await supabase
-        .from("daily_inspiration")
-        .select("*")
-        .eq("featured_date", today)
-        .limit(limit);
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        
+        // Try to get today's featured content first
+        const { data: featured, error: featuredError } = await supabase
+          .from("daily_inspiration")
+          .select("*")
+          .eq("featured_date", today)
+          .limit(limit);
 
-      if (!featuredError && featured && featured.length > 0) {
-        return featured as DailyInspiration[];
+        if (!featuredError && featured && featured.length > 0) {
+          return featured as DailyInspiration[];
+        }
+
+        // Fall back to most recent content
+        const { data: recent, error: recentError } = await supabase
+          .from("daily_inspiration")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(limit);
+
+        if (!recentError && recent && recent.length > 0) {
+          return recent as DailyInspiration[];
+        }
+
+        // Return default content if database is empty
+        return defaultInspirations.slice(0, limit);
+      } catch (error) {
+        console.error('Failed to fetch inspiration:', error);
+        // Always return default content on error
+        return defaultInspirations.slice(0, limit);
       }
-
-      // Fall back to most recent content
-      const { data: recent, error: recentError } = await supabase
-        .from("daily_inspiration")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(limit);
-
-      if (!recentError && recent && recent.length > 0) {
-        return recent as DailyInspiration[];
-      }
-
-      // Return default content if database is empty
-      return defaultInspirations.slice(0, limit);
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 }
 
