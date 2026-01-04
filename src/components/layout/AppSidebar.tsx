@@ -79,7 +79,7 @@ export function AppSidebar() {
               <div className="flex items-center gap-2">
                 <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg" />
                 <div>
-                  <div className="font-semibold text-sm">Fance</div>
+                  <div className="font-semibold text-sm">Fance OS</div>
                   <div className="text-[10px] text-muted-foreground leading-tight">技能驱动，智能无限</div>
                 </div>
               </div>
