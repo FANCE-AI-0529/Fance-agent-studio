@@ -14,6 +14,51 @@ interface RSSQueryRequest {
   relationTypes?: string[];
 }
 
+// Simple keyword extraction
+function extractKeywords(text: string): string[] {
+  const stopwords = new Set([
+    "的", "是", "在", "和", "与", "了", "有", "我", "你", "他", "她", "它", "们",
+    "这", "那", "什么", "怎么", "为什么", "如何", "可以", "能", "会", "要",
+    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "can", "to", "of", "in", "for", "on", "with",
+    "at", "by", "from", "as", "into", "through", "during", "before", "after",
+    "above", "below", "between", "under", "again", "further", "then", "once"
+  ]);
+  
+  // Split by common separators and filter
+  const words = text.toLowerCase()
+    .replace(/[^\w\s\u4e00-\u9fff]/g, " ")
+    .split(/\s+/)
+    .filter(word => word.length > 1 && !stopwords.has(word));
+  
+  return [...new Set(words)];
+}
+
+// Calculate relevance score between query keywords and entity
+function calculateRelevance(queryKeywords: string[], entity: {
+  name: string;
+  description?: string;
+  source_content?: string;
+  metadata?: { keywords?: string[] };
+}): number {
+  const entityText = [
+    entity.name,
+    entity.description || "",
+    entity.source_content || "",
+    ...(entity.metadata?.keywords || [])
+  ].join(" ").toLowerCase();
+  
+  let matchCount = 0;
+  for (const keyword of queryKeywords) {
+    if (entityText.includes(keyword)) {
+      matchCount++;
+    }
+  }
+  
+  return queryKeywords.length > 0 ? matchCount / queryKeywords.length : 0;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,7 +67,6 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -52,67 +96,70 @@ serve(async (req) => {
       relationTypes 
     }: RSSQueryRequest = await req.json();
 
+    if (!query) {
+      return new Response(JSON.stringify({ error: "Query is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log(`RSS Query for user ${user.id}: "${query.substring(0, 100)}..."`);
 
-    // Step 1: Generate query embedding
-    console.log("Generating query embedding...");
-    const embeddingResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "Generate a semantic embedding representation. Return ONLY a JSON array of 64 floating point numbers between -1 and 1 representing the semantic meaning. No explanation, just the array.",
-          },
-          {
-            role: "user",
-            content: query,
-          },
-        ],
-        temperature: 0,
-        max_tokens: 500,
-      }),
-    });
+    // Step 1: Extract keywords from query
+    const queryKeywords = extractKeywords(query);
+    console.log(`Extracted keywords: ${queryKeywords.join(", ")}`);
 
-    let queryEmbedding: number[] = [];
-    if (embeddingResponse.ok) {
-      const embResult = await embeddingResponse.json();
-      const embContent = embResult.choices?.[0]?.message?.content || "";
-      try {
-        let cleanEmb = embContent.trim();
-        if (cleanEmb.startsWith("```")) {
-          cleanEmb = cleanEmb.replace(/```json?\n?/g, "").replace(/```/g, "");
-        }
-        queryEmbedding = JSON.parse(cleanEmb.trim());
-      } catch {
-        queryEmbedding = Array.from({ length: 64 }, () => Math.random() * 2 - 1);
-      }
-    } else {
-      console.error("Failed to generate query embedding");
-      queryEmbedding = Array.from({ length: 64 }, () => Math.random() * 2 - 1);
+    // Step 2: Fetch all entities for this user (limited for performance)
+    let entityQuery = supabase
+      .from("entities")
+      .select("*")
+      .eq("user_id", user.id)
+      .limit(500);
+
+    if (agentId) {
+      entityQuery = entityQuery.eq("agent_id", agentId);
     }
 
-    // Step 2: Find similar entities (anchor points)
-    console.log("Finding anchor entities...");
-    const { data: anchorEntities, error: anchorError } = await supabase
-      .rpc("find_similar_entities", {
-        p_user_id: user.id,
-        p_query_embedding: queryEmbedding,
-        p_limit: topK,
-        p_agent_id: agentId || null,
-      });
+    const { data: allEntities, error: entitiesError } = await entityQuery;
 
-    if (anchorError) {
-      console.error("Failed to find anchor entities:", anchorError);
-      throw new Error("Failed to find anchor entities");
+    if (entitiesError) {
+      console.error("Failed to fetch entities:", entitiesError);
+      throw new Error("Failed to fetch entities");
     }
 
-    if (!anchorEntities || anchorEntities.length === 0) {
+    if (!allEntities || allEntities.length === 0) {
+      console.log("No entities found");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          anchors: [],
+          subgraph: [],
+          context: "",
+          message: "No entities found in the knowledge graph",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Step 3: Calculate relevance scores and find anchor entities
+    const scoredEntities = allEntities.map(entity => ({
+      entity,
+      score: calculateRelevance(queryKeywords, entity)
+    }));
+
+    // Filter and sort by relevance
+    const anchorEntities = scoredEntities
+      .filter(e => e.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK)
+      .map(e => ({
+        entity_id: e.entity.id,
+        entity_name: e.entity.name,
+        entity_type: e.entity.entity_type,
+        similarity_score: e.score
+      }));
+
+    if (anchorEntities.length === 0) {
       console.log("No matching entities found");
       return new Response(
         JSON.stringify({
@@ -120,7 +167,7 @@ serve(async (req) => {
           anchors: [],
           subgraph: [],
           context: "",
-          message: "No matching entities found in the knowledge graph",
+          message: "No matching entities found for query",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -128,56 +175,111 @@ serve(async (req) => {
 
     console.log(`Found ${anchorEntities.length} anchor entities`);
 
-    // Step 3: Traverse graph from anchors (RSS Algorithm)
-    console.log("Traversing entity graph...");
-    const anchorIds = anchorEntities.map((e: { entity_id: string }) => e.entity_id);
+    // Step 4: Get relations for anchor entities and traverse
+    const anchorIds = anchorEntities.map(e => e.entity_id);
     
-    const { data: subgraph, error: traverseError } = await supabase
-      .rpc("traverse_entity_graph", {
-        p_entity_ids: anchorIds,
-        p_depth: traverseDepth,
-        p_relation_types: relationTypes || null,
-      });
+    let subgraph: Array<{
+      entity_id: string;
+      entity_name: string;
+      entity_type: string;
+      description?: string;
+      depth: number;
+    }> = [];
 
-    if (traverseError) {
-      console.error("Failed to traverse graph:", traverseError);
-      throw new Error("Failed to traverse graph");
+    // First level - anchor entities (depth 0)
+    for (const anchor of anchorEntities) {
+      const entity = allEntities.find(e => e.id === anchor.entity_id);
+      if (entity) {
+        subgraph.push({
+          entity_id: entity.id,
+          entity_name: entity.name,
+          entity_type: entity.entity_type,
+          description: entity.description,
+          depth: 0
+        });
+      }
     }
 
-    console.log(`Subgraph contains ${subgraph?.length || 0} nodes`);
+    // Traverse relations
+    let currentIds = anchorIds;
+    const visitedIds = new Set(anchorIds);
 
-    // Step 4: Get full entity details and relations
-    const entityIds = [...new Set([
-      ...anchorIds,
-      ...(subgraph?.map((n: { entity_id: string }) => n.entity_id) || []),
-    ])];
+    for (let depth = 1; depth <= traverseDepth; depth++) {
+      if (currentIds.length === 0) break;
 
-    const { data: entities, error: entitiesError } = await supabase
-      .from("entities")
-      .select("*")
-      .in("id", entityIds);
+      // Build query for relations
+      let relQuery = supabase
+        .from("entity_relations")
+        .select("*")
+        .eq("user_id", user.id);
 
-    if (entitiesError) {
-      console.error("Failed to fetch entity details:", entitiesError);
+      // Filter by source or target in current level
+      relQuery = relQuery.or(
+        `source_entity_id.in.(${currentIds.join(",")}),target_entity_id.in.(${currentIds.join(",")})`
+      );
+
+      if (relationTypes && relationTypes.length > 0) {
+        relQuery = relQuery.in("relation_type", relationTypes);
+      }
+
+      const { data: relations, error: relError } = await relQuery.limit(100);
+
+      if (relError) {
+        console.error(`Failed to fetch relations at depth ${depth}:`, relError);
+        break;
+      }
+
+      // Find new entity IDs from relations
+      const newIds: string[] = [];
+      for (const rel of relations || []) {
+        if (!visitedIds.has(rel.source_entity_id)) {
+          newIds.push(rel.source_entity_id);
+          visitedIds.add(rel.source_entity_id);
+        }
+        if (!visitedIds.has(rel.target_entity_id)) {
+          newIds.push(rel.target_entity_id);
+          visitedIds.add(rel.target_entity_id);
+        }
+      }
+
+      if (newIds.length === 0) break;
+
+      // Fetch entity details for new IDs
+      const { data: newEntities } = await supabase
+        .from("entities")
+        .select("*")
+        .in("id", newIds);
+
+      for (const entity of newEntities || []) {
+        subgraph.push({
+          entity_id: entity.id,
+          entity_name: entity.name,
+          entity_type: entity.entity_type,
+          description: entity.description,
+          depth
+        });
+      }
+
+      currentIds = newIds;
     }
 
-    // Get relations between these entities
-    const { data: relations, error: relationsError } = await supabase
+    console.log(`Subgraph contains ${subgraph.length} nodes`);
+
+    // Step 5: Get all relations between subgraph entities
+    const allSubgraphIds = subgraph.map(n => n.entity_id);
+    const { data: allRelations } = await supabase
       .from("entity_relations")
       .select("*")
-      .or(`source_entity_id.in.(${entityIds.join(",")}),target_entity_id.in.(${entityIds.join(",")})`);
+      .or(`source_entity_id.in.(${allSubgraphIds.join(",")}),target_entity_id.in.(${allSubgraphIds.join(",")})`)
+      .limit(50);
 
-    if (relationsError) {
-      console.error("Failed to fetch relations:", relationsError);
-    }
-
-    // Step 5: Serialize subgraph to context text
+    // Step 6: Build context text
     let contextText = "## 相关知识图谱上下文\n\n";
     
-    // Add anchor entities with similarity scores
+    // Add anchor entities
     contextText += "### 核心相关实体\n";
     for (const anchor of anchorEntities) {
-      const entity = entities?.find((e: { id: string }) => e.id === anchor.entity_id);
+      const entity = allEntities.find(e => e.id === anchor.entity_id);
       if (entity) {
         contextText += `- **${entity.name}** (${entity.entity_type}): ${entity.description || "无描述"}\n`;
         if (entity.source_content) {
@@ -186,41 +288,34 @@ serve(async (req) => {
       }
     }
 
-    // Add related entities from traversal
-    if (subgraph && subgraph.length > 0) {
-      contextText += "\n### 关联实体网络\n";
-      const groupedByDepth: Record<number, typeof subgraph> = {};
-      
-      for (const node of subgraph) {
-        if (!groupedByDepth[node.depth]) {
-          groupedByDepth[node.depth] = [];
-        }
-        groupedByDepth[node.depth].push(node);
+    // Add related entities by depth
+    const depthGroups: Record<number, typeof subgraph> = {};
+    for (const node of subgraph) {
+      if (node.depth > 0) {
+        if (!depthGroups[node.depth]) depthGroups[node.depth] = [];
+        depthGroups[node.depth].push(node);
       }
+    }
 
-      for (const depth of Object.keys(groupedByDepth).sort()) {
-        const nodes = groupedByDepth[Number(depth)];
-        if (Number(depth) > 0) {
-          contextText += `\n第 ${depth} 层关联:\n`;
-          for (const node of nodes) {
-            contextText += `- ${node.entity_name} (${node.entity_type}): ${node.description || ""}\n`;
-            if (node.relation_path && node.relation_path !== node.entity_name) {
-              contextText += `  路径: ${node.relation_path}\n`;
-            }
-          }
+    for (const depth of Object.keys(depthGroups).sort()) {
+      const nodes = depthGroups[Number(depth)];
+      if (nodes.length > 0) {
+        contextText += `\n### 第 ${depth} 层关联实体\n`;
+        for (const node of nodes) {
+          contextText += `- ${node.entity_name} (${node.entity_type}): ${node.description || ""}\n`;
         }
       }
     }
 
-    // Add key relations
-    if (relations && relations.length > 0) {
+    // Add relations
+    if (allRelations && allRelations.length > 0) {
       contextText += "\n### 实体关系\n";
       const entityIdToName: Record<string, string> = {};
-      for (const e of entities || []) {
+      for (const e of allEntities) {
         entityIdToName[e.id] = e.name;
       }
 
-      for (const rel of relations.slice(0, 20)) { // Limit to 20 relations
+      for (const rel of allRelations) {
         const sourceName = entityIdToName[rel.source_entity_id] || "未知";
         const targetName = entityIdToName[rel.target_entity_id] || "未知";
         contextText += `- ${sourceName} --[${rel.relation_type}]--> ${targetName}`;
@@ -237,14 +332,14 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         anchors: anchorEntities,
-        subgraph: subgraph || [],
-        entities: entities || [],
-        relations: relations || [],
+        subgraph,
+        entities: allEntities.filter(e => allSubgraphIds.includes(e.id)),
+        relations: allRelations || [],
         context: contextText,
         stats: {
           anchorCount: anchorEntities.length,
-          subgraphNodes: subgraph?.length || 0,
-          relationsCount: relations?.length || 0,
+          subgraphNodes: subgraph.length,
+          relationsCount: allRelations?.length || 0,
           contextLength: contextText.length,
         },
       }),
@@ -253,7 +348,10 @@ serve(async (req) => {
   } catch (error) {
     console.error("RSS query error:", error);
     return new Response(
-      JSON.stringify({ error: "An internal error occurred. Please try again later.", code: "RSS_QUERY_ERROR" }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "An internal error occurred",
+        code: "RSS_QUERY_ERROR" 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import { useIntentDrift } from "./useIntentDrift";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
@@ -24,6 +25,7 @@ interface AgentConfig {
   model?: string;
   skills?: AgentSkill[];
   mplpPolicy?: string;
+  agentId?: string;
 }
 
 interface TraceEventData {
@@ -33,9 +35,18 @@ interface TraceEventData {
   [key: string]: unknown;
 }
 
+export interface IntentDriftInfo {
+  driftDetected: boolean;
+  severity: "none" | "low" | "medium" | "high" | "critical";
+  deltaScore: number;
+  message?: string;
+}
+
 interface UseAgentChatOptions {
   agentConfig?: AgentConfig;
   onTraceEvent?: (type: string, data: TraceEventData) => void;
+  onIntentDrift?: (drift: IntentDriftInfo) => void;
+  enableIntentTracking?: boolean;
 }
 
 interface StreamChatOptions {
@@ -91,9 +102,18 @@ export function createMultimodalContent(
     : content;
 }
 
-export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions = {}) {
+export function useAgentChat({ 
+  agentConfig, 
+  onTraceEvent, 
+  onIntentDrift,
+  enableIntentTracking = false 
+}: UseAgentChatOptions = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentDrift, setCurrentDrift] = useState<IntentDriftInfo | null>(null);
+  const responseAccumulatorRef = useRef<string>("");
+  
+  const { trackIntent, resetSession } = useIntentDrift(agentConfig?.agentId);
 
   const streamChat = useCallback(async ({
     messages,
@@ -103,6 +123,15 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
   }: StreamChatOptions) => {
     setIsLoading(true);
     setError(null);
+    responseAccumulatorRef.current = "";
+
+    // Get the latest user message for intent tracking
+    const latestUserMessage = messages.filter(m => m.role === "user").pop();
+    const userMessageText = latestUserMessage 
+      ? (typeof latestUserMessage.content === "string" 
+          ? latestUserMessage.content 
+          : latestUserMessage.content.find(c => c.type === "text")?.text || "")
+      : "";
 
     // Check if any message contains multimodal content
     const isMultimodal = messages.some(m => hasMultimodalContent(m.content));
@@ -170,6 +199,7 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               tokenCount++;
+              responseAccumulatorRef.current += content;
               onDelta(content);
             }
           } catch {
@@ -193,6 +223,7 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               tokenCount++;
+              responseAccumulatorRef.current += content;
               onDelta(content);
             }
           } catch { /* ignore */ }
@@ -201,6 +232,22 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
 
       onThinking?.("LLM:Stream", `响应完成 (${tokenCount} tokens)`, "success");
       onTraceEvent?.("ai_response_complete", { tokenCount, isMultimodal });
+      
+      // Track intent drift after response is complete
+      if (enableIntentTracking && userMessageText) {
+        const driftResult = await trackIntent(userMessageText, responseAccumulatorRef.current);
+        if (driftResult) {
+          setCurrentDrift(driftResult);
+          if (driftResult.driftDetected) {
+            onIntentDrift?.(driftResult);
+            onTraceEvent?.("intent_drift", { 
+              severity: driftResult.severity, 
+              deltaScore: driftResult.deltaScore 
+            });
+          }
+        }
+      }
+      
       onDone();
     } catch (err) {
       const message = err instanceof Error ? err.message : "未知错误";
@@ -210,7 +257,12 @@ export function useAgentChat({ agentConfig, onTraceEvent }: UseAgentChatOptions 
     } finally {
       setIsLoading(false);
     }
-  }, [agentConfig, onTraceEvent]);
+  }, [agentConfig, onTraceEvent, enableIntentTracking, trackIntent, onIntentDrift]);
 
-  return { streamChat, isLoading, error };
+  const resetIntentTracking = useCallback(() => {
+    resetSession();
+    setCurrentDrift(null);
+  }, [resetSession]);
+
+  return { streamChat, isLoading, error, currentDrift, resetIntentTracking };
 }

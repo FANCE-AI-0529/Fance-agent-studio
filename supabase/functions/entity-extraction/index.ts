@@ -17,6 +17,7 @@ interface ExtractedEntity {
   type: string;
   description: string;
   sourceContent: string;
+  keywords?: string[];
 }
 
 interface ExtractedRelation {
@@ -59,6 +60,13 @@ serve(async (req) => {
 
     const { documentContent, documentName, agentId }: EntityExtractionRequest = await req.json();
 
+    if (!documentContent || !documentName) {
+      return new Response(JSON.stringify({ error: "Missing documentContent or documentName" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log(`Processing document: ${documentName} for user: ${user.id}`);
 
     // Create document processing record
@@ -68,7 +76,7 @@ serve(async (req) => {
         user_id: user.id,
         agent_id: agentId || null,
         document_name: documentName,
-        document_content: documentContent,
+        document_content: documentContent.substring(0, 50000), // Limit stored content
         status: "processing",
       })
       .select()
@@ -79,7 +87,7 @@ serve(async (req) => {
       throw new Error("Failed to create document record");
     }
 
-    // Step 1: Extract entities using Lovable AI
+    // Extract entities using tool calling for structured output
     console.log("Extracting entities...");
     const entityExtractionResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -93,64 +101,116 @@ serve(async (req) => {
           {
             role: "system",
             content: `You are an expert at extracting structured entities and relationships from documents.
-Extract entities of these types: person, organization, document, location, concept, process, regulation.
+Extract entities of types: person, organization, document, location, concept, process, regulation.
 Also identify relationships between entities.
-Return ONLY valid JSON, no markdown.`,
+For each entity, extract key keywords that can be used for matching.`,
           },
           {
             role: "user",
-            content: `Extract entities and relationships from this document:
-
-${documentContent.substring(0, 8000)}
-
-Return JSON in this exact format:
-{
-  "entities": [
-    {"name": "entity name", "type": "person|organization|document|location|concept|process|regulation", "description": "brief description", "sourceContent": "relevant quote from document"}
-  ],
-  "relations": [
-    {"sourceEntity": "source name", "targetEntity": "target name", "relationType": "belongs_to|requires|provides|located_at|manages|regulates|processes", "description": "relationship description"}
-  ]
-}`,
+            content: `Extract entities and relationships from this document:\n\n${documentContent.substring(0, 10000)}`,
           },
         ],
-        temperature: 0.2,
-        max_tokens: 4000,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "save_entities",
+              description: "Save extracted entities and relations",
+              parameters: {
+                type: "object",
+                properties: {
+                  entities: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        type: { 
+                          type: "string", 
+                          enum: ["person", "organization", "document", "location", "concept", "process", "regulation"]
+                        },
+                        description: { type: "string" },
+                        sourceContent: { type: "string", description: "Relevant quote from document" },
+                        keywords: {
+                          type: "array",
+                          items: { type: "string" },
+                          description: "Keywords for matching"
+                        }
+                      },
+                      required: ["name", "type", "description"]
+                    }
+                  },
+                  relations: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        sourceEntity: { type: "string" },
+                        targetEntity: { type: "string" },
+                        relationType: {
+                          type: "string",
+                          enum: ["belongs_to", "requires", "provides", "located_at", "manages", "regulates", "processes", "related_to"]
+                        },
+                        description: { type: "string" }
+                      },
+                      required: ["sourceEntity", "targetEntity", "relationType"]
+                    }
+                  }
+                },
+                required: ["entities", "relations"]
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "save_entities" } }
       }),
     });
 
     if (!entityExtractionResponse.ok) {
+      const status = entityExtractionResponse.status;
       const errorText = await entityExtractionResponse.text();
-      console.error("Entity extraction failed:", errorText);
+      console.error("Entity extraction failed:", status, errorText);
       
       await supabase
         .from("document_processing")
-        .update({ status: "failed", error_message: "Entity extraction failed" })
+        .update({ 
+          status: "failed", 
+          error_message: status === 429 ? "Rate limited" : status === 402 ? "Quota exceeded" : "Entity extraction failed" 
+        })
         .eq("id", docRecord.id);
+      
+      if (status === 429) {
+        return new Response(JSON.stringify({ error: "请求过于频繁，请稍后再试", code: "RATE_LIMITED" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (status === 402) {
+        return new Response(JSON.stringify({ error: "AI服务额度不足", code: "QUOTA_EXCEEDED" }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
         
       throw new Error("Entity extraction failed");
     }
 
     const extractionResult = await entityExtractionResponse.json();
-    const content = extractionResult.choices?.[0]?.message?.content || "";
     
-    console.log("Raw extraction result:", content);
+    // Parse tool call response
+    const toolCall = extractionResult.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      console.error("No tool call in response");
+      await supabase
+        .from("document_processing")
+        .update({ status: "failed", error_message: "Invalid AI response format" })
+        .eq("id", docRecord.id);
+      throw new Error("Invalid AI response format");
+    }
 
-    // Parse the JSON response
     let extractedData: { entities: ExtractedEntity[]; relations: ExtractedRelation[] };
     try {
-      // Clean up the response if it has markdown code blocks
-      let cleanContent = content.trim();
-      if (cleanContent.startsWith("```json")) {
-        cleanContent = cleanContent.slice(7);
-      }
-      if (cleanContent.startsWith("```")) {
-        cleanContent = cleanContent.slice(3);
-      }
-      if (cleanContent.endsWith("```")) {
-        cleanContent = cleanContent.slice(0, -3);
-      }
-      extractedData = JSON.parse(cleanContent.trim());
+      extractedData = JSON.parse(toolCall.function.arguments);
     } catch (parseError) {
       console.error("Failed to parse extraction result:", parseError);
       await supabase
@@ -160,82 +220,29 @@ Return JSON in this exact format:
       throw new Error("Failed to parse extraction result");
     }
 
-    // Step 2: Generate embeddings for each entity
-    console.log(`Generating embeddings for ${extractedData.entities.length} entities...`);
-    
-    const entitiesWithEmbeddings: Array<{
-      user_id: string;
-      agent_id: string | null;
-      name: string;
-      entity_type: string;
-      description: string;
-      source_document: string;
-      source_content: string;
-      embedding: number[];
-    }> = [];
+    console.log(`Extracted ${extractedData.entities?.length || 0} entities and ${extractedData.relations?.length || 0} relations`);
 
-    for (const entity of extractedData.entities) {
-      // Generate embedding using Lovable AI
-      const embeddingText = `${entity.name}: ${entity.description}. ${entity.sourceContent}`;
-      
-      const embeddingResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: "Generate a semantic embedding representation. Return ONLY a JSON array of 64 floating point numbers between -1 and 1 representing the semantic meaning. No explanation, just the array.",
-            },
-            {
-              role: "user",
-              content: embeddingText,
-            },
-          ],
-          temperature: 0,
-          max_tokens: 500,
-        }),
-      });
+    // Insert entities WITHOUT pseudo-embeddings - use keywords for matching instead
+    const entitiesToInsert = (extractedData.entities || []).map((entity) => ({
+      user_id: user.id,
+      agent_id: agentId || null,
+      name: entity.name,
+      entity_type: entity.type,
+      description: entity.description,
+      source_document: documentName,
+      source_content: entity.sourceContent || "",
+      // Store keywords as metadata for text-based matching
+      metadata: {
+        keywords: entity.keywords || [],
+        extracted_at: new Date().toISOString()
+      },
+      // Don't generate pseudo-embeddings - they're ineffective
+      embedding: null,
+    }));
 
-      let embedding: number[] = [];
-      if (embeddingResponse.ok) {
-        const embResult = await embeddingResponse.json();
-        const embContent = embResult.choices?.[0]?.message?.content || "";
-        try {
-          let cleanEmb = embContent.trim();
-          if (cleanEmb.startsWith("```")) {
-            cleanEmb = cleanEmb.replace(/```json?\n?/g, "").replace(/```/g, "");
-          }
-          embedding = JSON.parse(cleanEmb.trim());
-        } catch {
-          // Generate random embedding as fallback
-          embedding = Array.from({ length: 64 }, () => Math.random() * 2 - 1);
-        }
-      } else {
-        embedding = Array.from({ length: 64 }, () => Math.random() * 2 - 1);
-      }
-
-      entitiesWithEmbeddings.push({
-        user_id: user.id,
-        agent_id: agentId || null,
-        name: entity.name,
-        entity_type: entity.type,
-        description: entity.description,
-        source_document: documentName,
-        source_content: entity.sourceContent,
-        embedding,
-      });
-    }
-
-    // Step 3: Insert entities
-    console.log("Inserting entities...");
     const { data: insertedEntities, error: insertError } = await supabase
       .from("entities")
-      .insert(entitiesWithEmbeddings)
+      .insert(entitiesToInsert)
       .select();
 
     if (insertError) {
@@ -247,14 +254,13 @@ Return JSON in this exact format:
       throw new Error("Failed to insert entities");
     }
 
-    // Step 4: Create entity name to ID mapping
+    // Create entity name to ID mapping (case-insensitive)
     const entityNameToId: Record<string, string> = {};
     for (const entity of insertedEntities || []) {
       entityNameToId[entity.name.toLowerCase()] = entity.id;
     }
 
-    // Step 5: Insert relations
-    console.log(`Creating ${extractedData.relations.length} relations...`);
+    // Insert relations
     const relationsToInsert: Array<{
       user_id: string;
       source_entity_id: string;
@@ -263,7 +269,7 @@ Return JSON in this exact format:
       description: string;
     }> = [];
 
-    for (const relation of extractedData.relations) {
+    for (const relation of extractedData.relations || []) {
       const sourceId = entityNameToId[relation.sourceEntity.toLowerCase()];
       const targetId = entityNameToId[relation.targetEntity.toLowerCase()];
 
@@ -273,18 +279,22 @@ Return JSON in this exact format:
           source_entity_id: sourceId,
           target_entity_id: targetId,
           relation_type: relation.relationType,
-          description: relation.description,
+          description: relation.description || "",
         });
       }
     }
 
+    let insertedRelationsCount = 0;
     if (relationsToInsert.length > 0) {
-      const { error: relError } = await supabase
+      const { data: insertedRelations, error: relError } = await supabase
         .from("entity_relations")
-        .insert(relationsToInsert);
+        .insert(relationsToInsert)
+        .select();
 
       if (relError) {
         console.error("Failed to insert some relations:", relError);
+      } else {
+        insertedRelationsCount = insertedRelations?.length || 0;
       }
     }
 
@@ -294,20 +304,20 @@ Return JSON in this exact format:
       .update({
         status: "completed",
         entities_count: insertedEntities?.length || 0,
-        relations_count: relationsToInsert.length,
+        relations_count: insertedRelationsCount,
         completed_at: new Date().toISOString(),
       })
       .eq("id", docRecord.id);
 
     console.log(`Successfully processed document: ${documentName}`);
-    console.log(`Entities: ${insertedEntities?.length || 0}, Relations: ${relationsToInsert.length}`);
+    console.log(`Entities: ${insertedEntities?.length || 0}, Relations: ${insertedRelationsCount}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         documentId: docRecord.id,
         entitiesCount: insertedEntities?.length || 0,
-        relationsCount: relationsToInsert.length,
+        relationsCount: insertedRelationsCount,
         entities: insertedEntities,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -315,7 +325,10 @@ Return JSON in this exact format:
   } catch (error) {
     console.error("Entity extraction error:", error);
     return new Response(
-      JSON.stringify({ error: "An internal error occurred. Please try again later.", code: "ENTITY_EXTRACTION_ERROR" }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "An internal error occurred",
+        code: "ENTITY_EXTRACTION_ERROR" 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
