@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,11 +24,11 @@ import { AdminInvitePanel } from "@/components/invite/AdminInvitePanel";
 import { format } from "date-fns";
 
 interface UserManagementDialogProps {
-  trigger?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function UserManagementDialog({ trigger }: UserManagementDialogProps) {
-  const [open, setOpen] = useState(false);
+export function UserManagementDialog({ open, onOpenChange }: UserManagementDialogProps) {
   const [friendCode, setFriendCode] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
@@ -65,19 +64,11 @@ export function UserManagementDialog({ trigger }: UserManagementDialogProps) {
     setFriendCode("");
   };
 
-  // Check if user is admin (you may want to implement proper admin check)
+  // Check if user is admin
   const isAdmin = user?.user_metadata?.is_admin === true;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="ghost" className="w-full justify-start">
-            <Users className="h-4 w-4 mr-2" />
-            用户管理
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -87,10 +78,12 @@ export function UserManagementDialog({ trigger }: UserManagementDialogProps) {
         </DialogHeader>
 
         <Tabs defaultValue="my-invites" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="my-invites">我的邀请</TabsTrigger>
-            {isAdmin && <TabsTrigger value="admin">管理员面板</TabsTrigger>}
-          </TabsList>
+          {isAdmin && (
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="my-invites">我的邀请</TabsTrigger>
+              <TabsTrigger value="admin">管理员面板</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="my-invites" className="space-y-4 mt-4">
             {/* Stats Cards */}
