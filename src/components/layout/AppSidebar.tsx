@@ -80,7 +80,7 @@ export function AppSidebar() {
                 <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg" />
                 <div>
                   <div className="font-semibold text-sm">Fance</div>
-                  <div className="text-[10px] text-muted-foreground">v1.0</div>
+                  <div className="text-[10px] text-muted-foreground leading-tight">Agent Skills驱动的智能体构建平台</div>
                 </div>
               </div>
             )}
