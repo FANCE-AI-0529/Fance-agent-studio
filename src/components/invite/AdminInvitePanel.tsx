@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -37,12 +45,28 @@ import {
   Download,
   Clock,
   CheckCircle2,
-  XCircle
+  AlertCircle,
+  Calendar
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+// Helper to check if code is expired
+function isExpired(expiresAt: string | null): boolean {
+  if (!expiresAt) return false;
+  return new Date(expiresAt) < new Date();
+}
+
+// Helper to format expiration
+function formatExpiration(expiresAt: string | null): string {
+  if (!expiresAt) return "永久有效";
+  const date = new Date(expiresAt);
+  if (date < new Date()) return "已过期";
+  return date.toLocaleDateString("zh-CN");
+}
+
 export function AdminInvitePanel() {
   const [generateCount, setGenerateCount] = useState(10);
+  const [expiresInDays, setExpiresInDays] = useState<string>("0"); // 0 = no expiration
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   
@@ -52,7 +76,11 @@ export function AdminInvitePanel() {
   const deleteCode = useDeleteInviteCode();
 
   const handleGenerate = async () => {
-    await batchGenerate.mutateAsync(generateCount);
+    const days = parseInt(expiresInDays);
+    await batchGenerate.mutateAsync({ 
+      count: generateCount, 
+      expiresInDays: days > 0 ? days : null 
+    });
     setDialogOpen(false);
   };
 
@@ -65,7 +93,7 @@ export function AdminInvitePanel() {
 
   const handleExportCodes = () => {
     const pendingCodes = allCodes
-      .filter(c => c.status === "pending" && !c.invited_user_id)
+      .filter(c => c.status === "pending" && !c.invited_user_id && !isExpired(c.expires_at))
       .map(c => c.invite_code);
     
     if (pendingCodes.length === 0) {
@@ -85,8 +113,16 @@ export function AdminInvitePanel() {
     toast({ title: `已导出 ${pendingCodes.length} 个邀请码` });
   };
 
-  const pendingCodes = allCodes.filter(c => c.status === "pending" && !c.invited_user_id);
-  const usedCodes = allCodes.filter(c => c.status === "accepted" || c.invited_user_id);
+  // Get code status
+  const getCodeStatus = (code: any) => {
+    if (code.status === "accepted" || code.invited_user_id) {
+      return "used";
+    }
+    if (isExpired(code.expires_at)) {
+      return "expired";
+    }
+    return "available";
+  };
 
   return (
     <Card className="border-primary/20 bg-primary/5">
@@ -144,12 +180,12 @@ export function AdminInvitePanel() {
               <DialogHeader>
                 <DialogTitle>批量生成邀请码</DialogTitle>
                 <DialogDescription>
-                  一次性生成多个邀请码，最多 100 个
+                  一次性生成多个邀请码，可设置有效期
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">生成数量</label>
+                  <Label>生成数量</Label>
                   <Input
                     type="number"
                     min={1}
@@ -157,30 +193,59 @@ export function AdminInvitePanel() {
                     value={generateCount}
                     onChange={(e) => setGenerateCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
                   />
-                  <p className="text-xs text-muted-foreground">可输入 1-100 之间的数量</p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setGenerateCount(10)}
+                    >
+                      10 个
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setGenerateCount(25)}
+                    >
+                      25 个
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setGenerateCount(50)}
+                    >
+                      50 个
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setGenerateCount(10)}
-                  >
-                    10 个
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setGenerateCount(25)}
-                  >
-                    25 个
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setGenerateCount(50)}
-                  >
-                    50 个
-                  </Button>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    有效期
+                  </Label>
+                  <Select value={expiresInDays} onValueChange={setExpiresInDays}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择有效期" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">永久有效</SelectItem>
+                      <SelectItem value="1">1 天</SelectItem>
+                      <SelectItem value="3">3 天</SelectItem>
+                      <SelectItem value="7">7 天</SelectItem>
+                      <SelectItem value="14">14 天</SelectItem>
+                      <SelectItem value="30">30 天</SelectItem>
+                      <SelectItem value="90">90 天</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {expiresInDays === "0" 
+                      ? "邀请码将永久有效，直到被使用" 
+                      : `邀请码将在 ${expiresInDays} 天后过期`
+                    }
+                  </p>
                 </div>
               </div>
               <div className="flex justify-end gap-3">
@@ -231,61 +296,73 @@ export function AdminInvitePanel() {
                   <TableRow>
                     <TableHead>邀请码</TableHead>
                     <TableHead>状态</TableHead>
+                    <TableHead>有效期</TableHead>
                     <TableHead>创建时间</TableHead>
                     <TableHead className="text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allCodes.map((code) => (
-                    <TableRow key={code.id}>
-                      <TableCell className="font-mono font-medium">
-                        {code.invite_code}
-                      </TableCell>
-                      <TableCell>
-                        {code.status === "accepted" || code.invited_user_id ? (
-                          <Badge variant="default" className="gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            已使用
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="gap-1">
-                            <Clock className="h-3 w-3" />
-                            可用
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(code.created_at).toLocaleDateString("zh-CN")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => handleCopy(code.invite_code, code.id)}
-                          >
-                            {copiedId === code.id ? (
-                              <Check className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          {code.status === "pending" && !code.invited_user_id && (
+                  {allCodes.map((code) => {
+                    const status = getCodeStatus(code);
+                    return (
+                      <TableRow key={code.id} className={status === "expired" ? "opacity-50" : ""}>
+                        <TableCell className="font-mono font-medium">
+                          {code.invite_code}
+                        </TableCell>
+                        <TableCell>
+                          {status === "used" ? (
+                            <Badge variant="default" className="gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              已使用
+                            </Badge>
+                          ) : status === "expired" ? (
+                            <Badge variant="destructive" className="gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              已过期
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="gap-1">
+                              <Clock className="h-3 w-3" />
+                              可用
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatExpiration(code.expires_at)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(code.created_at).toLocaleDateString("zh-CN")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => deleteCode.mutate(code.id)}
-                              disabled={deleteCode.isPending}
+                              className="h-8 w-8"
+                              onClick={() => handleCopy(code.invite_code, code.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              {copiedId === code.id ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            {status !== "used" && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => deleteCode.mutate(code.id)}
+                                disabled={deleteCode.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </ScrollArea>

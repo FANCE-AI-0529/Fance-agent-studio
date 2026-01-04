@@ -62,18 +62,31 @@ function generateInviteCode(): string {
   return code;
 }
 
+export interface BatchGenerateOptions {
+  count: number;
+  expiresInDays?: number | null; // null means no expiration
+}
+
 // Batch generate invite codes
 export function useBatchGenerateInviteCodes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (count: number) => {
+    mutationFn: async ({ count, expiresInDays }: BatchGenerateOptions) => {
       if (!user?.id) throw new Error("User not authenticated");
       if (count < 1 || count > 100) throw new Error("数量必须在 1-100 之间");
 
       const codes: string[] = [];
       const insertData = [];
+
+      // Calculate expiration date
+      let expiresAt: string | null = null;
+      if (expiresInDays && expiresInDays > 0) {
+        const date = new Date();
+        date.setDate(date.getDate() + expiresInDays);
+        expiresAt = date.toISOString();
+      }
 
       // Generate unique codes
       for (let i = 0; i < count; i++) {
@@ -87,6 +100,7 @@ export function useBatchGenerateInviteCodes() {
           inviter_id: user.id,
           invite_code: code,
           status: "pending",
+          expires_at: expiresAt,
         });
       }
 
