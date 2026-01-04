@@ -42,7 +42,7 @@ import {
 const mainNavItems = [
   { title: "概览", url: "/", icon: LayoutDashboard },
   { title: "Agent 构建器", url: "/builder", icon: Bot },
-  { title: "技能工坊", url: "/foundry", icon: Hammer },
+  { title: "Skills工坊", url: "/foundry", icon: Hammer },
   { title: "运行环境", url: "/runtime", icon: Play },
   { title: "API 中心", url: "/api-hub", icon: Plug },
 ];
