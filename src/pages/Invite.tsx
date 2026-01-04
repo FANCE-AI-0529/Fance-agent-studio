@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -16,6 +16,8 @@ import {
   useInvitationStats,
   useAcceptInvitation 
 } from "@/hooks/useInvite";
+import { useIsAdmin } from "@/hooks/useAdminInvite";
+import { AdminInvitePanel } from "@/components/invite/AdminInvitePanel";
 import { 
   Gift, 
   Copy, 
@@ -42,6 +44,7 @@ export default function Invite() {
   const { data: pointsHistory = [], isLoading: historyLoading } = usePointsHistory();
   const { data: invitations = [], isLoading: invitationsLoading } = useSentInvitations();
   const acceptInvitation = useAcceptInvitation();
+  const { data: isAdmin } = useIsAdmin();
 
   const handleCopyCode = async () => {
     if (!inviteCode) return;
@@ -140,6 +143,9 @@ export default function Invite() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Admin Panel */}
+          {isAdmin && <AdminInvitePanel />}
 
           {/* Invite Code Card */}
           <Card>
