@@ -33,7 +33,7 @@ export function useInviteValidation(inviteCode: string): InviteValidationResult 
       try {
         const { data, error: queryError } = await supabase
           .from("invitations")
-          .select("id, inviter_id, status, invited_user_id")
+          .select("id, inviter_id, status, invited_user_id, expires_at")
           .eq("invite_code", inviteCode.toUpperCase())
           .maybeSingle();
 
@@ -44,13 +44,20 @@ export function useInviteValidation(inviteCode: string): InviteValidationResult 
         }
 
         if (!data) {
-          setError("邀请码不存在");
+          setError("邀请码不存在或已过期");
           setIsLoading(false);
           return;
         }
 
         if (data.status !== "pending" || data.invited_user_id !== null) {
           setError("邀请码已被使用");
+          setIsLoading(false);
+          return;
+        }
+
+        // Check expiration (additional client-side check)
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          setError("邀请码已过期");
           setIsLoading(false);
           return;
         }
