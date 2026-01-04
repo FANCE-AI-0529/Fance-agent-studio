@@ -74,7 +74,17 @@ import { ApiStatsDashboard } from "@/components/builder/ApiStatsDashboard";
 import CreationModeSelector, { CreationMode } from "@/components/builder/CreationModeSelector";
 import LiveTestPanel from "@/components/builder/LiveTestPanel";
 import PersonalityConfigurator from "@/components/builder/PersonalityConfigurator";
-import { useSaveAgentWithSkills, useDeployAgent, useAgent } from "@/hooks/useAgents";
+import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePublishedSkills } from "@/hooks/useSkills";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -128,6 +138,7 @@ const Builder = () => {
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [templateApplied, setTemplateApplied] = useState(false);
   const [showDeploySuccessDialog, setShowDeploySuccessDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [personalityConfig, setPersonalityConfig] = useState<PersonalityConfig>(getDefaultPersonalityConfig());
 
   const { parseAdjustment, applyAdjustment } = useConfigAdjustment();
@@ -160,6 +171,7 @@ const Builder = () => {
   const { data: existingAgent } = useAgent(agentIdParam || null);
   const saveAgent = useSaveAgentWithSkills();
   const deployAgent = useDeployAgent();
+  const deleteAgent = useDeleteAgent();
 
   // Load existing agent data
   useEffect(() => {
@@ -694,8 +706,25 @@ const Builder = () => {
     }
   };
 
+  // Handle delete agent
+  const handleDeleteAgent = async () => {
+    if (!currentAgentId) return;
+    
+    try {
+      await deleteAgent.mutateAsync(currentAgentId);
+      toast({
+        title: "智能体已删除",
+        description: "正在返回首页...",
+      });
+      navigate("/");
+    } catch (error) {
+      // Error already handled in hook
+    }
+  };
+
   const canDeploy = agentConfig.name.trim() !== "" && addedSkills.length > 0;
   const isSaving = saveAgent.isPending || deployAgent.isPending;
+  const isDeleting = deleteAgent.isPending;
 
   // Fit view helper
   const handleFitView = () => {
@@ -1086,6 +1115,9 @@ const Builder = () => {
           isSaving={isSaving}
           isCollapsed={rightPanelCollapsed}
           onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          agentId={currentAgentId}
+          onDelete={() => setShowDeleteConfirm(true)}
+          isDeleting={isDeleting}
         />
 
         {/* Wizard Modal */}
@@ -1245,6 +1277,28 @@ const Builder = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确定删除此智能体？</AlertDialogTitle>
+              <AlertDialogDescription>
+                此操作将永久删除「{agentConfig.name}」及其所有配置和关联数据。此操作不可撤销。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>取消</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDeleteAgent}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "删除中..." : "确认删除"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );
