@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,11 +41,35 @@ const validModels = [
   "openai/gpt-5-nano",
 ];
 
+const VALID_MPLP_POLICIES = ['default', 'standard', 'strict'];
+
 function getValidModel(requestedModel?: string): string {
   if (requestedModel && validModels.includes(requestedModel)) {
     return requestedModel;
   }
   return "google/gemini-2.5-flash"; // default
+}
+
+// Validate and sanitize agent configuration to prevent injection attacks
+function validateAgentConfig(config?: AgentConfig): AgentConfig | undefined {
+  if (!config) return undefined;
+  
+  return {
+    name: config.name ? String(config.name).slice(0, 100) : undefined,
+    systemPrompt: config.systemPrompt ? String(config.systemPrompt).slice(0, 8000) : undefined,
+    model: validModels.includes(config.model || '') ? config.model : undefined,
+    mplpPolicy: VALID_MPLP_POLICIES.includes(config.mplpPolicy || '') 
+      ? config.mplpPolicy : 'standard',
+    skills: Array.isArray(config.skills) 
+      ? config.skills.slice(0, 20).map(s => ({
+          name: String(s.name || '').slice(0, 100),
+          description: String(s.description || '').slice(0, 500),
+          permissions: Array.isArray(s.permissions) 
+            ? s.permissions.slice(0, 10).map(p => String(p).slice(0, 50))
+            : []
+        }))
+      : []
+  };
 }
 
 // Check if message contains multimodal content
@@ -181,6 +206,33 @@ serve(async (req) => {
   }
 
   try {
+    // === SECURITY FIX 1: Verify user authentication ===
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("[agent-chat] No authorization header");
+      return new Response(
+        JSON.stringify({ error: "未授权访问", code: "UNAUTHORIZED" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      console.error("[agent-chat] Invalid auth token:", userError?.message);
+      return new Response(
+        JSON.stringify({ error: "无效的认证令牌", code: "INVALID_TOKEN" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[agent-chat] Authenticated user: ${user.id}`);
+
     const { messages, agentConfig } = await req.json() as {
       messages: ChatMessage[];
       agentConfig?: AgentConfig;
@@ -193,12 +245,15 @@ serve(async (req) => {
       throw new Error("AI 服务未配置");
     }
 
+    // === SECURITY FIX 2: Validate and sanitize agent configuration ===
+    const validatedConfig = validateAgentConfig(agentConfig);
+
     // Check if this is a multimodal request
     const isMultimodal = hasMultimodalContent(messages);
-    const systemPrompt = buildSystemPrompt(agentConfig, isMultimodal);
-    const model = getValidModel(agentConfig?.model);
+    const systemPrompt = buildSystemPrompt(validatedConfig, isMultimodal);
+    const model = getValidModel(validatedConfig?.model);
 
-    console.log(`[agent-chat] Starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${agentConfig?.name || 'default'}`);
+    console.log(`[agent-chat] User ${user.id} starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}`);
     console.log(`[agent-chat] Message count: ${messages?.length || 0}`);
 
     // Build messages array
@@ -246,7 +301,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[agent-chat] Streaming response started with model: ${model}, multimodal: ${isMultimodal}`);
+    console.log(`[agent-chat] Streaming response started for user ${user.id} with model: ${model}, multimodal: ${isMultimodal}`);
     
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
