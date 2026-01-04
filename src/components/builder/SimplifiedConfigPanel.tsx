@@ -55,6 +55,9 @@ interface SimplifiedConfigPanelProps {
   isSaving: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  agentId?: string | null;
+  onDelete?: () => void;
+  isDeleting?: boolean;
 }
 
 export function SimplifiedConfigPanel({
@@ -69,6 +72,9 @@ export function SimplifiedConfigPanel({
   isSaving,
   isCollapsed,
   onToggleCollapse,
+  agentId,
+  onDelete,
+  isDeleting,
 }: SimplifiedConfigPanelProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     basic: true,
@@ -371,7 +377,7 @@ export function SimplifiedConfigPanel({
         <Button
           className="w-full gap-2"
           onClick={onDeploy}
-          disabled={!canDeploy || isSaving}
+          disabled={!canDeploy || isSaving || isDeleting}
         >
           <Rocket className="h-4 w-4" />
           保存并部署
@@ -380,10 +386,21 @@ export function SimplifiedConfigPanel({
           variant="outline"
           className="w-full"
           onClick={onSave}
-          disabled={isSaving || !config.name.trim()}
+          disabled={isSaving || isDeleting || !config.name.trim()}
         >
           仅保存草稿
         </Button>
+        {agentId && onDelete && (
+          <Button
+            variant="outline"
+            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={onDelete}
+            disabled={isSaving || isDeleting}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            删除此智能体
+          </Button>
+        )}
       </div>
     </div>
   );

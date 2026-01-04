@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -6,13 +6,34 @@ import {
   Play, 
   ArrowRight, 
   Loader2,
+  MoreVertical,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useMyAgents } from "@/hooks/useAgents";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useMyAgents, useDeleteAgent, Agent } from "@/hooks/useAgents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useLogActivity } from "@/hooks/useAchievements";
+import { toast } from "@/hooks/use-toast";
 import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
 import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
@@ -27,6 +48,10 @@ const Index = () => {
   const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
   const { data: userStats, isLoading: statsLoading } = useUserStats();
   const logActivity = useLogActivity();
+  const deleteAgent = useDeleteAgent();
+  
+  const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Log activity when user visits dashboard
   useEffect(() => {
@@ -39,6 +64,22 @@ const Index = () => {
 
   const handleStartWizard = () => {
     navigate("/builder?wizard=true");
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!agentToDelete) return;
+    
+    try {
+      await deleteAgent.mutateAsync(agentToDelete.id);
+      toast({
+        title: "智能体已删除",
+        description: `「${agentToDelete.name}」已被删除`,
+      });
+      setAgentToDelete(null);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      // Error already handled in hook
+    }
   };
 
   return (
@@ -129,31 +170,62 @@ const Index = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Link
-                      to={agent.status === 'deployed' ? '/runtime' : `/builder/${agent.id}`}
-                      className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Bot className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                            {agent.name}
-                          </h3>
-                          <Badge 
-                            variant={agent.status === 'deployed' ? 'default' : 'secondary'}
-                            className="text-[10px]"
-                          >
-                            {agent.status === 'deployed' ? '已部署' : '草稿'}
-                          </Badge>
+                    <div className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
+                      <Link
+                        to={agent.status === 'deployed' ? '/runtime' : `/builder/${agent.id}`}
+                        className="flex items-center gap-4 flex-1 min-w-0"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Bot className="h-6 w-6 text-primary" />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {agent.department || '通用助手'}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                    </Link>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium truncate group-hover:text-primary transition-colors">
+                              {agent.name}
+                            </h3>
+                            <Badge 
+                              variant={agent.status === 'deployed' ? 'default' : 'secondary'}
+                              className="text-[10px]"
+                            >
+                              {agent.status === 'deployed' ? '已部署' : '草稿'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {agent.department || '通用助手'}
+                          </p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      </Link>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/builder/${agent.id}`)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            编辑
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setAgentToDelete(agent);
+                              setShowDeleteConfirm(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </motion.div>
                 ))}
                 {myAgents.length > 3 && (
@@ -174,6 +246,28 @@ const Index = () => {
         {/* Community Stats - Now using real data */}
         <CommunityStats />
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确定删除此智能体？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将永久删除「{agentToDelete?.name}」及其所有配置和关联数据。此操作不可撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAgent.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteAgent}
+              disabled={deleteAgent.isPending}
+            >
+              {deleteAgent.isPending ? "删除中..." : "确认删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
