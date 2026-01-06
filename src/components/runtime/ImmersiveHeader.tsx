@@ -69,7 +69,8 @@ export function ImmersiveHeader({
 }: ImmersiveHeaderProps) {
   return (
     <div className="panel-header border-b border-border backdrop-blur-sm bg-background/80 relative z-20">
-      <div className="flex items-center gap-2">
+      {/* 左侧控制区 */}
+      <div className="flex items-center gap-2 flex-1">
         {/* History Toggle */}
         {isLoggedIn && (
           <Button
@@ -81,14 +82,6 @@ export function ImmersiveHeader({
             <History className={cn("h-4 w-4", showHistory && "text-primary")} />
           </Button>
         )}
-        
-        {/* Agent Selector */}
-        <AgentSelector
-          agents={agents}
-          selectedAgent={selectedAgent}
-          onSelectAgent={onSelectAgent}
-          isLoading={isLoadingAgents}
-        />
         
         {/* Session Badge */}
         {hasActiveSession && (
@@ -104,7 +97,18 @@ export function ImmersiveHeader({
         )}
       </div>
       
-      <div className="flex items-center gap-1.5">
+      {/* 中间 - Agent Selector 居中显示 */}
+      <div className="flex items-center justify-center">
+        <AgentSelector
+          agents={agents}
+          selectedAgent={selectedAgent}
+          onSelectAgent={onSelectAgent}
+          isLoading={isLoadingAgents}
+        />
+      </div>
+      
+      {/* 右侧控制区 */}
+      <div className="flex items-center gap-1.5 flex-1 justify-end">
         {/* Scenario Selector */}
         <ScenarioSelector
           selectedScenario={activeScenario}
