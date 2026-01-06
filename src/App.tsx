@@ -221,7 +221,7 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <LanguageProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
