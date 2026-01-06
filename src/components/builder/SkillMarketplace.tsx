@@ -36,6 +36,20 @@ const skillCategories = [
   { id: "code", label: "代码生成", icon: FileCode },
 ];
 
+export interface MCPTool {
+  name: string;
+  description?: string;
+  input_schema?: Record<string, unknown>;
+  output_schema?: Record<string, unknown>;
+}
+
+export interface MCPResource {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
 export interface Skill {
   id: string;
   name: string;
@@ -45,6 +59,15 @@ export interface Skill {
   version: string;
   inputs?: Array<{ name: string; type: string; description?: string; required?: boolean }>;
   outputs?: Array<{ name: string; type: string; description?: string }>;
+  // MCP-specific fields
+  origin?: 'native' | 'mcp';
+  mcp_type?: string | null;
+  mcp_tools?: MCPTool[] | null;
+  mcp_resources?: MCPResource[] | null;
+  runtime_env?: string | null;
+  scope?: string | null;
+  is_official?: boolean | null;
+  transport_url?: string | null;
 }
 
 // Convert DB skill to component skill format
@@ -58,6 +81,15 @@ function toSkill(dbSkill: DbSkill): Skill {
     version: dbSkill.version,
     inputs: (dbSkill.inputs as Skill["inputs"]) || [],
     outputs: (dbSkill.outputs as Skill["outputs"]) || [],
+    // MCP fields
+    origin: (dbSkill.origin as 'native' | 'mcp') || 'native',
+    mcp_type: dbSkill.mcp_type,
+    mcp_tools: (dbSkill.mcp_tools as unknown as MCPTool[]) || null,
+    mcp_resources: (dbSkill.mcp_resources as unknown as MCPResource[]) || null,
+    runtime_env: dbSkill.runtime_env,
+    scope: dbSkill.scope,
+    is_official: dbSkill.is_official,
+    transport_url: dbSkill.transport_url,
   };
 }
 
