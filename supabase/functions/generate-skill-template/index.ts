@@ -41,14 +41,75 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `你是一个专业的 Agent 技能模板生成器。根据用户描述生成完整的技能模板。
+            content: `你是一个专业的 Agent 技能模板生成器。根据用户描述生成完整、规范的技能模板。
 
-技能模板包含三个文件:
-1. Skill.md - 技能定义文件 (YAML frontmatter + Markdown)
-2. handler.py - Python 处理器代码
-3. config.yaml - 运行配置
+## Skill.md YAML Frontmatter 必须包含以下字段：
 
-确保生成的代码是真实可运行的，不要使用占位符。`
+1. **name** (必填): 技能名称，kebab-case 格式，如 "web-search"
+2. **version** (必填): 语义化版本号，如 "1.0.0"
+3. **description** (必填): 技能描述，简明扼要说明功能
+4. **author** (必填): 作者名称，默认使用 "Fance OS"
+5. **permissions** (必填): 权限声明数组，必须包含以下一项或多项：
+   - read: 读取数据权限
+   - write: 写入数据权限
+   - network: 网络访问权限
+   - compute: 计算资源权限
+   - delete: 删除数据权限
+6. **inputs** (必填): 输入参数数组，每项必须包含：
+   - name: 参数名（英文）
+   - type: 类型（string/number/boolean/object/array）
+   - description: 参数描述
+   - required: 是否必填（true/false）
+7. **outputs** (必填): 输出参数数组，每项必须包含：
+   - name: 参数名
+   - type: 类型
+   - description: 描述
+
+## 完整的 Skill.md 格式示例（严格按此格式）：
+
+---
+name: "text-summarizer"
+version: "1.0.0"
+description: "文本摘要生成技能"
+author: "Fance OS"
+permissions:
+  - read
+  - compute
+inputs:
+  - name: text
+    type: string
+    description: 需要摘要的原始文本
+    required: true
+  - name: maxLength
+    type: number
+    description: 摘要最大长度
+    required: false
+outputs:
+  - name: summary
+    type: string
+    description: 生成的文本摘要
+  - name: wordCount
+    type: number
+    description: 摘要字数
+---
+
+# 文本摘要技能
+
+## 功能说明
+该技能用于生成文本摘要...
+
+## 使用示例
+...
+
+## handler.py 要求：
+- 必须包含 async def handler(inputs: dict) -> dict 函数
+- 使用类型注解
+- 包含错误处理
+- 返回与 outputs 定义一致的字典
+
+## config.yaml 要求：
+- 包含 name、version、runtime 等基础配置
+- 包含 timeout、memory 等运行时配置`
           },
           {
             role: "user",
@@ -58,7 +119,7 @@ serve(async (req) => {
 ${category ? `类别：${category}` : ''}
 ${difficulty ? `难度：${difficulty}` : ''}
 
-请生成完整的技能模板。`
+请严格按照系统提示中的格式要求生成完整的技能模板，确保 YAML frontmatter 包含所有必填字段（name, version, description, author, permissions, inputs, outputs）。`
           }
         ],
         tools: [
@@ -66,29 +127,29 @@ ${difficulty ? `难度：${difficulty}` : ''}
             type: "function",
             function: {
               name: "create_skill_template",
-              description: "创建一个完整的技能模板",
+              description: "创建一个完整的技能模板，必须包含所有必填字段",
               parameters: {
                 type: "object",
                 properties: {
                   name: {
                     type: "string",
-                    description: "技能名称（英文，kebab-case格式）"
+                    description: "技能名称（英文，kebab-case格式，如 'web-search'）"
                   },
                   description: {
                     type: "string",
-                    description: "技能描述（中文）"
+                    description: "技能描述（中文，简明扼要）"
                   },
                   skillMd: {
                     type: "string",
-                    description: "完整的 Skill.md 内容（包含YAML frontmatter和Markdown文档）"
+                    description: "完整的 Skill.md 内容。必须以 '---' 开头（无前导空白），YAML frontmatter 必须包含: name, version, description, author, permissions(数组), inputs(数组，每项含name/type/description/required), outputs(数组，每项含name/type/description)。frontmatter 后接 Markdown 文档。"
                   },
                   handlerPy: {
                     type: "string",
-                    description: "完整的 handler.py Python代码"
+                    description: "完整的 handler.py Python代码。必须包含 async def handler(inputs: dict) -> dict 函数，使用类型注解，包含错误处理。"
                   },
                   configYaml: {
                     type: "string",
-                    description: "完整的 config.yaml 配置文件内容"
+                    description: "完整的 config.yaml 配置文件，包含 name, version, runtime, timeout, memory 等配置项。"
                   }
                 },
                 required: ["name", "description", "skillMd", "handlerPy", "configYaml"]
