@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FormattedText } from "./FormattedText";
 import { TypewriterFormattedText } from "./TypewriterFormattedText";
 import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated";
+import { MCPToolCard, MCPToolCall } from "./MCPToolCard";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
@@ -31,6 +32,7 @@ interface MessageBubbleProps {
     colorId: string;
   };
   attachments?: MessageAttachment[];
+  mcpToolCalls?: MCPToolCall[];
   onRegenerate?: () => void;
   onEdit?: (newContent: string) => void;
   // Roleplay mode props
@@ -64,6 +66,7 @@ export function MessageBubble({
   isNew,
   agentAvatar,
   attachments,
+  mcpToolCalls,
   onRegenerate,
   onEdit,
   isRoleplay,
@@ -289,6 +292,15 @@ export function MessageBubble({
                   />
                 )}
               </div>
+
+              {/* MCP Tool Calls */}
+              {mcpToolCalls && mcpToolCalls.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {mcpToolCalls.map(call => (
+                    <MCPToolCard key={call.id} {...call} />
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
