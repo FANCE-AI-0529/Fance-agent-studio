@@ -19,6 +19,8 @@ import {
   Sparkles,
   Package,
   User,
+  Server,
+  Plug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +60,11 @@ import { BundleDetailDialog } from "@/components/foundry/BundleDetailDialog";
 import { EditBundleDialog } from "@/components/foundry/EditBundleDialog";
 import { MyBundlesPanel } from "@/components/foundry/MyBundlesPanel";
 import { BundleCategoryFilter, BundleCategory, BUNDLE_CATEGORIES } from "@/components/foundry/BundleCategoryFilter";
+import { SkillModeSwitch, SkillMode } from "@/components/foundry/SkillModeSwitch";
+import { MCPConfigEditor, MCPConfig } from "@/components/foundry/MCPConfigEditor";
+import { MCPInspector } from "@/components/foundry/MCPInspector";
+import { MCPSkillMdGenerator } from "@/components/foundry/MCPSkillMdGenerator";
+import { useMCPInspect, MCPInspectResult } from "@/hooks/useMCPInspect";
 import { useFeaturedBundles, SkillBundle } from "@/hooks/useSkillBundles";
 import { useBundlesByCategory } from "@/hooks/useBundlesByCategory";
 import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
@@ -220,11 +227,88 @@ const createInitialFiles = (skillName: string): FileItem[] => [
   },
 ];
 
+// MCP file structure
+const createMCPFiles = (serverName: string): FileItem[] => [
+  {
+    id: "folder-skill",
+    name: serverName || "new-mcp-server",
+    type: "folder",
+    children: [
+      { id: "file-mcp-config", name: "mcp-config.json", type: "file", language: "json" },
+      { id: "file-skill", name: "SKILL.md", type: "file", language: "markdown" },
+      { id: "file-env", name: ".env.example", type: "file", language: "plaintext" },
+    ],
+  },
+];
+
 const createFileContents = (): Record<string, string> => ({
   "file-skill": defaultSkillMd,
   "file-handler": handlerPy,
   "file-config": configYaml,
 });
+
+const defaultMCPConfig: MCPConfig = {
+  name: "new-mcp-server",
+  version: "1.0.0",
+  description: "",
+  transport: { type: "stdio", command: "npx", args: [] },
+  runtime: "node",
+  scope: "local",
+  tools: [],
+  resources: [],
+  envVars: [],
+};
+
+const generateEnvExample = (config: MCPConfig): string => {
+  if (!config.envVars || config.envVars.length === 0) {
+    return "# No environment variables required\n";
+  }
+  return config.envVars
+    .map((env) => `# ${env.description || env.name}\n${env.name}=${env.default || ""}`)
+    .join("\n\n");
+};
+
+const generateMCPSkillMd = (config: MCPConfig): string => {
+  const toolsList = config.tools?.map((t) => `- **${t.name}**: ${t.description || "No description"}`).join("\n") || "No tools defined";
+  const resourcesList = config.resources?.map((r) => `- \`${r.uri}\`: ${r.description || r.name}`).join("\n") || "No resources defined";
+  
+  return `---
+name: "${config.name}"
+version: "${config.version}"
+description: "${config.description || ""}"
+author: "MCP Generator"
+origin: "mcp"
+mcp_type: "${config.transport.type}"
+runtime_env: "${config.runtime}"
+scope: "${config.scope}"
+permissions:
+  - network
+---
+
+# ${config.name}
+
+## Overview
+
+${config.description || "An MCP Server skill."}
+
+## Available Tools
+
+${toolsList}
+
+## Resources
+
+${resourcesList}
+
+## Configuration
+
+Transport Type: \`${config.transport.type}\`
+${config.transport.type === "stdio" ? `Command: \`${config.transport.command} ${config.transport.args?.join(" ") || ""}\`` : `URL: \`${config.transport.url || ""}\``}
+
+## Environment Variables
+
+${config.envVars?.map((env) => `- \`${env.name}\`: ${env.description || "No description"} ${env.required ? "(required)" : "(optional)"}`).join("\n") || "No environment variables required."}
+`;
+};
 
 // Validation Status Card
 function ValidationStatusCard({ validation }: { validation: ValidationResult }) {
@@ -349,6 +433,11 @@ const Foundry = () => {
   const [showImportExport, setShowImportExport] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
 
+  // MCP 模式状态
+  const [skillMode, setSkillMode] = useState<SkillMode>("native");
+  const [mcpConfig, setMcpConfig] = useState<MCPConfig>(defaultMCPConfig);
+  const { inspect, isInspecting, result: inspectResult, reset: resetInspect } = useMCPInspect();
+
   const { data: mySkills = [], isLoading: isLoadingSkills } = useMySkills();
   const createSkill = useCreateSkill();
   const updateSkill = useUpdateSkill();
@@ -421,10 +510,73 @@ const Foundry = () => {
 
   const handleNewSkill = () => {
     setActiveSkillId(null);
-    setContents(createFileContents());
-    setFiles(createInitialFiles("new-skill"));
-    setActiveFileId("file-skill");
+    if (skillMode === "mcp") {
+      const newConfig = { ...defaultMCPConfig };
+      setMcpConfig(newConfig);
+      setContents({
+        "file-mcp-config": JSON.stringify(newConfig, null, 2),
+        "file-skill": generateMCPSkillMd(newConfig),
+        "file-env": generateEnvExample(newConfig),
+      });
+      setFiles(createMCPFiles("new-mcp-server"));
+      setActiveFileId("file-mcp-config");
+    } else {
+      setContents(createFileContents());
+      setFiles(createInitialFiles("new-skill"));
+      setActiveFileId("file-skill");
+    }
     setHasUnsavedChanges(false);
+    resetInspect();
+  };
+
+  const handleModeChange = (newMode: SkillMode) => {
+    if (newMode === skillMode) return;
+    
+    if (newMode === "mcp") {
+      // 切换到 MCP 模式
+      const newConfig = { ...defaultMCPConfig };
+      setMcpConfig(newConfig);
+      setFiles(createMCPFiles(newConfig.name));
+      setContents({
+        "file-mcp-config": JSON.stringify(newConfig, null, 2),
+        "file-skill": generateMCPSkillMd(newConfig),
+        "file-env": generateEnvExample(newConfig),
+      });
+      setActiveFileId("file-mcp-config");
+    } else {
+      // 切换到 Native 模式
+      setFiles(createInitialFiles("new-skill"));
+      setContents(createFileContents());
+      setActiveFileId("file-skill");
+    }
+    setSkillMode(newMode);
+    setActiveSkillId(null);
+    setHasUnsavedChanges(true);
+    resetInspect();
+  };
+
+  const handleMCPConfigChange = (newConfig: MCPConfig) => {
+    setMcpConfig(newConfig);
+    setContents((prev) => ({
+      ...prev,
+      "file-mcp-config": JSON.stringify(newConfig, null, 2),
+      "file-skill": generateMCPSkillMd(newConfig),
+      "file-env": generateEnvExample(newConfig),
+    }));
+    setFiles(createMCPFiles(newConfig.name));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleGenerateSkillMd = (content: string) => {
+    setContents((prev) => ({
+      ...prev,
+      "file-skill": content,
+    }));
+    setHasUnsavedChanges(true);
+    toast({
+      title: "SKILL.md 已生成",
+      description: "基于 MCP 配置自动生成的描述文件",
+    });
   };
 
   const handleLoadTemplate = () => {
@@ -978,6 +1130,7 @@ const Foundry = () => {
             onOpenImportExport={() => setShowImportExport(true)}
             onOpenVersionHistory={() => setShowVersionHistory(true)}
             isLoading={isLoadingSkills}
+            skillMode={skillMode}
           />
 
           {/* Main Content */}
@@ -985,8 +1138,10 @@ const Foundry = () => {
             {/* Toolbar */}
             <div className="h-12 px-4 flex items-center justify-between border-b border-border bg-card/80">
               <div className="flex items-center gap-3">
+                <SkillModeSwitch mode={skillMode} onModeChange={handleModeChange} />
+                <div className="w-px h-5 bg-border" />
                 <Badge variant="outline" className="gap-1.5">
-                  <FileText className="h-3 w-3" />
+                  {skillMode === "mcp" ? <Server className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
                   {activeFile?.name || "未选择文件"}
                 </Badge>
                 {hasUnsavedChanges && (
@@ -1071,173 +1226,263 @@ const Foundry = () => {
 
             {/* Editor Area */}
             <div className="flex-1 flex min-h-0">
-              {/* Code Editor */}
+              {/* Code Editor / MCP Config Editor */}
               <div className="flex-1 flex flex-col min-w-0">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                  <div className="px-4 pt-2 border-b border-border flex-shrink-0">
-                    <TabsList className="bg-transparent h-9 p-0 gap-6">
-                      <TabsTrigger
-                        value="edit"
-                        className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
-                      >
-                        <Code2 className="h-4 w-4" />
-                        代码编辑
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="visual"
-                        className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        可视化编辑
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="preview"
-                        className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
-                      >
-                        <Eye className="h-4 w-4" />
-                        预览
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
+                {skillMode === "mcp" ? (
+                  // MCP 模式
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                    <div className="px-4 pt-2 border-b border-border flex-shrink-0">
+                      <TabsList className="bg-transparent h-9 p-0 gap-6">
+                        <TabsTrigger
+                          value="edit"
+                          className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
+                        >
+                          <Server className="h-4 w-4" />
+                          配置编辑
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="visual"
+                          className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
+                        >
+                          <Code2 className="h-4 w-4" />
+                          JSON 编辑
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="preview"
+                          className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          SKILL.md
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
 
-                  <TabsContent value="edit" className="flex-1 m-0 p-0 min-h-0">
-                    <SkillEditor
-                      value={currentContent}
-                      onChange={handleContentChange}
-                      language={getLanguage()}
-                    />
-                  </TabsContent>
+                    <TabsContent value="edit" className="flex-1 m-0 p-0 min-h-0 overflow-auto">
+                      <MCPConfigEditor config={mcpConfig} onChange={handleMCPConfigChange} />
+                    </TabsContent>
 
-                  <TabsContent value="visual" className="flex-1 m-0 p-0 min-h-0 overflow-auto">
-                    {activeFileId === "file-skill" ? (
-                      <SkillMetadataEditor
-                        content={contents["file-skill"]}
-                        onChange={(newContent) => {
-                          setContents((prev) => ({ ...prev, "file-skill": newContent }));
+                    <TabsContent value="visual" className="flex-1 m-0 p-0 min-h-0">
+                      <SkillEditor
+                        value={contents["file-mcp-config"] || JSON.stringify(mcpConfig, null, 2)}
+                        onChange={(value) => {
+                          try {
+                            const parsed = JSON.parse(value);
+                            setMcpConfig(parsed);
+                            setContents((prev) => ({
+                              ...prev,
+                              "file-mcp-config": value,
+                              "file-skill": generateMCPSkillMd(parsed),
+                              "file-env": generateEnvExample(parsed),
+                            }));
+                            setFiles(createMCPFiles(parsed.name));
+                          } catch {
+                            // Invalid JSON, just update the content
+                            setContents((prev) => ({ ...prev, "file-mcp-config": value }));
+                          }
                           setHasUnsavedChanges(true);
                         }}
+                        language="json"
                       />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                        <Settings className="h-10 w-10 mb-3 opacity-30" />
-                        <p className="text-sm">可视化编辑仅支持 SKILL.md</p>
-                        <p className="text-xs mt-1">请在左侧选择 SKILL.md</p>
-                      </div>
-                    )}
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="preview" className="flex-1 m-0 p-6 overflow-auto">
-                    {activeFileId === "file-skill" && validation.metadata ? (
-                      <div className="max-w-2xl mx-auto">
-                        <div className="p-6 rounded-xl border border-border bg-card">
-                          <h2 className="text-xl font-bold mb-2">{validation.metadata.name}</h2>
-                          <p className="text-muted-foreground mb-4">{validation.metadata.description}</p>
+                    <TabsContent value="preview" className="flex-1 m-0 p-0 min-h-0">
+                      <SkillEditor
+                        value={contents["file-skill"] || generateMCPSkillMd(mcpConfig)}
+                        onChange={(value) => {
+                          setContents((prev) => ({ ...prev, "file-skill": value }));
+                          setHasUnsavedChanges(true);
+                        }}
+                        language="markdown"
+                      />
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  // Native 模式
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                    <div className="px-4 pt-2 border-b border-border flex-shrink-0">
+                      <TabsList className="bg-transparent h-9 p-0 gap-6">
+                        <TabsTrigger
+                          value="edit"
+                          className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
+                        >
+                          <Code2 className="h-4 w-4" />
+                          代码编辑
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="visual"
+                          className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
+                        >
+                          <Settings className="h-4 w-4" />
+                          可视化编辑
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="preview"
+                          className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-9 px-1 gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          预览
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
 
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="p-3 rounded-lg bg-secondary/30">
-                              <div className="text-xs text-muted-foreground mb-1">版本</div>
-                              <div className="font-mono">{validation.metadata.version}</div>
+                    <TabsContent value="edit" className="flex-1 m-0 p-0 min-h-0">
+                      <SkillEditor
+                        value={currentContent}
+                        onChange={handleContentChange}
+                        language={getLanguage()}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="visual" className="flex-1 m-0 p-0 min-h-0 overflow-auto">
+                      {activeFileId === "file-skill" ? (
+                        <SkillMetadataEditor
+                          content={contents["file-skill"]}
+                          onChange={(newContent) => {
+                            setContents((prev) => ({ ...prev, "file-skill": newContent }));
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                          <Settings className="h-10 w-10 mb-3 opacity-30" />
+                          <p className="text-sm">可视化编辑仅支持 SKILL.md</p>
+                          <p className="text-xs mt-1">请在左侧选择 SKILL.md</p>
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="preview" className="flex-1 m-0 p-6 overflow-auto">
+                      {activeFileId === "file-skill" && validation.metadata ? (
+                        <div className="max-w-2xl mx-auto">
+                          <div className="p-6 rounded-xl border border-border bg-card">
+                            <h2 className="text-xl font-bold mb-2">{validation.metadata.name}</h2>
+                            <p className="text-muted-foreground mb-4">{validation.metadata.description}</p>
+
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <div className="p-3 rounded-lg bg-secondary/30">
+                                <div className="text-xs text-muted-foreground mb-1">版本</div>
+                                <div className="font-mono">{validation.metadata.version}</div>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30">
+                                <div className="text-xs text-muted-foreground mb-1">作者</div>
+                                <div>{validation.metadata.author}</div>
+                              </div>
                             </div>
-                            <div className="p-3 rounded-lg bg-secondary/30">
-                              <div className="text-xs text-muted-foreground mb-1">作者</div>
-                              <div>{validation.metadata.author}</div>
-                            </div>
+
+                            {validation.metadata.permissions && validation.metadata.permissions.length > 0 && (
+                              <div className="mb-4">
+                                <div className="text-xs text-muted-foreground mb-2">权限</div>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {validation.metadata.permissions.map((p) => (
+                                    <Badge key={p} variant="outline">
+                                      {p}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {validation.metadata.inputs && validation.metadata.inputs.length > 0 && (
+                              <div className="mb-4">
+                                <div className="text-xs text-muted-foreground mb-2">输入参数</div>
+                                <div className="space-y-1">
+                                  {validation.metadata.inputs.map((input, i) => (
+                                    <div key={i} className="p-2 rounded-lg bg-secondary/30 font-mono text-sm">
+                                      <span className="text-cognitive">{input.name}</span>
+                                      <span className="text-muted-foreground">: </span>
+                                      <span className="text-governance">{input.type}</span>
+                                      {input.description && (
+                                        <span className="text-muted-foreground ml-2">// {input.description}</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-
-                          {validation.metadata.permissions && validation.metadata.permissions.length > 0 && (
-                            <div className="mb-4">
-                              <div className="text-xs text-muted-foreground mb-2">权限</div>
-                              <div className="flex gap-1.5 flex-wrap">
-                                {validation.metadata.permissions.map((p) => (
-                                  <Badge key={p} variant="outline">
-                                    {p}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {validation.metadata.inputs && validation.metadata.inputs.length > 0 && (
-                            <div className="mb-4">
-                              <div className="text-xs text-muted-foreground mb-2">输入参数</div>
-                              <div className="space-y-1">
-                                {validation.metadata.inputs.map((input, i) => (
-                                  <div key={i} className="p-2 rounded-lg bg-secondary/30 font-mono text-sm">
-                                    <span className="text-cognitive">{input.name}</span>
-                                    <span className="text-muted-foreground">: </span>
-                                    <span className="text-governance">{input.type}</span>
-                                    {input.description && (
-                                      <span className="text-muted-foreground ml-2">// {input.description}</span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-muted-foreground">
-                        <div className="text-center">
-                          <Eye className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                          <p>预览仅支持 SKILL.md 文件</p>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                          <div className="text-center">
+                            <Eye className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                            <p>预览仅支持 SKILL.md 文件</p>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                )}
               </div>
 
-              {/* Right Panel - Validation */}
+
+              {/* Right Panel - Validation / MCP Inspector */}
               <div className="w-80 border-l border-border bg-card/50 flex flex-col">
                 <div className="h-12 px-4 flex items-center border-b border-border">
-                  <span className="font-semibold text-sm">校验 & 预览</span>
+                  <span className="font-semibold text-sm">
+                    {skillMode === "mcp" ? "MCP 工具" : "校验 & 预览"}
+                  </span>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {/* Validation Status */}
-                  {activeFileId === "file-skill" && <ValidationStatusCard validation={validation} />}
+                  {skillMode === "mcp" ? (
+                    <>
+                      {/* MCP Inspector */}
+                      <MCPInspector config={mcpConfig} />
+                      
+                      {/* SKILL.md Generator */}
+                      <MCPSkillMdGenerator 
+                        config={mcpConfig} 
+                        inspectResult={inspectResult}
+                        onGenerate={handleGenerateSkillMd}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* Validation Status */}
+                      {activeFileId === "file-skill" && <ValidationStatusCard validation={validation} />}
 
-                  {/* Current Skill Info */}
-                  {currentSkill && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        技能状态
-                      </label>
-                      <div className="p-3 rounded-lg border border-border bg-card">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{currentSkill.name}</span>
-                          <Badge variant={currentSkill.is_published ? "default" : "secondary"}>
-                            {currentSkill.is_published ? "已发布" : "草稿"}
-                          </Badge>
+                      {/* Current Skill Info */}
+                      {currentSkill && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            技能状态
+                          </label>
+                          <div className="p-3 rounded-lg border border-border bg-card">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium">{currentSkill.name}</span>
+                              <Badge variant={currentSkill.is_published ? "default" : "secondary"}>
+                                {currentSkill.is_published ? "已发布" : "草稿"}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground">v{currentSkill.version}</div>
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">v{currentSkill.version}</div>
-                      </div>
-                    </div>
-                  )}
+                      )}
 
-                  {/* Validation Details */}
-                  {activeFileId === "file-skill" && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        校验详情
-                      </label>
-                      <ValidationPanel validation={validation} />
-                    </div>
-                  )}
+                      {/* Validation Details */}
+                      {activeFileId === "file-skill" && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            校验详情
+                          </label>
+                          <ValidationPanel validation={validation} />
+                        </div>
+                      )}
 
-                  {/* Metadata Display */}
-                  {activeFileId === "file-skill" && validation.metadata && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Frontmatter 解析
-                      </label>
-                      <MetadataDisplay metadata={validation.metadata} />
-                    </div>
-                  )}
+                      {/* Metadata Display */}
+                      {activeFileId === "file-skill" && validation.metadata && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Frontmatter 解析
+                          </label>
+                          <MetadataDisplay metadata={validation.metadata} />
+                        </div>
+                      )}
 
-                  {/* Dependency Manager */}
-                  {contents["file-config"] && <DependencyManager configContent={contents["file-config"]} />}
+                      {/* Dependency Manager */}
+                      {contents["file-config"] && <DependencyManager configContent={contents["file-config"]} />}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
