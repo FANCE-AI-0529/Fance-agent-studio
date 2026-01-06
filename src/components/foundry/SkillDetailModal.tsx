@@ -19,6 +19,8 @@ import {
   Tag,
   MessageSquare,
   CheckCircle2,
+  ExternalLink,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSkillRatings, useMySkillRating, useSubmitRating } from "@/hooks/useSkillRating";
@@ -26,6 +28,8 @@ import { useInstallSkill, useIsSkillInstalled } from "@/hooks/useSkillInstall";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MarketSkill } from "@/hooks/useSkillMarket";
 import { format } from "date-fns";
+import { MCPBadge, MCPInfoBadges } from "@/components/foundry/MCPBadge";
+import { MCPToolsList, MCPResourcesList, type MCPTool, type MCPResource } from "@/components/foundry/MCPToolsList";
 
 interface SkillDetailModalProps {
   skill: MarketSkill | null;
@@ -46,6 +50,10 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
   const submitRating = useSubmitRating();
 
   if (!skill) return null;
+
+  const isMCP = skill.origin === "mcp";
+  const mcpTools = (skill.mcp_tools as MCPTool[] | null) || [];
+  const mcpResources = (skill.mcp_resources as MCPResource[] | null) || [];
 
   const handleInstall = async () => {
     await installSkill.mutateAsync(skill.id);
@@ -71,12 +79,16 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <Star className="h-8 w-8" />
+            <div className={cn(
+              "w-16 h-16 rounded-xl flex items-center justify-center shrink-0",
+              isMCP ? "bg-purple-500/10 text-purple-400" : "bg-primary/10 text-primary"
+            )}>
+              {isMCP ? <Wrench className="h-8 w-8" /> : <Star className="h-8 w-8" />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <DialogTitle className="text-xl">{skill.name}</DialogTitle>
+                {isMCP && <MCPBadge />}
                 {skill.is_verified && (
                   <BadgeCheck className="h-5 w-5 text-primary" />
                 )}
@@ -84,10 +96,19 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
                   <Badge className="bg-primary/20 text-primary">精选</Badge>
                 )}
               </div>
+              {/* MCP Info Badges */}
+              {isMCP && (
+                <MCPInfoBadges
+                  runtime={skill.runtime_env}
+                  scope={skill.scope}
+                  isOfficial={skill.is_official}
+                  className="mt-1"
+                />
+              )}
               <p className="text-sm text-muted-foreground mt-1">
                 {skill.description || "暂无描述"}
               </p>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1">
                   <Star className="h-4 w-4 fill-primary text-primary" />
                   {skill.rating || 0} ({skill.ratings_count || 0} 评价)
@@ -96,10 +117,27 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
                   <Download className="h-4 w-4" />
                   {skill.downloads_count || 0} 次安装
                 </span>
+                {isMCP && skill.github_stars ? (
+                  <span className="flex items-center gap-1">
+                    <Star className="h-4 w-4" />
+                    {skill.github_stars} stars
+                  </span>
+                ) : null}
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   v{skill.version}
                 </span>
+                {isMCP && skill.transport_url && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-muted-foreground hover:text-primary"
+                    onClick={() => window.open(skill.transport_url!, "_blank")}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    GitHub
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -107,6 +145,20 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
 
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-6 py-4">
+            {/* MCP Tools Section */}
+            {isMCP && mcpTools.length > 0 && (
+              <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                <MCPToolsList tools={mcpTools} />
+              </div>
+            )}
+
+            {/* MCP Resources Section */}
+            {isMCP && mcpResources.length > 0 && (
+              <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                <MCPResourcesList resources={mcpResources} />
+              </div>
+            )}
+
             {/* 标签 */}
             {skill.tags && skill.tags.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
@@ -242,7 +294,7 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
         {/* 底部操作栏 */}
         <div className="flex items-center justify-between pt-4">
           <div className="text-lg font-semibold">
-            {formatPrice(skill.price, skill.is_free)}
+            {isMCP ? "开源" : formatPrice(skill.price, skill.is_free)}
           </div>
           <Button
             size="lg"

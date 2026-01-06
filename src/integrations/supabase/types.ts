@@ -2462,20 +2462,29 @@ export type Database = {
           created_at: string
           description: string | null
           downloads_count: number | null
+          github_stars: number | null
           id: string
           inputs: Json | null
           is_featured: boolean | null
           is_free: boolean | null
+          is_official: boolean | null
           is_published: boolean
           is_verified: boolean | null
+          mcp_resources: Json | null
+          mcp_tools: Json | null
+          mcp_type: string | null
           name: string
+          origin: string | null
           outputs: Json | null
           permissions: string[]
           preview_images: string[] | null
           price: number | null
           rating: number | null
           ratings_count: number | null
+          runtime_env: string | null
+          scope: string | null
           tags: string[] | null
+          transport_url: string | null
           updated_at: string
           version: string
         }
@@ -2487,20 +2496,29 @@ export type Database = {
           created_at?: string
           description?: string | null
           downloads_count?: number | null
+          github_stars?: number | null
           id?: string
           inputs?: Json | null
           is_featured?: boolean | null
           is_free?: boolean | null
+          is_official?: boolean | null
           is_published?: boolean
           is_verified?: boolean | null
+          mcp_resources?: Json | null
+          mcp_tools?: Json | null
+          mcp_type?: string | null
           name: string
+          origin?: string | null
           outputs?: Json | null
           permissions?: string[]
           preview_images?: string[] | null
           price?: number | null
           rating?: number | null
           ratings_count?: number | null
+          runtime_env?: string | null
+          scope?: string | null
           tags?: string[] | null
+          transport_url?: string | null
           updated_at?: string
           version?: string
         }
@@ -2512,20 +2530,29 @@ export type Database = {
           created_at?: string
           description?: string | null
           downloads_count?: number | null
+          github_stars?: number | null
           id?: string
           inputs?: Json | null
           is_featured?: boolean | null
           is_free?: boolean | null
+          is_official?: boolean | null
           is_published?: boolean
           is_verified?: boolean | null
+          mcp_resources?: Json | null
+          mcp_tools?: Json | null
+          mcp_type?: string | null
           name?: string
+          origin?: string | null
           outputs?: Json | null
           permissions?: string[]
           preview_images?: string[] | null
           price?: number | null
           rating?: number | null
           ratings_count?: number | null
+          runtime_env?: string | null
+          scope?: string | null
           tags?: string[] | null
+          transport_url?: string | null
           updated_at?: string
           version?: string
         }
