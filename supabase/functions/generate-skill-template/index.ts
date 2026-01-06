@@ -146,6 +146,16 @@ ${difficulty ? `难度：${difficulty}` : ''}
       throw new Error("Incomplete template generated");
     }
 
+    // Clean up generated content - trim leading/trailing whitespace
+    template.skillMd = template.skillMd?.trim() || "";
+    template.handlerPy = template.handlerPy?.trim() || "";
+    template.configYaml = template.configYaml?.trim() || "";
+
+    // Ensure skillMd starts with YAML frontmatter
+    if (!template.skillMd.startsWith("---")) {
+      template.skillMd = "---\n" + template.skillMd;
+    }
+
     console.log(`Successfully generated template: ${template.name}`);
 
     return new Response(
