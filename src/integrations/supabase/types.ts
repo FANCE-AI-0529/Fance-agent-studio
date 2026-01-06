@@ -1628,6 +1628,8 @@ export type Database = {
         Row: {
           accepted_at: string | null
           created_at: string | null
+          email_sent_at: string | null
+          email_status: string | null
           expires_at: string | null
           id: string
           invite_code: string
@@ -1635,11 +1637,14 @@ export type Database = {
           invited_user_id: string | null
           inviter_id: string
           reward_points: number | null
+          source_channel: string | null
           status: string | null
         }
         Insert: {
           accepted_at?: string | null
           created_at?: string | null
+          email_sent_at?: string | null
+          email_status?: string | null
           expires_at?: string | null
           id?: string
           invite_code: string
@@ -1647,11 +1652,14 @@ export type Database = {
           invited_user_id?: string | null
           inviter_id: string
           reward_points?: number | null
+          source_channel?: string | null
           status?: string | null
         }
         Update: {
           accepted_at?: string | null
           created_at?: string | null
+          email_sent_at?: string | null
+          email_status?: string | null
           expires_at?: string | null
           id?: string
           invite_code?: string
@@ -1659,6 +1667,7 @@ export type Database = {
           invited_user_id?: string | null
           inviter_id?: string
           reward_points?: number | null
+          source_channel?: string | null
           status?: string | null
         }
         Relationships: []
@@ -3371,6 +3380,15 @@ export type Database = {
           total_agents: number | null
           total_conversations: number | null
           total_creators: number | null
+        }
+        Relationships: []
+      }
+      invitation_daily_stats: {
+        Row: {
+          accepted_count: number | null
+          date: string | null
+          email_sent_count: number | null
+          generated_count: number | null
         }
         Relationships: []
       }
