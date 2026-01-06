@@ -19,6 +19,8 @@ import {
   Trash2,
   MoreHorizontal,
   CheckCircle2,
+  Plug,
+  Server,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +39,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { SkillMode } from "@/components/foundry/SkillModeSwitch";
 
 export interface FileItem {
   id: string;
@@ -57,7 +60,7 @@ const fileIcons: Record<string, React.ElementType> = {
   md: FileText,
   py: Code2,
   yaml: FileCode,
-  json: FileCode,
+  json: Server,
   ts: Code2,
   js: Code2,
 };
@@ -81,6 +84,7 @@ interface FoundrySidebarProps {
   onOpenImportExport: () => void;
   onOpenVersionHistory: () => void;
   isLoading?: boolean;
+  skillMode?: SkillMode;
 }
 
 function FileTreeItem({
@@ -171,6 +175,7 @@ export function FoundrySidebar({
   onOpenImportExport,
   onOpenVersionHistory,
   isLoading,
+  skillMode = "native",
 }: FoundrySidebarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState({
