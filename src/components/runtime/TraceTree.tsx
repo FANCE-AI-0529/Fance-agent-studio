@@ -14,6 +14,8 @@ import {
   Filter,
   RefreshCw,
   Trash2,
+  Database,
+  Server,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,6 +110,43 @@ const eventConfig: Record<TraceEventType, EventConfig> = {
   error: {
     icon: AlertCircle,
     label: "错误",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10",
+  },
+  // MCP event configs
+  mcp_plan: {
+    icon: Brain,
+    label: "[MPLP:Plan]",
+    color: "text-cognitive",
+    bgColor: "bg-cognitive/10",
+  },
+  mcp_confirm: {
+    icon: Shield,
+    label: "[MPLP:Confirm]",
+    color: "text-governance",
+    bgColor: "bg-governance/10",
+  },
+  mcp_execute: {
+    icon: Zap,
+    label: "[MCP:Execute]",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+  },
+  mcp_response: {
+    icon: CheckCircle2,
+    label: "[MCP:Response]",
+    color: "text-status-executing",
+    bgColor: "bg-status-executing/10",
+  },
+  mcp_resource_read: {
+    icon: Database,
+    label: "[MCP:Resource]",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+  },
+  mcp_error: {
+    icon: XCircle,
+    label: "[MCP:Error]",
     color: "text-destructive",
     bgColor: "bg-destructive/10",
   },

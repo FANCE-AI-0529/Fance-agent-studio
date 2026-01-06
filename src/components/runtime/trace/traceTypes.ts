@@ -14,7 +14,14 @@ export type TraceEventType =
   | "execution_completed"
   | "execution_failed"
   | "ai_response_complete"
-  | "error";
+  | "error"
+  // MCP event types
+  | "mcp_plan"           // [MPLP:Plan] Selected MCP Tool
+  | "mcp_confirm"        // [MPLP:Confirm] User authorized
+  | "mcp_execute"        // [MCP:Execute] Sending request
+  | "mcp_response"       // [MCP:Response] Received response
+  | "mcp_resource_read"  // [MCP:Resource] Reading resource
+  | "mcp_error";         // [MCP:Error] MCP call failed
 
 export interface TraceEventData {
   skillName?: string;
@@ -26,6 +33,15 @@ export interface TraceEventData {
   tokenCount?: number;
   message?: string;
   code?: string;
+  // MCP-specific fields
+  mcpServer?: string;           // MCP Server name
+  mcpTool?: string;             // MCP Tool name
+  mcpMethod?: string;           // MCP method (tools/call, resources/read)
+  mcpInputs?: Record<string, unknown>;   // Tool input parameters
+  mcpOutputs?: Record<string, unknown>;  // Tool output results
+  mcpStatusCode?: number;       // HTTP status code
+  mcpResponseSize?: string;     // Response size (e.g., "1.2kb")
+  mcpResourceUri?: string;      // Resource URI
 }
 
 export interface TraceEvent {
