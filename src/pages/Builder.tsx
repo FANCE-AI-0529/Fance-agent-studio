@@ -591,8 +591,13 @@ const Builder = () => {
           navigate(`/builder/${agentId}`, { replace: true });
         }
       }
-    } catch (error) {
-      // Error already handled in hook's onError
+    } catch (err: any) {
+      console.error("Save failed:", err);
+      toast({
+        title: "保存失败",
+        description: err?.message || "未知错误",
+        variant: "destructive",
+      });
     }
   };
 
@@ -637,8 +642,13 @@ const Builder = () => {
         // Show deploy success dialog instead of auto-navigating
         setShowDeploySuccessDialog(true);
       }
-    } catch (error) {
-      // Error already handled in hook's onError
+    } catch (err: any) {
+      console.error("Deploy failed:", err);
+      toast({
+        title: "部署失败",
+        description: err?.message || "未知错误",
+        variant: "destructive",
+      });
     }
   };
 

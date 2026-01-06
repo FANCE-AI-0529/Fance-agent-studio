@@ -327,9 +327,24 @@ export function useUpsertLLMModelConfig() {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
+      // Use delete + insert to avoid ON CONFLICT issues with nullable agent_id
+      // First, delete any existing config for this user/agent/module
+      const deleteQuery = supabase
+        .from("llm_model_configs")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("module_type", input.module_type);
+      
+      if (input.agent_id) {
+        await deleteQuery.eq("agent_id", input.agent_id);
+      } else {
+        await deleteQuery.is("agent_id", null);
+      }
+
+      // Then insert new config
       const { data, error } = await supabase
         .from("llm_model_configs")
-        .upsert({
+        .insert({
           user_id: user.id,
           agent_id: input.agent_id,
           module_type: input.module_type,
@@ -342,8 +357,6 @@ export function useUpsertLLMModelConfig() {
           presence_penalty: input.presence_penalty ?? 0,
           system_prompt_override: input.system_prompt_override || null,
           settings: input.settings || {},
-        }, {
-          onConflict: 'agent_id,module_type',
         })
         .select()
         .single();
