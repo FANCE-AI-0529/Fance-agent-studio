@@ -85,15 +85,25 @@ export function AISkillGenerator({ onGenerated, trigger }: AISkillGeneratorProps
       }
 
       if (data?.skillMd && data?.handlerPy && data?.configYaml) {
+        // Clean up generated content - trim leading/trailing whitespace
+        let cleanedSkillMd = (data.skillMd as string).trim();
+        const cleanedHandlerPy = (data.handlerPy as string).trim();
+        const cleanedConfigYaml = (data.configYaml as string).trim();
+
+        // Ensure skillMd starts with YAML frontmatter
+        if (!cleanedSkillMd.startsWith("---")) {
+          cleanedSkillMd = "---\n" + cleanedSkillMd;
+        }
+
         // Extract skill name from the generated SKILL.md
-        const nameMatch = data.skillMd.match(/name:\s*["']?([^"'\n]+)["']?/);
+        const nameMatch = cleanedSkillMd.match(/name:\s*["']?([^"'\n]+)["']?/);
         const skillName = nameMatch ? nameMatch[1].trim() : "ai-generated-skill";
 
         onGenerated(
           {
-            skillMd: data.skillMd,
-            handlerPy: data.handlerPy,
-            configYaml: data.configYaml,
+            skillMd: cleanedSkillMd,
+            handlerPy: cleanedHandlerPy,
+            configYaml: cleanedConfigYaml,
           },
           skillName
         );

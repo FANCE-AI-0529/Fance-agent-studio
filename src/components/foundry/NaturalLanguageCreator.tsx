@@ -100,7 +100,17 @@ export function NaturalLanguageCreator({ onGenerated }: NaturalLanguageCreatorPr
       if (data?.error) throw new Error(data.error);
 
       if (data?.skillMd && data?.handlerPy && data?.configYaml) {
-        const nameMatch = data.skillMd.match(/name:\s*["']?([^"'\n]+)["']?/);
+        // Clean up generated content - trim leading/trailing whitespace
+        let cleanedSkillMd = (data.skillMd as string).trim();
+        const cleanedHandlerPy = (data.handlerPy as string).trim();
+        const cleanedConfigYaml = (data.configYaml as string).trim();
+
+        // Ensure skillMd starts with YAML frontmatter
+        if (!cleanedSkillMd.startsWith("---")) {
+          cleanedSkillMd = "---\n" + cleanedSkillMd;
+        }
+
+        const nameMatch = cleanedSkillMd.match(/name:\s*["']?([^"'\n]+)["']?/);
         const skillName = nameMatch ? nameMatch[1].trim() : mockAnalysis.name;
 
         setCurrentStep("complete");
@@ -108,9 +118,9 @@ export function NaturalLanguageCreator({ onGenerated }: NaturalLanguageCreatorPr
         setTimeout(() => {
           onGenerated(
             {
-              skillMd: data.skillMd,
-              handlerPy: data.handlerPy,
-              configYaml: data.configYaml,
+              skillMd: cleanedSkillMd,
+              handlerPy: cleanedHandlerPy,
+              configYaml: cleanedConfigYaml,
             },
             skillName
           );
