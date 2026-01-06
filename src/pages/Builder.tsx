@@ -332,26 +332,48 @@ const Builder = () => {
     return mapping[category] || [];
   }
 
-  // Get added skills from nodes
+  // Extract skill IDs directly from nodes (stable source, doesn't depend on publishedSkills loading)
+  const rawSkillIds = Array.from(
+    new Set(
+      nodes
+        .filter((n) => n.type === "skill")
+        .map((n) => (n.data as SkillNodeData).id)
+        .filter(Boolean)
+    )
+  );
+
+  // Get added skills from nodes (for UI display and manifest)
   const addedSkills = nodes
     .filter((n) => n.type === "skill")
     .map((n) => {
       const data = n.data as SkillNodeData;
-      return publishedSkills.find((s) => s.id === data.id);
-    })
-    .filter(Boolean)
-    .map((s) => ({
-      id: s!.id,
-      name: s!.name,
-      category: s!.category,
-      description: s!.description || "",
-      permissions: s!.permissions || [],
-      version: s!.version,
-      inputs: (s!.inputs as Skill["inputs"]) || [],
-      outputs: (s!.outputs as Skill["outputs"]) || [],
-    })) as Skill[];
+      const published = publishedSkills.find((s) => s.id === data.id);
+      if (published) {
+        return {
+          id: published.id,
+          name: published.name,
+          category: published.category,
+          description: published.description || "",
+          permissions: published.permissions || [],
+          version: published.version,
+          inputs: (published.inputs as Skill["inputs"]) || [],
+          outputs: (published.outputs as Skill["outputs"]) || [],
+        };
+      }
+      // Fallback to node data if publishedSkills not loaded yet
+      return {
+        id: data.id,
+        name: data.name,
+        category: data.category,
+        description: data.description || "",
+        permissions: data.permissions || [],
+        version: "1.0.0",
+        inputs: [],
+        outputs: [],
+      };
+    }) as Skill[];
 
-  const addedSkillIds = addedSkills.map((s) => s.id);
+  const addedSkillIds = rawSkillIds;
 
   // Update agent node when config or skills change
   const updateAgentNode = useCallback(() => {
@@ -549,24 +571,28 @@ const Builder = () => {
       return;
     }
 
-    const manifest = generateManifest();
+    try {
+      const manifest = generateManifest();
 
-    const agentId = await saveAgent.mutateAsync({
-      agent: {
-        id: currentAgentId || undefined,
-        name: agentConfig.name,
-        department: agentConfig.department || null,
-        model: agentConfig.model,
-      },
-      skillIds: addedSkillIds,
-      manifest,
-    });
+      const agentId = await saveAgent.mutateAsync({
+        agent: {
+          id: currentAgentId || undefined,
+          name: agentConfig.name,
+          department: agentConfig.department || null,
+          model: agentConfig.model,
+        },
+        skillIds: rawSkillIds,
+        manifest,
+      });
 
-    if (agentId) {
-      setCurrentAgentId(agentId);
-      if (!agentIdParam) {
-        navigate(`/builder/${agentId}`, { replace: true });
+      if (agentId) {
+        setCurrentAgentId(agentId);
+        if (!agentIdParam) {
+          navigate(`/builder/${agentId}`, { replace: true });
+        }
       }
+    } catch (error) {
+      // Error already handled in hook's onError
     }
   };
 
@@ -582,28 +608,37 @@ const Builder = () => {
       return;
     }
 
-    const manifest = generateManifest();
+    if (!agentConfig.name.trim()) {
+      toast({ title: "请输入智能体名称", variant: "destructive" });
+      return;
+    }
 
-    const agentId = await saveAgent.mutateAsync({
-      agent: {
-        id: currentAgentId || undefined,
-        name: agentConfig.name,
-        department: agentConfig.department || null,
-        model: agentConfig.model,
-      },
-      skillIds: addedSkillIds,
-      manifest,
-    });
+    try {
+      const manifest = generateManifest();
 
-    if (agentId) {
-      setCurrentAgentId(agentId);
-      if (!agentIdParam) {
-        navigate(`/builder/${agentId}`, { replace: true });
+      const agentId = await saveAgent.mutateAsync({
+        agent: {
+          id: currentAgentId || undefined,
+          name: agentConfig.name,
+          department: agentConfig.department || null,
+          model: agentConfig.model,
+        },
+        skillIds: rawSkillIds,
+        manifest,
+      });
+
+      if (agentId) {
+        setCurrentAgentId(agentId);
+        if (!agentIdParam) {
+          navigate(`/builder/${agentId}`, { replace: true });
+        }
+        await deployAgent.mutateAsync(agentId);
+
+        // Show deploy success dialog instead of auto-navigating
+        setShowDeploySuccessDialog(true);
       }
-      await deployAgent.mutateAsync(agentId);
-
-      // Show deploy success dialog instead of auto-navigating
-      setShowDeploySuccessDialog(true);
+    } catch (error) {
+      // Error already handled in hook's onError
     }
   };
 
@@ -722,7 +757,8 @@ const Builder = () => {
     }
   };
 
-  const canDeploy = agentConfig.name.trim() !== "" && addedSkills.length > 0;
+  // Allow deployment without skills - only require a name
+  const canDeploy = agentConfig.name.trim() !== "";
   const isSaving = saveAgent.isPending || deployAgent.isPending;
   const isDeleting = deleteAgent.isPending;
 

@@ -165,6 +165,11 @@ export function useSaveAgentWithSkills() {
     }) => {
       if (!user) throw new Error("用户未登录");
 
+      // Deduplicate and filter invalid skill IDs
+      const cleanSkillIds = Array.from(new Set(skillIds)).filter(
+        (id) => id && typeof id === "string" && id.trim() !== ""
+      );
+
       let agentId = agent.id;
 
       if (agentId) {
@@ -207,9 +212,9 @@ export function useSaveAgentWithSkills() {
         agentId = newAgentData[0].id;
       }
 
-      // Add new skill associations
-      if (skillIds.length > 0) {
-        const agentSkills = skillIds.map((skillId) => ({
+      // Add new skill associations (only if there are valid skill IDs)
+      if (cleanSkillIds.length > 0) {
+        const agentSkills = cleanSkillIds.map((skillId) => ({
           agent_id: agentId!,
           skill_id: skillId,
         }));
@@ -239,19 +244,18 @@ export function useDeployAgent() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
+      // Don't use .select().single() to avoid RLS/RETURNING issues
+      const { error } = await supabase
         .from("agents")
         .update({ status: "deployed" })
-        .eq("id", id)
-        .select()
-        .single();
+        .eq("id", id);
 
       if (error) throw error;
-      return data;
+      return id;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
-      toast({ title: "部署成功", description: `${data.name} 已部署到城市网络` });
+      toast({ title: "部署成功", description: "智能体已部署到城市网络" });
     },
     onError: (error) => {
       toast({ title: "部署失败", description: error.message, variant: "destructive" });
