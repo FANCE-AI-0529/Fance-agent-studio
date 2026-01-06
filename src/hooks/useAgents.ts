@@ -172,61 +172,79 @@ export function useSaveAgentWithSkills() {
 
       let agentId = agent.id;
 
-      if (agentId) {
-        // Update existing agent
-        const { error: updateError } = await supabase
-          .from("agents")
-          .update({
-            name: agent.name,
-            department: agent.department,
-            model: agent.model,
-            manifest,
-          })
-          .eq("id", agentId);
+      try {
+        if (agentId) {
+          // Update existing agent
+          const { error: updateError } = await supabase
+            .from("agents")
+            .update({
+              name: agent.name,
+              department: agent.department,
+              model: agent.model,
+              manifest,
+            })
+            .eq("id", agentId);
 
-        if (updateError) throw updateError;
+          if (updateError) {
+            const errMsg = `[agents.update] ${updateError.message}${updateError.details ? ` | details: ${updateError.details}` : ''}${updateError.hint ? ` | hint: ${updateError.hint}` : ''}`;
+            throw new Error(errMsg);
+          }
 
-        // Remove old skill associations
-        const { error: deleteError } = await supabase
-          .from("agent_skills")
-          .delete()
-          .eq("agent_id", agentId);
+          // Remove old skill associations
+          const { error: deleteError } = await supabase
+            .from("agent_skills")
+            .delete()
+            .eq("agent_id", agentId);
 
-        if (deleteError) throw deleteError;
-      } else {
-        // Create new agent
-        // Use insert without .single() to avoid implicit ON CONFLICT
-        const { data: newAgentData, error: createError } = await supabase
-          .from("agents")
-          .insert({
-            name: agent.name,
-            department: agent.department,
-            model: agent.model,
-            manifest,
-            author_id: user.id,
-          })
-          .select();
+          if (deleteError) {
+            const errMsg = `[agent_skills.delete] ${deleteError.message}${deleteError.details ? ` | details: ${deleteError.details}` : ''}${deleteError.hint ? ` | hint: ${deleteError.hint}` : ''}`;
+            throw new Error(errMsg);
+          }
+        } else {
+          // Create new agent
+          const { data: newAgentData, error: createError } = await supabase
+            .from("agents")
+            .insert({
+              name: agent.name,
+              department: agent.department,
+              model: agent.model,
+              manifest,
+              author_id: user.id,
+            })
+            .select();
 
-        if (createError) throw createError;
-        if (!newAgentData || newAgentData.length === 0) throw new Error("创建 Agent 失败");
-        agentId = newAgentData[0].id;
+          if (createError) {
+            const errMsg = `[agents.insert] ${createError.message}${createError.details ? ` | details: ${createError.details}` : ''}${createError.hint ? ` | hint: ${createError.hint}` : ''}`;
+            throw new Error(errMsg);
+          }
+          if (!newAgentData || newAgentData.length === 0) {
+            throw new Error("[agents.insert] 创建 Agent 失败：返回数据为空");
+          }
+          agentId = newAgentData[0].id;
+        }
+
+        // Add new skill associations (only if there are valid skill IDs)
+        if (cleanSkillIds.length > 0) {
+          const agentSkills = cleanSkillIds.map((skillId) => ({
+            agent_id: agentId!,
+            skill_id: skillId,
+          }));
+
+          const { error: skillsError } = await supabase
+            .from("agent_skills")
+            .insert(agentSkills);
+
+          if (skillsError) {
+            const errMsg = `[agent_skills.insert] ${skillsError.message}${skillsError.details ? ` | details: ${skillsError.details}` : ''}${skillsError.hint ? ` | hint: ${skillsError.hint}` : ''}`;
+            throw new Error(errMsg);
+          }
+        }
+
+        return agentId;
+      } catch (err: any) {
+        // Re-throw with preserved message
+        throw err;
       }
-
-      // Add new skill associations (only if there are valid skill IDs)
-      if (cleanSkillIds.length > 0) {
-        const agentSkills = cleanSkillIds.map((skillId) => ({
-          agent_id: agentId!,
-          skill_id: skillId,
-        }));
-
-        const { error: skillsError } = await supabase
-          .from("agent_skills")
-          .insert(agentSkills);
-
-        if (skillsError) throw skillsError;
-      }
-
-      return agentId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
