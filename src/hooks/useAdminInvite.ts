@@ -3,6 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
+// Types for invite trends
+interface InviteTrendData {
+  date: string;
+  generated_count: number;
+  accepted_count: number;
+  email_sent_count: number;
+}
+
+// Types for user source stats
+interface UserSourceData {
+  inviter_id: string;
+  inviter_name: string;
+  total_invites: number;
+  accepted_invites: number;
+  pending_invites: number;
+  conversion_rate: number;
+}
+
 // Check if user is admin
 export function useIsAdmin() {
   const { user } = useAuth();
@@ -187,5 +205,186 @@ export function useAdminInviteStats() {
       return { total, pending, accepted, todayCount };
     },
     enabled: isAdmin === true,
+  });
+}
+
+// Get invite trends data for charts
+export function useInviteTrends(days: number = 14) {
+  const { data: isAdmin } = useIsAdmin();
+
+  return useQuery<InviteTrendData[]>({
+    queryKey: ["invite-trends", days],
+    queryFn: async () => {
+      // Get all invitations from the past N days
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const { data, error } = await supabase
+        .from("invitations")
+        .select("created_at, status, email_sent_at")
+        .gte("created_at", startDate.toISOString());
+
+      if (error) throw error;
+
+      // Group by date
+      const dateMap = new Map<string, InviteTrendData>();
+      
+      // Initialize all dates
+      for (let i = 0; i < days; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split("T")[0];
+        dateMap.set(dateStr, {
+          date: dateStr,
+          generated_count: 0,
+          accepted_count: 0,
+          email_sent_count: 0,
+        });
+      }
+
+      // Count by date
+      data?.forEach(item => {
+        const dateStr = item.created_at.split("T")[0];
+        const existing = dateMap.get(dateStr);
+        if (existing) {
+          existing.generated_count++;
+          if (item.status === "accepted") {
+            existing.accepted_count++;
+          }
+          if (item.email_sent_at) {
+            existing.email_sent_count++;
+          }
+        }
+      });
+
+      return Array.from(dateMap.values()).sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    },
+    enabled: isAdmin === true,
+  });
+}
+
+// Get user source stats (grouped by inviter)
+export function useUserSourceStats() {
+  const { data: isAdmin } = useIsAdmin();
+
+  return useQuery<UserSourceData[]>({
+    queryKey: ["user-source-stats"],
+    queryFn: async () => {
+      // Get all invitations with inviter info
+      const { data: invitations, error } = await supabase
+        .from("invitations")
+        .select(`
+          inviter_id,
+          status
+        `);
+
+      if (error) throw error;
+
+      // Get unique inviter IDs
+      const inviterIds = [...new Set(invitations?.map(i => i.inviter_id).filter(Boolean))];
+
+      // Get profile info for inviters
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", inviterIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p.display_name]) || []);
+
+      // Group by inviter
+      const inviterMap = new Map<string, UserSourceData>();
+
+      invitations?.forEach(inv => {
+        if (!inv.inviter_id) return;
+
+        const existing = inviterMap.get(inv.inviter_id);
+        if (existing) {
+          existing.total_invites++;
+          if (inv.status === "accepted") {
+            existing.accepted_invites++;
+          } else {
+            existing.pending_invites++;
+          }
+        } else {
+          inviterMap.set(inv.inviter_id, {
+            inviter_id: inv.inviter_id,
+            inviter_name: profileMap.get(inv.inviter_id) || "未知用户",
+            total_invites: 1,
+            accepted_invites: inv.status === "accepted" ? 1 : 0,
+            pending_invites: inv.status === "pending" ? 1 : 0,
+            conversion_rate: 0,
+          });
+        }
+      });
+
+      // Calculate conversion rates
+      const result = Array.from(inviterMap.values()).map(item => ({
+        ...item,
+        conversion_rate: item.total_invites > 0 
+          ? (item.accepted_invites / item.total_invites) * 100 
+          : 0,
+      }));
+
+      // Sort by total invites
+      return result.sort((a, b) => b.total_invites - a.total_invites);
+    },
+    enabled: isAdmin === true,
+  });
+}
+
+// Send invite emails mutation
+interface SendEmailParams {
+  emails: string[];
+  inviteCodes: string[];
+  customMessage?: string;
+  autoGenerate?: boolean;
+}
+
+interface SendEmailResult {
+  results: { email: string; success: boolean; error?: string }[];
+  summary: { total: number; sent: number; failed: number };
+}
+
+export function useSendInviteEmails() {
+  const queryClient = useQueryClient();
+
+  return useMutation<SendEmailResult, Error, SendEmailParams>({
+    mutationFn: async ({ emails, inviteCodes, customMessage, autoGenerate }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke("send-invite-email", {
+        body: {
+          emails,
+          inviteCodes: autoGenerate ? [] : inviteCodes,
+          customMessage,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to send emails");
+      }
+
+      return response.data as SendEmailResult;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["all-invite-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["invite-trends"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-invite-stats"] });
+      
+      toast({
+        title: "邮件发送完成",
+        description: `成功 ${data.summary.sent} 封，失败 ${data.summary.failed} 封`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "发送失败",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 }

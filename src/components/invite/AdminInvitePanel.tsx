@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,12 @@ import {
   useAllInviteCodes,
   useDeleteInviteCode,
   useAdminInviteStats,
+  useInviteTrends,
+  useUserSourceStats,
 } from "@/hooks/useAdminInvite";
+import { InviteTrendChart } from "./InviteTrendChart";
+import { UserSourceTable } from "./UserSourceTable";
+import { BulkEmailSender } from "./BulkEmailSender";
 import { 
   Shield, 
   Plus, 
@@ -46,17 +52,19 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Calendar
+  Calendar,
+  BarChart3,
+  Users,
+  Mail,
+  ListChecks
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-// Helper to check if code is expired
 function isExpired(expiresAt: string | null): boolean {
   if (!expiresAt) return false;
   return new Date(expiresAt) < new Date();
 }
 
-// Helper to format expiration
 function formatExpiration(expiresAt: string | null): string {
   if (!expiresAt) return "永久有效";
   const date = new Date(expiresAt);
@@ -66,12 +74,14 @@ function formatExpiration(expiresAt: string | null): string {
 
 export function AdminInvitePanel() {
   const [generateCount, setGenerateCount] = useState(10);
-  const [expiresInDays, setExpiresInDays] = useState<string>("0"); // 0 = no expiration
+  const [expiresInDays, setExpiresInDays] = useState<string>("0");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   
   const { data: stats, isLoading: statsLoading } = useAdminInviteStats();
   const { data: allCodes = [], isLoading: codesLoading } = useAllInviteCodes();
+  const { data: trends = [], isLoading: trendsLoading } = useInviteTrends(14);
+  const { data: userSources = [], isLoading: sourcesLoading } = useUserSourceStats();
   const batchGenerate = useBatchGenerateInviteCodes();
   const deleteCode = useDeleteInviteCode();
 
@@ -113,14 +123,9 @@ export function AdminInvitePanel() {
     toast({ title: `已导出 ${pendingCodes.length} 个邀请码` });
   };
 
-  // Get code status
   const getCodeStatus = (code: any) => {
-    if (code.status === "accepted" || code.invited_user_id) {
-      return "used";
-    }
-    if (isExpired(code.expires_at)) {
-      return "expired";
-    }
+    if (code.status === "accepted" || code.invited_user_id) return "used";
+    if (isExpired(code.expires_at)) return "expired";
     return "available";
   };
 
@@ -131,243 +136,188 @@ export function AdminInvitePanel() {
           <Shield className="h-5 w-5 text-primary" />
           管理员面板
         </CardTitle>
-        <CardDescription>批量生成和管理邀请码</CardDescription>
+        <CardDescription>管理邀请码、查看统计和发送邀请邮件</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          {statsLoading ? (
-            <>
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="text-center p-3 bg-card rounded-lg border">
-                  <Skeleton className="h-6 w-8 mx-auto mb-1" />
-                  <Skeleton className="h-3 w-12 mx-auto" />
-                </div>
-              ))}
-            </>
-          ) : (
-            <>
-              <div className="text-center p-3 bg-card rounded-lg border">
-                <div className="text-xl font-bold">{stats?.total || 0}</div>
-                <p className="text-xs text-muted-foreground">总计</p>
-              </div>
-              <div className="text-center p-3 bg-card rounded-lg border">
-                <div className="text-xl font-bold text-primary">{stats?.pending || 0}</div>
-                <p className="text-xs text-muted-foreground">可用</p>
-              </div>
-              <div className="text-center p-3 bg-card rounded-lg border">
-                <div className="text-xl font-bold text-green-500">{stats?.accepted || 0}</div>
-                <p className="text-xs text-muted-foreground">已使用</p>
-              </div>
-              <div className="text-center p-3 bg-card rounded-lg border">
-                <div className="text-xl font-bold">{stats?.todayCount || 0}</div>
-                <p className="text-xs text-muted-foreground">今日生成</p>
-              </div>
-            </>
-          )}
-        </div>
+      <CardContent>
+        <Tabs defaultValue="stats" className="space-y-6">
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="stats" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">统计</span>
+            </TabsTrigger>
+            <TabsTrigger value="codes" className="gap-2">
+              <ListChecks className="h-4 w-4" />
+              <span className="hidden sm:inline">邀请码</span>
+            </TabsTrigger>
+            <TabsTrigger value="sources" className="gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">来源</span>
+            </TabsTrigger>
+            <TabsTrigger value="email" className="gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">邮件</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                批量生成
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>批量生成邀请码</DialogTitle>
-                <DialogDescription>
-                  一次性生成多个邀请码，可设置有效期
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>生成数量</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={generateCount}
-                    onChange={(e) => setGenerateCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setGenerateCount(10)}
-                    >
-                      10 个
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setGenerateCount(25)}
-                    >
-                      25 个
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setGenerateCount(50)}
-                    >
-                      50 个
+          {/* Statistics Tab */}
+          <TabsContent value="stats" className="space-y-6">
+            <div className="grid grid-cols-4 gap-4">
+              {statsLoading ? (
+                [1, 2, 3, 4].map(i => (
+                  <div key={i} className="text-center p-3 bg-card rounded-lg border">
+                    <Skeleton className="h-6 w-8 mx-auto mb-1" />
+                    <Skeleton className="h-3 w-12 mx-auto" />
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="text-center p-3 bg-card rounded-lg border">
+                    <div className="text-xl font-bold">{stats?.total || 0}</div>
+                    <p className="text-xs text-muted-foreground">总计</p>
+                  </div>
+                  <div className="text-center p-3 bg-card rounded-lg border">
+                    <div className="text-xl font-bold text-primary">{stats?.pending || 0}</div>
+                    <p className="text-xs text-muted-foreground">可用</p>
+                  </div>
+                  <div className="text-center p-3 bg-card rounded-lg border">
+                    <div className="text-xl font-bold text-green-500">{stats?.accepted || 0}</div>
+                    <p className="text-xs text-muted-foreground">已使用</p>
+                  </div>
+                  <div className="text-center p-3 bg-card rounded-lg border">
+                    <div className="text-xl font-bold">{stats?.todayCount || 0}</div>
+                    <p className="text-xs text-muted-foreground">今日生成</p>
+                  </div>
+                </>
+              )}
+            </div>
+            <InviteTrendChart data={trends} isLoading={trendsLoading} />
+          </TabsContent>
+
+          {/* Invite Codes Tab */}
+          <TabsContent value="codes" className="space-y-4">
+            <div className="flex gap-3">
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    批量生成
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>批量生成邀请码</DialogTitle>
+                    <DialogDescription>一次性生成多个邀请码</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>生成数量</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={generateCount}
+                        onChange={(e) => setGenerateCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                      />
+                      <div className="flex gap-2">
+                        {[10, 25, 50].map(n => (
+                          <Button key={n} variant="outline" size="sm" className="flex-1" onClick={() => setGenerateCount(n)}>
+                            {n} 个
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        有效期
+                      </Label>
+                      <Select value={expiresInDays} onValueChange={setExpiresInDays}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">永久有效</SelectItem>
+                          <SelectItem value="7">7 天</SelectItem>
+                          <SelectItem value="30">30 天</SelectItem>
+                          <SelectItem value="90">90 天</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
+                    <Button onClick={handleGenerate} disabled={batchGenerate.isPending}>
+                      {batchGenerate.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      生成 {generateCount} 个
                     </Button>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    有效期
-                  </Label>
-                  <Select value={expiresInDays} onValueChange={setExpiresInDays}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择有效期" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">永久有效</SelectItem>
-                      <SelectItem value="1">1 天</SelectItem>
-                      <SelectItem value="3">3 天</SelectItem>
-                      <SelectItem value="7">7 天</SelectItem>
-                      <SelectItem value="14">14 天</SelectItem>
-                      <SelectItem value="30">30 天</SelectItem>
-                      <SelectItem value="90">90 天</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {expiresInDays === "0" 
-                      ? "邀请码将永久有效，直到被使用" 
-                      : `邀请码将在 ${expiresInDays} 天后过期`
-                    }
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  取消
-                </Button>
-                <Button 
-                  onClick={handleGenerate}
-                  disabled={batchGenerate.isPending}
-                >
-                  {batchGenerate.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
-                  生成 {generateCount} 个
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Button variant="outline" className="gap-2" onClick={handleExportCodes}>
-            <Download className="h-4 w-4" />
-            导出可用码
-          </Button>
-        </div>
-
-        {/* Code List */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">邀请码列表</h4>
-            <Badge variant="secondary">{allCodes.length} 个</Badge>
-          </div>
-
-          {codesLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline" className="gap-2" onClick={handleExportCodes}>
+                <Download className="h-4 w-4" />
+                导出可用码
+              </Button>
             </div>
-          ) : allCodes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>暂无邀请码</p>
-              <p className="text-sm">点击"批量生成"创建邀请码</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>邀请码</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>有效期</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allCodes.map((code) => {
-                    const status = getCodeStatus(code);
-                    return (
-                      <TableRow key={code.id} className={status === "expired" ? "opacity-50" : ""}>
-                        <TableCell className="font-mono font-medium">
-                          {code.invite_code}
-                        </TableCell>
-                        <TableCell>
-                          {status === "used" ? (
-                            <Badge variant="default" className="gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              已使用
+
+            {codesLoading ? (
+              <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : allCodes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>暂无邀请码</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[300px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>邀请码</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>有效期</TableHead>
+                      <TableHead className="text-right">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allCodes.map((code) => {
+                      const status = getCodeStatus(code);
+                      return (
+                        <TableRow key={code.id} className={status === "expired" ? "opacity-50" : ""}>
+                          <TableCell className="font-mono font-medium">{code.invite_code}</TableCell>
+                          <TableCell>
+                            <Badge variant={status === "used" ? "default" : status === "expired" ? "destructive" : "secondary"} className="gap-1">
+                              {status === "used" ? <CheckCircle2 className="h-3 w-3" /> : status === "expired" ? <AlertCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                              {status === "used" ? "已使用" : status === "expired" ? "已过期" : "可用"}
                             </Badge>
-                          ) : status === "expired" ? (
-                            <Badge variant="destructive" className="gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              已过期
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="gap-1">
-                              <Clock className="h-3 w-3" />
-                              可用
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {formatExpiration(code.expires_at)}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {new Date(code.created_at).toLocaleDateString("zh-CN")}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              onClick={() => handleCopy(code.invite_code, code.id)}
-                            >
-                              {copiedId === code.id ? (
-                                <Check className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                            {status !== "used" && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => deleteCode.mutate(code.id)}
-                                disabled={deleteCode.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{formatExpiration(code.expires_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleCopy(code.invite_code, code.id)}>
+                                {copiedId === code.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          )}
-        </div>
+                              {status !== "used" && (
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteCode.mutate(code.id)} disabled={deleteCode.isPending}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            )}
+          </TabsContent>
+
+          {/* User Sources Tab */}
+          <TabsContent value="sources">
+            <UserSourceTable data={userSources} isLoading={sourcesLoading} />
+          </TabsContent>
+
+          {/* Email Tab */}
+          <TabsContent value="email">
+            <BulkEmailSender />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
