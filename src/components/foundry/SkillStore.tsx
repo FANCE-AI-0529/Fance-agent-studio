@@ -17,6 +17,8 @@ import {
   Package,
   Crown,
   BadgeCheck,
+  Wrench,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +32,15 @@ import {
   useFeaturedSkills,
   useNewSkills,
   useMarketSkills,
+  type SkillOriginFilter,
 } from "@/hooks/useSkillMarket";
 import { useMyInstalledSkills, useInstallSkill } from "@/hooks/useSkillInstall";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MarketSkill } from "@/hooks/useSkillMarket";
+import { MCPSourceFilter, type SkillOrigin } from "@/components/foundry/MCPSourceFilter";
+import { MCPBadge, MCPInfoBadges } from "@/components/foundry/MCPBadge";
+import { MCPToolsPreview } from "@/components/foundry/MCPToolsList";
+import type { MCPTool, MCPResource } from "@/components/foundry/MCPToolsList";
 
 const categories = [
   { id: "all", label: "全部", icon: <Sparkles className="h-4 w-4" /> },
@@ -42,6 +49,8 @@ const categories = [
   { id: "web", label: "网络搜索", icon: <Globe className="h-4 w-4" /> },
   { id: "chat", label: "对话增强", icon: <MessageSquare className="h-4 w-4" /> },
   { id: "productivity", label: "效率工具", icon: <Zap className="h-4 w-4" /> },
+  { id: "browser", label: "浏览器", icon: <Globe className="h-4 w-4" /> },
+  { id: "database", label: "数据库", icon: <Database className="h-4 w-4" /> },
 ];
 
 const getCategoryIcon = (category: string) => {
@@ -60,14 +69,16 @@ export function SkillStore({ onInstall, onCreateNew }: SkillStoreProps) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "rating">("popular");
   const [priceFilter, setPriceFilter] = useState<"all" | "free" | "paid">("all");
+  const [originFilter, setOriginFilter] = useState<SkillOrigin>("all");
 
-  // Fetch real data
+  // Fetch real data with origin filter
   const { data: featuredSkills = [], isLoading: loadingFeatured } = useFeaturedSkills();
   const { data: newSkills = [], isLoading: loadingNew } = useNewSkills();
   const { data: marketSkills = [], isLoading: loadingMarket } = useMarketSkills({
     category: activeCategory,
     sortBy,
     priceFilter,
+    origin: originFilter as SkillOriginFilter,
   });
   const { data: installedData = [] } = useMyInstalledSkills();
   const installSkill = useInstallSkill();
@@ -240,6 +251,12 @@ export function SkillStore({ onInstall, onCreateNew }: SkillStoreProps) {
 
             {/* 分类页 */}
             <TabsContent value="categories" className="mt-0 space-y-4">
+              {/* 来源过滤器 */}
+              <MCPSourceFilter 
+                value={originFilter} 
+                onChange={setOriginFilter} 
+              />
+
               {/* 分类标签 */}
               <div className="flex flex-wrap gap-2">
                 {categories.map((cat) => (
@@ -257,7 +274,7 @@ export function SkillStore({ onInstall, onCreateNew }: SkillStoreProps) {
               </div>
 
               {/* 排序和筛选 */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant={sortBy === "popular" ? "secondary" : "ghost"}
                   size="sm"
@@ -378,17 +395,24 @@ function SkillCard({
   isNew?: boolean;
 }) {
   const icon = getCategoryIcon(skill.category);
+  const isMCP = skill.origin === "mcp";
+  const mcpTools = (skill.mcp_tools as MCPTool[] | null) || [];
+  const mcpResources = (skill.mcp_resources as MCPResource[] | null) || [];
 
   return (
     <Card className="group hover:border-primary/50 hover:shadow-lg transition-all rounded-xl">
       <CardHeader className="pb-2">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-            {icon}
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+            isMCP ? "bg-purple-500/10 text-purple-400" : "bg-primary/10 text-primary"
+          )}>
+            {isMCP ? <Wrench className="h-6 w-6" /> : icon}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="font-semibold truncate">{skill.name}</h4>
+              {isMCP && <MCPBadge />}
               {isNew && (
                 <Badge variant="secondary" className="text-xs bg-status-confirm/20 text-status-confirm">
                   新
@@ -403,47 +427,82 @@ function SkillCard({
                 <BadgeCheck className="h-4 w-4 text-primary" />
               )}
             </div>
+            {/* MCP Info Badges (runtime, scope, official) */}
+            {isMCP && (
+              <MCPInfoBadges
+                runtime={skill.runtime_env}
+                scope={skill.scope}
+                isOfficial={skill.is_official}
+                className="mt-1"
+              />
+            )}
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
               {skill.description || "暂无描述"}
             </p>
           </div>
         </div>
       </CardHeader>
-      <CardFooter className="pt-2 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-primary text-primary" />
-            {skill.rating || 0}
-          </span>
-          <span className="flex items-center gap-1">
-            <Download className="h-3 w-3" />
-            {formatDownloads(skill.downloads_count)}
-          </span>
-          <span className={cn(
-            skill.is_free ? "text-status-executing" : "text-primary font-medium"
-          )}>
-            {formatPrice(skill.price, skill.is_free)}
-          </span>
-        </div>
-        <Button
-          size="sm"
-          variant={isInstalled ? "outline" : "default"}
-          disabled={isInstalled || isInstalling}
-          onClick={() => onInstall(skill.id)}
-          className="gap-1"
-        >
-          {isInstalled ? (
-            <>
-              <CheckCircle2 className="h-3 w-3" />
-              已安装
-            </>
-          ) : (
-            <>
+      <CardFooter className="pt-2 flex flex-col gap-2">
+        {/* MCP Tools/Resources preview */}
+        {isMCP && (mcpTools.length > 0 || mcpResources.length > 0) && (
+          <MCPToolsPreview tools={mcpTools} resources={mcpResources} className="w-full" />
+        )}
+        
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Star className="h-3 w-3 fill-primary text-primary" />
+              {skill.rating || 0}
+            </span>
+            <span className="flex items-center gap-1">
               <Download className="h-3 w-3" />
-              安装
-            </>
-          )}
-        </Button>
+              {formatDownloads(skill.downloads_count)}
+            </span>
+            {isMCP && skill.github_stars ? (
+              <span className="flex items-center gap-1">
+                <Star className="h-3 w-3" />
+                {skill.github_stars}
+              </span>
+            ) : (
+              <span className={cn(
+                skill.is_free ? "text-status-executing" : "text-primary font-medium"
+              )}>
+                {formatPrice(skill.price, skill.is_free)}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {isMCP && skill.transport_url && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                onClick={() => window.open(skill.transport_url!, "_blank")}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant={isInstalled ? "outline" : "default"}
+              disabled={isInstalled || isInstalling}
+              onClick={() => onInstall(skill.id)}
+              className="gap-1"
+            >
+              {isInstalled ? (
+                <>
+                  <CheckCircle2 className="h-3 w-3" />
+                  已安装
+                </>
+              ) : (
+                <>
+                  <Download className="h-3 w-3" />
+                  安装
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </CardFooter>
     </Card>
   );
