@@ -68,7 +68,7 @@ export function ImmersiveHeader({
   sessionId,
 }: ImmersiveHeaderProps) {
   return (
-    <div className="panel-header border-b border-border backdrop-blur-sm bg-background/80">
+    <div className="panel-header border-b border-border backdrop-blur-sm bg-background/80 relative z-20">
       <div className="flex items-center gap-2">
         {/* History Toggle */}
         {isLoggedIn && (

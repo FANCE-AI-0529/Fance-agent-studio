@@ -75,7 +75,7 @@ export function AgentSelector({
           <ChevronDown className="h-4 w-4 text-muted-foreground ml-2" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72">
+      <DropdownMenuContent align="start" className="w-72 z-50">
         <div className="px-3 py-2 border-b border-border">
           <p className="text-xs text-muted-foreground">
             选择一个智能体开始对话，智能体会根据您的指令自动执行任务

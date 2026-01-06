@@ -1016,7 +1016,7 @@ const Runtime = () => {
               )}
 
               {/* Main Chat Area */}
-              <div className="flex-1 flex flex-col min-w-0 relative">
+              <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
                 {/* Scene Background - Only in Immersive Mode with active scenario */}
                 {!isDeveloperMode && activeScenario && (
                   <SceneBackground
@@ -1045,7 +1045,7 @@ const Runtime = () => {
                     sessionId={chatSession?.id}
                   />
                 ) : (
-                  <div className="panel-header border-b border-border">
+                  <div className="panel-header border-b border-border relative z-20">
                     <div className="flex items-center gap-2">
                       {user && (
                         <Button
@@ -1164,7 +1164,7 @@ const Runtime = () => {
                 )}
 
                 {/* Messages or Welcome Guide */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-10">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-0">
                   {localMessages.length === 0 && currentPhase === "idle" ? (
                     <WelcomeGuide 
                       agent={selectedAgent} 
