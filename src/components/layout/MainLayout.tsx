@@ -40,10 +40,12 @@ function MobileLayout({ children }: { children: ReactNode }) {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarProvider defaultOpen={true}>
             <AppSidebar />
-          </SheetContent>
-        </Sheet>
+          </SidebarProvider>
+        </SheetContent>
+      </Sheet>
         
         <div className="flex items-center gap-2">
           <img src={logoIcon} alt="F" className="w-7 h-7 rounded-lg" />
