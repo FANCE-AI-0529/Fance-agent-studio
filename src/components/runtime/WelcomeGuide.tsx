@@ -105,7 +105,7 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
   const avatar = getAgentAvatar(agent);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto relative z-0">
       <div className="max-w-2xl w-full space-y-6">
         {/* Agent Introduction */}
         <div className="text-center space-y-4">
