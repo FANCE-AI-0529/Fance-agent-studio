@@ -103,14 +103,16 @@ export function useCreateAgent() {
     mutationFn: async (agent: Omit<AgentInsert, "author_id">) => {
       if (!user) throw new Error("用户未登录");
 
+      // Use insert without .single() to avoid implicit ON CONFLICT
       const { data, error } = await supabase
         .from("agents")
         .insert({ ...agent, author_id: user.id })
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error("创建 Agent 失败");
+      const createdAgent = data[0];
+      return createdAgent;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
@@ -188,7 +190,8 @@ export function useSaveAgentWithSkills() {
         if (deleteError) throw deleteError;
       } else {
         // Create new agent
-        const { data: newAgent, error: createError } = await supabase
+        // Use insert without .single() to avoid implicit ON CONFLICT
+        const { data: newAgentData, error: createError } = await supabase
           .from("agents")
           .insert({
             name: agent.name,
@@ -197,11 +200,11 @@ export function useSaveAgentWithSkills() {
             manifest,
             author_id: user.id,
           })
-          .select()
-          .single();
+          .select();
 
         if (createError) throw createError;
-        agentId = newAgent.id;
+        if (!newAgentData || newAgentData.length === 0) throw new Error("创建 Agent 失败");
+        agentId = newAgentData[0].id;
       }
 
       // Add new skill associations

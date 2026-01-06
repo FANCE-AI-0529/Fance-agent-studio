@@ -210,11 +210,10 @@ export function useLogActivity() {
     if (!user) return;
     
     try {
+      // Use insert without .select().single() to avoid ON CONFLICT issues
       await supabase
         .from("user_activity_log")
-        .insert({ user_id: user.id })
-        .select()
-        .single();
+        .insert({ user_id: user.id });
     } catch {
       // Ignore duplicate key errors (already logged today)
     }
