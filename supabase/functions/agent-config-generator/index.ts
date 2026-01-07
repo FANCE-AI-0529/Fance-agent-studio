@@ -5,6 +5,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface CanvasNodeConfig {
+  id: string;
+  type: string;
+  data: Record<string, unknown>;
+}
+
+interface CanvasEdgeConfig {
+  id: string;
+  source: string;
+  sourceHandle?: string;
+  target: string;
+  targetHandle?: string;
+}
+
+interface MCPActionSuggestion {
+  serverId: string;
+  serverName: string;
+  toolName: string;
+  reason: string;
+  riskLevel: "low" | "medium" | "high";
+}
+
+interface KnowledgeBaseSuggestion {
+  name: string;
+  description: string;
+  retrievalMode: "vector" | "graph" | "hybrid";
+}
+
 interface GeneratedConfig {
   name: string;
   department: string;
@@ -17,6 +45,10 @@ interface GeneratedConfig {
     creative: number;
     preset?: string;
   };
+  canvasNodes?: CanvasNodeConfig[];
+  canvasEdges?: CanvasEdgeConfig[];
+  suggestedMCPActions?: MCPActionSuggestion[];
+  suggestedKnowledgeBases?: KnowledgeBaseSuggestion[];
 }
 
 serve(async (req) => {
@@ -25,7 +57,7 @@ serve(async (req) => {
   }
 
   try {
-    const { description, currentConfig } = await req.json();
+    const { description, currentConfig, generateFullWorkflow = false } = await req.json();
 
     if (!description || typeof description !== "string") {
       return new Response(
@@ -39,7 +71,55 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPromptForGenerator = `你是一个AI Agent配置生成专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成配置。
+    // Extended prompt for full workflow generation
+    const systemPromptForGenerator = generateFullWorkflow 
+      ? `你是一个AI Agent配置和工作流设计专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成完整的配置和工作流设计。
+
+请根据用户描述生成以下配置（使用JSON格式）：
+
+## 基础配置
+1. name: Agent的名称（简短、有特色）
+2. department: 所属部门（如：营销部、技术部、客服部、内容部等）
+3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字）
+4. suggestedSkills: 推荐的技能列表（字符串数组，如：["文案写作", "数据分析"]）
+5. personalityConfig: 性格配置
+   - professional: 0-1（0=活泼，1=专业）
+   - detailed: 0-1（0=简洁，1=详细）
+   - humor: 0-1（0=严肃，1=幽默）
+   - creative: 0-1（0=保守，1=创意）
+
+## MCP动作推荐（如果需要外部系统集成）
+6. suggestedMCPActions: 推荐的MCP动作列表
+   每个动作包含：
+   - serverId: 服务器ID（如 "database", "email", "github", "google-calendar", "slack", "notion"）
+   - serverName: 服务器名称（如 "数据库", "邮件服务"）
+   - toolName: 工具名称（如 "query_database", "send_email"）
+   - reason: 推荐原因
+   - riskLevel: 风险级别 "low" | "medium" | "high"
+
+分析关键词映射MCP：
+- 邮件/通知/发送 -> email服务
+- 订单/库存/查询 -> database服务  
+- GitHub/Issue/代码 -> github服务
+- 日历/日程/会议 -> google-calendar服务
+- Slack/消息/通知 -> slack服务
+- Notion/文档/笔记 -> notion服务
+- 删除/退款/支付 -> 标记为high风险
+
+## 知识库推荐（如果需要知识检索）
+7. suggestedKnowledgeBases: 推荐的知识库列表
+   每个知识库包含：
+   - name: 知识库名称
+   - description: 知识库描述
+   - retrievalMode: 检索模式 "vector" | "graph" | "hybrid"
+
+分析关键词映射知识库：
+- FAQ/常见问题 -> FAQ知识库, hybrid模式
+- 文档/手册/规范 -> 产品文档, vector模式
+- 研究/分析/论文 -> 研究资料, graph模式
+
+直接返回JSON对象，不要包含其他文字。确保JSON格式正确。`
+      : `你是一个AI Agent配置生成专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成配置。
 
 请根据用户描述生成以下配置（使用JSON格式）：
 1. name: Agent的名称（简短、有特色）

@@ -93,6 +93,7 @@ import { useVariableStore } from "@/stores/variableStore";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
+import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import {
   AlertDialog,
@@ -179,6 +180,7 @@ const Builder = () => {
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [leftPanelTab, setLeftPanelTab] = useState<"skills" | "variables">("skills");
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   const { setSelectedEdgeId, mockData: currentVariables } = useVariableStore();
 
@@ -1157,6 +1159,22 @@ const Builder = () => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>向导模式</TooltipContent>
+              </Tooltip>
+
+              {/* AI Generator Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1.5 h-8"
+                    onClick={() => setShowAIGenerator(true)}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    AI生成
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>AI一键生成完整智能体</TooltipContent>
               </Tooltip>
 
               {/* Debug Mode Button */}
