@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   BaseEdge,
   getBezierPath,
@@ -6,12 +6,15 @@ import {
 } from "@xyflow/react";
 import type { EdgeProps } from "@xyflow/react";
 import { PortType, portColors } from "../ports/portTypes";
+import type { EdgeMapping } from "../variables/variableTypes";
 
 export interface AnimatedFlowEdgeData {
   portType?: PortType;
   animated?: boolean;
   flowDirection?: "forward" | "reverse";
   label?: string;
+  mapping?: EdgeMapping;
+  mockData?: unknown;
   [key: string]: unknown;
 }
 
@@ -30,6 +33,7 @@ const AnimatedFlowEdge = memo(({
   selected,
   markerEnd,
 }: EdgeProps) => {
+  const [showPreview, setShowPreview] = useState(false);
   const edgeData = data as AnimatedFlowEdgeData | undefined;
   const portType = edgeData?.portType || "data";
   const animated = edgeData?.animated !== false;
@@ -48,6 +52,16 @@ const AnimatedFlowEdge = memo(({
   // Generate unique IDs for SVG definitions
   const gradientId = `gradient-${id}`;
   const filterId = `glow-${id}`;
+
+  // Format mock data for preview
+  const formatPreviewData = (data: unknown): string => {
+    if (!data) return "{}";
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch {
+      return String(data);
+    }
+  };
 
   return (
     <>
@@ -79,6 +93,8 @@ const AnimatedFlowEdge = memo(({
         stroke="transparent"
         strokeWidth={20}
         className="react-flow__edge-interaction"
+        onMouseEnter={() => setShowPreview(true)}
+        onMouseLeave={() => setShowPreview(false)}
       />
 
       {/* Main edge */}
@@ -170,6 +186,31 @@ const AnimatedFlowEdge = memo(({
             </>
           )}
         </>
+      )}
+
+      {/* Hover preview bubble */}
+      {showPreview && edgeData?.mockData && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -100%) translate(${labelX}px,${labelY - 10}px)`,
+              pointerEvents: "none",
+            }}
+            className="max-w-xs"
+          >
+            <div className="bg-popover border border-border rounded-lg shadow-xl p-3 text-xs">
+              <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                <span className="text-[10px] font-medium uppercase tracking-wide">
+                  📦 Data Preview
+                </span>
+              </div>
+              <pre className="font-mono text-[10px] overflow-auto max-h-32 text-foreground bg-muted rounded p-2">
+                {formatPreviewData(edgeData.mockData)}
+              </pre>
+            </div>
+          </div>
+        </EdgeLabelRenderer>
       )}
 
       {/* Edge label */}
