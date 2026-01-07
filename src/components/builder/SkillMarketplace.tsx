@@ -44,7 +44,7 @@ const nativeCategories = [
 // Origin filter options
 const originFilters = [
   { id: "all", label: "All", labelZh: "全部", icon: Sparkles },
-  { id: "native", label: "Skills", labelZh: "Skills", icon: Puzzle },
+  { id: "native", label: "MCP", labelZh: "MCP", icon: Puzzle },
   { id: "mcp", label: "MCP", labelZh: "MCP 生态", icon: Plug },
 ];
 
