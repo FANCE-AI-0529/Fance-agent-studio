@@ -1295,6 +1295,60 @@ export type Database = {
           },
         ]
       }
+      document_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string | null
+          document_id: string
+          embedding: string | null
+          id: string
+          knowledge_base_id: string
+          metadata: Json | null
+          token_count: number | null
+          user_id: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string | null
+          document_id: string
+          embedding?: string | null
+          id?: string
+          knowledge_base_id: string
+          metadata?: Json | null
+          token_count?: number | null
+          user_id: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string | null
+          document_id?: string
+          embedding?: string | null
+          id?: string
+          knowledge_base_id?: string
+          metadata?: Json | null
+          token_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunks_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_processing: {
         Row: {
           agent_id: string | null
@@ -1671,6 +1725,122 @@ export type Database = {
           status?: string | null
         }
         Relationships: []
+      }
+      knowledge_bases: {
+        Row: {
+          chunk_overlap: number | null
+          chunk_size: number | null
+          chunks_count: number | null
+          created_at: string | null
+          department: string | null
+          description: string | null
+          documents_count: number | null
+          embedding_model: string | null
+          id: string
+          index_status: string | null
+          metadata: Json | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chunk_overlap?: number | null
+          chunk_size?: number | null
+          chunks_count?: number | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          documents_count?: number | null
+          embedding_model?: string | null
+          id?: string
+          index_status?: string | null
+          metadata?: Json | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chunk_overlap?: number | null
+          chunk_size?: number | null
+          chunks_count?: number | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          documents_count?: number | null
+          embedding_model?: string | null
+          id?: string
+          index_status?: string | null
+          metadata?: Json | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      knowledge_documents: {
+        Row: {
+          chunks_count: number | null
+          content: string | null
+          created_at: string | null
+          error_message: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          knowledge_base_id: string
+          metadata: Json | null
+          mime_type: string | null
+          name: string
+          source_type: string | null
+          source_url: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chunks_count?: number | null
+          content?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          knowledge_base_id: string
+          metadata?: Json | null
+          mime_type?: string | null
+          name: string
+          source_type?: string | null
+          source_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chunks_count?: number | null
+          content?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          knowledge_base_id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          name?: string
+          source_type?: string | null
+          source_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_documents_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       llm_model_configs: {
         Row: {
@@ -2470,6 +2640,7 @@ export type Database = {
           is_official: boolean | null
           is_published: boolean
           is_verified: boolean | null
+          knowledge_base_id: string | null
           mcp_resources: Json | null
           mcp_tools: Json | null
           mcp_type: string | null
@@ -2479,10 +2650,12 @@ export type Database = {
           permissions: string[]
           preview_images: string[] | null
           price: number | null
+          rag_config: Json | null
           rating: number | null
           ratings_count: number | null
           runtime_env: string | null
           scope: string | null
+          skill_type: string | null
           tags: string[] | null
           transport_url: string | null
           updated_at: string
@@ -2504,6 +2677,7 @@ export type Database = {
           is_official?: boolean | null
           is_published?: boolean
           is_verified?: boolean | null
+          knowledge_base_id?: string | null
           mcp_resources?: Json | null
           mcp_tools?: Json | null
           mcp_type?: string | null
@@ -2513,10 +2687,12 @@ export type Database = {
           permissions?: string[]
           preview_images?: string[] | null
           price?: number | null
+          rag_config?: Json | null
           rating?: number | null
           ratings_count?: number | null
           runtime_env?: string | null
           scope?: string | null
+          skill_type?: string | null
           tags?: string[] | null
           transport_url?: string | null
           updated_at?: string
@@ -2538,6 +2714,7 @@ export type Database = {
           is_official?: boolean | null
           is_published?: boolean
           is_verified?: boolean | null
+          knowledge_base_id?: string | null
           mcp_resources?: Json | null
           mcp_tools?: Json | null
           mcp_type?: string | null
@@ -2547,16 +2724,26 @@ export type Database = {
           permissions?: string[]
           preview_images?: string[] | null
           price?: number | null
+          rag_config?: Json | null
           rating?: number | null
           ratings_count?: number | null
           runtime_env?: string | null
           scope?: string | null
+          skill_type?: string | null
           tags?: string[] | null
           transport_url?: string | null
           updated_at?: string
           version?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "skills_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_chain_executions: {
         Row: {
@@ -3525,6 +3712,23 @@ export type Database = {
         Returns: undefined
       }
       install_skill: { Args: { p_skill_id: string }; Returns: undefined }
+      match_document_chunks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_knowledge_base_id?: string
+          p_user_id?: string
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          document_id: string
+          id: string
+          knowledge_base_id: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
       submit_skill_rating: {
         Args: { p_rating: number; p_review?: string; p_skill_id: string }
         Returns: undefined

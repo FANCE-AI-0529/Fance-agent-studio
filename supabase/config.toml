@@ -65,3 +65,12 @@ verify_jwt = false
 
 [functions.send-invite-email]
 verify_jwt = false
+
+[functions.embed-text]
+verify_jwt = false
+
+[functions.rag-ingest]
+verify_jwt = false
+
+[functions.rag-query]
+verify_jwt = false
