@@ -51,6 +51,10 @@ const categories = [
   { id: "productivity", label: "效率工具", icon: <Zap className="h-4 w-4" /> },
   { id: "browser", label: "浏览器", icon: <Globe className="h-4 w-4" /> },
   { id: "database", label: "数据库", icon: <Database className="h-4 w-4" /> },
+  { id: "design", label: "创意设计", icon: <Sparkles className="h-4 w-4" /> },
+  { id: "content", label: "内容创作", icon: <FileText className="h-4 w-4" /> },
+  { id: "document", label: "文档处理", icon: <FileText className="h-4 w-4" /> },
+  { id: "code", label: "开发工具", icon: <Wrench className="h-4 w-4" /> },
 ];
 
 const getCategoryIcon = (category: string) => {
