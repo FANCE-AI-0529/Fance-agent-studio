@@ -72,6 +72,7 @@ const Auth = () => {
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [loginCaptchaVerified, setLoginCaptchaVerified] = useState(false);
 
   // Invite code validation
   const { isValid: isInviteValid, isLoading: isValidating, error: inviteError, invitationId } = useInviteValidation(inviteCode);
@@ -82,6 +83,16 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate captcha first
+    if (!loginCaptchaVerified) {
+      toast({
+        title: "请完成安全验证",
+        description: "请先完成数学验证",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       emailSchema.parse(loginEmail);
       loginPasswordSchema.parse(loginPassword);
@@ -311,7 +322,10 @@ const Auth = () => {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full gap-2" disabled={loading}>
+                    {/* Login CAPTCHA */}
+                    <MathCaptcha onVerified={setLoginCaptchaVerified} />
+
+                    <Button type="submit" className="w-full gap-2" disabled={loading || !loginCaptchaVerified}>
                       {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
