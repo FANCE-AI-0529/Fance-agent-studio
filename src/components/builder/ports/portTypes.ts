@@ -244,7 +244,51 @@ export const standardPorts = {
     ],
     // outputs are dynamic based on branches
   },
+  // MCP Action node ports
+  mcpAction: {
+    inputs: [
+      { id: "control-in", type: "control" as PortType, direction: "input" as PortDirection, label: "触发" },
+    ],
+    outputs: [
+      { id: "control-out", type: "control" as PortType, direction: "output" as PortDirection, label: "完成" },
+      { id: "result-out", type: "data" as PortType, direction: "output" as PortDirection, label: "结果" },
+      { id: "error-out", type: "data" as PortType, direction: "output" as PortDirection, label: "错误" },
+    ],
+  },
+  // Intervention node ports (MPLP confirmation)
+  intervention: {
+    inputs: [
+      { id: "control-in", type: "control" as PortType, direction: "input" as PortDirection, label: "触发" },
+      { id: "data-preview", type: "data" as PortType, direction: "input" as PortDirection, label: "预览数据" },
+    ],
+    outputs: [
+      { id: "approved-out", type: "control" as PortType, direction: "output" as PortDirection, label: "已批准" },
+      { id: "rejected-out", type: "control" as PortType, direction: "output" as PortDirection, label: "已拒绝" },
+      { id: "user-input", type: "data" as PortType, direction: "output" as PortDirection, label: "用户输入" },
+    ],
+  },
 };
+
+/**
+ * Generate input ports from JSON Schema
+ */
+export function generatePortsFromSchema(
+  schema: { 
+    properties?: Record<string, { type: string; description?: string }>; 
+    required?: string[] 
+  }
+): PortConfig[] {
+  if (!schema?.properties) return [];
+  
+  return Object.entries(schema.properties).map(([name, prop]) => ({
+    id: `param-${name}`,
+    type: "data" as PortType,
+    direction: "input" as PortDirection,
+    label: name,
+    description: prop.description,
+    required: schema.required?.includes(name),
+  }));
+}
 
 /**
  * Port layout configuration

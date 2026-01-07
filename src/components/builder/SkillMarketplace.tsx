@@ -21,7 +21,9 @@ import {
   GitBranch,
   Route,
   GitMerge,
+  Zap,
 } from "lucide-react";
+import { MCPActionsPanel, MCPActionDragItem, InterventionDragItem } from "./MCPActionsPanel";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,7 @@ const originFilters = [
   { id: "all", label: "All", labelZh: "全部", icon: Sparkles },
   { id: "native", label: "Skills", labelZh: "Skills", icon: Puzzle },
   { id: "mcp", label: "MCP", labelZh: "MCP", icon: Plug },
+  { id: "actions", label: "Actions", labelZh: "动作", icon: Zap },
   { id: "knowledge", label: "Knowledge", labelZh: "知识库", icon: BookOpen },
   { id: "logic", label: "Logic", labelZh: "逻辑", icon: GitBranch },
 ];
@@ -178,6 +181,8 @@ interface SkillMarketplaceProps {
   onDragStart: (skill: Skill) => void;
   onKnowledgeDragStart?: (kb: KnowledgeBaseItem) => void;
   onLogicNodeDragStart?: (node: LogicNodeItem) => void;
+  onMCPActionDragStart?: (action: MCPActionDragItem) => void;
+  onInterventionDragStart?: (intervention: InterventionDragItem) => void;
   addedSkillIds: string[];
   addedKnowledgeBaseIds?: string[];
 }
@@ -186,13 +191,15 @@ export function SkillMarketplace({
   onDragStart, 
   onKnowledgeDragStart,
   onLogicNodeDragStart,
+  onMCPActionDragStart,
+  onInterventionDragStart,
   addedSkillIds,
   addedKnowledgeBaseIds = [],
 }: SkillMarketplaceProps) {
   const { language, t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp' | 'knowledge' | 'logic'>('all');
+  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp' | 'actions' | 'knowledge' | 'logic'>('all');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -374,12 +381,14 @@ export function SkillMarketplace({
         {originFilters.map((filter) => (
           <button
             key={filter.id}
-            onClick={() => setOriginFilter(filter.id as 'all' | 'native' | 'mcp' | 'knowledge')}
+            onClick={() => setOriginFilter(filter.id as 'all' | 'native' | 'mcp' | 'actions' | 'knowledge' | 'logic')}
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors min-w-[60px]",
               originFilter === filter.id
                 ? filter.id === 'knowledge' 
                   ? "bg-purple-500 text-white"
+                  : filter.id === 'actions'
+                  ? "bg-orange-500 text-white"
                   : "bg-primary text-primary-foreground"
                 : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
             )}
@@ -439,6 +448,13 @@ export function SkillMarketplace({
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : originFilter === 'actions' ? (
+          // MCP Actions Panel
+          <MCPActionsPanel
+            onActionDragStart={onMCPActionDragStart}
+            onInterventionDragStart={onInterventionDragStart}
+            language={language}
+          />
         ) : originFilter === 'logic' ? (
           // Logic Nodes List
           <div className="space-y-2">

@@ -68,8 +68,11 @@ import OutputNode from "@/components/builder/nodes/OutputNode";
 import IntentRouterNode, { IntentRouterNodeData } from "@/components/builder/nodes/IntentRouterNode";
 import ConditionNode, { ConditionNodeData } from "@/components/builder/nodes/ConditionNode";
 import ParallelNode, { ParallelNodeData } from "@/components/builder/nodes/ParallelNode";
+import MCPActionNode, { MCPActionNodeData } from "@/components/builder/nodes/MCPActionNode";
+import InterventionNode, { InterventionNodeData } from "@/components/builder/nodes/InterventionNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
+import { MCPActionDragItem, InterventionDragItem } from "@/components/builder/MCPActionsPanel";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { BuilderWizard } from "@/components/builder/BuilderWizard";
@@ -116,6 +119,8 @@ const nodeTypes: NodeTypes = {
   intentRouter: IntentRouterNode,
   condition: ConditionNode,
   parallel: ParallelNode,
+  mcpAction: MCPActionNode,
+  intervention: InterventionNode,
 };
 
 // Custom edge types
@@ -510,6 +515,58 @@ const Builder = () => {
         x: event.clientX - bounds.left,
         y: event.clientY - bounds.top,
       });
+
+      // Check if it's an MCP action
+      if (item.type === 'mcp_action') {
+        const action = item as MCPActionDragItem;
+        const newNode: Node<MCPActionNodeData> = {
+          id: `mcp-action-${action.tool.name}-${Date.now()}`,
+          type: "mcpAction",
+          position,
+          data: {
+            id: `action-${Date.now()}`,
+            name: action.tool.name,
+            serverName: action.serverName,
+            description: action.tool.description,
+            inputSchema: action.tool.inputSchema as MCPActionNodeData['inputSchema'],
+            permissions: action.permissions,
+            riskLevel: action.riskLevel,
+            requiresConfirmation: action.riskLevel !== 'low',
+            onRemove: (id) => {
+              setNodes((nds) => nds.filter((n) => n.data?.id !== id));
+              setEdges((eds) => eds.filter((e) => !e.source.includes(id) && !e.target.includes(id)));
+            },
+          },
+        };
+        setNodes((nds) => [...nds, newNode]);
+        toast({ title: "MCP 动作已添加", description: `${action.tool.name}` });
+        return;
+      }
+
+      // Check if it's an intervention node
+      if (item.type === 'intervention') {
+        const newNode: Node<InterventionNodeData> = {
+          id: `intervention-${Date.now()}`,
+          type: "intervention",
+          position,
+          data: {
+            id: `intervention-${Date.now()}`,
+            name: "用户介入",
+            confirmationType: "detailed",
+            timeoutSeconds: 30,
+            defaultAction: "reject",
+            showInputPreview: true,
+            riskLevel: "medium",
+            onRemove: (id) => {
+              setNodes((nds) => nds.filter((n) => n.data?.id !== id));
+              setEdges((eds) => eds.filter((e) => !e.source.includes(id) && !e.target.includes(id)));
+            },
+          },
+        };
+        setNodes((nds) => [...nds, newNode]);
+        toast({ title: "介入节点已添加", description: "MPLP 确认节点" });
+        return;
+      }
 
       // Check if it's a knowledge base
       if (item.type === 'knowledge_base') {
