@@ -204,7 +204,7 @@ serve(async (req) => {
       };
     }
 
-    // Validate and sanitize the response
+    // Validate and sanitize the response - including MCP and Knowledge Base suggestions
     const validatedConfig: GeneratedConfig = {
       name: String(generatedConfig.name || "AI助手").slice(0, 50),
       department: String(generatedConfig.department || "通用部门").slice(0, 30),
@@ -218,7 +218,25 @@ serve(async (req) => {
         humor: Math.max(0, Math.min(1, Number(generatedConfig.personalityConfig?.humor) || 0.3)),
         creative: Math.max(0, Math.min(1, Number(generatedConfig.personalityConfig?.creative) || 0.5)),
         preset: generatedConfig.personalityConfig?.preset
-      }
+      },
+      // Include MCP action suggestions
+      suggestedMCPActions: Array.isArray(generatedConfig.suggestedMCPActions) 
+        ? generatedConfig.suggestedMCPActions.slice(0, 10).map(action => ({
+            serverId: String(action.serverId || ""),
+            serverName: String(action.serverName || ""),
+            toolName: String(action.toolName || ""),
+            reason: String(action.reason || ""),
+            riskLevel: (["low", "medium", "high"].includes(action.riskLevel) ? action.riskLevel : "low") as "low" | "medium" | "high"
+          }))
+        : [],
+      // Include Knowledge Base suggestions
+      suggestedKnowledgeBases: Array.isArray(generatedConfig.suggestedKnowledgeBases)
+        ? generatedConfig.suggestedKnowledgeBases.slice(0, 5).map(kb => ({
+            name: String(kb.name || "知识库"),
+            description: String(kb.description || ""),
+            retrievalMode: (["vector", "graph", "hybrid"].includes(kb.retrievalMode) ? kb.retrievalMode : "vector") as "vector" | "graph" | "hybrid"
+          }))
+        : []
     };
 
     console.log("Generated config:", validatedConfig);
