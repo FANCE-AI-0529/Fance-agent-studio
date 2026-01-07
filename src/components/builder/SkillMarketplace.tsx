@@ -49,6 +49,9 @@ const nativeCategories = [
   { id: "vision", label: "Vision", labelZh: "图像识别", icon: Image },
   { id: "nlp", label: "NLP", labelZh: "自然语言", icon: MessageSquare },
   { id: "code", label: "Code Gen", labelZh: "代码生成", icon: FileCode },
+  { id: "design", label: "Design", labelZh: "创意设计", icon: Sparkles },
+  { id: "content", label: "Content", labelZh: "内容创作", icon: FileText },
+  { id: "document", label: "Document", labelZh: "文档处理", icon: FileText },
 ];
 
 // Origin filter options

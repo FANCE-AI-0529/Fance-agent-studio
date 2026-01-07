@@ -2836,6 +2836,485 @@ dependencies:
   - httpx>=0.24.0
 `,
   },
+  // ==================== 新增 6 个官方技能模板 ====================
+  {
+    id: "canvas-design",
+    name: "视觉设计哲学",
+    description: "使用设计哲学创建美丽的视觉艺术作品，支持海报、艺术品、设计稿等静态作品",
+    category: "创意设计",
+    icon: <Image className="h-4 w-4" />,
+    difficulty: "advanced",
+    content: `---
+name: "canvas-design"
+version: "1.0.0"
+description: "创建设计哲学并通过视觉表达 - 输出 .md, .pdf, .png 文件"
+author: "Fance OS"
+permissions:
+  - file_write
+  - image_generation
+inputs:
+  - name: concept
+    type: string
+    description: 设计概念或主题
+    required: true
+  - name: style
+    type: string
+    description: 设计风格偏好
+    required: false
+outputs:
+  - name: philosophy
+    type: string
+    description: 设计哲学文档 (.md)
+  - name: artwork
+    type: file
+    description: 视觉作品 (.pdf 或 .png)
+---
+
+# 视觉设计哲学技能
+
+## 设计哲学创建
+
+创建一个视觉哲学（不是布局或模板），通过以下方式解读：
+- 形式、空间、色彩、构图
+- 图像、图形、形状、图案
+- 极简文字作为视觉点缀
+
+## 核心理解
+
+**输入**: 用户提供的微妙指示或灵感
+**创建**: 一个设计哲学/美学运动
+**输出**: 90% 视觉设计 + 10% 必要文字的艺术品
+
+## 如何生成视觉哲学
+
+1. **命名运动** (1-2 词): "Brutalist Joy" / "Chromatic Silence" / "Metabolist Dreams"
+
+2. **阐述哲学** (4-6 段落):
+   - 空间与形式
+   - 色彩与材质
+   - 比例与节奏
+   - 构图与平衡
+   - 视觉层级
+
+## 哲学示例
+
+### "Concrete Poetry" 哲学
+通过纪念碑式的形式和大胆的几何进行交流。
+
+### "Chromatic Language" 哲学
+色彩作为主要信息系统。
+
+### "Analog Meditation" 哲学
+通过纹理和呼吸空间进行安静的视觉冥想。
+`,
+    handlerCode: `"""
+视觉设计哲学技能处理器
+"""
+
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    concept = inputs.get("concept", "")
+    style = inputs.get("style", "modern")
+    
+    philosophy = f"# Design Philosophy: {concept}\\n\\nBased on {style} aesthetics."
+    
+    return {
+        "philosophy": philosophy,
+        "status": "Philosophy created"
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("concept"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 120
+  memory_mb: 512
+
+dependencies:
+  - pillow>=10.0.0
+`,
+  },
+  {
+    id: "brand-guidelines",
+    name: "品牌规范应用",
+    description: "应用品牌颜色、字体和视觉规范到任何设计作品",
+    category: "品牌设计",
+    icon: <Shield className="h-4 w-4" />,
+    difficulty: "beginner",
+    content: `---
+name: "brand-guidelines"
+version: "1.0.0"
+description: "应用品牌视觉规范到设计作品"
+author: "Fance OS"
+permissions:
+  - file_read
+  - file_write
+inputs:
+  - name: file_path
+    type: string
+    description: 需要应用品牌规范的文件路径
+    required: true
+outputs:
+  - name: styled_file
+    type: file
+    description: 应用品牌规范后的文件
+---
+
+# 品牌规范应用技能
+
+## 品牌颜色
+
+| 颜色 | 值 | 用途 |
+|------|-----|------|
+| Dark | #141413 | 主文本和深色背景 |
+| Light | #faf9f5 | 浅色背景 |
+| Orange | #d97757 | 主强调色 |
+| Blue | #6a9bcc | 次强调色 |
+| Green | #788c5d | 第三强调色 |
+
+## 字体
+
+- **标题**: Poppins (Arial 备选)
+- **正文**: Lora (Georgia 备选)
+`,
+    handlerCode: `"""
+品牌规范应用技能处理器
+"""
+
+from typing import Dict, Any
+
+BRAND_COLORS = {
+    "dark": "#141413",
+    "light": "#faf9f5",
+    "accent_orange": "#d97757",
+    "accent_blue": "#6a9bcc",
+    "accent_green": "#788c5d",
+}
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    file_path = inputs.get("file_path", "")
+    return {
+        "status": "Brand guidelines applied",
+        "colors_applied": BRAND_COLORS,
+        "file_path": file_path
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("file_path"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 60
+  memory_mb: 256
+
+dependencies:
+  - python-pptx>=0.6.21
+`,
+  },
+  {
+    id: "artifacts-builder",
+    name: "Artifacts 构建器",
+    description: "使用 React + Tailwind + shadcn/ui 构建复杂的多组件 HTML Artifacts",
+    category: "开发工具",
+    icon: <Code className="h-4 w-4" />,
+    difficulty: "advanced",
+    content: `---
+name: "artifacts-builder"
+version: "1.0.0"
+description: "构建强大的前端 Claude.ai Artifacts"
+author: "Fance OS"
+permissions:
+  - file_write
+  - shell_execute
+inputs:
+  - name: project_name
+    type: string
+    description: 项目名称
+    required: true
+outputs:
+  - name: bundle_html
+    type: file
+    description: 打包后的单 HTML 文件
+---
+
+# Artifacts 构建器技能
+
+**技术栈**: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+
+## 快速开始
+
+1. 初始化项目: \`scripts/init-artifact.sh <project-name>\`
+2. 开发 artifact
+3. 打包: \`scripts/bundle-artifact.sh\`
+4. 分享 bundle.html
+
+## 项目特性
+
+- ✅ React + TypeScript (via Vite)
+- ✅ Tailwind CSS + shadcn/ui 主题系统
+- ✅ 40+ shadcn/ui 组件预安装
+- ✅ Parcel 打包配置
+`,
+    handlerCode: `"""
+Artifacts 构建器技能处理器
+"""
+
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    project_name = inputs.get("project_name", "my-artifact")
+    
+    return {
+        "status": "Project initialized",
+        "project_name": project_name,
+        "next_steps": [
+            f"cd {project_name}",
+            "Edit src/App.tsx",
+            "Run scripts/bundle-artifact.sh"
+        ]
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("project_name"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 300
+  memory_mb: 1024
+
+dependencies:
+  - nodejs>=18.0.0
+`,
+  },
+  {
+    id: "content-research-writer",
+    name: "研究写作助手",
+    description: "协助写作高质量内容，包括研究、引用、大纲、反馈迭代",
+    category: "内容创作",
+    icon: <BookOpen className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "content-research-writer"
+version: "1.0.0"
+description: "协作式写作伙伴，帮助研究、大纲、起草和优化内容"
+author: "Fance OS"
+permissions:
+  - internet_access
+  - file_read
+  - file_write
+inputs:
+  - name: topic
+    type: string
+    description: 写作主题
+    required: true
+  - name: content_type
+    type: string
+    description: 内容类型 (article/blog/tutorial)
+    required: false
+outputs:
+  - name: outline
+    type: string
+    description: 内容大纲
+  - name: research
+    type: array
+    description: 研究资料和引用
+---
+
+# 研究写作助手技能
+
+## 功能
+
+1. **协作式大纲**: 将想法结构化为连贯的大纲
+2. **研究辅助**: 查找相关信息并添加引用
+3. **钩子改进**: 加强开头以吸引注意力
+4. **章节反馈**: 在写作过程中逐节审阅
+5. **语气保持**: 维持你的写作风格和语调
+
+## 工作流程
+
+1. 从大纲开始
+2. 研究和添加引用
+3. 改进钩子
+4. 获取章节反馈
+5. 优化打磨
+`,
+    handlerCode: `"""
+研究写作助手技能处理器
+"""
+
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    topic = inputs.get("topic", "")
+    content_type = inputs.get("content_type", "article")
+    
+    outline = f"# {content_type.title()}: {topic}\\n\\n## Introduction\\n\\n## Main Points\\n\\n## Conclusion"
+    
+    return {
+        "outline": outline,
+        "research": [],
+        "next_steps": ["Review outline", "Start writing", "Get feedback"]
+    }
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("topic"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 60
+  memory_mb: 256
+
+dependencies:
+  - httpx>=0.24.0
+`,
+  },
+  {
+    id: "pdf-toolkit",
+    name: "PDF 处理工具包",
+    description: "全面的 PDF 处理能力：文本提取、表格提取、合并拆分、表单填写",
+    category: "文档处理",
+    icon: <FileText className="h-4 w-4" />,
+    difficulty: "intermediate",
+    content: `---
+name: "pdf-toolkit"
+version: "1.0.0"
+description: "全面的 PDF 处理操作工具包"
+author: "Fance OS"
+permissions:
+  - file_read
+  - file_write
+inputs:
+  - name: operation
+    type: string
+    description: 操作类型 (extract_text/extract_tables/merge/split)
+    required: true
+  - name: file_path
+    type: string
+    description: PDF 文件路径
+    required: true
+outputs:
+  - name: result
+    type: any
+    description: 操作结果
+---
+
+# PDF 处理工具包
+
+## 支持的操作
+
+- **extract_text**: 提取 PDF 文本
+- **extract_tables**: 提取 PDF 表格
+- **merge**: 合并多个 PDF
+- **split**: 拆分 PDF 为单页
+- **fill_form**: 填写 PDF 表单
+
+## 使用示例
+
+\`\`\`python
+from pypdf import PdfReader, PdfWriter
+
+reader = PdfReader("document.pdf")
+text = ""
+for page in reader.pages:
+    text += page.extract_text()
+\`\`\`
+`,
+    handlerCode: `"""
+PDF 处理工具包技能处理器
+"""
+
+from typing import Dict, Any
+from pypdf import PdfReader, PdfWriter
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    operation = inputs.get("operation", "extract_text")
+    file_path = inputs.get("file_path", "")
+    
+    if operation == "extract_text":
+        reader = PdfReader(file_path)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+        return {"text": text, "page_count": len(reader.pages)}
+    
+    return {"error": f"Operation {operation} not implemented"}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("operation") and inputs.get("file_path"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 120
+  memory_mb: 512
+
+dependencies:
+  - pypdf>=4.0.0
+  - pdfplumber>=0.10.0
+`,
+  },
+  {
+    id: "skill-template",
+    name: "空白技能模板",
+    description: "创建自定义技能的起始模板，包含基础结构",
+    category: "模板",
+    icon: <Sparkles className="h-4 w-4" />,
+    difficulty: "beginner",
+    content: `---
+name: "my-custom-skill"
+version: "1.0.0"
+description: "在此处添加技能描述"
+author: "Your Name"
+permissions:
+  - read
+inputs:
+  - name: input_param
+    type: string
+    description: 输入参数描述
+    required: true
+outputs:
+  - name: result
+    type: any
+    description: 输出结果描述
+---
+
+# 自定义技能
+
+## 概述
+
+在这里描述你的技能做什么。
+
+## 使用方法
+
+描述如何使用这个技能。
+`,
+    handlerCode: `"""
+自定义技能处理器模板
+"""
+
+from typing import Dict, Any
+
+async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    input_param = inputs.get("input_param", "")
+    
+    # 在这里实现你的逻辑
+    result = f"Processed: {input_param}"
+    
+    return {"result": result, "status": "success"}
+
+def validate_inputs(inputs: Dict[str, Any]) -> bool:
+    return bool(inputs.get("input_param"))
+`,
+    configYaml: `runtime:
+  python_version: "3.11"
+  timeout_seconds: 30
+  memory_mb: 128
+
+dependencies:
+  # 添加你需要的依赖
+`,
+  },
 ];
 
 interface SkillTemplatesDialogProps {
