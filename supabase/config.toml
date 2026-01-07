@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.validate-invite-code]
 verify_jwt = false
+
+[functions.claim-invite-code]
+verify_jwt = false
