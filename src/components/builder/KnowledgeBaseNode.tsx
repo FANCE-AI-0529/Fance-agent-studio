@@ -1,9 +1,11 @@
 import React, { memo } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Position } from "@xyflow/react";
 import { BookOpen, Database, X, Settings, Network, FileText, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import MultiPortHandle from "./ports/MultiPortHandle";
+import { standardPorts, PortConfig } from "./ports/portTypes";
 
 export interface KnowledgeBaseNodeData {
   [key: string]: unknown;
@@ -25,6 +27,7 @@ export interface KnowledgeBaseNodeData {
 }
 
 interface KnowledgeBaseNodeProps {
+  id: string;
   data: KnowledgeBaseNodeData;
   selected?: boolean;
 }
@@ -42,8 +45,13 @@ const statusColors: Record<string, string> = {
   failed: "bg-red-500",
 };
 
-const KnowledgeBaseNode: React.FC<KnowledgeBaseNodeProps> = memo(({ data, selected }) => {
+const KnowledgeBaseNode: React.FC<KnowledgeBaseNodeProps> = memo(({ id, data, selected }) => {
   const modeInfo = retrievalModeLabels[data.retrieval_mode] || retrievalModeLabels.hybrid;
+
+  // Input ports (left side)
+  const inputPorts: PortConfig[] = standardPorts.knowledge.inputs;
+  // Output ports (right side)
+  const outputPorts: PortConfig[] = standardPorts.knowledge.outputs;
 
   return (
     <div
@@ -53,11 +61,18 @@ const KnowledgeBaseNode: React.FC<KnowledgeBaseNodeProps> = memo(({ data, select
         "hover:shadow-xl"
       )}
     >
-      {/* Connection Handle - Top */}
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!bg-purple-500 !border-2 !border-background !w-3 !h-3"
+      {/* Input ports on left side */}
+      <MultiPortHandle
+        ports={inputPorts}
+        position={Position.Left}
+        nodeId={id}
+      />
+
+      {/* Output ports on right side */}
+      <MultiPortHandle
+        ports={outputPorts}
+        position={Position.Right}
+        nodeId={id}
       />
 
       {/* Header */}
@@ -172,13 +187,6 @@ const KnowledgeBaseNode: React.FC<KnowledgeBaseNodeProps> = memo(({ data, select
           )}
         </div>
       </div>
-
-      {/* Connection Handle - Bottom */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!bg-purple-500 !border-2 !border-background !w-3 !h-3"
-      />
     </div>
   );
 });
