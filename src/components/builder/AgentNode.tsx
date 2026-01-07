@@ -1,7 +1,10 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Position } from "@xyflow/react";
 import { Bot, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import MultiPortHandle from "./ports/MultiPortHandle";
+import { standardPorts } from "./ports/portTypes";
 
 export interface AgentNodeData {
   name: string;
@@ -12,23 +15,37 @@ export interface AgentNodeData {
 }
 
 interface AgentNodeProps {
+  id: string;
   data: AgentNodeData;
   selected?: boolean;
 }
 
-const AgentNode = memo(({ data, selected }: AgentNodeProps) => {
+const AgentNode = memo(({ id, data, selected }: AgentNodeProps) => {
+  // Input ports (left side)
+  const inputPorts = standardPorts.agent.inputs;
+  // Output ports (right side)
+  const outputPorts = standardPorts.agent.outputs;
+
   return (
     <div
-      className={`relative bg-card border-2 rounded-xl p-4 transition-all duration-200 ${
-        selected ? "border-primary glow-primary" : "border-primary/50"
-      }`}
-      style={{ minWidth: 220 }}
+      className={cn(
+        "relative bg-card border-2 rounded-xl p-4 transition-all duration-200",
+        selected ? "border-primary ring-2 ring-primary/30" : "border-primary/50",
+        "min-w-[240px]"
+      )}
     >
-      {/* Connection handle - receives from skills */}
-      <Handle
-        type="target"
+      {/* Input ports on left side */}
+      <MultiPortHandle
+        ports={inputPorts}
         position={Position.Left}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        nodeId={id}
+      />
+
+      {/* Output ports on right side */}
+      <MultiPortHandle
+        ports={outputPorts}
+        position={Position.Right}
+        nodeId={id}
       />
 
       {/* Agent Icon */}
@@ -62,13 +79,27 @@ const AgentNode = memo(({ data, selected }: AgentNodeProps) => {
 
       {/* Status */}
       <div className="flex items-center justify-center gap-1.5">
-        <div className="w-2 h-2 rounded-full bg-status-idle" />
+        <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
         <span className="text-xs text-muted-foreground">待部署</span>
       </div>
 
       {/* Settings indicator */}
       <div className="absolute top-2 right-2">
         <Settings className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Port labels - Left side */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-2 space-y-3 text-[10px] text-muted-foreground text-right hidden group-hover:block">
+        {inputPorts.map((port) => (
+          <div key={port.id}>{port.label}</div>
+        ))}
+      </div>
+
+      {/* Port labels - Right side */}
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 space-y-3 text-[10px] text-muted-foreground hidden group-hover:block">
+        {outputPorts.map((port) => (
+          <div key={port.id}>{port.label}</div>
+        ))}
       </div>
     </div>
   );

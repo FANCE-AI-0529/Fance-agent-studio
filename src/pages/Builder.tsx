@@ -13,7 +13,6 @@ import {
   Connection,
   Node,
   Edge,
-  NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -62,6 +61,9 @@ import {
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import KnowledgeBaseNode, { KnowledgeBaseNodeData } from "@/components/builder/KnowledgeBaseNode";
+import TriggerNode from "@/components/builder/nodes/TriggerNode";
+import OutputNode from "@/components/builder/nodes/OutputNode";
+import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
@@ -94,12 +96,20 @@ import { findTemplateById } from "@/data/agentTemplates";
 import { PersonalityConfig, getDefaultPersonalityConfig, mergePersonalityWithPrompt } from "@/utils/personalityToPrompt";
 import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
 import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
+import { NodeTypes, EdgeTypes } from "@xyflow/react";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
   skill: SkillNode,
   agent: AgentNode,
   knowledge: KnowledgeBaseNode,
+  trigger: TriggerNode,
+  output: OutputNode,
+};
+
+// Custom edge types
+const edgeTypes: EdgeTypes = {
+  [ANIMATED_FLOW_EDGE]: AnimatedFlowEdge,
 };
 
 // Initial agent node in center

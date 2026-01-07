@@ -1,9 +1,11 @@
 import { memo } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Position } from "@xyflow/react";
 import { Sparkles, X, Database, Image, MessageSquare, FileCode, Wrench, AlertCircle, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import MultiPortHandle from "./ports/MultiPortHandle";
+import { standardPorts, PortConfig } from "./ports/portTypes";
 
 const categoryIcons: Record<string, React.ElementType> = {
   analysis: Database,
@@ -33,29 +35,45 @@ export interface SkillNodeData {
 }
 
 interface SkillNodeProps {
+  id: string;
   data: SkillNodeData;
   selected?: boolean;
 }
 
-const SkillNode = memo(({ data, selected }: SkillNodeProps) => {
+const SkillNode = memo(({ id, data, selected }: SkillNodeProps) => {
   const CategoryIcon = categoryIcons[data.category] || Sparkles;
   const isMCP = data.origin === 'mcp';
   const tools = data.mcp_tools || [];
   const enabledTools = data.enabled_tools || [];
   const hasToolWarning = isMCP && tools.length > 0 && enabledTools.length === 0;
 
+  // Input ports (left side)
+  const inputPorts: PortConfig[] = standardPorts.skill.inputs;
+  // Output ports (right side)
+  const outputPorts: PortConfig[] = standardPorts.skill.outputs;
+
   return (
     <div
-      className={`node-card rounded-lg relative transition-all duration-200 animate-scale-in ${
-        selected ? "border-primary glow-primary" : ""
-      } ${hasToolWarning ? "border-amber-500/50" : ""}`}
-      style={{ minWidth: 180, maxWidth: 200 }}
+      className={cn(
+        "node-card rounded-lg relative transition-all duration-200 animate-scale-in",
+        "bg-card border-2 shadow-md p-3",
+        selected ? "border-primary ring-2 ring-primary/30" : "border-border",
+        hasToolWarning && "border-amber-500/50",
+        "min-w-[180px] max-w-[220px]"
+      )}
     >
-      {/* Connection handle - connects to agent */}
-      <Handle
-        type="source"
+      {/* Input port on left side */}
+      <MultiPortHandle
+        ports={inputPorts}
+        position={Position.Left}
+        nodeId={id}
+      />
+
+      {/* Output ports on right side */}
+      <MultiPortHandle
+        ports={outputPorts}
         position={Position.Right}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        nodeId={id}
       />
 
       {/* Remove button */}
@@ -85,8 +103,11 @@ const SkillNode = memo(({ data, selected }: SkillNodeProps) => {
 
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
-        <div className={`w-7 h-7 rounded-md flex items-center justify-center ${isMCP ? 'bg-purple-500/10' : 'bg-cognitive/10'}`}>
-          <CategoryIcon className={`h-4 w-4 ${isMCP ? 'text-purple-400' : 'text-cognitive'}`} />
+        <div className={cn(
+          "w-7 h-7 rounded-md flex items-center justify-center",
+          isMCP ? 'bg-purple-500/10' : 'bg-primary/10'
+        )}>
+          <CategoryIcon className={cn("h-4 w-4", isMCP ? 'text-purple-400' : 'text-primary')} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
