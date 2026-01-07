@@ -21,7 +21,13 @@ export type TraceEventType =
   | "mcp_execute"        // [MCP:Execute] Sending request
   | "mcp_response"       // [MCP:Response] Received response
   | "mcp_resource_read"  // [MCP:Resource] Reading resource
-  | "mcp_error";         // [MCP:Error] MCP call failed
+  | "mcp_error"          // [MCP:Error] MCP call failed
+  // RAG event types
+  | "rag_vector_search"     // [RAG:Vector] Vector similarity search
+  | "rag_graph_traverse"    // [RAG:Graph] Graph traversal
+  | "rag_context_inject"    // [MPLP:Trace] Context injection
+  | "rag_source_found"      // [RAG:Source] Source document found
+  | "rag_entity_match";     // [RAG:Entity] Entity matched
 
 export interface TraceEventData {
   skillName?: string;
@@ -42,6 +48,21 @@ export interface TraceEventData {
   mcpStatusCode?: number;       // HTTP status code
   mcpResponseSize?: string;     // Response size (e.g., "1.2kb")
   mcpResourceUri?: string;      // Resource URI
+  // RAG-specific fields
+  ragKnowledgeBaseId?: string;    // Knowledge base ID
+  ragKnowledgeBaseName?: string;  // Knowledge base name
+  ragChunkId?: string;            // Document chunk ID
+  ragChunkContent?: string;       // Chunk content preview
+  ragSimilarity?: number;         // Similarity score
+  ragNodeId?: string;             // Graph node ID
+  ragNodeName?: string;           // Graph node name
+  ragNodeType?: string;           // Graph node type
+  ragRelationPath?: string;       // Relation path string
+  ragTraversalDepth?: number;     // Graph traversal depth
+  ragSourceDocumentId?: string;   // Source document ID
+  ragSourceDocumentName?: string; // Source document name
+  ragChunksCount?: number;        // Number of chunks found
+  ragNodesCount?: number;         // Number of nodes found
 }
 
 export interface TraceEvent {

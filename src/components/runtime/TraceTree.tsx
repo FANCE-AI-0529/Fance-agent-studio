@@ -16,6 +16,9 @@ import {
   Trash2,
   Database,
   Server,
+  Layers,
+  Target,
+  FileText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,6 +152,37 @@ const eventConfig: Record<TraceEventType, EventConfig> = {
     label: "[MCP:Error]",
     color: "text-destructive",
     bgColor: "bg-destructive/10",
+  },
+  // RAG event configs
+  rag_vector_search: {
+    icon: Database,
+    label: "[RAG:Vector]",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+  },
+  rag_graph_traverse: {
+    icon: GitBranch,
+    label: "[RAG:Graph]",
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+  },
+  rag_context_inject: {
+    icon: Layers,
+    label: "[MPLP:Trace]",
+    color: "text-cognitive",
+    bgColor: "bg-cognitive/10",
+  },
+  rag_entity_match: {
+    icon: Target,
+    label: "[RAG:Entity]",
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
+  rag_source_found: {
+    icon: FileText,
+    label: "[RAG:Source]",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
 };
 

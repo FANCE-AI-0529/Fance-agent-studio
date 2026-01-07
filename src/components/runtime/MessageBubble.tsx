@@ -6,6 +6,7 @@ import { FormattedText } from "./FormattedText";
 import { TypewriterFormattedText } from "./TypewriterFormattedText";
 import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated";
 import { MCPToolCard, MCPToolCall } from "./MCPToolCard";
+import { CitationCard, Citation } from "./CitationCard";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
@@ -33,6 +34,7 @@ interface MessageBubbleProps {
   };
   attachments?: MessageAttachment[];
   mcpToolCalls?: MCPToolCall[];
+  citations?: Citation[];
   onRegenerate?: () => void;
   onEdit?: (newContent: string) => void;
   // Roleplay mode props
@@ -67,6 +69,7 @@ export function MessageBubble({
   agentAvatar,
   attachments,
   mcpToolCalls,
+  citations,
   onRegenerate,
   onEdit,
   isRoleplay,
@@ -300,6 +303,11 @@ export function MessageBubble({
                     <MCPToolCard key={call.id} {...call} />
                   ))}
                 </div>
+              )}
+
+              {/* Citations */}
+              {citations && citations.length > 0 && (
+                <CitationCard citations={citations} className="mt-3" />
               )}
             </motion.div>
           )}
