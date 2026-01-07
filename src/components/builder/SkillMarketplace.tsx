@@ -11,12 +11,18 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Globe,
+  Plug,
+  Terminal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { usePublishedSkills, type Skill as DbSkill } from "@/hooks/useSkills";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
+import { mcpCategories, getMCPCategoryById, runtimeEnvConfig, scopeConfig } from "@/data/mcpCategories";
 import { cn } from "@/lib/utils";
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -26,12 +32,20 @@ const categoryIcons: Record<string, React.ElementType> = {
   code: FileCode,
 };
 
-const skillCategories = [
-  { id: "all", label: "全部" },
-  { id: "analysis", label: "数据分析", icon: Database },
-  { id: "vision", label: "图像识别", icon: Image },
-  { id: "nlp", label: "自然语言", icon: MessageSquare },
-  { id: "code", label: "代码生成", icon: FileCode },
+// Native skill categories
+const nativeCategories = [
+  { id: "all", label: "All", labelZh: "全部" },
+  { id: "analysis", label: "Data Analysis", labelZh: "数据分析", icon: Database },
+  { id: "vision", label: "Vision", labelZh: "图像识别", icon: Image },
+  { id: "nlp", label: "NLP", labelZh: "自然语言", icon: MessageSquare },
+  { id: "code", label: "Code Gen", labelZh: "代码生成", icon: FileCode },
+];
+
+// Origin filter options
+const originFilters = [
+  { id: "all", label: "All", labelZh: "全部", icon: Sparkles },
+  { id: "native", label: "Native", labelZh: "Agent OS", icon: Puzzle },
+  { id: "mcp", label: "MCP", labelZh: "MCP 生态", icon: Plug },
 ];
 
 export interface MCPTool {
@@ -53,6 +67,7 @@ export interface Skill {
   name: string;
   category: string;
   description: string;
+  description_zh?: string;
   permissions: string[];
   version: string;
   inputs?: Array<{ name: string; type: string; description?: string; required?: boolean }>;
@@ -97,8 +112,10 @@ interface SkillMarketplaceProps {
 }
 
 export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplaceProps) {
+  const { language, t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp'>('all');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -106,6 +123,26 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
   const { data: dbSkills, isLoading } = usePublishedSkills();
 
   const skills = (dbSkills || []).map(toSkill);
+
+  // Get categories based on origin filter
+  const getActiveCategories = () => {
+    if (originFilter === 'mcp') {
+      return [{ id: "all", label: "All", labelZh: "全部" }, ...mcpCategories.map(c => ({
+        id: c.id,
+        label: c.label,
+        labelZh: c.labelZh,
+        icon: c.icon,
+      }))];
+    }
+    return nativeCategories;
+  };
+
+  const activeCategories = getActiveCategories();
+
+  // Reset category when origin filter changes
+  useEffect(() => {
+    setActiveCategory("all");
+  }, [originFilter]);
 
   // Handle category scroll indicators
   useEffect(() => {
@@ -122,21 +159,32 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
     handleScroll();
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [activeCategories]);
 
   const filteredSkills = skills.filter((skill) => {
     const matchesSearch =
       skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       skill.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      activeCategory === "all" || skill.category === activeCategory;
-    return matchesSearch && matchesCategory;
+    
+    // Origin filter
+    const matchesOrigin = originFilter === 'all' || skill.origin === originFilter;
+    
+    // Category filter - use mcp_type for MCP skills, category for native
+    const skillCategory = skill.origin === 'mcp' ? skill.mcp_type : skill.category;
+    const matchesCategory = activeCategory === 'all' || skillCategory === activeCategory;
+    
+    return matchesSearch && matchesOrigin && matchesCategory;
   });
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>, skill: Skill) => {
     e.dataTransfer.setData("application/json", JSON.stringify(skill));
     e.dataTransfer.effectAllowed = "copy";
     onDragStart(skill);
+  };
+
+  // Get localized category label
+  const getCategoryLabel = (cat: { label: string; labelZh: string }) => {
+    return language === 'zh' ? cat.labelZh : cat.label;
   };
 
   if (isCollapsed) {
@@ -153,7 +201,7 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
           <Puzzle className="h-4 w-4 text-cognitive" />
           <span className="text-xs text-muted-foreground [writing-mode:vertical-rl]">
-            技能市场
+            {t("skill.market.title")}
           </span>
         </div>
         <Badge variant="secondary" className="text-[10px] px-1">
@@ -169,11 +217,12 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
       <div className="panel-header">
         <div className="flex items-center gap-2 min-w-0">
           <Puzzle className="h-4 w-4 text-cognitive flex-shrink-0" />
-          <span className="font-semibold text-sm truncate">技能市场</span>
+          <span className="font-semibold text-sm truncate">{t("skill.market.title")}</span>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <LanguageSwitcher />
           <Badge variant="secondary" className="text-xs">
-            {skills.length} 可用
+            {skills.length} {t("skill.market.available")}
           </Badge>
           <Button
             variant="ghost"
@@ -191,12 +240,31 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="搜索技能..."
+            placeholder={t("skill.market.search")}
             className="pl-9 bg-background"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+      </div>
+
+      {/* Origin Filter */}
+      <div className="flex gap-1 p-2 border-b border-border">
+        {originFilters.map((filter) => (
+          <button
+            key={filter.id}
+            onClick={() => setOriginFilter(filter.id as 'all' | 'native' | 'mcp')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors",
+              originFilter === filter.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <filter.icon className="h-3 w-3" />
+            {language === 'zh' ? filter.labelZh : filter.label}
+          </button>
+        ))}
       </div>
 
       {/* Category Tabs */}
@@ -213,21 +281,24 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
           ref={categoryScrollRef}
           className="flex gap-1.5 p-2 border-b border-border overflow-x-auto scrollbar-hide"
         >
-          {skillCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors flex-shrink-0",
-                activeCategory === cat.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {cat.icon && <cat.icon className="h-3.5 w-3.5" />}
-              {cat.label}
-            </button>
-          ))}
+          {activeCategories.map((cat) => {
+            const CatIcon = 'icon' in cat ? cat.icon : undefined;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors flex-shrink-0",
+                  activeCategory === cat.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {CatIcon && <CatIcon className="h-3.5 w-3.5" />}
+                {getCategoryLabel(cat)}
+              </button>
+            );
+          })}
         </div>
 
         {/* Right gradient indicator */}
@@ -248,21 +319,26 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
         ) : skills.length === 0 ? (
           <EmptyState
             icon={Puzzle}
-            title="技能市场为空"
-            description="还没有已发布的技能，前往 Foundry 创建第一个技能吧"
+            title={t("skill.market.empty")}
+            description={t("skill.market.empty_desc")}
             action={{
-              label: "创建技能",
+              label: t("skill.market.create"),
               onClick: () => window.location.href = "/foundry",
             }}
           />
         ) : filteredSkills.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm animate-fade-in">
-            未找到匹配的技能
+            {t("skill.market.no_match")}
           </div>
         ) : (
           filteredSkills.map((skill) => {
             const isAdded = addedSkillIds.includes(skill.id);
-            const CategoryIcon = categoryIcons[skill.category] || Sparkles;
+            const isMCP = skill.origin === 'mcp';
+            const CategoryIcon = isMCP 
+              ? (getMCPCategoryById(skill.mcp_type || '')?.icon || Plug)
+              : (categoryIcons[skill.category] || Sparkles);
+            const runtimeEnv = skill.runtime_env ? runtimeEnvConfig[skill.runtime_env] : null;
+            const scope = skill.scope ? scopeConfig[skill.scope] : null;
 
             return (
               <div
@@ -283,18 +359,51 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
                   <div className="flex-1 min-w-0">
                     {/* Title row */}
                     <div className="flex items-center gap-2 mb-1">
-                      <CategoryIcon className="h-4 w-4 text-cognitive flex-shrink-0" />
+                      <CategoryIcon className={cn(
+                        "h-4 w-4 flex-shrink-0",
+                        isMCP 
+                          ? getMCPCategoryById(skill.mcp_type || '')?.color || "text-muted-foreground"
+                          : "text-cognitive"
+                      )} />
                       <span className="font-medium text-sm truncate flex-1">{skill.name}</span>
+                      {isMCP && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-500/10 text-purple-600 border-purple-500/30 flex-shrink-0">
+                          MCP
+                        </Badge>
+                      )}
                       {isAdded && (
                         <Badge variant="secondary" className="text-[10px] flex-shrink-0">
-                          已添加
+                          {t("skill.market.added")}
                         </Badge>
                       )}
                     </div>
                     
-                    {/* Description */}
+                    {/* Runtime & Scope badges for MCP */}
+                    {isMCP && (runtimeEnv || scope) && (
+                      <div className="flex items-center gap-1 mb-1.5">
+                        {runtimeEnv && (
+                          <span className="text-[10px]" title={runtimeEnv.label}>
+                            {runtimeEnv.emoji}
+                          </span>
+                        )}
+                        {scope && (
+                          <span className="text-[10px]" title={scope.label}>
+                            {scope.emoji}
+                          </span>
+                        )}
+                        {skill.is_official && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-green-500/10 text-green-600 border-green-500/30">
+                            ✓ {language === 'zh' ? '官方' : 'Official'}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Description - use localized version if available */}
                     <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                      {skill.description}
+                      {language === 'zh' && skill.description_zh 
+                        ? skill.description_zh 
+                        : skill.description}
                     </p>
                     
                     {/* Bottom: permissions + version */}

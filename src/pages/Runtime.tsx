@@ -29,7 +29,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { EnhancedConfirmCard as ConfirmCard, ConfirmAction } from "@/components/runtime/EnhancedConfirmCard";
+import { EnhancedConfirmCard as ConfirmCard, ConfirmAction, getMCPRiskLevel, getMCPToolPermissions } from "@/components/runtime/EnhancedConfirmCard";
 import { QuickShareButton } from "@/components/runtime/ShareDialog";
 import { QuickCommandPalette } from "@/components/runtime/QuickCommandPalette";
 import { AgentQuickSwitcher, QuickAgent } from "@/components/runtime/AgentQuickSwitcher";
@@ -115,7 +115,7 @@ interface MPLPScenario {
   requiresConfirm: boolean;
   riskLevel: "low" | "medium" | "high";
   permissions: string[];
-  actionType: "read" | "write" | "network" | "execute" | "admin";
+  actionType: "read" | "write" | "network" | "execute" | "admin" | "mcp_tool";
   description: string;
   details: string;
   thinkingSteps: { module: string; message: string; level: "info" | "warn" | "success" | "error" }[];
@@ -262,7 +262,84 @@ const mplpScenarios: MPLPScenario[] = [
     ],
     mockResponse: "💰 支付处理完成！\n\n**交易详情：**\n- 交易ID: TXN-2024-001234\n- 金额: ¥1,500.00\n- 收款方: 某某供应商\n- 状态: ✅ 成功\n\n电子回单已发送至您的邮箱。",
   },
+  // MCP Tool - Terminal Command (High Risk)
+  {
+    keywords: ["MCP", "终端", "命令", "shell", "execute"],
+    skillName: "MCP 终端执行",
+    requiresConfirm: true,
+    riskLevel: "high",
+    permissions: ["execute", "file_system", "mcp_access"],
+    actionType: "mcp_tool",
+    description: "调用 MCP 工具执行终端命令",
+    details: "⚠️ MCP 工具将在外部服务器执行命令，可能影响系统状态。请仔细确认工具名称和输入参数。",
+    thinkingSteps: [
+      { module: "MPLP:Router", message: "Intent detected: mcp_tool_call - HIGH RISK", level: "warn" },
+      { module: "MPLP:Auth", message: "Permission check: execute, mcp_access... REQUIRES_CONFIRM", level: "warn" },
+      { module: "MPLP:Policy", message: "🔴 MCP tool execution requires explicit user approval", level: "error" },
+    ],
+    mockResponse: "⚡ MCP 工具执行完成！\n\n```\n$ execute_command\n[OK] Command executed successfully\n[OK] Output captured\n```\n\n工具执行成功，结果已返回。",
+  },
+  // MCP Tool - Browser (Medium Risk)
+  {
+    keywords: ["浏览器", "网页", "playwright", "puppeteer", "scrape"],
+    skillName: "MCP 浏览器自动化",
+    requiresConfirm: true,
+    riskLevel: "medium",
+    permissions: ["browser", "network", "mcp_access"],
+    actionType: "mcp_tool",
+    description: "调用 MCP 浏览器自动化工具",
+    details: "此操作将通过 MCP 控制浏览器访问网页，可能涉及网络请求和数据抓取。",
+    thinkingSteps: [
+      { module: "MPLP:Router", message: "Intent detected: mcp_browser_automation", level: "info" },
+      { module: "MPLP:Auth", message: "Permission check: browser, network... REQUIRES_CONFIRM", level: "warn" },
+      { module: "MPLP:Policy", message: "MCP browser access requires user confirmation", level: "warn" },
+    ],
+    mockResponse: "🌐 MCP 浏览器工具执行完成！\n\n**操作详情：**\n- 访问页面: https://example.com\n- 状态: 200 OK\n- 截图已保存\n\n网页内容已抓取完成。",
+  },
+  // MCP Tool - Database (Medium Risk)
+  {
+    keywords: ["数据库", "postgres", "mysql", "sqlite", "query"],
+    skillName: "MCP 数据库操作",
+    requiresConfirm: true,
+    riskLevel: "medium",
+    permissions: ["database", "read", "mcp_access"],
+    actionType: "mcp_tool",
+    description: "调用 MCP 数据库工具",
+    details: "此操作将通过 MCP 连接到外部数据库执行查询或操作。",
+    thinkingSteps: [
+      { module: "MPLP:Router", message: "Intent detected: mcp_database_query", level: "info" },
+      { module: "MPLP:Auth", message: "Permission check: database, mcp_access... REQUIRES_CONFIRM", level: "warn" },
+      { module: "MPLP:Policy", message: "MCP database access requires user confirmation", level: "warn" },
+    ],
+    mockResponse: "🗄️ MCP 数据库工具执行完成！\n\n**查询结果：**\n- 返回记录数: 42\n- 执行时间: 125ms\n\n数据已成功检索。",
+  },
 ];
+
+// Helper function to create MCP confirm action
+function createMCPConfirmAction(
+  server: string,
+  tool: string,
+  inputs: Record<string, unknown>
+): ConfirmAction {
+  const riskLevel = getMCPRiskLevel(tool);
+  const permissions = getMCPToolPermissions(tool);
+  
+  return {
+    id: `mcp-${Date.now()}`,
+    type: "mcp_tool",
+    skillName: `${server} / ${tool}`,
+    description: `调用 MCP 工具: ${tool}`,
+    permissions,
+    riskLevel,
+    isMCP: true,
+    mcpServer: server,
+    mcpTool: tool,
+    mcpInputs: inputs,
+    details: riskLevel === "high" 
+      ? `⚠️ 此 MCP 工具 (${tool}) 可能执行危险操作。请仔细确认参数后再继续。`
+      : `此操作将向 MCP 服务器 ${server} 发送请求。`,
+  };
+}
 
 const Runtime = () => {
   const { user } = useAuth();
