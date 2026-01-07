@@ -18,6 +18,9 @@ import {
   FileText,
   Layers,
   Network,
+  GitBranch,
+  Route,
+  GitMerge,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +55,41 @@ const originFilters = [
   { id: "native", label: "Skills", labelZh: "Skills", icon: Puzzle },
   { id: "mcp", label: "MCP", labelZh: "MCP", icon: Plug },
   { id: "knowledge", label: "Knowledge", labelZh: "知识库", icon: BookOpen },
+  { id: "logic", label: "Logic", labelZh: "逻辑", icon: GitBranch },
+];
+
+// Logic node definitions
+const logicNodes = [
+  {
+    id: "intent-router",
+    name: "意图路由器",
+    nameEn: "Intent Router",
+    description: "基于语义或关键词将输入路由到不同分支",
+    descriptionEn: "Route input to different branches based on semantics or keywords",
+    icon: Route,
+    nodeType: "intentRouter" as const,
+    color: "cyan",
+  },
+  {
+    id: "condition",
+    name: "条件判断",
+    nameEn: "Condition",
+    description: "IF/ELSE 逻辑分支判断",
+    descriptionEn: "IF/ELSE conditional branching",
+    icon: GitBranch,
+    nodeType: "condition" as const,
+    color: "yellow",
+  },
+  {
+    id: "parallel",
+    name: "并发执行",
+    nameEn: "Parallel Gateway",
+    description: "同时触发多个下游节点",
+    descriptionEn: "Trigger multiple downstream nodes simultaneously",
+    icon: GitMerge,
+    nodeType: "parallel" as const,
+    color: "purple",
+  },
 ];
 
 export interface MCPTool {
@@ -126,9 +164,20 @@ export interface KnowledgeBaseItem {
   graph_enabled: boolean;
 }
 
+// Logic node item for drag
+export interface LogicNodeItem {
+  type: 'logic_node';
+  nodeType: 'intentRouter' | 'condition' | 'parallel';
+  name: string;
+  nameEn: string;
+  description: string;
+  descriptionEn: string;
+}
+
 interface SkillMarketplaceProps {
   onDragStart: (skill: Skill) => void;
   onKnowledgeDragStart?: (kb: KnowledgeBaseItem) => void;
+  onLogicNodeDragStart?: (node: LogicNodeItem) => void;
   addedSkillIds: string[];
   addedKnowledgeBaseIds?: string[];
 }
@@ -136,13 +185,14 @@ interface SkillMarketplaceProps {
 export function SkillMarketplace({ 
   onDragStart, 
   onKnowledgeDragStart,
+  onLogicNodeDragStart,
   addedSkillIds,
   addedKnowledgeBaseIds = [],
 }: SkillMarketplaceProps) {
   const { language, t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp' | 'knowledge'>('all');
+  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp' | 'knowledge' | 'logic'>('all');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
@@ -237,6 +287,20 @@ export function SkillMarketplace({
     e.dataTransfer.setData("application/json", JSON.stringify(kb));
     e.dataTransfer.effectAllowed = "copy";
     onKnowledgeDragStart?.(kb);
+  };
+
+  const handleLogicNodeDragStart = (e: DragEvent<HTMLDivElement>, node: typeof logicNodes[0]) => {
+    const logicItem: LogicNodeItem = {
+      type: 'logic_node',
+      nodeType: node.nodeType,
+      name: node.name,
+      nameEn: node.nameEn,
+      description: node.description,
+      descriptionEn: node.descriptionEn,
+    };
+    e.dataTransfer.setData("application/json", JSON.stringify(logicItem));
+    e.dataTransfer.effectAllowed = "copy";
+    onLogicNodeDragStart?.(logicItem);
   };
 
   // Get localized category label
@@ -374,6 +438,49 @@ export function SkillMarketplace({
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : originFilter === 'logic' ? (
+          // Logic Nodes List
+          <div className="space-y-2">
+            {logicNodes.map((node) => {
+              const Icon = node.icon;
+              const colorClasses = {
+                cyan: "border-cyan-500/30 hover:border-cyan-500/50 bg-cyan-500/5",
+                yellow: "border-yellow-500/30 hover:border-yellow-500/50 bg-yellow-500/5",
+                purple: "border-purple-500/30 hover:border-purple-500/50 bg-purple-500/5",
+              };
+              const iconColors = {
+                cyan: "text-cyan-500 bg-cyan-500/20",
+                yellow: "text-yellow-500 bg-yellow-500/20",
+                purple: "text-purple-500 bg-purple-500/20",
+              };
+              return (
+                <div
+                  key={node.id}
+                  draggable
+                  onDragStart={(e) => handleLogicNodeDragStart(e, node)}
+                  className={cn(
+                    "p-3 rounded-lg border transition-all group cursor-grab active:cursor-grabbing",
+                    colorClasses[node.color as keyof typeof colorClasses]
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={cn("w-6 h-6 rounded flex items-center justify-center", iconColors[node.color as keyof typeof iconColors])}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="font-medium text-sm">{language === 'zh' ? node.name : node.nameEn}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {language === 'zh' ? node.description : node.descriptionEn}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : originFilter === 'knowledge' ? (
           // Knowledge Base List
