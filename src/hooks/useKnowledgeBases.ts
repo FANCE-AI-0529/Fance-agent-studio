@@ -15,6 +15,9 @@ export interface KnowledgeBase {
   chunk_overlap: number;
   documents_count: number;
   chunks_count: number;
+  nodes_count: number;
+  edges_count: number;
+  graph_enabled: boolean;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

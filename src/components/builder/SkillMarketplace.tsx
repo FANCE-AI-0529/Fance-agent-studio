@@ -14,12 +14,17 @@ import {
   Globe,
   Plug,
   Terminal,
+  BookOpen,
+  FileText,
+  Layers,
+  Network,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { usePublishedSkills, type Skill as DbSkill } from "@/hooks/useSkills";
+import { useKnowledgeBases } from "@/hooks/useKnowledgeBases";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
 import { mcpCategories, getMCPCategoryById, runtimeEnvConfig, scopeConfig } from "@/data/mcpCategories";
@@ -46,6 +51,7 @@ const originFilters = [
   { id: "all", label: "All", labelZh: "全部", icon: Sparkles },
   { id: "native", label: "Skills", labelZh: "Skills", icon: Puzzle },
   { id: "mcp", label: "MCP", labelZh: "MCP", icon: Plug },
+  { id: "knowledge", label: "Knowledge", labelZh: "知识库", icon: BookOpen },
 ];
 
 export interface MCPTool {
@@ -106,23 +112,46 @@ function toSkill(dbSkill: DbSkill): Skill {
   };
 }
 
-interface SkillMarketplaceProps {
-  onDragStart: (skill: Skill) => void;
-  addedSkillIds: string[];
+// Knowledge base item for drag
+export interface KnowledgeBaseItem {
+  type: 'knowledge_base';
+  id: string;
+  name: string;
+  description?: string;
+  documents_count: number;
+  chunks_count: number;
+  nodes_count?: number;
+  edges_count?: number;
+  index_status: string;
+  graph_enabled: boolean;
 }
 
-export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplaceProps) {
+interface SkillMarketplaceProps {
+  onDragStart: (skill: Skill) => void;
+  onKnowledgeDragStart?: (kb: KnowledgeBaseItem) => void;
+  addedSkillIds: string[];
+  addedKnowledgeBaseIds?: string[];
+}
+
+export function SkillMarketplace({ 
+  onDragStart, 
+  onKnowledgeDragStart,
+  addedSkillIds,
+  addedKnowledgeBaseIds = [],
+}: SkillMarketplaceProps) {
   const { language, t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp'>('all');
+  const [originFilter, setOriginFilter] = useState<'all' | 'native' | 'mcp' | 'knowledge'>('all');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const { data: dbSkills, isLoading } = usePublishedSkills();
+  const { data: dbSkills, isLoading: isLoadingSkills } = usePublishedSkills();
+  const { data: knowledgeBases, isLoading: isLoadingKnowledge } = useKnowledgeBases();
 
   const skills = (dbSkills || []).map(toSkill);
+  const isLoading = isLoadingSkills || (originFilter === 'knowledge' && isLoadingKnowledge);
 
   // Get categories based on origin filter
   const getActiveCategories = () => {
@@ -133,6 +162,13 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
         labelZh: c.labelZh,
         icon: c.icon,
       }))];
+    }
+    if (originFilter === 'knowledge') {
+      return [
+        { id: "all", label: "All", labelZh: "全部" },
+        { id: "ready", label: "Ready", labelZh: "已就绪", icon: Layers },
+        { id: "graph", label: "GraphRAG", labelZh: "知识图谱", icon: Network },
+      ];
     }
     return nativeCategories;
   };
@@ -176,10 +212,31 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
     return matchesSearch && matchesOrigin && matchesCategory;
   });
 
+  // Filter knowledge bases
+  const filteredKnowledgeBases = (knowledgeBases || []).filter((kb) => {
+    const matchesSearch =
+      kb.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (kb.description || "").toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeCategory === 'ready') {
+      return matchesSearch && kb.index_status === 'ready';
+    }
+    if (activeCategory === 'graph') {
+      return matchesSearch && kb.graph_enabled;
+    }
+    return matchesSearch;
+  });
+
   const handleDragStart = (e: DragEvent<HTMLDivElement>, skill: Skill) => {
     e.dataTransfer.setData("application/json", JSON.stringify(skill));
     e.dataTransfer.effectAllowed = "copy";
     onDragStart(skill);
+  };
+
+  const handleKnowledgeDragStart = (e: DragEvent<HTMLDivElement>, kb: KnowledgeBaseItem) => {
+    e.dataTransfer.setData("application/json", JSON.stringify(kb));
+    e.dataTransfer.effectAllowed = "copy";
+    onKnowledgeDragStart?.(kb);
   };
 
   // Get localized category label
@@ -249,15 +306,17 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
       </div>
 
       {/* Origin Filter */}
-      <div className="flex gap-1 p-2 border-b border-border">
+      <div className="flex gap-1 p-2 border-b border-border flex-wrap">
         {originFilters.map((filter) => (
           <button
             key={filter.id}
-            onClick={() => setOriginFilter(filter.id as 'all' | 'native' | 'mcp')}
+            onClick={() => setOriginFilter(filter.id as 'all' | 'native' | 'mcp' | 'knowledge')}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors",
+              "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors min-w-[60px]",
               originFilter === filter.id
-                ? "bg-primary text-primary-foreground"
+                ? filter.id === 'knowledge' 
+                  ? "bg-purple-500 text-white"
+                  : "bg-primary text-primary-foreground"
                 : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
             )}
           >
@@ -310,12 +369,131 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
         />
       </div>
 
-      {/* Skills List */}
+      {/* Skills / Knowledge List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : originFilter === 'knowledge' ? (
+          // Knowledge Base List
+          <>
+            {!knowledgeBases || knowledgeBases.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title={language === 'zh' ? "还没有知识库" : "No Knowledge Bases"}
+                description={language === 'zh' ? "前往 Foundry 创建你的第一个知识库" : "Go to Foundry to create your first knowledge base"}
+                action={{
+                  label: language === 'zh' ? "前往创建" : "Create Now",
+                  onClick: () => window.location.href = "/foundry",
+                }}
+              />
+            ) : filteredKnowledgeBases.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm animate-fade-in">
+                {t("skill.market.no_match")}
+              </div>
+            ) : (
+              filteredKnowledgeBases.map((kb) => {
+                const isAdded = addedKnowledgeBaseIds.includes(kb.id);
+                const kbItem: KnowledgeBaseItem = {
+                  type: 'knowledge_base',
+                  id: kb.id,
+                  name: kb.name,
+                  description: kb.description || undefined,
+                  documents_count: kb.documents_count || 0,
+                  chunks_count: kb.chunks_count || 0,
+                  nodes_count: kb.nodes_count || 0,
+                  edges_count: kb.edges_count || 0,
+                  index_status: kb.index_status || 'pending',
+                  graph_enabled: kb.graph_enabled || false,
+                };
+
+                return (
+                  <div
+                    key={kb.id}
+                    draggable={!isAdded && kb.index_status === 'ready'}
+                    onDragStart={(e) => handleKnowledgeDragStart(e, kbItem)}
+                    className={cn(
+                      "p-3 rounded-lg border transition-all group",
+                      isAdded
+                        ? "border-purple-500/50 bg-purple-500/5 opacity-60 cursor-not-allowed"
+                        : kb.index_status !== 'ready'
+                        ? "border-border bg-card opacity-60 cursor-not-allowed"
+                        : "border-purple-500/30 bg-card hover:border-purple-500/50 hover:shadow-sm cursor-grab active:cursor-grabbing"
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      {!isAdded && kb.index_status === 'ready' && (
+                        <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        {/* Title row */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <BookOpen className="h-4 w-4 flex-shrink-0 text-purple-500" />
+                          <span className="font-medium text-sm truncate flex-1">{kb.name}</span>
+                          {isAdded && (
+                            <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+                              {t("skill.market.added")}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Status badges */}
+                        <div className="flex items-center gap-1 mb-1.5">
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-[10px] px-1.5 py-0",
+                              kb.index_status === 'ready' 
+                                ? "bg-green-500/10 text-green-600 border-green-500/30"
+                                : kb.index_status === 'indexing'
+                                ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                                : "bg-gray-500/10 text-gray-600 border-gray-500/30"
+                            )}
+                          >
+                            {kb.index_status === 'ready' ? (language === 'zh' ? '已索引' : 'Ready') :
+                             kb.index_status === 'indexing' ? (language === 'zh' ? '索引中' : 'Indexing') :
+                             (language === 'zh' ? '待处理' : 'Pending')}
+                          </Badge>
+                          {kb.graph_enabled && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-500/10 text-purple-600 border-purple-500/30">
+                              <Network className="h-2.5 w-2.5 mr-0.5" />
+                              GraphRAG
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Description */}
+                        {kb.description && (
+                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                            {kb.description}
+                          </p>
+                        )}
+                        
+                        {/* Stats */}
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            <span>{kb.documents_count || 0} {language === 'zh' ? '文档' : 'docs'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Layers className="h-3 w-3" />
+                            <span>{kb.chunks_count || 0} {language === 'zh' ? '切片' : 'chunks'}</span>
+                          </div>
+                          {kb.graph_enabled && (kb.nodes_count || 0) > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Network className="h-3 w-3" />
+                              <span>{kb.nodes_count || 0}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </>
         ) : skills.length === 0 ? (
           <EmptyState
             icon={Puzzle}
