@@ -64,11 +64,29 @@ export function AIAgentGenerator({ isOpen, onClose, onApply }: AIAgentGeneratorP
   const handleApply = () => {
     if (!generatedResult) return;
 
+    // Convert knowledge base suggestions to MountedKnowledgeBase format
+    const mountedKnowledgeBases: MountedKnowledgeBase[] = generatedResult.knowledgeBases.map((kb, index) => ({
+      id: `ai-generated-kb-${Date.now()}-${index}`,
+      name: kb.name,
+      description: kb.description,
+      documents_count: 0,
+      chunks_count: 0,
+      index_status: 'pending',
+      graph_enabled: kb.retrievalMode === 'graph' || kb.retrievalMode === 'hybrid',
+      config: {
+        retrieval_mode: kb.retrievalMode,
+        top_k: 5,
+        graph_depth: kb.retrievalMode === 'graph' || kb.retrievalMode === 'hybrid' ? 2 : 0,
+        source_traceability: true,
+        auto_inject_context: true,
+      },
+    }));
+
     onApply(
       generatedResult.nodes,
       generatedResult.edges,
       generatedResult.agentConfig,
-      undefined
+      mountedKnowledgeBases.length > 0 ? mountedKnowledgeBases : undefined
     );
     handleClose();
   };

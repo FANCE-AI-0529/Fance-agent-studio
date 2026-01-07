@@ -367,9 +367,12 @@ function buildWorkflowFromConfig(
     });
   }
 
-  // Add MCP action nodes
+  // Find intervention node if exists
+  const interventionNode = nodes.find(n => n.type === "intervention");
+
+  // Add MCP action nodes with proper connections
   mcpActions.forEach((action, index) => {
-    const mcpId = `mcp-${action.toolName}-${Date.now()}`;
+    const mcpId = `mcp-${action.toolName}-${Date.now()}-${index}`;
     nodes.push({
       id: mcpId,
       type: "mcpAction",
@@ -378,11 +381,33 @@ function buildWorkflowFromConfig(
         id: mcpId,
         name: action.toolName,
         serverName: action.serverName,
+        serverId: action.serverId,
         description: action.reason,
         riskLevel: action.riskLevel,
         requiresConfirmation: action.riskLevel !== "low",
+        inputSchema: {},
+        outputMapping: {},
       },
     });
+    
+    // Connect agent to MCP action
+    edges.push({
+      id: `edge-agent-mcp-${index}`,
+      source: "agent-central",
+      target: mcpId,
+      animated: true,
+    });
+    
+    // If high-risk action and intervention node exists, connect them
+    if (action.riskLevel === "high" && interventionNode) {
+      edges.push({
+        id: `edge-mcp-intervention-${index}`,
+        source: mcpId,
+        target: interventionNode.id,
+        animated: true,
+        label: "需确认",
+      });
+    }
   });
 
   // Add knowledge base nodes

@@ -1671,6 +1671,33 @@ const Builder = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* AI Agent Generator Modal */}
+        <AIAgentGenerator
+          isOpen={showAIGenerator}
+          onClose={() => setShowAIGenerator(false)}
+          onApply={(nodes, edges, config, knowledgeBases) => {
+            // Update canvas nodes and edges
+            setNodes(nodes);
+            setEdges(edges);
+            
+            // Update agent config
+            setAgentConfig(config);
+            
+            // Mount knowledge bases if provided
+            knowledgeBases?.forEach(kb => addKnowledgeBase(kb));
+            
+            // Fit view after a short delay
+            setTimeout(() => {
+              reactFlowInstance?.fitView({ padding: 0.2 });
+            }, 100);
+            
+            toast({
+              title: "智能体已生成",
+              description: `已创建 ${nodes.length} 个节点和 ${edges.length} 条连线`,
+            });
+          }}
+        />
       </div>
     </TooltipProvider>
   );
