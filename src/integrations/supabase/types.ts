@@ -1735,11 +1735,14 @@ export type Database = {
           department: string | null
           description: string | null
           documents_count: number | null
+          edges_count: number | null
           embedding_model: string | null
+          graph_enabled: boolean | null
           id: string
           index_status: string | null
           metadata: Json | null
           name: string
+          nodes_count: number | null
           updated_at: string | null
           user_id: string
         }
@@ -1751,11 +1754,14 @@ export type Database = {
           department?: string | null
           description?: string | null
           documents_count?: number | null
+          edges_count?: number | null
           embedding_model?: string | null
+          graph_enabled?: boolean | null
           id?: string
           index_status?: string | null
           metadata?: Json | null
           name: string
+          nodes_count?: number | null
           updated_at?: string | null
           user_id: string
         }
@@ -1767,11 +1773,14 @@ export type Database = {
           department?: string | null
           description?: string | null
           documents_count?: number | null
+          edges_count?: number | null
           embedding_model?: string | null
+          graph_enabled?: boolean | null
           id?: string
           index_status?: string | null
           metadata?: Json | null
           name?: string
+          nodes_count?: number | null
           updated_at?: string | null
           user_id?: string
         }
@@ -1835,6 +1844,149 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "knowledge_documents_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_edges: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_bidirectional: boolean | null
+          knowledge_base_id: string
+          metadata: Json | null
+          relation_type: string
+          source_content: string | null
+          source_node_id: string
+          strength: number | null
+          target_node_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          knowledge_base_id: string
+          metadata?: Json | null
+          relation_type: string
+          source_content?: string | null
+          source_node_id: string
+          strength?: number | null
+          target_node_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          knowledge_base_id?: string
+          metadata?: Json | null
+          relation_type?: string
+          source_content?: string | null
+          source_node_id?: string
+          strength?: number | null
+          target_node_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_edges_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_nodes: {
+        Row: {
+          chunk_id: string | null
+          created_at: string | null
+          description: string | null
+          document_id: string | null
+          embedding: string | null
+          id: string
+          importance_score: number | null
+          knowledge_base_id: string
+          metadata: Json | null
+          name: string
+          node_type: string
+          occurrence_count: number | null
+          source_content: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chunk_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          importance_score?: number | null
+          knowledge_base_id: string
+          metadata?: Json | null
+          name: string
+          node_type: string
+          occurrence_count?: number | null
+          source_content?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chunk_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          importance_score?: number | null
+          knowledge_base_id?: string
+          metadata?: Json | null
+          name?: string
+          node_type?: string
+          occurrence_count?: number | null
+          source_content?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_nodes_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "document_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_nodes_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_nodes_knowledge_base_id_fkey"
             columns: ["knowledge_base_id"]
             isOneToOne: false
             referencedRelation: "knowledge_bases"
@@ -3729,6 +3881,24 @@ export type Database = {
           similarity: number
         }[]
       }
+      match_knowledge_nodes: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          p_knowledge_base_id?: string
+          p_user_id?: string
+          query_embedding: string
+        }
+        Returns: {
+          description: string
+          id: string
+          importance_score: number
+          knowledge_base_id: string
+          name: string
+          node_type: string
+          similarity: number
+        }[]
+      }
       submit_skill_rating: {
         Args: { p_rating: number; p_review?: string; p_skill_id: string }
         Returns: undefined
@@ -3746,6 +3916,18 @@ export type Database = {
           entity_id: string
           entity_name: string
           entity_type: string
+          relation_path: string
+        }[]
+      }
+      traverse_knowledge_graph: {
+        Args: { p_depth?: number; p_node_ids: string[]; p_user_id?: string }
+        Returns: {
+          depth: number
+          description: string
+          importance_score: number
+          node_id: string
+          node_name: string
+          node_type: string
           relation_path: string
         }[]
       }

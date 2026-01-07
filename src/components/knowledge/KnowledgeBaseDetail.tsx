@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,7 @@ import { DocumentUploader } from "./DocumentUploader";
 import { DocumentList } from "./DocumentList";
 import { ChunkPreview } from "./ChunkPreview";
 import { EntityExtractionToggle } from "./EntityExtractionToggle";
+import { KnowledgeGraphPanel } from "./KnowledgeGraphPanel";
 
 interface KnowledgeBaseDetailProps {
   knowledgeBase: KnowledgeBase;
@@ -102,6 +104,7 @@ export function KnowledgeBaseDetail({ knowledgeBase }: KnowledgeBaseDetailProps)
                 <TabsTrigger value="chunks" disabled={!selectedDocumentId}>
                   切片预览
                 </TabsTrigger>
+                <TabsTrigger value="graph">知识图谱</TabsTrigger>
               </TabsList>
             </div>
             <TabsContent value="documents" className="flex-1 overflow-hidden m-0 px-4 pb-4">
@@ -111,6 +114,9 @@ export function KnowledgeBaseDetail({ knowledgeBase }: KnowledgeBaseDetailProps)
               {selectedDocumentId && (
                 <ChunkPreview documentId={selectedDocumentId} />
               )}
+            </TabsContent>
+            <TabsContent value="graph" className="flex-1 overflow-hidden m-0">
+              <KnowledgeGraphPanel knowledgeBaseId={knowledgeBase.id} />
             </TabsContent>
           </Tabs>
         </div>
