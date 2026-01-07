@@ -5,68 +5,55 @@ interface InviteValidationResult {
   isValid: boolean;
   isLoading: boolean;
   error: string | null;
-  inviterInfo: {
-    id: string;
-  } | null;
+  invitationId: string | null;
 }
 
 export function useInviteValidation(inviteCode: string): InviteValidationResult {
   const [isValid, setIsValid] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [inviterInfo, setInviterInfo] = useState<{ id: string } | null>(null);
+  const [invitationId, setInvitationId] = useState<string | null>(null);
 
   useEffect(() => {
     const validateCode = async () => {
       // Reset state
       setIsValid(false);
       setError(null);
-      setInviterInfo(null);
+      setInvitationId(null);
 
       // Skip if code is empty or too short
-      if (!inviteCode || inviteCode.length < 6) {
+      if (!inviteCode || inviteCode.trim().length < 4) {
         return;
       }
 
       setIsLoading(true);
 
       try {
-        const { data, error: queryError } = await supabase
-          .from("invitations")
-          .select("id, inviter_id, status, invited_user_id, expires_at")
-          .eq("invite_code", inviteCode.toUpperCase())
-          .maybeSingle();
+        // 使用 Edge Function 验证邀请码（安全，不暴露敏感数据）
+        const { data, error: fnError } = await supabase.functions.invoke(
+          'validate-invite-code',
+          { body: { code: inviteCode } }
+        );
 
-        if (queryError) {
+        if (fnError) {
+          console.error('[useInviteValidation] Function error:', fnError);
           setError("验证邀请码时出错");
           setIsLoading(false);
           return;
         }
 
-        if (!data) {
-          setError("邀请码不存在或已过期");
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.status !== "pending" || data.invited_user_id !== null) {
-          setError("邀请码已被使用");
-          setIsLoading(false);
-          return;
-        }
-
-        // Check expiration (additional client-side check)
-        if (data.expires_at && new Date(data.expires_at) < new Date()) {
-          setError("邀请码已过期");
+        if (!data.valid) {
+          setError(data.error || "邀请码无效");
           setIsLoading(false);
           return;
         }
 
         // Valid invite code
         setIsValid(true);
-        setInviterInfo({ id: data.inviter_id });
+        setInvitationId(data.invitationId);
         setError(null);
       } catch (err) {
+        console.error('[useInviteValidation] Error:', err);
         setError("验证邀请码时出错");
       } finally {
         setIsLoading(false);
@@ -78,63 +65,33 @@ export function useInviteValidation(inviteCode: string): InviteValidationResult 
     return () => clearTimeout(timer);
   }, [inviteCode]);
 
-  return { isValid, isLoading, error, inviterInfo };
+  return { isValid, isLoading, error, invitationId };
 }
 
 // Function to accept invitation after successful registration
+// 使用 Edge Function 安全认领邀请码
 export async function acceptInvitationOnSignup(
-  inviteCode: string,
+  invitationId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Find the invitation
-    const { data: invitation, error: findError } = await supabase
-      .from("invitations")
-      .select("*")
-      .eq("invite_code", inviteCode.toUpperCase())
-      .eq("status", "pending")
-      .is("invited_user_id", null)
-      .single();
+    const { data, error: fnError } = await supabase.functions.invoke(
+      'claim-invite-code',
+      { body: { invitationId, userId } }
+    );
 
-    if (findError || !invitation) {
-      return { success: false, error: "邀请码无效或已被使用" };
+    if (fnError) {
+      console.error('[acceptInvitationOnSignup] Function error:', fnError);
+      return { success: false, error: "处理邀请码时出错" };
     }
 
-    // Update invitation
-    const { error: updateError } = await supabase
-      .from("invitations")
-      .update({
-        invited_user_id: userId,
-        status: "accepted",
-        accepted_at: new Date().toISOString(),
-        reward_points: 100,
-      })
-      .eq("id", invitation.id);
-
-    if (updateError) {
-      return { success: false, error: "更新邀请状态失败" };
+    if (!data.success) {
+      return { success: false, error: data.error || "邀请码无效" };
     }
-
-    // Award points to inviter
-    await supabase.from("point_transactions").insert({
-      user_id: invitation.inviter_id,
-      amount: 100,
-      transaction_type: "invite_reward",
-      description: "邀请好友奖励",
-      reference_id: invitation.id,
-    });
-
-    // Award points to invitee
-    await supabase.from("point_transactions").insert({
-      user_id: userId,
-      amount: 50,
-      transaction_type: "invited_bonus",
-      description: "受邀注册奖励",
-      reference_id: invitation.id,
-    });
 
     return { success: true };
   } catch (err) {
+    console.error('[acceptInvitationOnSignup] Error:', err);
     return { success: false, error: "处理邀请码时出错" };
   }
 }
