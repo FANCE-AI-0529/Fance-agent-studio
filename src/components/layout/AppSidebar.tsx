@@ -86,7 +86,7 @@ export function AppSidebar() {
               {!collapsed && (
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm text-foreground">Fance OS</div>
-                  <div className="text-[10px] text-muted-foreground">智能体编排平台</div>
+                  <div className="text-[10px] text-muted-foreground">技能驱动，智能无限！</div>
                 </div>
               )}
             </div>
