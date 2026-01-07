@@ -67,6 +67,10 @@ import { MCPSkillMdGenerator } from "@/components/foundry/MCPSkillMdGenerator";
 import { useMCPInspect, MCPInspectResult } from "@/hooks/useMCPInspect";
 import { useFeaturedBundles, SkillBundle } from "@/hooks/useSkillBundles";
 import { KnowledgeManager } from "@/components/knowledge/KnowledgeManager";
+import { KnowledgeBaseDetail } from "@/components/knowledge/KnowledgeBaseDetail";
+import { CreateKnowledgeBaseDialog } from "@/components/knowledge/CreateKnowledgeBaseDialog";
+import { useKnowledgeBases, KnowledgeBase } from "@/hooks/useKnowledgeBases";
+import { useKnowledgeStore } from "@/stores/knowledgeStore";
 import { useBundlesByCategory } from "@/hooks/useBundlesByCategory";
 import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
 import {
@@ -396,7 +400,10 @@ function ValidationStatusCard({ validation }: { validation: ValidationResult }) 
 }
 
 // C端消费者视图类型
-type ConsumerView = "store" | "bundles" | "myBundles" | "create" | "lowcode" | "creator" | "knowledge";
+type ConsumerView = "store" | "bundles" | "myBundles" | "create" | "lowcode" | "creator";
+
+// Content view when knowledge base is selected
+type ContentView = "consumer" | "knowledgeDetail";
 
 const Foundry = () => {
   const navigate = useNavigate();
@@ -444,6 +451,15 @@ const Foundry = () => {
   const updateSkill = useUpdateSkill();
   const publishSkill = usePublishSkill();
   const deleteSkill = useDeleteSkill();
+
+  // Knowledge base state
+  const { data: knowledgeBases = [], isLoading: isLoadingKnowledgeBases } = useKnowledgeBases();
+  const { selectedKnowledgeBaseId, setSelectedKnowledgeBase } = useKnowledgeStore();
+  const [showCreateKnowledgeBase, setShowCreateKnowledgeBase] = useState(false);
+  
+  const selectedKnowledgeBase = knowledgeBases.find(
+    (kb) => kb.id === selectedKnowledgeBaseId
+  );
 
   // 检查URL参数是否指定开发者模式
   useEffect(() => {
@@ -801,104 +817,153 @@ const Foundry = () => {
 
   // 消费者模式渲染
   if (!isDeveloperMode) {
+    const handleKnowledgeBaseSelect = (id: string | null) => {
+      setSelectedKnowledgeBase(id);
+    };
+
     return (
       <TooltipProvider>
-        <div className="h-full flex flex-col">
-          {/* 顶部导航栏 */}
-          <div className="h-14 px-6 flex items-center justify-between border-b border-border bg-card">
-            <div className="flex items-center gap-6">
-              <h1 className="text-lg font-semibold">能力工坊</h1>
-              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                <Button
-                  variant={consumerView === "store" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("store")}
-                  className="gap-2"
-                >
-                  <Store className="h-4 w-4" />
-                  能力商店
-                </Button>
-                <Button
-                  variant={consumerView === "bundles" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("bundles")}
-                  className="gap-2"
-                >
-                  <Package className="h-4 w-4" />
-                  能力包
-                </Button>
-                <Button
-                  variant={consumerView === "create" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("create")}
-                  className="gap-2"
-                >
-                  <Wand2 className="h-4 w-4" />
-                  AI创建
-                </Button>
-                <Button
-                  variant={consumerView === "lowcode" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("lowcode")}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  可视化配置
-                </Button>
-                <Button
-                  variant={consumerView === "knowledge" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("knowledge")}
-                  className="gap-2"
-                >
-                  <Server className="h-4 w-4" />
-                  知识库
-                </Button>
-                {user && (
+        <div className="h-full flex">
+          {/* 左侧边栏 */}
+          <FoundrySidebar
+            skills={sidebarSkills}
+            activeSkillId={activeSkillId}
+            onSkillSelect={(id) => {
+              setActiveSkillId(id);
+              setSelectedKnowledgeBase(null);
+            }}
+            onNewSkill={() => {
+              setActiveSkillId(null);
+              setSelectedKnowledgeBase(null);
+            }}
+            onDeleteSkill={handleDelete}
+            files={files}
+            activeFileId={activeFileId}
+            onFileSelect={handleFileSelect}
+            onLoadTemplate={handleLoadTemplate}
+            onOpenTemplates={() => setShowTemplates(true)}
+            onOpenImportExport={() => setShowImportExport(true)}
+            onOpenVersionHistory={() => setShowVersionHistory(true)}
+            isLoading={isLoadingSkills}
+            skillMode={skillMode}
+            knowledgeBases={knowledgeBases}
+            activeKnowledgeBaseId={selectedKnowledgeBaseId}
+            onKnowledgeBaseSelect={handleKnowledgeBaseSelect}
+            onNewKnowledgeBase={() => setShowCreateKnowledgeBase(true)}
+            isLoadingKnowledgeBases={isLoadingKnowledgeBases}
+            onOpenTestPanel={() => setActiveTab("test")}
+          />
+
+          {/* 右侧内容区 */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* 顶部导航栏 */}
+            <div className="h-14 px-6 flex items-center justify-between border-b border-border bg-card">
+              <div className="flex items-center gap-6">
+                <h1 className="text-lg font-semibold">能力工坊</h1>
+                <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
                   <Button
-                    variant={consumerView === "creator" ? "default" : "ghost"}
+                    variant={consumerView === "store" && !selectedKnowledgeBaseId ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setConsumerView("creator")}
+                    onClick={() => {
+                      setConsumerView("store");
+                      setSelectedKnowledgeBase(null);
+                    }}
                     className="gap-2"
                   >
-                    <User className="h-4 w-4" />
-                    创作者中心
+                    <Store className="h-4 w-4" />
+                    能力商店
+                  </Button>
+                  <Button
+                    variant={consumerView === "bundles" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => {
+                      setConsumerView("bundles");
+                      setSelectedKnowledgeBase(null);
+                    }}
+                    className="gap-2"
+                  >
+                    <Package className="h-4 w-4" />
+                    能力包
+                  </Button>
+                  <Button
+                    variant={consumerView === "create" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => {
+                      setConsumerView("create");
+                      setSelectedKnowledgeBase(null);
+                    }}
+                    className="gap-2"
+                  >
+                    <Wand2 className="h-4 w-4" />
+                    AI创建
+                  </Button>
+                  <Button
+                    variant={consumerView === "lowcode" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => {
+                      setConsumerView("lowcode");
+                      setSelectedKnowledgeBase(null);
+                    }}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    可视化配置
+                  </Button>
+                  {user && (
+                    <Button
+                      variant={consumerView === "creator" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => {
+                        setConsumerView("creator");
+                        setSelectedKnowledgeBase(null);
+                      }}
+                      className="gap-2"
+                    >
+                      <User className="h-4 w-4" />
+                      创作者中心
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {!user && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/auth")}
+                    className="gap-2"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    登录
                   </Button>
                 )}
+                
+                {/* 开发者模式切换 */}
+                <div className="flex items-center gap-2 pl-4 border-l border-border">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  <Switch
+                    checked={isDeveloperMode}
+                    onCheckedChange={setIsDeveloperMode}
+                  />
+                  <Label className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Wrench className="h-3 w-3" />
+                    开发者
+                  </Label>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              {!user && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/auth")}
-                  className="gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  登录
-                </Button>
-              )}
-              
-              {/* 开发者模式切换 */}
-              <div className="flex items-center gap-2 pl-4 border-l border-border">
-                <Sparkles className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={isDeveloperMode}
-                  onCheckedChange={setIsDeveloperMode}
-                />
-                <Label className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Wrench className="h-3 w-3" />
-                  开发者
-                </Label>
-              </div>
-            </div>
-          </div>
-
-          {/* 主内容区 */}
-          <div className="flex-1 overflow-hidden">
-            {consumerView === "store" && (
+            {/* 主内容区 */}
+            <div className="flex-1 overflow-hidden">
+              {/* 知识库详情 - 优先显示 */}
+              {selectedKnowledgeBaseId && selectedKnowledgeBase ? (
+                <div className="h-full overflow-y-auto p-6">
+                  <KnowledgeBaseDetail knowledgeBase={selectedKnowledgeBase} />
+                </div>
+              ) : (
+                <>
+                  {consumerView === "store" && (
               <SkillStore
                 onInstall={(skillId) => {
                   toast({
@@ -1085,10 +1150,9 @@ const Foundry = () => {
                 }}
               />
             )}
-
-            {consumerView === "knowledge" && (
-              <KnowledgeManager />
-            )}
+                </>
+              )}
+            </div>
           </div>
 
           {/* Dialogs */}
@@ -1102,6 +1166,10 @@ const Foundry = () => {
             bundle={editBundle}
             open={!!editBundle}
             onOpenChange={(open) => !open && setEditBundle(null)}
+          />
+          <CreateKnowledgeBaseDialog 
+            open={showCreateKnowledgeBase} 
+            onOpenChange={setShowCreateKnowledgeBase} 
           />
         </div>
       </TooltipProvider>
