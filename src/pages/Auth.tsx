@@ -13,10 +13,20 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { useInviteValidation, acceptInvitationOnSignup } from "@/hooks/useInviteValidation";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/auth/PasswordStrengthIndicator";
+import { MathCaptcha } from "@/components/auth/MathCaptcha";
 
 const emailSchema = z.string().email("请输入有效的邮箱地址");
-const passwordSchema = z.string().min(6, "密码至少需要6个字符");
-const inviteCodeSchema = z.string().min(6, "邀请码至少6位").max(10, "邀请码最多10位");
+// 强密码验证：至少8位，包含大小写字母、数字和特殊字符
+const strongPasswordSchema = z.string()
+  .min(8, "密码至少需要8个字符")
+  .regex(/[A-Z]/, "密码必须包含大写字母")
+  .regex(/[a-z]/, "密码必须包含小写字母")
+  .regex(/[0-9]/, "密码必须包含数字")
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "密码必须包含特殊字符");
+const inviteCodeSchema = z.string().min(4, "邀请码至少4位").max(20, "邀请码最多20位");
+// 登录时使用简单密码验证
+const loginPasswordSchema = z.string().min(1, "请输入密码");
 
 type AuthView = "main" | "forgot" | "reset";
 
@@ -61,16 +71,20 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   // Invite code validation
   const { isValid: isInviteValid, isLoading: isValidating, error: inviteError, invitationId } = useInviteValidation(inviteCode);
+  
+  // Password strength check
+  const { isStrong: isPasswordStrong } = usePasswordStrength(signupPassword);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       emailSchema.parse(loginEmail);
-      passwordSchema.parse(loginPassword);
+      loginPasswordSchema.parse(loginPassword);
     } catch (err) {
       if (err instanceof z.ZodError) {
         toast({
@@ -133,9 +147,19 @@ const Auth = () => {
       return;
     }
 
+    // Validate captcha
+    if (!captchaVerified) {
+      toast({
+        title: "请完成安全验证",
+        description: "请先完成数学验证",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       emailSchema.parse(signupEmail);
-      passwordSchema.parse(signupPassword);
+      strongPasswordSchema.parse(signupPassword);
     } catch (err) {
       if (err instanceof z.ZodError) {
         toast({
@@ -145,6 +169,16 @@ const Auth = () => {
         });
         return;
       }
+    }
+
+    // Additional password strength check
+    if (!isPasswordStrong) {
+      toast({
+        title: "密码强度不足",
+        description: "请设置包含大小写字母、数字和特殊字符的强密码",
+        variant: "destructive",
+      });
+      return;
     }
 
     if (signupPassword !== signupConfirmPassword) {
@@ -366,13 +400,14 @@ const Auth = () => {
                         <Input
                           id="signup-password"
                           type="password"
-                          placeholder="至少6个字符"
+                          placeholder="包含大小写字母、数字和特殊字符"
                           className="pl-10"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
                           required
                         />
                       </div>
+                      <PasswordStrengthIndicator password={signupPassword} />
                     </div>
 
                     <div className="space-y-2">
@@ -389,12 +424,18 @@ const Auth = () => {
                           required
                         />
                       </div>
+                      {signupConfirmPassword && signupPassword !== signupConfirmPassword && (
+                        <p className="text-xs text-destructive">两次输入的密码不一致</p>
+                      )}
                     </div>
+
+                    {/* Math CAPTCHA */}
+                    <MathCaptcha onVerified={setCaptchaVerified} />
 
                     <Button 
                       type="submit" 
                       className="w-full gap-2" 
-                      disabled={loading || !isInviteValid}
+                      disabled={loading || !isInviteValid || !isPasswordStrong || !captchaVerified}
                     >
                       {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
