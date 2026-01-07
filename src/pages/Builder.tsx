@@ -39,6 +39,7 @@ import {
   Mic,
   MessageSquare,
   TestTube2,
+  Variable,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
@@ -81,6 +83,9 @@ import CreationModeSelector, { CreationMode } from "@/components/builder/Creatio
 import LiveTestPanel from "@/components/builder/LiveTestPanel";
 import PersonalityConfigurator from "@/components/builder/PersonalityConfigurator";
 import RAGConfigPanel, { RAGConfig } from "@/components/builder/RAGConfigPanel";
+import { VariablePoolPanel } from "@/components/builder/variables/VariablePoolPanel";
+import { EdgeMappingPanel } from "@/components/builder/variables/EdgeMappingPanel";
+import { useVariableStore } from "@/stores/variableStore";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import {
   AlertDialog,
@@ -162,6 +167,10 @@ const Builder = () => {
   const [personalityConfig, setPersonalityConfig] = useState<PersonalityConfig>(getDefaultPersonalityConfig());
   const [selectedKnowledgeBaseId, setSelectedKnowledgeBaseId] = useState<string | null>(null);
   const [draggingKnowledge, setDraggingKnowledge] = useState<KnowledgeBaseItem | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+  const [leftPanelTab, setLeftPanelTab] = useState<"skills" | "variables">("skills");
+
+  const { setSelectedEdgeId } = useVariableStore();
 
   const { parseAdjustment, applyAdjustment } = useConfigAdjustment();
   const { 
@@ -472,6 +481,17 @@ const Builder = () => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
   }, []);
+
+  // Handle edge click for mapping panel
+  const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
+    setSelectedEdge(edge);
+    setSelectedEdgeId(edge.id);
+  }, [setSelectedEdgeId]);
+
+  const handleCloseEdgeMapping = useCallback(() => {
+    setSelectedEdge(null);
+    setSelectedEdgeId(null);
+  }, [setSelectedEdgeId]);
 
   // Handle drop
   const onDrop = useCallback(
@@ -1190,8 +1210,10 @@ const Builder = () => {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onEdgeClick={onEdgeClick}
               onInit={setReactFlowInstance}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               fitView
               fitViewOptions={{ padding: 0.4 }}
               defaultEdgeOptions={{
