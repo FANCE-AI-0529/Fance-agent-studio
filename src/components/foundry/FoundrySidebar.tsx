@@ -21,8 +21,6 @@ import {
   CheckCircle2,
   Plug,
   Server,
-  Database,
-  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +39,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { KnowledgeBase } from "@/hooks/useKnowledgeBases";
 import { SkillMode } from "@/components/foundry/SkillModeSwitch";
 
 export interface FileItem {
@@ -88,14 +85,6 @@ interface FoundrySidebarProps {
   onOpenVersionHistory: () => void;
   isLoading?: boolean;
   skillMode?: SkillMode;
-  // Knowledge base props
-  knowledgeBases?: KnowledgeBase[];
-  activeKnowledgeBaseId?: string | null;
-  onKnowledgeBaseSelect?: (id: string | null) => void;
-  onNewKnowledgeBase?: () => void;
-  isLoadingKnowledgeBases?: boolean;
-  // Test panel props
-  onOpenTestPanel?: () => void;
 }
 
 function FileTreeItem({
@@ -187,29 +176,17 @@ export function FoundrySidebar({
   onOpenVersionHistory,
   isLoading,
   skillMode = "native",
-  knowledgeBases = [],
-  activeKnowledgeBaseId,
-  onKnowledgeBaseSelect,
-  onNewKnowledgeBase,
-  isLoadingKnowledgeBases,
-  onOpenTestPanel,
 }: FoundrySidebarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState({
     skills: true,
     files: true,
-    knowledge: true,
-    testing: false,
     templates: false,
     tools: false,
   });
 
   const filteredSkills = skills.filter((skill) =>
     skill.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredKnowledgeBases = knowledgeBases.filter((kb) =>
-    kb.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleSection = (section: keyof typeof sectionsOpen) => {
@@ -402,124 +379,6 @@ export function FoundrySidebar({
                     onSelect={onFileSelect}
                   />
                 ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Knowledge Base Section */}
-          <Collapsible
-            open={sectionsOpen.knowledge}
-            onOpenChange={() => toggleSection("knowledge")}
-          >
-            <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-secondary/50 transition-colors mt-2">
-                <div className="flex items-center gap-2">
-                  {sectionsOpen.knowledge ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                  <Database className="h-3.5 w-3.5 text-cognitive" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    知识库
-                  </span>
-                </div>
-                <Badge variant="secondary" className="text-[10px] h-5">
-                  {knowledgeBases.length}
-                </Badge>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="space-y-0.5 mt-1">
-                {/* New Knowledge Base Button */}
-                <button
-                  onClick={onNewKnowledgeBase}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>新建知识库</span>
-                </button>
-
-                {/* Knowledge Base List */}
-                {isLoadingKnowledgeBases ? (
-                  <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                    加载中...
-                  </div>
-                ) : filteredKnowledgeBases.length === 0 && searchTerm ? (
-                  <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                    未找到匹配的知识库
-                  </div>
-                ) : (
-                  filteredKnowledgeBases.map((kb) => (
-                    <div
-                      key={kb.id}
-                      className={cn(
-                        "group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer",
-                        activeKnowledgeBaseId === kb.id
-                          ? "bg-primary/10"
-                          : "hover:bg-secondary/50"
-                      )}
-                      onClick={() => onKnowledgeBaseSelect?.(kb.id)}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Database
-                          className={cn(
-                            "h-4 w-4 flex-shrink-0",
-                            activeKnowledgeBaseId === kb.id
-                              ? "text-primary"
-                              : "text-muted-foreground"
-                          )}
-                        />
-                        <span
-                          className={cn(
-                            "text-sm truncate",
-                            activeKnowledgeBaseId === kb.id
-                              ? "text-primary font-medium"
-                              : "text-foreground"
-                          )}
-                        >
-                          {kb.name}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-[10px]">
-                        {kb.documents_count || 0}
-                      </Badge>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Test Platform Section */}
-          <Collapsible
-            open={sectionsOpen.testing}
-            onOpenChange={() => toggleSection("testing")}
-          >
-            <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-secondary/50 transition-colors mt-2">
-                <div className="flex items-center gap-2">
-                  {sectionsOpen.testing ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                  <Play className="h-3.5 w-3.5 text-cognitive" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    测试平台
-                  </span>
-                </div>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="space-y-0.5 mt-1 pl-2">
-                <button
-                  onClick={onOpenTestPanel}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                >
-                  <Play className="h-4 w-4" />
-                  <span>技能沙箱测试</span>
-                </button>
               </div>
             </CollapsibleContent>
           </Collapsible>
