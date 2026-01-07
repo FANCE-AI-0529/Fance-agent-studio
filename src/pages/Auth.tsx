@@ -63,7 +63,7 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
 
   // Invite code validation
-  const { isValid: isInviteValid, isLoading: isValidating, error: inviteError } = useInviteValidation(inviteCode);
+  const { isValid: isInviteValid, isLoading: isValidating, error: inviteError, invitationId } = useInviteValidation(inviteCode);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,9 +178,9 @@ const Auth = () => {
     // Wait for auth state to update and get user
     const { data: { user: newUser } } = await supabase.auth.getUser();
     
-    if (newUser) {
-      // Accept the invitation
-      const result = await acceptInvitationOnSignup(inviteCode, newUser.id);
+    if (newUser && invitationId) {
+      // Accept the invitation using invitationId (not inviteCode)
+      const result = await acceptInvitationOnSignup(invitationId, newUser.id);
       
       if (result.success) {
         toast({
@@ -188,6 +188,7 @@ const Auth = () => {
           description: "欢迎加入！您已获得 50 积分奖励",
         });
       } else {
+        console.warn('[Auth] Failed to claim invitation:', result.error);
         toast({
           title: "注册成功",
           description: "欢迎加入！",
