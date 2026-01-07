@@ -61,7 +61,8 @@ import {
 
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
-import { SkillMarketplace, Skill } from "@/components/builder/SkillMarketplace";
+import KnowledgeBaseNode, { KnowledgeBaseNodeData } from "@/components/builder/KnowledgeBaseNode";
+import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { BuilderWizard } from "@/components/builder/BuilderWizard";
@@ -74,6 +75,7 @@ import { ApiStatsDashboard } from "@/components/builder/ApiStatsDashboard";
 import CreationModeSelector, { CreationMode } from "@/components/builder/CreationModeSelector";
 import LiveTestPanel from "@/components/builder/LiveTestPanel";
 import PersonalityConfigurator from "@/components/builder/PersonalityConfigurator";
+import RAGConfigPanel, { RAGConfig } from "@/components/builder/RAGConfigPanel";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import {
   AlertDialog,
@@ -91,11 +93,13 @@ import { cn } from "@/lib/utils";
 import { findTemplateById } from "@/data/agentTemplates";
 import { PersonalityConfig, getDefaultPersonalityConfig, mergePersonalityWithPrompt } from "@/utils/personalityToPrompt";
 import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
+import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
 
 // Custom node types
 const nodeTypes: NodeTypes = {
   skill: SkillNode,
   agent: AgentNode,
+  knowledge: KnowledgeBaseNode,
 };
 
 // Initial agent node in center
@@ -140,8 +144,21 @@ const Builder = () => {
   const [showDeploySuccessDialog, setShowDeploySuccessDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [personalityConfig, setPersonalityConfig] = useState<PersonalityConfig>(getDefaultPersonalityConfig());
+  const [selectedKnowledgeBaseId, setSelectedKnowledgeBaseId] = useState<string | null>(null);
+  const [draggingKnowledge, setDraggingKnowledge] = useState<KnowledgeBaseItem | null>(null);
 
   const { parseAdjustment, applyAdjustment } = useConfigAdjustment();
+  const { 
+    mountedKnowledgeBases, 
+    addKnowledgeBase, 
+    removeKnowledgeBase, 
+    updateConfig: updateKnowledgeConfig,
+    getKnowledgeBase,
+    getConfig: getKnowledgeConfig,
+    generateKnowledgeManifest,
+    generateGovernancePolicies,
+    hasLongTermMemory,
+  } = useBuilderKnowledge();
 
   // Check URL params for wizard mode
   useEffect(() => {
@@ -447,10 +464,83 @@ const Builder = () => {
 
       if (!reactFlowWrapper.current || !reactFlowInstance) return;
 
-      const skillData = event.dataTransfer.getData("application/json");
-      if (!skillData) return;
+      const itemData = event.dataTransfer.getData("application/json");
+      if (!itemData) return;
 
-      const skill: Skill = JSON.parse(skillData);
+      const item = JSON.parse(itemData);
+      
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+
+      // Check if it's a knowledge base
+      if (item.type === 'knowledge_base') {
+        const kb = item as KnowledgeBaseItem;
+        
+        if (mountedKnowledgeBases.some(m => m.id === kb.id)) {
+          toast({ title: "知识库已存在", variant: "destructive" });
+          return;
+        }
+
+        // Add to knowledge store
+        addKnowledgeBase({
+          id: kb.id,
+          name: kb.name,
+          description: kb.description,
+          documents_count: kb.documents_count,
+          chunks_count: kb.chunks_count,
+          nodes_count: kb.nodes_count,
+          edges_count: kb.edges_count,
+          index_status: kb.index_status,
+          graph_enabled: kb.graph_enabled,
+        });
+
+        const newNode: Node<KnowledgeBaseNodeData> = {
+          id: `knowledge-${kb.id}-${Date.now()}`,
+          type: "knowledge",
+          position,
+          data: {
+            id: kb.id,
+            name: kb.name,
+            description: kb.description || "",
+            documents_count: kb.documents_count,
+            chunks_count: kb.chunks_count,
+            nodes_count: kb.nodes_count,
+            edges_count: kb.edges_count,
+            index_status: kb.index_status,
+            graph_enabled: kb.graph_enabled,
+            retrieval_mode: 'hybrid',
+            top_k: 5,
+            graph_depth: 2,
+            onRemove: (id) => {
+              removeKnowledgeBase(id);
+              setNodes((nds) => nds.filter((n) => n.data?.id !== id));
+              setEdges((eds) => eds.filter((e) => !e.source.includes(id)));
+            },
+            onConfigure: (id) => setSelectedKnowledgeBaseId(id),
+          },
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+
+        const newEdge: Edge = {
+          id: `edge-kb-${kb.id}-${Date.now()}`,
+          source: newNode.id,
+          target: "agent-central",
+          animated: true,
+          style: { stroke: "hsl(280 60% 60%)", strokeWidth: 2 },
+        };
+        setEdges((eds) => [...eds, newEdge]);
+
+        toast({ title: "知识库已挂载", description: `${kb.name} 已成功装载` });
+        setDraggingKnowledge(null);
+        return;
+      }
+
+      // Handle skill drop (existing logic)
+      const skill: Skill = item;
 
       if (addedSkillIds.includes(skill.id)) {
         toast({
@@ -460,12 +550,6 @@ const Builder = () => {
         });
         return;
       }
-
-      const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      });
 
       const newNode: Node<SkillNodeData> = {
         id: `skill-${skill.id}-${Date.now()}`,
@@ -499,11 +583,14 @@ const Builder = () => {
 
       setDraggingSkill(null);
     },
-    [reactFlowInstance, addedSkillIds, setNodes, setEdges, handleRemoveSkill]
+    [reactFlowInstance, addedSkillIds, setNodes, setEdges, handleRemoveSkill, mountedKnowledgeBases, addKnowledgeBase, removeKnowledgeBase]
   );
 
-  // Generate manifest
+  // Generate manifest with knowledge bases
   const generateManifest = () => {
+    const knowledgeManifest = generateKnowledgeManifest();
+    const governancePolicies = generateGovernancePolicies();
+    
     return {
       version: "1.0.0",
       metadata: {
@@ -541,15 +628,20 @@ const Builder = () => {
           permissions: s.permissions,
         })),
       },
+      knowledge: knowledgeManifest,
       mplp: {
         policy: "default",
         context: {
           role: agentConfig.systemPrompt ? "custom" : "assistant",
           department: agentConfig.department || "general",
+          long_term_memory: hasLongTermMemory ? "enabled" : "disabled",
         },
         require_confirm: ["write", "delete", "network", "execute"],
         audit_log: true,
         trace_enabled: true,
+        governance: {
+          policies: governancePolicies,
+        },
       },
     };
   };
@@ -804,7 +896,9 @@ const Builder = () => {
           {!leftPanelCollapsed && (
             <SkillMarketplace
               onDragStart={setDraggingSkill}
+              onKnowledgeDragStart={setDraggingKnowledge}
               addedSkillIds={addedSkillIds}
+              addedKnowledgeBaseIds={mountedKnowledgeBases.map(kb => kb.id)}
             />
           )}
         </div>
@@ -852,15 +946,20 @@ const Builder = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {draggingSkill && (
+              {(draggingSkill || draggingKnowledge) && (
                 <Badge className="text-xs bg-primary/10 text-primary border-0 animate-pulse">
-                  拖拽中: {draggingSkill.name}
+                  拖拽中: {draggingSkill?.name || draggingKnowledge?.name}
                 </Badge>
               )}
 
               <Badge variant="outline" className="text-xs">
-                {addedSkills.length} 个技能
+                {addedSkills.length} 技能
               </Badge>
+              {mountedKnowledgeBases.length > 0 && (
+                <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-600">
+                  {mountedKnowledgeBases.length} 知识库
+                </Badge>
+              )}
 
               <div className="h-5 w-px bg-border" />
 
