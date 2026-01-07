@@ -5,8 +5,12 @@ import {
   EdgeLabelRenderer,
 } from "@xyflow/react";
 import type { EdgeProps } from "@xyflow/react";
+import { Circle } from "lucide-react";
 import { PortType, portColors } from "../ports/portTypes";
 import type { EdgeMapping } from "../variables/variableTypes";
+import { cn } from "@/lib/utils";
+
+export type EdgeDebugStatus = "idle" | "active" | "completed";
 
 export interface AnimatedFlowEdgeData {
   portType?: PortType;
@@ -15,6 +19,12 @@ export interface AnimatedFlowEdgeData {
   label?: string;
   mapping?: EdgeMapping;
   mockData?: unknown;
+  // Debug mode fields
+  debugStatus?: EdgeDebugStatus;
+  hasBreakpoint?: boolean;
+  breakpointEnabled?: boolean;
+  isDebugMode?: boolean;
+  onBreakpointToggle?: (edgeId: string) => void;
   [key: string]: unknown;
 }
 
@@ -39,6 +49,28 @@ const AnimatedFlowEdge = memo(({
   const animated = edgeData?.animated !== false;
   const flowDirection = edgeData?.flowDirection || "forward";
   const color = portColors[portType];
+
+  // Debug mode fields
+  const debugStatus = edgeData?.debugStatus || "idle";
+  const hasBreakpoint = edgeData?.hasBreakpoint || false;
+  const breakpointEnabled = edgeData?.breakpointEnabled !== false;
+  const isDebugMode = edgeData?.isDebugMode || false;
+  const onBreakpointToggle = edgeData?.onBreakpointToggle;
+
+  // Debug mode styling
+  const isActiveFlow = debugStatus === "active";
+  const animationDuration = isActiveFlow ? "0.5s" : portType === "control" ? "1s" : "1.5s";
+  const particleRadius = isActiveFlow ? 6 : 4;
+  const strokeWidth = isActiveFlow ? 4 : selected ? 3 : 2;
+
+  // Handle breakpoint toggle (Ctrl/Cmd + Click)
+  const handleBreakpointClick = (e: React.MouseEvent) => {
+    if (isDebugMode && (e.ctrlKey || e.metaKey)) {
+      e.stopPropagation();
+      e.preventDefault();
+      onBreakpointToggle?.(id);
+    }
+  };
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -103,19 +135,24 @@ const AnimatedFlowEdge = memo(({
         path={edgePath}
         markerEnd={markerEnd}
         style={{
-          stroke: color.primary,
-          strokeWidth: selected ? 3 : 2,
-          filter: selected ? `url(#${filterId})` : undefined,
+          stroke: isActiveFlow ? "hsl(var(--primary))" : debugStatus === "completed" ? "hsl(142, 76%, 36%)" : color.primary,
+          strokeWidth,
+          filter: selected || isActiveFlow ? `url(#${filterId})` : undefined,
+          transition: "stroke 0.3s, stroke-width 0.3s",
         }}
       />
 
       {/* Animated particles */}
-      {animated && (
+      {(animated || isActiveFlow) && (
         <>
           {/* Primary flowing particle */}
-          <circle r="4" fill={color.primary} filter={`url(#${filterId})`}>
+          <circle 
+            r={particleRadius} 
+            fill={isActiveFlow ? "hsl(var(--primary))" : color.primary} 
+            filter={`url(#${filterId})`}
+          >
             <animateMotion
-              dur={portType === "control" ? "1s" : "1.5s"}
+              dur={animationDuration}
               repeatCount="indefinite"
               path={edgePath}
               keyPoints={flowDirection === "reverse" ? "1;0" : "0;1"}
@@ -225,6 +262,38 @@ const AnimatedFlowEdge = memo(({
             className="px-2 py-1 rounded text-xs bg-background border shadow-sm"
           >
             {edgeData.label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+
+      {/* Breakpoint marker */}
+      {isDebugMode && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: "all",
+            }}
+            className={cn(
+              "w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-all",
+              hasBreakpoint
+                ? breakpointEnabled
+                  ? "bg-red-500 shadow-lg shadow-red-500/30"
+                  : "bg-red-500/30"
+                : "bg-muted hover:bg-red-500/20"
+            )}
+            onClick={handleBreakpointClick}
+            title="Ctrl+Click 设置断点"
+          >
+            {hasBreakpoint && (
+              <Circle
+                className={cn(
+                  "h-2 w-2",
+                  breakpointEnabled ? "fill-white text-white" : "text-red-500"
+                )}
+              />
+            )}
           </div>
         </EdgeLabelRenderer>
       )}

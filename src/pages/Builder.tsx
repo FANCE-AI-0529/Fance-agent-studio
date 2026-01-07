@@ -40,6 +40,7 @@ import {
   MessageSquare,
   TestTube2,
   Variable,
+  Bug,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,9 @@ import RAGConfigPanel, { RAGConfig } from "@/components/builder/RAGConfigPanel";
 import { VariablePoolPanel } from "@/components/builder/variables/VariablePoolPanel";
 import { EdgeMappingPanel } from "@/components/builder/variables/EdgeMappingPanel";
 import { useVariableStore } from "@/stores/variableStore";
+import { useCanvasDebug } from "@/hooks/useCanvasDebug";
+import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
+import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import {
   AlertDialog,
@@ -174,8 +178,9 @@ const Builder = () => {
   const [draggingKnowledge, setDraggingKnowledge] = useState<KnowledgeBaseItem | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [leftPanelTab, setLeftPanelTab] = useState<"skills" | "variables">("skills");
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
-  const { setSelectedEdgeId } = useVariableStore();
+  const { setSelectedEdgeId, mockData: currentVariables } = useVariableStore();
 
   const { parseAdjustment, applyAdjustment } = useConfigAdjustment();
   const { 
@@ -189,6 +194,61 @@ const Builder = () => {
     generateGovernancePolicies,
     hasLongTermMemory,
   } = useBuilderKnowledge();
+
+  // Canvas debug hook
+  const handleNodeDebugUpdate = useCallback((nodeId: string, data: Record<string, unknown>) => {
+    setNodes((nds) => nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n));
+  }, [setNodes]);
+
+  const handleEdgeDebugUpdate = useCallback((edgeId: string, data: Record<string, unknown>) => {
+    setEdges((eds) => eds.map((e) => e.id === edgeId ? { ...e, data: { ...e.data, ...data } } : e));
+  }, [setEdges]);
+
+  const {
+    isDebugMode,
+    isRunning,
+    isPaused,
+    currentNodeId,
+    executionLogs,
+    breakpoints,
+    variableSnapshots,
+    simulationSpeed,
+    setDebugMode,
+    setSimulationSpeed,
+    startSimulation,
+    pauseSimulation,
+    resumeSimulation,
+    stopSimulation,
+    stepOver,
+    toggleBreakpoint,
+    clearAllBreakpoints,
+  } = useCanvasDebug({
+    nodes,
+    edges,
+    onNodeUpdate: handleNodeDebugUpdate,
+    onEdgeUpdate: handleEdgeDebugUpdate,
+  });
+
+  // Update edges with debug mode info
+  useEffect(() => {
+    if (isDebugMode) {
+      setEdges((eds) => eds.map((e) => ({
+        ...e,
+        data: {
+          ...e.data,
+          isDebugMode: true,
+          hasBreakpoint: !!breakpoints[e.id],
+          breakpointEnabled: breakpoints[e.id]?.enabled,
+          onBreakpointToggle: toggleBreakpoint,
+        },
+      })));
+    } else {
+      setEdges((eds) => eds.map((e) => ({
+        ...e,
+        data: { ...e.data, isDebugMode: false, hasBreakpoint: false },
+      })));
+    }
+  }, [isDebugMode, breakpoints, toggleBreakpoint, setEdges]);
 
   // Check URL params for wizard mode
   useEffect(() => {
@@ -1099,6 +1159,24 @@ const Builder = () => {
                 <TooltipContent>向导模式</TooltipContent>
               </Tooltip>
 
+              {/* Debug Mode Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isDebugMode ? "default" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      setDebugMode(!isDebugMode);
+                      if (!isDebugMode) setShowDebugPanel(true);
+                    }}
+                  >
+                    <Bug className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>调试模式</TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1254,6 +1332,29 @@ const Builder = () => {
             </div>
           </div>
 
+          {/* Debug Toolbar */}
+          {isDebugMode && (
+            <CanvasDebugToolbar
+              isRunning={isRunning}
+              isPaused={isPaused}
+              simulationSpeed={simulationSpeed}
+              breakpointCount={Object.keys(breakpoints).length}
+              currentNodeName={nodes.find((n) => n.id === currentNodeId)?.data?.name as string}
+              onStart={startSimulation}
+              onPause={pauseSimulation}
+              onResume={resumeSimulation}
+              onStop={stopSimulation}
+              onStepOver={stepOver}
+              onSpeedChange={setSimulationSpeed}
+              onClearBreakpoints={clearAllBreakpoints}
+              onExitDebug={() => {
+                stopSimulation();
+                setDebugMode(false);
+                setShowDebugPanel(false);
+              }}
+            />
+          )}
+
           {/* Canvas Area */}
           <div
             ref={reactFlowWrapper}
@@ -1342,8 +1443,20 @@ const Builder = () => {
           </div>
         </div>
 
-        {/* Right Panel - Config */}
-        <SimplifiedConfigPanel
+        {/* Debug Panel - shows when debug mode is active */}
+        {isDebugMode && showDebugPanel && (
+          <CanvasDebugPanel
+            executionLogs={executionLogs}
+            breakpoints={breakpoints}
+            variableSnapshots={variableSnapshots}
+            currentVariables={currentVariables}
+            onClose={() => setShowDebugPanel(false)}
+          />
+        )}
+
+        {/* Right Panel - Config (hidden in debug mode with debug panel open) */}
+        {!(isDebugMode && showDebugPanel) && (
+          <SimplifiedConfigPanel
           config={agentConfig}
           onConfigChange={setAgentConfig}
           skills={addedSkills}
@@ -1359,6 +1472,7 @@ const Builder = () => {
           onDelete={() => setShowDeleteConfirm(true)}
           isDeleting={isDeleting}
         />
+        )}
 
         {/* Wizard Modal */}
         <BuilderWizard
