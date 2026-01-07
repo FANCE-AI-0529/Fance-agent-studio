@@ -798,7 +798,7 @@ const Builder = () => {
         <div
           className={cn(
             "transition-all duration-300 ease-in-out flex-shrink-0",
-            leftPanelCollapsed ? "w-0" : "w-72"
+            leftPanelCollapsed ? "w-0" : "w-80"
           )}
         >
           {!leftPanelCollapsed && (
