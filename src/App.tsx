@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Builder from "./pages/Builder";
 import Foundry from "./pages/Foundry";
 import Runtime from "./pages/Runtime";
+import Knowledge from "./pages/Knowledge";
 import Profile from "./pages/Profile";
 import Creator from "./pages/Creator";
 import Leaderboard from "./pages/Leaderboard";
@@ -109,6 +110,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <MainLayout>
               <Builder />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/knowledge"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Knowledge />
             </MainLayout>
           </ProtectedRoute>
         }

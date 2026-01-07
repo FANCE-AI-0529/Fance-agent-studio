@@ -11,6 +11,8 @@ import {
   User,
   Plug,
   Users,
+  BookOpen,
+  Lock,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
@@ -38,13 +40,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const mainNavItems = [
-  { title: "概览", url: "/", icon: LayoutDashboard },
-  { title: "Agent 构建器", url: "/builder", icon: Bot },
-  { title: "Skills工坊", url: "/foundry", icon: Hammer },
-  { title: "测试平台", url: "/runtime", icon: Play },
-  { title: "API 中心", url: "/api-hub", icon: Plug },
+  { title: "工作台", url: "/", icon: LayoutDashboard },
+  { title: "智能体构建", url: "/builder", icon: Bot },
+  { title: "知识库", url: "/knowledge", icon: BookOpen },
+  { title: "技能工坊", url: "/foundry", icon: Hammer },
+  { title: "运行终端", url: "/runtime", icon: Play },
 ];
 
 export function AppSidebar() {
@@ -68,67 +72,103 @@ export function AppSidebar() {
     <>
       <Sidebar
         className={`border-r border-border transition-all duration-300 ${
-          collapsed ? "w-16" : "w-56"
+          collapsed ? "w-16" : "w-60"
         }`}
         collapsible="icon"
       >
         <div className="h-full flex flex-col bg-sidebar">
-          {/* Logo */}
-          <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
-            {!collapsed && (
-              <div className="flex items-center gap-2">
-                <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg" />
-                <div>
-                  <div className="font-semibold text-sm">Fance OS</div>
-                  <div className="text-[10px] text-muted-foreground leading-tight">技能驱动，智能无限</div>
-                </div>
+          {/* Logo & Brand */}
+          <div className="p-4 border-b border-sidebar-border">
+            <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <img src={logoIcon} alt="Fance" className="w-6 h-6" />
               </div>
-            )}
-            {collapsed && (
-              <img src={logoIcon} alt="F" className="w-8 h-8 rounded-lg mx-auto" />
-            )}
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm text-foreground">Fance OS</div>
+                  <div className="text-[10px] text-muted-foreground">智能体编排平台</div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <SidebarContent className="flex-1">
+          {/* MPLP Protocol Status */}
+          {!collapsed && (
+            <div className="px-4 py-3 border-b border-sidebar-border">
+              <div className="protocol-badge w-full justify-center">
+                <Lock className="h-3 w-3" />
+                <span>MPLP v1.0.0</span>
+                <Badge variant="outline" className="h-4 text-[9px] px-1.5 border-primary/30 text-primary">
+                  已锁定
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          <SidebarContent className="flex-1 py-2">
             {/* Main Navigation */}
             <SidebarGroup>
               {!collapsed && (
                 <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-4 py-2">
-                  工作台
+                  导航
                 </SidebarGroupLabel>
               )}
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="px-2">
                   {mainNavItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
-                          to={item.url} 
-                          end={item.url === "/"}
-                          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
-                            collapsed ? "justify-center" : ""
-                          }`}
-                          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                        >
-                          <item.icon className="h-4 w-4 flex-shrink-0" />
-                          {!collapsed && <span className="text-sm">{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton asChild>
+                            <NavLink 
+                              to={item.url} 
+                              end={item.url === "/"}
+                              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:bg-sidebar-accent ${
+                                collapsed ? "justify-center" : ""
+                              }`}
+                              activeClassName="bg-primary/10 text-primary border border-primary/20"
+                            >
+                              <item.icon className="h-4 w-4 flex-shrink-0" />
+                              {!collapsed && <span className="text-sm font-medium">{item.title}</span>}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        {collapsed && (
+                          <TooltipContent side="right" className="font-medium">
+                            {item.title}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Protocol Status */}
+            {/* Protocol Runtime Status */}
             {!collapsed && (
-              <div className="mx-4 mt-4 p-3 rounded-lg bg-card/50 border border-sidebar-border">
+              <div className="mx-4 mt-4 p-3 rounded-lg bg-card/50 border border-border">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-status-executing animate-pulse" />
-                  <span className="text-xs font-medium">MPLP Protocol</span>
+                  <span className="text-xs font-medium text-foreground">治理引擎</span>
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  治理引擎运行中
+                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-port-data" />
+                    <span className="text-muted-foreground">数据流</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-port-control" />
+                    <span className="text-muted-foreground">控制流</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-port-perception" />
+                    <span className="text-muted-foreground">感知流</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-status-planning" />
+                    <span className="text-muted-foreground">规划中</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -144,12 +184,12 @@ export function AppSidebar() {
                     collapsed ? "justify-center" : ""
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 ring-2 ring-primary/20">
                     <User className="h-4 w-4 text-primary" />
                   </div>
                   {!collapsed && (
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm font-medium truncate">{displayName}</div>
+                      <div className="text-sm font-medium truncate text-foreground">{displayName}</div>
                       <div className="text-[10px] text-muted-foreground truncate">{email}</div>
                     </div>
                   )}
@@ -176,7 +216,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setHelpOpen(true)}>
                   <HelpCircle className="h-4 w-4 mr-2" />
-                  帮助
+                  帮助中心
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
@@ -188,15 +228,15 @@ export function AppSidebar() {
 
             {/* Collapse Toggle */}
             <div className="p-2 flex justify-center border-t border-sidebar-border">
-              <SidebarTrigger className="h-8 w-8 rounded-lg hover:bg-sidebar-accent">
-                <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+              <SidebarTrigger className="h-8 w-8 rounded-lg hover:bg-sidebar-accent transition-colors">
+                <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
               </SidebarTrigger>
             </div>
           </div>
         </div>
       </Sidebar>
 
-      {/* Dialogs rendered outside DropdownMenu to avoid nesting issues */}
+      {/* Dialogs */}
       <UserManagementDialog open={userManagementOpen} onOpenChange={setUserManagementOpen} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
