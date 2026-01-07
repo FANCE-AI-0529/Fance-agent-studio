@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface KnowledgeBaseNodeData {
+  [key: string]: unknown;
   id: string;
   name: string;
   description: string;
