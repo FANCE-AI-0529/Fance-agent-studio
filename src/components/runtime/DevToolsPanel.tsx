@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Keyboard,
   X,
+  Search,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ const TAB_ICONS: Record<string, React.ElementType> = {
   Users,
   Link,
   History,
+  Search,
   Bug,
 };
 
@@ -48,6 +50,7 @@ interface DevToolsPanelProps {
   renderCollaboration?: () => React.ReactNode;
   renderTaskChain?: () => React.ReactNode;
   renderHistory?: () => React.ReactNode;
+  renderRAG?: () => React.ReactNode;
   renderDebug?: () => React.ReactNode;
   
   // 回调
@@ -61,6 +64,7 @@ export function DevToolsPanel({
   renderCollaboration,
   renderTaskChain,
   renderHistory,
+  renderRAG,
   renderDebug,
   onClose,
 }: DevToolsPanelProps) {
@@ -110,6 +114,7 @@ export function DevToolsPanel({
       collaboration: renderCollaboration,
       taskchain: renderTaskChain,
       history: renderHistory,
+      rag: renderRAG,
       debug: renderDebug,
     };
 
