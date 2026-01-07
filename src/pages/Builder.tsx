@@ -63,6 +63,9 @@ import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
 import KnowledgeBaseNode, { KnowledgeBaseNodeData } from "@/components/builder/KnowledgeBaseNode";
 import TriggerNode from "@/components/builder/nodes/TriggerNode";
 import OutputNode from "@/components/builder/nodes/OutputNode";
+import IntentRouterNode, { IntentRouterNodeData } from "@/components/builder/nodes/IntentRouterNode";
+import ConditionNode, { ConditionNodeData } from "@/components/builder/nodes/ConditionNode";
+import ParallelNode, { ParallelNodeData } from "@/components/builder/nodes/ParallelNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
@@ -105,6 +108,9 @@ const nodeTypes: NodeTypes = {
   knowledge: KnowledgeBaseNode,
   trigger: TriggerNode,
   output: OutputNode,
+  intentRouter: IntentRouterNode,
+  condition: ConditionNode,
+  parallel: ParallelNode,
 };
 
 // Custom edge types

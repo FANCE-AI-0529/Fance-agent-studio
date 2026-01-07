@@ -149,6 +149,30 @@ export function getPortTypeFromHandleId(
 }
 
 /**
+ * Branch output colors for condition nodes
+ */
+export const branchColors = {
+  true: {
+    primary: "hsl(142, 71%, 45%)",
+    tailwind: "text-green-500",
+    tailwindBg: "bg-green-500",
+    border: "border-green-500",
+  },
+  false: {
+    primary: "hsl(0, 72%, 51%)",
+    tailwind: "text-red-500",
+    tailwindBg: "bg-red-500",
+    border: "border-red-500",
+  },
+  default: {
+    primary: "hsl(220, 8.9%, 46.1%)",
+    tailwind: "text-muted-foreground",
+    tailwindBg: "bg-muted",
+    border: "border-muted",
+  },
+};
+
+/**
  * Standard port configurations for common node types
  */
 export const standardPorts = {
@@ -194,6 +218,31 @@ export const standardPorts = {
       { id: "control-in", type: "control" as PortType, direction: "input" as PortDirection, label: "触发发送" },
       { id: "data-in", type: "data" as PortType, direction: "input" as PortDirection, label: "消息内容" },
     ],
+  },
+  // Logic nodes
+  intentRouter: {
+    inputs: [
+      { id: "control-in", type: "control" as PortType, direction: "input" as PortDirection, label: "执行请求" },
+      { id: "data-in", type: "data" as PortType, direction: "input" as PortDirection, label: "输入数据" },
+    ],
+    // outputs are dynamic based on routes
+  },
+  condition: {
+    inputs: [
+      { id: "control-in", type: "control" as PortType, direction: "input" as PortDirection, label: "执行请求" },
+      { id: "data-in", type: "data" as PortType, direction: "input" as PortDirection, label: "判断数据" },
+    ],
+    outputs: [
+      { id: "true-out", type: "control" as PortType, direction: "output" as PortDirection, label: "True" },
+      { id: "false-out", type: "control" as PortType, direction: "output" as PortDirection, label: "False" },
+    ],
+  },
+  parallel: {
+    inputs: [
+      { id: "control-in", type: "control" as PortType, direction: "input" as PortDirection, label: "触发信号" },
+      { id: "data-in", type: "data" as PortType, direction: "input" as PortDirection, label: "共享数据" },
+    ],
+    // outputs are dynamic based on branches
   },
 };
 
