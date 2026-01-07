@@ -81,6 +81,34 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.team": "团队版",
     "pricing.upgrade": "升级",
     "pricing.current": "当前计划",
+    
+    // 技能市场
+    "skill.market.title": "技能市场",
+    "skill.market.search": "搜索技能...",
+    "skill.market.available": "可用",
+    "skill.market.empty": "技能市场为空",
+    "skill.market.empty_desc": "还没有已发布的技能，前往 Foundry 创建第一个技能吧",
+    "skill.market.create": "创建技能",
+    "skill.market.no_match": "未找到匹配的技能",
+    "skill.market.added": "已添加",
+    
+    // 来源过滤
+    "skill.origin.all": "全部",
+    "skill.origin.native": "Agent OS 原生",
+    "skill.origin.mcp": "MCP 生态",
+    
+    // MCP 确认
+    "confirm.mcp.title": "MCP 工具调用确认",
+    "confirm.mcp.warning": "此操作将调用外部 MCP 服务器执行命令",
+    "confirm.mcp.server": "MCP 服务器",
+    "confirm.mcp.tool": "工具名称",
+    "confirm.mcp.inputs": "输入参数",
+    "confirm.mcp.risk": "风险提示",
+    "confirm.mcp.risk_high": "终端命令可能执行任意代码，存在安全风险",
+    "confirm.mcp.risk_medium": "此操作将访问外部服务",
+    "confirm.remember": "记住此工具的选择（同一会话内）",
+    "confirm.cancel": "不，取消",
+    "confirm.execute": "是的，执行",
   },
   en: {
     // Brand
@@ -94,6 +122,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.foundry": "Skills",
     "nav.runtime": "Chat",
     "nav.profile": "Profile",
+    
     // Home
     "home.title": "Build Your AI Assistant",
     "home.subtitle": "Get started in 10 minutes, no coding required",
@@ -157,6 +186,34 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.team": "Team",
     "pricing.upgrade": "Upgrade",
     "pricing.current": "Current Plan",
+    
+    // Skill Market
+    "skill.market.title": "Skill Market",
+    "skill.market.search": "Search skills...",
+    "skill.market.available": "available",
+    "skill.market.empty": "Skill Market is Empty",
+    "skill.market.empty_desc": "No published skills yet. Go to Foundry to create your first skill.",
+    "skill.market.create": "Create Skill",
+    "skill.market.no_match": "No matching skills found",
+    "skill.market.added": "Added",
+    
+    // Origin filter
+    "skill.origin.all": "All",
+    "skill.origin.native": "Agent OS Native",
+    "skill.origin.mcp": "MCP Ecosystem",
+    
+    // MCP Confirm
+    "confirm.mcp.title": "MCP Tool Call Confirmation",
+    "confirm.mcp.warning": "This action will invoke an external MCP server to execute commands",
+    "confirm.mcp.server": "MCP Server",
+    "confirm.mcp.tool": "Tool Name",
+    "confirm.mcp.inputs": "Input Parameters",
+    "confirm.mcp.risk": "Risk Warning",
+    "confirm.mcp.risk_high": "Terminal commands may execute arbitrary code, posing security risks",
+    "confirm.mcp.risk_medium": "This operation will access external services",
+    "confirm.remember": "Remember choice for this tool (current session)",
+    "confirm.cancel": "No, Cancel",
+    "confirm.execute": "Yes, Execute",
   },
 };
 
