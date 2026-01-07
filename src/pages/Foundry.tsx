@@ -66,6 +66,7 @@ import { MCPInspector } from "@/components/foundry/MCPInspector";
 import { MCPSkillMdGenerator } from "@/components/foundry/MCPSkillMdGenerator";
 import { useMCPInspect, MCPInspectResult } from "@/hooks/useMCPInspect";
 import { useFeaturedBundles, SkillBundle } from "@/hooks/useSkillBundles";
+import { KnowledgeManager } from "@/components/knowledge/KnowledgeManager";
 import { useBundlesByCategory } from "@/hooks/useBundlesByCategory";
 import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
 import {
@@ -395,7 +396,7 @@ function ValidationStatusCard({ validation }: { validation: ValidationResult }) 
 }
 
 // C端消费者视图类型
-type ConsumerView = "store" | "bundles" | "myBundles" | "create" | "lowcode" | "creator";
+type ConsumerView = "store" | "bundles" | "myBundles" | "create" | "lowcode" | "creator" | "knowledge";
 
 const Foundry = () => {
   const navigate = useNavigate();
@@ -844,6 +845,15 @@ const Foundry = () => {
                   <Settings className="h-4 w-4" />
                   可视化配置
                 </Button>
+                <Button
+                  variant={consumerView === "knowledge" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setConsumerView("knowledge")}
+                  className="gap-2"
+                >
+                  <Server className="h-4 w-4" />
+                  知识库
+                </Button>
                 {user && (
                   <Button
                     variant={consumerView === "creator" ? "default" : "ghost"}
@@ -1074,6 +1084,10 @@ const Foundry = () => {
                   setIsDeveloperMode(true);
                 }}
               />
+            )}
+
+            {consumerView === "knowledge" && (
+              <KnowledgeManager />
             )}
           </div>
 
