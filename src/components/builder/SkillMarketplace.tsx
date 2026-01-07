@@ -1,5 +1,4 @@
-import { useState, DragEvent } from "react";
-import { Link } from "react-router-dom";
+import { useState, useRef, useEffect, DragEvent } from "react";
 import {
   Puzzle,
   Search,
@@ -12,7 +11,6 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Plus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -102,9 +100,29 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(true);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
   const { data: dbSkills, isLoading } = usePublishedSkills();
 
   const skills = (dbSkills || []).map(toSkill);
+
+  // Handle category scroll indicators
+  useEffect(() => {
+    const container = categoryScrollRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setShowLeftGradient(container.scrollLeft > 0);
+      setShowRightGradient(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 1
+      );
+    };
+
+    handleScroll();
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const filteredSkills = skills.filter((skill) => {
     const matchesSearch =
@@ -149,21 +167,21 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
     <div className="w-80 border-r border-border flex flex-col bg-card/50">
       {/* Header */}
       <div className="panel-header">
-        <div className="flex items-center gap-2">
-          <Puzzle className="h-4 w-4 text-cognitive" />
-          <span className="font-semibold text-sm">技能市场</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <Puzzle className="h-4 w-4 text-cognitive flex-shrink-0" />
+          <span className="font-semibold text-sm truncate">技能市场</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Badge variant="secondary" className="text-xs">
             {skills.length} 可用
           </Badge>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7"
             onClick={() => setIsCollapsed(true)}
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -182,22 +200,43 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-1 p-2 border-b border-border overflow-x-auto">
-        {skillCategories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors",
-              activeCategory === cat.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {cat.icon && <cat.icon className="h-3.5 w-3.5" />}
-            {cat.label}
-          </button>
-        ))}
+      <div className="relative">
+        {/* Left gradient indicator */}
+        <div
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-card to-transparent z-10 pointer-events-none transition-opacity",
+            showLeftGradient ? "opacity-100" : "opacity-0"
+          )}
+        />
+        
+        <div
+          ref={categoryScrollRef}
+          className="flex gap-1.5 p-2 border-b border-border overflow-x-auto scrollbar-hide"
+        >
+          {skillCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors flex-shrink-0",
+                activeCategory === cat.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {cat.icon && <cat.icon className="h-3.5 w-3.5" />}
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Right gradient indicator */}
+        <div
+          className={cn(
+            "absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card to-transparent z-10 pointer-events-none transition-opacity",
+            showRightGradient ? "opacity-100" : "opacity-0"
+          )}
+        />
       </div>
 
       {/* Skills List */}
@@ -231,33 +270,36 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
                 draggable={!isAdded}
                 onDragStart={(e) => handleDragStart(e, skill)}
                 className={cn(
-                  "p-3 rounded-lg border transition-all",
+                  "p-3 rounded-lg border transition-all group",
                   isAdded
                     ? "border-primary/50 bg-primary/5 opacity-60 cursor-not-allowed"
-                    : "border-border bg-card hover:border-primary/50 cursor-grab active:cursor-grabbing"
+                    : "border-border bg-card hover:border-primary/50 hover:shadow-sm cursor-grab active:cursor-grabbing"
                 )}
               >
                 <div className="flex items-start gap-2">
                   {!isAdded && (
-                    <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <CategoryIcon className="h-3.5 w-3.5 text-cognitive" />
-                        <span className="font-medium text-sm">{skill.name}</span>
-                      </div>
+                    {/* Title row */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <CategoryIcon className="h-4 w-4 text-cognitive flex-shrink-0" />
+                      <span className="font-medium text-sm truncate flex-1">{skill.name}</span>
                       {isAdded && (
-                        <Badge variant="secondary" className="text-[10px]">
+                        <Badge variant="secondary" className="text-[10px] flex-shrink-0">
                           已添加
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">
+                    
+                    {/* Description */}
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
                       {skill.description}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-1">
+                    
+                    {/* Bottom: permissions + version */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex gap-1 flex-wrap flex-1 min-w-0">
                         {skill.permissions.slice(0, 2).map((perm) => (
                           <Badge
                             key={perm}
@@ -267,8 +309,13 @@ export function SkillMarketplace({ onDragStart, addedSkillIds }: SkillMarketplac
                             {perm}
                           </Badge>
                         ))}
+                        {skill.permissions.length > 2 && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            +{skill.permissions.length - 2}
+                          </Badge>
+                        )}
                       </div>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
                         v{skill.version}
                       </span>
                     </div>
