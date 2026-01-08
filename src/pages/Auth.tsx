@@ -15,6 +15,7 @@ import { useInviteValidation, acceptInvitationOnSignup } from "@/hooks/useInvite
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/auth/PasswordStrengthIndicator";
 import { MathCaptcha } from "@/components/auth/MathCaptcha";
+import { useSecurityAudit } from "@/hooks/useSecurityAudit";
 
 const emailSchema = z.string().email("请输入有效的邮箱地址");
 // 强密码验证：至少8位，包含大小写字母、数字和特殊字符
@@ -80,6 +81,9 @@ const Auth = () => {
   // Password strength check
   const { isStrong: isPasswordStrong } = usePasswordStrength(signupPassword);
 
+  // Security audit logging
+  const { logLogin, logSignup } = useSecurityAudit();
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -118,12 +122,22 @@ const Auth = () => {
       } else if (error.message.includes("Email not confirmed")) {
         message = "请先验证您的邮箱";
       }
+      
+      // Log failed login attempt
+      await logLogin('', false, message);
+      
       toast({
         title: "登录失败",
         description: message,
         variant: "destructive",
       });
     } else {
+      // Get user ID for successful login log
+      const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+      if (loggedInUser) {
+        await logLogin(loggedInUser.id, true);
+      }
+      
       toast({
         title: "登录成功",
         description: "欢迎回来！",
@@ -212,6 +226,10 @@ const Auth = () => {
       if (error.message.includes("User already registered")) {
         message = "该邮箱已被注册";
       }
+      
+      // Log failed signup attempt
+      await logSignup('', false, message);
+      
       toast({
         title: "注册失败",
         description: message,
@@ -223,27 +241,32 @@ const Auth = () => {
     // Wait for auth state to update and get user
     const { data: { user: newUser } } = await supabase.auth.getUser();
     
-    if (newUser && invitationId) {
-      // Accept the invitation using invitationId (not inviteCode)
-      const result = await acceptInvitationOnSignup(invitationId, newUser.id);
+    if (newUser) {
+      // Log successful signup
+      await logSignup(newUser.id, true);
       
-      if (result.success) {
-        toast({
-          title: "注册成功",
-          description: "欢迎加入！您已获得 50 积分奖励",
-        });
+      if (invitationId) {
+        // Accept the invitation using invitationId (not inviteCode)
+        const result = await acceptInvitationOnSignup(invitationId, newUser.id);
+        
+        if (result.success) {
+          toast({
+            title: "注册成功",
+            description: "欢迎加入！您已获得 50 积分奖励",
+          });
+        } else {
+          console.warn('[Auth] Failed to claim invitation:', result.error);
+          toast({
+            title: "注册成功",
+            description: "欢迎加入！",
+          });
+        }
       } else {
-        console.warn('[Auth] Failed to claim invitation:', result.error);
         toast({
           title: "注册成功",
           description: "欢迎加入！",
         });
       }
-    } else {
-      toast({
-        title: "注册成功",
-        description: "欢迎加入！",
-      });
     }
 
     setLoading(false);

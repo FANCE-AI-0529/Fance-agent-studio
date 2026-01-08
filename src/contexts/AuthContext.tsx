@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -10,6 +10,32 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
+
+// Helper function to log security events
+const logSecurityEvent = async (
+  userId: string | null,
+  eventType: string,
+  eventCategory: string,
+  success: boolean = true,
+  errorMessage?: string
+) => {
+  try {
+    await supabase.from('security_audit_logs').insert({
+      user_id: userId,
+      event_type: eventType,
+      event_category: eventCategory,
+      user_agent: navigator.userAgent,
+      metadata: {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+      },
+      success,
+      error_message: errorMessage,
+    });
+  } catch (err) {
+    console.error('Failed to log security event:', err);
+  }
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -64,9 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
+    const currentUserId = user?.id;
     await supabase.auth.signOut();
-  };
+    
+    // Log logout event
+    if (currentUserId) {
+      await logSecurityEvent(currentUserId, 'logout', 'authentication');
+    }
+  }, [user?.id]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
