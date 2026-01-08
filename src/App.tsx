@@ -30,48 +30,49 @@ import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-// Protected route wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  // 检查访客模式
-  const isGuestMode = sessionStorage.getItem("guestMode") === "true";
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user && !isGuestMode) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-// Auth route wrapper (redirect if already logged in)
-function AuthRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-}
-
+// These components must be inside AuthProvider, so we define them in AppRoutes
 function AppRoutes() {
+  // Protected route wrapper
+  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    const { user, loading } = useAuth();
+
+    // 检查访客模式
+    const isGuestMode = sessionStorage.getItem("guestMode") === "true";
+
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (!user && !isGuestMode) {
+      return <Navigate to="/auth" replace />;
+    }
+
+    return <>{children}</>;
+  };
+
+  // Auth route wrapper (redirect if already logged in)
+  const AuthRoute = ({ children }: { children: React.ReactNode }) => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (user) {
+      return <Navigate to="/" replace />;
+    }
+
+    return <>{children}</>;
+  };
+
   return (
     <Routes>
       <Route
