@@ -1,8 +1,15 @@
+// =====================================================
+// 隐形构建器 Hook - 带 RAG 澄清交互
+// Invisible Builder Hook - With RAG Clarification
+// =====================================================
+
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MagicStep } from "@/components/consumer/MagicLoader";
 import type { Json } from "@/integrations/supabase/types";
+import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecision } from "@/hooks/useKnowledgeMatching";
+import { toast } from "sonner";
 
 export interface InvisibleBuildResult {
   agentId: string;
@@ -12,16 +19,32 @@ export interface InvisibleBuildResult {
   systemPrompt: string;
   capabilities: string[];
   description?: string;
+  mountedKnowledgeBases?: Array<{ id: string; name: string }>;
+}
+
+// Clarification state for UI
+export interface ClarificationState {
+  type: RAGDecision;
+  matches: KnowledgeMatchResult[];
+  question?: string;
+  isPending: boolean;
 }
 
 interface UseInvisibleBuilderReturn {
   build: (description: string) => Promise<InvisibleBuildResult>;
   isBuilding: boolean;
+  isPaused: boolean;
   currentStepIndex: number;
   steps: MagicStep[];
   progress: number;
   error: string | null;
   reset: () => void;
+  
+  // Clarification interaction
+  clarificationState: ClarificationState | null;
+  handleKnowledgeSelection: (selectedIds: string[]) => void;
+  handleSkipKnowledge: () => void;
+  handleFileUploaded: (kb: { id: string; name: string }) => void;
 }
 
 const DEFAULT_STEPS: MagicStep[] = [
@@ -35,10 +58,17 @@ const DEFAULT_STEPS: MagicStep[] = [
 export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
   const { user } = useAuth();
   const [isBuilding, setIsBuilding] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
   const [steps, setSteps] = useState<MagicStep[]>(DEFAULT_STEPS);
   const [error, setError] = useState<string | null>(null);
+  const [clarificationState, setClarificationState] = useState<ClarificationState | null>(null);
+  
   const abortRef = useRef(false);
+  const resolveDecisionRef = useRef<((value: KnowledgeMatchResult[]) => void) | null>(null);
+  const selectedKBsRef = useRef<KnowledgeMatchResult[]>([]);
+  
+  const { matchKnowledgeBases } = useKnowledgeMatching();
 
   const updateStep = useCallback((index: number, updates: Partial<MagicStep>) => {
     setSteps(prev => prev.map((step, i) => 
@@ -59,20 +89,178 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
     await new Promise(resolve => setTimeout(resolve, 800));
   }, []);
 
+  const pauseStep = useCallback((index: number, text?: string) => {
+    setIsPaused(true);
+    setSteps(prev => prev.map((step, i) => ({
+      ...step,
+      status: i < index ? 'complete' : i === index ? 'paused' : 'pending',
+      text: i === index && text ? text : step.text,
+    })));
+  }, []);
+
+  const resumeStep = useCallback((index: number, text?: string) => {
+    setIsPaused(false);
+    setClarificationState(null);
+    setSteps(prev => prev.map((step, i) => ({
+      ...step,
+      status: i < index ? 'complete' : i === index ? 'active' : 'pending',
+      text: i === index && text ? text : step.text,
+    })));
+  }, []);
+
+  // Wait for user decision (returns a Promise that resolves when user selects)
+  const waitForUserDecision = useCallback((): Promise<KnowledgeMatchResult[]> => {
+    return new Promise((resolve) => {
+      resolveDecisionRef.current = resolve;
+    });
+  }, []);
+
+  // Handle user selecting knowledge bases
+  const handleKnowledgeSelection = useCallback((selectedIds: string[]) => {
+    if (!clarificationState) return;
+    
+    const selected = clarificationState.matches.filter(m => 
+      selectedIds.includes(m.knowledgeBase.id)
+    );
+    
+    selectedKBsRef.current = selected;
+    
+    // Resolve the waiting promise
+    if (resolveDecisionRef.current) {
+      resolveDecisionRef.current(selected);
+      resolveDecisionRef.current = null;
+    }
+  }, [clarificationState]);
+
+  // Handle user skipping knowledge selection
+  const handleSkipKnowledge = useCallback(() => {
+    selectedKBsRef.current = [];
+    
+    if (resolveDecisionRef.current) {
+      resolveDecisionRef.current([]);
+      resolveDecisionRef.current = null;
+    }
+  }, []);
+
+  // Handle file uploaded during clarification
+  const handleFileUploaded = useCallback((kb: { id: string; name: string }) => {
+    // Create a fake match result for the uploaded KB
+    const uploadedMatch: KnowledgeMatchResult = {
+      knowledgeBase: {
+        id: kb.id,
+        name: kb.name,
+        description: '刚刚上传的文件',
+        usage_context: null,
+        intent_tags: [],
+        documents_count: 1,
+        chunks_count: null,
+      },
+      score: 1.0,
+      matchReason: 'user_uploaded',
+      decisionZone: 'auto',
+    };
+    
+    selectedKBsRef.current = [uploadedMatch];
+    
+    if (resolveDecisionRef.current) {
+      resolveDecisionRef.current([uploadedMatch]);
+      resolveDecisionRef.current = null;
+    }
+  }, []);
+
   const build = useCallback(async (description: string): Promise<InvisibleBuildResult> => {
     if (!user) throw new Error("用户未登录");
     
     setIsBuilding(true);
+    setIsPaused(false);
     setError(null);
     setSteps(DEFAULT_STEPS.map(s => ({ ...s, status: 'pending' })));
+    setClarificationState(null);
+    selectedKBsRef.current = [];
     abortRef.current = false;
+
+    let mountedKnowledgeBases: Array<{ id: string; name: string }> = [];
 
     try {
       // Step 1: Understanding requirements
       await advanceToStep(0);
       
-      // Step 2: Analyze capabilities
-      await advanceToStep(1);
+      // Step 2: Analyze capabilities + Knowledge matching
+      await advanceToStep(1, '分析所需能力，匹配知识库...');
+      
+      // Trigger knowledge base matching
+      const matchResult = await matchKnowledgeBases(description, { autoMount: false });
+      
+      if (abortRef.current) throw new Error('已取消');
+
+      if (matchResult) {
+        if (matchResult.decision === 'auto_mount' && matchResult.matches.length > 0) {
+          // Auto zone: Silently mount the best match
+          const autoMounted = matchResult.matches[0];
+          mountedKnowledgeBases = [{ 
+            id: autoMounted.knowledgeBase.id, 
+            name: autoMounted.knowledgeBase.name 
+          }];
+          toast.success(`已自动挂载「${autoMounted.knowledgeBase.name}」`, {
+            duration: 3000,
+          });
+          
+        } else if (matchResult.decision === 'ask_user' && matchResult.matches.length > 0) {
+          // Clarify zone: Pause and ask user
+          setClarificationState({
+            type: 'ask_user',
+            matches: matchResult.matches,
+            question: matchResult.clarifyQuestion || '我发现了几个相关的知识库，您想基于哪个进行构建？',
+            isPending: true,
+          });
+          pauseStep(1, '等待您的选择...');
+          
+          // Wait for user decision
+          const selectedKBs = await waitForUserDecision();
+          
+          if (abortRef.current) throw new Error('已取消');
+          
+          if (selectedKBs.length > 0) {
+            mountedKnowledgeBases = selectedKBs.map(kb => ({
+              id: kb.knowledgeBase.id,
+              name: kb.knowledgeBase.name,
+            }));
+            resumeStep(1, `已选定「${selectedKBs[0].knowledgeBase.name}」，继续组装...`);
+          } else {
+            resumeStep(1, '使用通用知识，继续组装...');
+          }
+          
+          // Small delay for visual feedback
+          await new Promise(resolve => setTimeout(resolve, 600));
+          
+        } else if (matchResult.decision === 'suggest_upload') {
+          // Empty zone: Suggest upload
+          setClarificationState({
+            type: 'suggest_upload',
+            matches: [],
+            question: '我没有找到相关资料。您可以直接把文件拖给我，我立马学习！',
+            isPending: true,
+          });
+          pauseStep(1, '等待您的选择...');
+          
+          // Wait for user to upload or skip
+          const uploadedKBs = await waitForUserDecision();
+          
+          if (abortRef.current) throw new Error('已取消');
+          
+          if (uploadedKBs.length > 0) {
+            mountedKnowledgeBases = uploadedKBs.map(kb => ({
+              id: kb.knowledgeBase.id,
+              name: kb.knowledgeBase.name,
+            }));
+            resumeStep(1, `已学习「${uploadedKBs[0].knowledgeBase.name}」，继续组装...`);
+          } else {
+            resumeStep(1, '使用纯对话模式，继续组装...');
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 600));
+        }
+      }
       
       // Call AI to generate config
       const { data: configData, error: configError } = await supabase.functions.invoke(
@@ -80,7 +268,8 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         {
           body: { 
             description,
-            generateFullWorkflow: false
+            generateFullWorkflow: false,
+            knowledgeBaseIds: mountedKnowledgeBases.map(kb => kb.id),
           }
         }
       );
@@ -110,6 +299,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         model: config?.model || 'gpt-4',
         temperature: config?.temperature || 0.7,
         skills: skills,
+        knowledgeBases: mountedKnowledgeBases,
         createdFrom: 'consumer-magic-builder',
         originalDescription: description,
       };
@@ -142,6 +332,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         systemPrompt: manifest.systemPrompt,
         capabilities,
         description: manifest.description,
+        mountedKnowledgeBases,
       };
 
       return result;
@@ -150,15 +341,25 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       throw err;
     } finally {
       setIsBuilding(false);
+      setIsPaused(false);
     }
-  }, [user, advanceToStep]);
+  }, [user, advanceToStep, pauseStep, resumeStep, matchKnowledgeBases, waitForUserDecision]);
 
   const reset = useCallback(() => {
     abortRef.current = true;
     setIsBuilding(false);
+    setIsPaused(false);
     setCurrentStepIndex(-1);
     setSteps(DEFAULT_STEPS.map(s => ({ ...s, status: 'pending' })));
     setError(null);
+    setClarificationState(null);
+    selectedKBsRef.current = [];
+    
+    // Resolve any pending promises
+    if (resolveDecisionRef.current) {
+      resolveDecisionRef.current([]);
+      resolveDecisionRef.current = null;
+    }
   }, []);
 
   const progress = currentStepIndex >= 0 
@@ -168,11 +369,16 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
   return {
     build,
     isBuilding,
+    isPaused,
     currentStepIndex,
     steps,
     progress,
     error,
     reset,
+    clarificationState,
+    handleKnowledgeSelection,
+    handleSkipKnowledge,
+    handleFileUploaded,
   };
 }
 
