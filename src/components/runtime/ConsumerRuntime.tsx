@@ -195,17 +195,28 @@ export function ConsumerRuntime() {
     initSession();
   }, [agentId, user, isInitialized, findOrCreateSessionForAgent]);
 
-  // Load persisted messages into local state
+  // Load persisted messages into local state (guard against infinite loops)
+  const lastPersistedHashRef = useRef<string>("");
   useEffect(() => {
-    if (persistedMessages && persistedMessages.length > 0 && isInitialized) {
-      const formattedMessages: Message[] = persistedMessages.map((m, i) => ({
-        id: m.id || `msg-${i}`,
-        role: m.role as 'user' | 'assistant',
-        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
-        timestamp: m.timestamp,
-      }));
-      setMessages(formattedMessages);
-    }
+    if (!isInitialized) return;
+    if (!persistedMessages || persistedMessages.length === 0) return;
+
+    // Create a stable hash from message ids + updated timestamps
+    const hash = persistedMessages
+      .map((m) => `${m.id}:${new Date(m.timestamp).getTime()}`)
+      .join("|");
+
+    if (hash === lastPersistedHashRef.current) return;
+    lastPersistedHashRef.current = hash;
+
+    const formattedMessages: Message[] = persistedMessages.map((m, i) => ({
+      id: m.id || `msg-${i}`,
+      role: m.role as 'user' | 'assistant',
+      content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+      timestamp: m.timestamp,
+    }));
+
+    setMessages(formattedMessages);
   }, [persistedMessages, isInitialized]);
 
   // Load agent config when agent data is available
