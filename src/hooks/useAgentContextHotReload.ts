@@ -49,12 +49,16 @@ export function useAgentContextHotReload({
   const storeAgentConfig = useGlobalAgentStore((state) => state.agentConfig);
   const loadAgent = useGlobalAgentStore((state) => state.loadAgent);
 
-  // Sync initial config
+  // Store callback ref to avoid dependency issues
+  const onConfigUpdateRef = useRef(onConfigUpdate);
+  onConfigUpdateRef.current = onConfigUpdate;
+
+  // Sync initial config (only once)
   useEffect(() => {
-    if (initialConfig && !effectiveConfig) {
-      setEffectiveConfig(initialConfig);
+    if (initialConfig) {
+      setEffectiveConfig(prev => prev || initialConfig);
     }
-  }, [initialConfig, effectiveConfig]);
+  }, [initialConfig]);
 
   // Handle hot reload when store config changes
   useEffect(() => {
@@ -65,44 +69,44 @@ export function useAgentContextHotReload({
     
     const prevConfig = prevAgentConfigRef.current;
     
-    // Detect changes
-    if (prevConfig && prevConfig.id === storeAgentConfig.id) {
-      const prevManifest = prevConfig.manifest;
-      const newManifest = storeAgentConfig.manifest;
-      
-      const manifestChanged = JSON.stringify(prevManifest) !== JSON.stringify(newManifest);
-      const nameChanged = prevConfig.name !== storeAgentConfig.name;
-      const modelChanged = prevConfig.model !== storeAgentConfig.model;
-      
-      if (manifestChanged || nameChanged || modelChanged) {
-        // Hot update the effective config
-        const newEffectiveConfig: EffectiveAgentConfig = {
-          name: storeAgentConfig.name,
-          systemPrompt: (newManifest as any)?.systemPrompt || 
-                        effectiveConfig?.systemPrompt || 
-                        `你是${storeAgentConfig.name}，一个专业的AI助手。`,
-          model: storeAgentConfig.model,
-          agentId: storeAgentConfig.id,
-        };
-        
-        setEffectiveConfig(newEffectiveConfig);
-        setConfigVersion(v => v + 1);
-        setLastRefreshedAt(new Date());
-        
-        // Notify parent
-        onConfigUpdate?.(newEffectiveConfig);
-        
-        console.log('[HotReload] Config updated:', {
-          manifestChanged,
-          nameChanged,
-          modelChanged,
-          version: configVersion + 1,
-        });
-      }
-    }
-    
+    // Store current config for next comparison
     prevAgentConfigRef.current = storeAgentConfig;
-  }, [storeAgentConfig, agentId, effectiveConfig, configVersion, onConfigUpdate]);
+    
+    // Skip if no previous config to compare
+    if (!prevConfig || prevConfig.id !== storeAgentConfig.id) return;
+    
+    // Detect changes
+    const prevManifest = prevConfig.manifest;
+    const newManifest = storeAgentConfig.manifest;
+    
+    const manifestChanged = JSON.stringify(prevManifest) !== JSON.stringify(newManifest);
+    const nameChanged = prevConfig.name !== storeAgentConfig.name;
+    const modelChanged = prevConfig.model !== storeAgentConfig.model;
+    
+    if (manifestChanged || nameChanged || modelChanged) {
+      // Hot update the effective config
+      const newEffectiveConfig: EffectiveAgentConfig = {
+        name: storeAgentConfig.name,
+        systemPrompt: (newManifest as any)?.systemPrompt || 
+                      `你是${storeAgentConfig.name}，一个专业的AI助手。`,
+        model: storeAgentConfig.model,
+        agentId: storeAgentConfig.id,
+      };
+      
+      setEffectiveConfig(newEffectiveConfig);
+      setConfigVersion(v => v + 1);
+      setLastRefreshedAt(new Date());
+      
+      // Notify parent via ref
+      onConfigUpdateRef.current?.(newEffectiveConfig);
+      
+      console.log('[HotReload] Config updated:', {
+        manifestChanged,
+        nameChanged,
+        modelChanged,
+      });
+    }
+  }, [storeAgentConfig, agentId]);
 
   // Manual refresh
   const refreshContext = useCallback(async () => {
