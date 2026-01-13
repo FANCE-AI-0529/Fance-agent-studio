@@ -266,13 +266,21 @@ async function syncSkills(
         if (embedding) result.embeddingsGenerated++;
       }
 
+      const capabilities = extractCapabilitiesFromSkill(skill);
+      const slotType = inferSlotType('skill', skill.name as string, description, capabilities);
+      const ioSpec = standardizeIOSpec(
+        skill.input_schema as Record<string, unknown> | null,
+        skill.output_schema as Record<string, unknown> | null
+      );
+      const tags = extractOperationTags(skill);
+
       const indexEntry = {
         asset_type: 'skill',
         asset_id: skill.id,
         name: skill.name,
         description: description,
         category: skill.category || skill.origin,
-        capabilities: extractCapabilitiesFromSkill(skill),
+        capabilities: capabilities,
         input_schema: skill.input_schema || {},
         output_schema: skill.output_schema || {},
         risk_level: assessSkillRisk(skill),
@@ -280,6 +288,10 @@ async function syncSkills(
         embedding: embedding ? JSON.stringify(embedding) : null,
         is_active: true,
         user_id: userId,
+        // 混合编排引擎新增字段
+        slot_type: slotType,
+        io_spec: ioSpec,
+        tags: tags,
       };
 
       const { error: upsertError } = await supabase.from('asset_semantic_index').upsert(
@@ -341,13 +353,21 @@ async function syncMCPTools(
         if (embedding) result.embeddingsGenerated++;
       }
 
+      const mcpCapabilities = extractCapabilitiesFromMCP(mcp);
+      const mcpSlotType = inferSlotType('mcp_tool', mcp.name as string, description, mcpCapabilities);
+      const mcpIoSpec = standardizeIOSpec(
+        mcp.input_schema as Record<string, unknown> | null,
+        mcp.output_schema as Record<string, unknown> | null
+      );
+      const mcpTags = extractOperationTags(mcp);
+
       const indexEntry = {
         asset_type: 'mcp_tool', 
         asset_id: mcp.id, 
         name: mcp.name, 
         description: description,
         category: mcp.category || 'mcp', 
-        capabilities: extractCapabilitiesFromMCP(mcp),
+        capabilities: mcpCapabilities,
         input_schema: mcp.input_schema || {}, 
         output_schema: mcp.output_schema || {},
         risk_level: assessMCPRisk(mcp),
@@ -355,6 +375,10 @@ async function syncMCPTools(
         embedding: embedding ? JSON.stringify(embedding) : null,
         is_active: true, 
         user_id: userId,
+        // 混合编排引擎新增字段
+        slot_type: mcpSlotType,
+        io_spec: mcpIoSpec,
+        tags: mcpTags,
       };
 
       const { error: upsertError } = await supabase.from('asset_semantic_index').upsert(
@@ -477,13 +501,19 @@ async function syncKnowledgeBases(
       const intentTags = extractIntentTagsFromKB(kb.name as string, kb.description as string | null);
       const contextHook = generateContextHook(kb.name as string, intentTags);
 
+      const kbCapabilities = ['查询', '检索', '上下文', 'RAG'];
+      const kbIoSpec = standardizeIOSpec(
+        { query: { type: 'string', required: true }, topK: { type: 'number', default: 5 } },
+        { chunks: { type: 'array' }, context: { type: 'string' }, sources: { type: 'array' } }
+      );
+
       const indexEntry = {
         asset_type: 'knowledge_base', 
         asset_id: kb.id, 
         name: kb.name, 
         description: kb.description,
         category: 'knowledge', 
-        capabilities: ['查询', '检索', '上下文', 'RAG'],
+        capabilities: kbCapabilities,
         input_schema: { query: { type: 'string', required: true }, topK: { type: 'number', default: 5 } },
         output_schema: { chunks: { type: 'array' }, context: { type: 'string' }, sources: { type: 'array' } },
         risk_level: 'low',
@@ -500,6 +530,10 @@ async function syncKnowledgeBases(
         // 新增：意图标签和上下文钩子
         intent_tags: intentTags,
         context_hook: contextHook,
+        // 混合编排引擎新增字段
+        slot_type: 'perception', // 知识库固定为感知层
+        io_spec: kbIoSpec,
+        tags: ['read', 'search', 'rag'],
       };
 
       const { error: upsertError } = await supabase.from('asset_semantic_index').upsert(
@@ -518,6 +552,85 @@ async function syncKnowledgeBases(
     }
   }
   return result;
+}
+
+// ========== 槽位推断逻辑 ==========
+
+const SLOT_KEYWORDS = {
+  perception: [
+    '查询', '检索', '获取', '读取', '搜索', '知识', 'rag', '文档',
+    'get', 'fetch', 'read', 'search', 'retrieve', 'query', 'find', 'lookup'
+  ],
+  decision: [
+    '分析', '判断', '路由', '评估', '分类', '决策', '推理', '计算',
+    'analyze', 'decide', 'route', 'classify', 'evaluate', 'assess', 'determine', 'compute'
+  ],
+  action: [
+    '发送', '写入', '创建', '删除', '更新', '执行', '推送', '通知',
+    'send', 'write', 'create', 'delete', 'update', 'execute', 'post', 'put', 'push', 'notify'
+  ],
+};
+
+function inferSlotType(
+  assetType: string,
+  name: string,
+  description: string,
+  capabilities: string[]
+): 'perception' | 'decision' | 'action' | 'hybrid' {
+  const text = `${name} ${description}`.toLowerCase();
+  const capsLower = capabilities.map(c => c.toLowerCase());
+  
+  // 知识库默认为感知层
+  if (assetType === 'knowledge_base') return 'perception';
+  
+  const hasPerception = SLOT_KEYWORDS.perception.some(k => 
+    text.includes(k) || capsLower.some(c => c.includes(k))
+  );
+  const hasDecision = SLOT_KEYWORDS.decision.some(k => 
+    text.includes(k) || capsLower.some(c => c.includes(k))
+  );
+  const hasAction = SLOT_KEYWORDS.action.some(k => 
+    text.includes(k) || capsLower.some(c => c.includes(k))
+  );
+  
+  if (hasPerception && !hasDecision && !hasAction) return 'perception';
+  if (hasDecision && !hasAction) return 'decision';
+  if (hasAction) return 'action';
+  
+  return 'hybrid';
+}
+
+// 标准化 IO 规范
+function standardizeIOSpec(
+  inputSchema: Record<string, unknown> | null,
+  outputSchema: Record<string, unknown> | null
+): { input: { type: string; properties: Record<string, unknown> }; output: { type: string; properties: Record<string, unknown> } } {
+  return {
+    input: {
+      type: 'object',
+      properties: inputSchema || {},
+    },
+    output: {
+      type: 'object',
+      properties: outputSchema || {},
+    },
+  };
+}
+
+// 提取操作标签
+function extractOperationTags(skill: Record<string, unknown>): string[] {
+  const tags: string[] = [];
+  const name = ((skill.name as string) || '').toLowerCase();
+  const description = ((skill.description as string) || '').toLowerCase();
+  const text = `${name} ${description}`;
+  
+  if (/read|get|fetch|query|search/i.test(text)) tags.push('read');
+  if (/write|create|insert|update|delete/i.test(text)) tags.push('write');
+  if (/send|post|publish|notify/i.test(text)) tags.push('send');
+  if (/analyze|evaluate|decide|route/i.test(text)) tags.push('decision');
+  if (/transform|convert|format/i.test(text)) tags.push('transform');
+  
+  return tags;
 }
 
 // ========== 能力提取 ==========
