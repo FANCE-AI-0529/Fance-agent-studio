@@ -189,6 +189,12 @@ const Builder = () => {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showVerificationPanel, setShowVerificationPanel] = useState(false);
+  
+  // Inspiration auto-generation state
+  const [inspirationDescription, setInspirationDescription] = useState<string | null>(null);
+  const [autoGenerateFromInspiration, setAutoGenerateFromInspiration] = useState(false);
+  const [inspirationTitle, setInspirationTitle] = useState<string | null>(null);
+  const [showDeployConfirmDialog, setShowDeployConfirmDialog] = useState(false);
 
   const { setSelectedEdgeId, mockData: currentVariables } = useVariableStore();
 
@@ -444,6 +450,11 @@ const Builder = () => {
       const decodedDesc = decodeURIComponent(description);
       const decodedTitle = title ? decodeURIComponent(title) : "灵感智能体";
       const decodedCategory = category ? decodeURIComponent(category) : "通用";
+
+      // Store inspiration data for EnhancedAIGenerator
+      setInspirationDescription(decodedDesc);
+      setInspirationTitle(decodedTitle);
+      setAutoGenerateFromInspiration(true);
 
       // Set basic agent config from inspiration
       setAgentConfig((prev) => ({
@@ -1744,14 +1755,27 @@ const Builder = () => {
         {/* Enhanced AI Workflow Generator Modal */}
         <EnhancedAIGenerator
           isOpen={showAIGenerator}
-          onClose={() => setShowAIGenerator(false)}
-          onApply={(nodes, edges, config, knowledgeBases, result) => {
+          onClose={() => {
+            setShowAIGenerator(false);
+            // Clear inspiration state when closing
+            setInspirationDescription(null);
+            setAutoGenerateFromInspiration(false);
+            setInspirationTitle(null);
+          }}
+          initialDescription={inspirationDescription}
+          autoGenerate={autoGenerateFromInspiration}
+          inspirationTitle={inspirationTitle}
+          onApply={async (nodes, edges, config, knowledgeBases, result) => {
             // Update canvas nodes and edges
             setNodes(nodes);
             setEdges(edges);
             
-            // Update agent config
-            setAgentConfig(config);
+            // Update agent config (preserve inspiration title if set)
+            setAgentConfig(prev => ({
+              ...config,
+              name: inspirationTitle || config.name,
+              department: prev.department || config.department,
+            }));
             
             // Mount knowledge bases if provided
             knowledgeBases?.forEach(kb => addKnowledgeBase(kb));
@@ -1781,8 +1805,83 @@ const Builder = () => {
               title: "工作流已生成",
               description: `已创建 ${nodes.length} 个节点和 ${edges.length} 条连线`,
             });
+            
+            // If from inspiration, auto-save and show deploy confirmation
+            if (autoGenerateFromInspiration && user) {
+              setTimeout(async () => {
+                try {
+                  await handleSave();
+                  toast({
+                    title: "智能体已保存",
+                    description: "基于灵感生成的智能体已保存到您的账户",
+                  });
+                  // Show deploy confirmation dialog
+                  setShowDeployConfirmDialog(true);
+                } catch (err) {
+                  console.error("Auto-save failed:", err);
+                }
+                
+                // Clear inspiration state
+                setInspirationDescription(null);
+                setAutoGenerateFromInspiration(false);
+                setInspirationTitle(null);
+              }, 500);
+            }
           }}
         />
+
+        {/* Deploy Confirmation Dialog (after inspiration generation) */}
+        <Dialog open={showDeployConfirmDialog} onOpenChange={setShowDeployConfirmDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-status-success/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-status-success" />
+                </div>
+                <div>
+                  <DialogTitle>智能体生成完成！</DialogTitle>
+                  <DialogDescription className="mt-1">
+                    「{agentConfig.name}」已成功创建并保存
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                是否立即部署使其可以真实使用？
+              </p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-status-success" />
+                  <span>画布已显示完整工作流</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-status-success" />
+                  <span>Manus 规划内核已集成</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-status-success" />
+                  <span>智能体配置已保存</span>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setShowDeployConfirmDialog(false)}>
+                稍后部署
+              </Button>
+              <Button 
+                onClick={async () => {
+                  setShowDeployConfirmDialog(false);
+                  await handleDeploy();
+                }}
+                className="gap-2"
+              >
+                <Play className="h-4 w-4" />
+                立即部署
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Verification Test Panel Dialog */}
         <Dialog open={showVerificationPanel} onOpenChange={setShowVerificationPanel}>
