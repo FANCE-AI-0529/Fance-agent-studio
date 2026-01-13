@@ -3,7 +3,7 @@
 // Enhanced AI Agent Generator with Workflow DSL
 // =====================================================
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -71,6 +71,10 @@ interface EnhancedAIGeneratorProps {
     knowledgeBases?: MountedKnowledgeBase[],
     result?: GenerationResult
   ) => void;
+  // New props for inspiration auto-generation
+  initialDescription?: string | null;
+  autoGenerate?: boolean;
+  inspirationTitle?: string | null;
 }
 
 // ========== 主组件 ==========
@@ -79,6 +83,9 @@ export function EnhancedAIGenerator({
   isOpen,
   onClose,
   onApply,
+  initialDescription,
+  autoGenerate = false,
+  inspirationTitle,
 }: EnhancedAIGeneratorProps) {
   // 输入状态
   const [description, setDescription] = useState("");
@@ -91,6 +98,10 @@ export function EnhancedAIGenerator({
   const [maxNodes, setMaxNodes] = useState(10);
   const [autoApplyPolicies, setAutoApplyPolicies] = useState(true);
 
+  // Auto-generation tracking
+  const hasAutoTriggeredRef = useRef(false);
+  const hasAutoAppliedRef = useRef(false);
+
   // 使用新的工作流生成器
   const {
     generate,
@@ -101,6 +112,59 @@ export function EnhancedAIGenerator({
     error,
     reset,
   } = useWorkflowGenerator();
+
+  // Auto-fill description from initialDescription
+  useEffect(() => {
+    if (initialDescription && isOpen) {
+      setDescription(initialDescription);
+    }
+  }, [initialDescription, isOpen]);
+
+  // Auto-trigger generation when autoGenerate is true
+  useEffect(() => {
+    if (
+      autoGenerate &&
+      isOpen &&
+      initialDescription &&
+      !isGenerating &&
+      !lastResult &&
+      !hasAutoTriggeredRef.current
+    ) {
+      hasAutoTriggeredRef.current = true;
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        generate(initialDescription, {
+          mplpPolicy,
+          includeKnowledge,
+          maxNodes,
+          autoApplyPolicies,
+        });
+      }, 300);
+    }
+  }, [autoGenerate, isOpen, initialDescription, isGenerating, lastResult, generate, mplpPolicy, includeKnowledge, maxNodes, autoApplyPolicies]);
+
+  // Auto-apply result when generation completes (for inspiration flow)
+  useEffect(() => {
+    if (
+      autoGenerate &&
+      lastResult &&
+      !hasAutoAppliedRef.current
+    ) {
+      hasAutoAppliedRef.current = true;
+      // Auto-apply after a short delay
+      setTimeout(() => {
+        handleApplyInternal();
+      }, 500);
+    }
+  }, [autoGenerate, lastResult]);
+
+  // Reset refs when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      hasAutoTriggeredRef.current = false;
+      hasAutoAppliedRef.current = false;
+    }
+  }, [isOpen]);
 
   const handleScenarioSelect = (scenario: AIAgentScenario) => {
     setSelectedScenario(scenario);
@@ -122,12 +186,12 @@ export function EnhancedAIGenerator({
     }
   }, [description, mplpPolicy, includeKnowledge, maxNodes, autoApplyPolicies, generate]);
 
-  const handleApply = useCallback(() => {
+  const handleApplyInternal = useCallback(() => {
     if (!lastResult) return;
 
     // 从 DSL 提取 agent 配置
     const agentConfig: SimpleAgentConfig = {
-      name: lastResult.dsl?.name || "AI 生成的智能体",
+      name: inspirationTitle || lastResult.dsl?.name || "AI 生成的智能体",
       department: lastResult.dsl?.metadata?.category || "",
       model: "claude-3.5",
       systemPrompt: lastResult.dsl?.stages?.[0]?.nodes?.find(
@@ -144,7 +208,11 @@ export function EnhancedAIGenerator({
       lastResult
     );
     handleClose();
-  }, [lastResult, onApply]);
+  }, [lastResult, onApply, inspirationTitle]);
+
+  const handleApply = useCallback(() => {
+    handleApplyInternal();
+  }, [handleApplyInternal]);
 
   const handleClose = () => {
     reset();
@@ -155,6 +223,8 @@ export function EnhancedAIGenerator({
 
   const handleRegenerate = () => {
     reset();
+    hasAutoTriggeredRef.current = false;
+    hasAutoAppliedRef.current = false;
     handleGenerate();
   };
 
