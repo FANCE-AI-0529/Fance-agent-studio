@@ -1,9 +1,10 @@
 // =====================================================
-// DSL 到 React Flow Graph 转换器
-// DSL to React Flow Graph Converter
+// DSL 到 React Flow Graph 转换器 - 增强版
+// DSL to React Flow Graph Converter with Dagre Layout
 // =====================================================
 
 import { Node, Edge } from '@xyflow/react';
+import dagre from '@dagrejs/dagre';
 import {
   WorkflowDSL,
   StageSpec,
@@ -24,6 +25,8 @@ interface LayoutConfig {
   branchGap: number;
   startX: number;
   startY: number;
+  useDagre: boolean;
+  direction: 'TB' | 'LR' | 'BT' | 'RL';
 }
 
 const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
@@ -34,6 +37,8 @@ const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
   branchGap: 150,
   startX: 100,
   startY: 100,
+  useDagre: true,
+  direction: 'TB',
 };
 
 // ========== 节点类型映射 ==========
@@ -51,6 +56,57 @@ const NODE_TYPE_MAP: Record<string, string> = {
   output: 'outputNode',
 };
 
+// ========== Dagre 自动布局 ==========
+
+function applyDagreLayout(
+  nodes: GeneratedNode[],
+  edges: GeneratedEdge[],
+  config: LayoutConfig
+): GeneratedNode[] {
+  const g = new dagre.graphlib.Graph();
+  
+  g.setGraph({
+    rankdir: config.direction,
+    nodesep: config.horizontalGap,
+    ranksep: config.verticalGap,
+    marginx: config.startX,
+    marginy: config.startY,
+  });
+  
+  g.setDefaultEdgeLabel(() => ({}));
+
+  // 添加节点
+  nodes.forEach((node) => {
+    g.setNode(node.id, {
+      width: config.nodeWidth,
+      height: config.nodeHeight,
+    });
+  });
+
+  // 添加边
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
+  });
+
+  // 执行布局
+  dagre.layout(g);
+
+  // 应用布局结果
+  return nodes.map((node) => {
+    const dagreNode = g.node(node.id);
+    if (dagreNode) {
+      return {
+        ...node,
+        position: {
+          x: dagreNode.x - config.nodeWidth / 2,
+          y: dagreNode.y - config.nodeHeight / 2,
+        },
+      };
+    }
+    return node;
+  });
+}
+
 // ========== 主转换函数 ==========
 
 export function convertDSLToGraph(
@@ -62,7 +118,7 @@ export function convertDSLToGraph(
   variableMappings: GeneratedVariableMapping[];
 } {
   const layoutConfig = { ...DEFAULT_LAYOUT_CONFIG, ...config };
-  const nodes: GeneratedNode[] = [];
+  let nodes: GeneratedNode[] = [];
   const edges: GeneratedEdge[] = [];
   const variableMappings: GeneratedVariableMapping[] = [];
 
@@ -126,6 +182,11 @@ export function convertDSLToGraph(
     }
   }
 
+  // 4. 应用 Dagre 自动布局
+  if (layoutConfig.useDagre) {
+    nodes = applyDagreLayout(nodes, edges, layoutConfig);
+  }
+
   return { nodes, edges, variableMappings };
 }
 
@@ -184,7 +245,7 @@ function processSequentialStage(
 
     // 创建从前序节点的连线
     for (const prevId of prevNodeIds) {
-      const edge = createEdge(prevId, node.id, nodeSpec.inputMappings, variableMappings);
+      const edge = createEdge(prevId, node.id, nodeSpec.inputMappings, variableMappings, nodeSpec);
       edges.push(edge);
     }
 
@@ -521,13 +582,48 @@ function createNodeFromSpec(
   };
 }
 
+// ========== 草稿边机制 ==========
+
+interface EdgeConfidenceInfo {
+  confidence: number;
+  status: 'confirmed' | 'draft';
+  matchReason?: string;
+}
+
+function calculateEdgeConfidence(
+  inputMappings: { targetField: string; sourceExpression: string }[],
+  nodeSpec?: NodeSpec
+): EdgeConfidenceInfo {
+  if (!inputMappings || inputMappings.length === 0) {
+    return { confidence: 0.5, status: 'draft', matchReason: '无映射' };
+  }
+
+  // 检查映射是否完整
+  const hasRequiredFields = inputMappings.some(m => 
+    m.sourceExpression && m.sourceExpression.includes('{{')
+  );
+
+  if (!hasRequiredFields) {
+    return { confidence: 0.3, status: 'draft', matchReason: '映射不完整' };
+  }
+
+  // 高风险节点降低置信度
+  if (nodeSpec?.riskLevel === 'high') {
+    return { confidence: 0.7, status: 'draft', matchReason: '高风险操作需确认' };
+  }
+
+  return { confidence: 1.0, status: 'confirmed', matchReason: '完整映射' };
+}
+
 function createEdge(
   sourceId: string,
   targetId: string,
   inputMappings: { targetField: string; sourceExpression: string }[],
-  variableMappings: GeneratedVariableMapping[]
+  variableMappings: GeneratedVariableMapping[],
+  nodeSpec?: NodeSpec
 ): GeneratedEdge {
   const edgeId = `edge-${sourceId}-${targetId}`;
+  const confidenceInfo = calculateEdgeConfidence(inputMappings, nodeSpec);
 
   // 如果有输入映射，添加到变量映射表
   if (inputMappings && inputMappings.length > 0) {
@@ -544,14 +640,24 @@ function createEdge(
     });
   }
 
+  // 根据置信度设置边样式
+  const isDraft = confidenceInfo.status === 'draft';
+  
   return {
     id: edgeId,
     source: sourceId,
     target: targetId,
     animated: true,
+    style: isDraft 
+      ? { stroke: '#ef4444', strokeDasharray: '5,5', strokeWidth: 2 }
+      : undefined,
     data: {
       hasMappings: inputMappings && inputMappings.length > 0,
       mappingCount: inputMappings?.length || 0,
+      confidence: confidenceInfo.confidence,
+      status: confidenceInfo.status,
+      matchReason: confidenceInfo.matchReason,
+      needsReview: isDraft,
     },
   };
 }
@@ -578,9 +684,16 @@ export function convertToReactFlowFormat(
     sourceHandle: e.sourceHandle,
     targetHandle: e.targetHandle,
     animated: e.animated,
+    style: e.style,
     data: e.data,
     type: 'animatedFlow',
   }));
 
   return { nodes, edges };
+}
+
+// ========== 布局方向切换 ==========
+
+export function getLayoutDirection(direction: 'horizontal' | 'vertical'): 'LR' | 'TB' {
+  return direction === 'horizontal' ? 'LR' : 'TB';
 }
