@@ -1,0 +1,248 @@
+// =====================================================
+// 沙箱验证 Edge Function
+// Sandbox Validate - Isolated Agent Testing Environment
+// =====================================================
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface SandboxRequest {
+  agentConfig: {
+    name: string;
+    systemPrompt: string;
+    model?: string;
+  };
+  testMessage: string;
+  generatedSkills?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    capabilities: string[];
+    templateContent?: string;
+  }>;
+  timeoutMs?: number;
+}
+
+interface SandboxResponse {
+  success: boolean;
+  response?: string;
+  error?: string;
+  statusCode: number;
+  duration: number;
+  failedComponent?: string;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const startTime = Date.now();
+
+  try {
+    const request: SandboxRequest = await req.json();
+    const {
+      agentConfig,
+      testMessage,
+      generatedSkills = [],
+      timeoutMs = 10000,
+    } = request;
+
+    if (!agentConfig || !testMessage) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "agentConfig and testMessage are required",
+          statusCode: 400,
+          duration: Date.now() - startTime,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 1. 验证生成的技能配置 (简单语法检查)
+    for (const skill of generatedSkills) {
+      if (skill.templateContent) {
+        try {
+          // 检查是否是有效的 YAML-like 结构
+          if (skill.templateContent.includes('{{') && !skill.templateContent.includes('}}')) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: `技能 "${skill.name}" 的模板语法错误：未闭合的模板标签`,
+                statusCode: 422,
+                duration: Date.now() - startTime,
+                failedComponent: skill.id,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        } catch (parseError) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: `技能 "${skill.name}" 配置解析失败`,
+              statusCode: 422,
+              duration: Date.now() - startTime,
+              failedComponent: skill.id,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
+    // 2. 构建系统提示词 (包含技能信息)
+    let enhancedSystemPrompt = agentConfig.systemPrompt;
+    
+    if (generatedSkills.length > 0) {
+      enhancedSystemPrompt += `\n\n你具备以下能力：\n`;
+      for (const skill of generatedSkills) {
+        enhancedSystemPrompt += `- ${skill.name}: ${skill.description}\n`;
+        if (skill.capabilities.length > 0) {
+          enhancedSystemPrompt += `  能力: ${skill.capabilities.join(', ')}\n`;
+        }
+      }
+    }
+
+    // 3. 使用 Lovable AI Gateway 进行测试 (模拟对话)
+    const aiGatewayUrl = Deno.env.get("AI_GATEWAY_URL") || "https://ai.lovable.dev/api/chat";
+    
+    // 创建带超时的 fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(aiGatewayUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("AI_GATEWAY_KEY") || ""}`,
+        },
+        body: JSON.stringify({
+          model: agentConfig.model || "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: enhancedSystemPrompt },
+            { role: "user", content: testMessage },
+          ],
+          max_tokens: 500,
+          temperature: 0.7,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `AI 服务返回错误: ${response.status}`,
+            statusCode: response.status,
+            duration: Date.now() - startTime,
+            failedComponent: "ai_gateway",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const aiResponse = await response.json();
+      const content = aiResponse.choices?.[0]?.message?.content 
+        || aiResponse.content 
+        || aiResponse.response
+        || "";
+
+      // 4. 验证响应有效性
+      if (!content || content.trim().length === 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "AI 返回了空响应",
+            statusCode: 204,
+            duration: Date.now() - startTime,
+            failedComponent: "agent",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // 检查响应是否包含错误指示
+      const errorIndicators = [
+        "无法处理",
+        "不支持",
+        "出错了",
+        "发生错误",
+        "I cannot",
+        "I'm unable",
+        "error occurred",
+      ];
+
+      const hasErrorIndicator = errorIndicators.some(
+        (indicator) => content.toLowerCase().includes(indicator.toLowerCase())
+      );
+
+      if (hasErrorIndicator) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "AI 响应包含错误指示",
+            response: content,
+            statusCode: 200,
+            duration: Date.now() - startTime,
+            failedComponent: "agent",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // 5. 成功返回
+      return new Response(
+        JSON.stringify({
+          success: true,
+          response: content,
+          statusCode: 200,
+          duration: Date.now() - startTime,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `请求超时 (${timeoutMs}ms)`,
+            statusCode: 408,
+            duration: Date.now() - startTime,
+            failedComponent: "network",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      throw fetchError;
+    }
+
+  } catch (error: unknown) {
+    console.error("Sandbox validation error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: errorMessage,
+        statusCode: 500,
+        duration: Date.now() - startTime,
+        failedComponent: "sandbox_system",
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

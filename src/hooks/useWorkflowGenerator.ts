@@ -1,6 +1,7 @@
 // =====================================================
 // 工作流生成器 Hook
 // useWorkflowGenerator - AI 驱动的工作流生成
+// 支持构建计划 (Build Plan) 和沙箱验证
 // =====================================================
 
 import { useState, useCallback } from 'react';
@@ -23,6 +24,8 @@ import {
   extractRequiredPermissions,
   PERMISSION_METADATA,
 } from '@/utils/policyInjector';
+import { useBuildPlanStore } from '@/stores/buildPlanStore';
+import type { GeneratedSkillSpec, AssetMatch } from '@/types/buildPlan';
 
 // ========== 类型定义 ==========
 
@@ -31,6 +34,7 @@ export interface GenerateOptions {
   includeKnowledge?: boolean;
   maxNodes?: number;
   autoApplyPolicies?: boolean;
+  enableBuildPlan?: boolean; // 启用构建计划可视化
 }
 
 export interface RiskAssessment {
@@ -128,6 +132,9 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
   const [lastResult, setLastResult] = useState<GenerationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Build Plan Store
+  const buildPlanStore = useBuildPlanStore();
+
   const generate = useCallback(async (
     description: string,
     options: GenerateOptions = {}
@@ -141,19 +148,32 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
       includeKnowledge = true,
       maxNodes = 10,
       autoApplyPolicies = true,
+      enableBuildPlan = true,
     } = options;
 
     setIsGenerating(true);
     setError(null);
     setProgress(0);
 
+    // 初始化构建计划
+    if (enableBuildPlan) {
+      buildPlanStore.initializePlan(description);
+    }
+
     try {
-      // Step 1: 调用 AI 生成 DSL
+      // Phase 1: 意图分析
+      if (enableBuildPlan) buildPlanStore.startPhase('intentAnalysis');
       setCurrentStep('正在分析需求...');
       setProgress(10);
 
-      await delay(300); // 短暂延迟以显示进度
+      await delay(300);
+      
+      if (enableBuildPlan) {
+        buildPlanStore.completePhase('intentAnalysis', '意图提取完成');
+      }
 
+      // Phase 2: 资产检查
+      if (enableBuildPlan) buildPlanStore.startPhase('assetCheck');
       setCurrentStep('正在检索相关资产...');
       setProgress(25);
 
@@ -172,6 +192,7 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
       }
 
       if (!data?.dsl) {
+        if (enableBuildPlan) buildPlanStore.failPhase('assetCheck', '生成失败');
         throw new Error('生成失败：未返回有效的工作流 DSL');
       }
 
@@ -187,6 +208,30 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
       const generatedSkills = data.suggestedAssets?.generatedSkills || [];
       const autoMountedKBs = data.suggestedAssets?.autoMountedKBs || [];
 
+      // 更新构建计划
+      if (enableBuildPlan) {
+        buildPlanStore.completePhase('assetCheck', `找到 ${generatedSkills.length + autoMountedKBs.length} 个相关资产`);
+        
+        // 设置资产检查结果
+        if (gapAnalysis) {
+          buildPlanStore.setAssetCheckResult({
+            matchedAssets: (data.suggestedAssets?.skills || []).map((s: { id: string; name: string; riskLevel?: string }) => ({
+              type: 'skill' as const,
+              id: s.id,
+              name: s.name,
+              score: 0.8,
+              action: 'use' as const,
+            })),
+            missingCapabilities: gapAnalysis.missingCapabilities || [],
+            needsGeneration: gapAnalysis.coverageScore < 0.6,
+            coverageScore: gapAnalysis.coverageScore,
+          });
+        }
+
+        // Phase 3: 缺口分析
+        buildPlanStore.startPhase('gapAnalysis');
+      }
+
       // 如果有缺口，添加警告
       if (gapAnalysis && gapAnalysis.coverageScore < 0.6) {
         apiWarnings.push({
@@ -194,9 +239,41 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
           message: `资产覆盖度较低 (${(gapAnalysis.coverageScore * 100).toFixed(0)}%)，已自动生成 ${generatedSkills.length} 个技能`,
           severity: 'warning' as const,
         });
+        
+        if (enableBuildPlan) {
+          buildPlanStore.completePhase('gapAnalysis', `覆盖度 ${(gapAnalysis.coverageScore * 100).toFixed(0)}%，需生成 ${generatedSkills.length} 技能`);
+          
+          // Phase 4: 技能生成
+          buildPlanStore.startPhase('skillGeneration');
+          for (const skill of generatedSkills) {
+            buildPlanStore.addGeneratedSkill({
+              id: skill.id,
+              name: skill.name,
+              description: skill.description || '',
+              category: skill.category || 'general',
+              capabilities: skill.capabilities || [],
+              inputSchema: {},
+              outputSchema: {},
+              generatedAt: new Date().toISOString(),
+              isGenerated: true,
+            });
+          }
+          buildPlanStore.completePhase('skillGeneration', `生成 ${generatedSkills.length} 个技能`);
+        }
+      } else if (enableBuildPlan) {
+        buildPlanStore.completePhase('gapAnalysis', '资产覆盖充足');
+        buildPlanStore.skipPhase('skillGeneration', '无需生成新技能');
+      }
+
+      // 设置自动挂载的知识库
+      if (enableBuildPlan && autoMountedKBs.length > 0) {
+        buildPlanStore.setAutoMountedKBs(autoMountedKBs);
       }
 
       setProgress(50);
+      
+      // Phase 5: 组装
+      if (enableBuildPlan) buildPlanStore.startPhase('assembly');
       setCurrentStep('正在应用治理策略...');
 
       // Step 2: 验证并注入策略
@@ -268,6 +345,13 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         });
       }
 
+      // 完成组装阶段
+      if (enableBuildPlan) {
+        buildPlanStore.completePhase('assembly', `生成 ${nodes.length} 个节点`);
+        // 验证阶段将在 EnhancedAIGenerator 中处理
+        buildPlanStore.updatePhase('validation', { status: 'pending' });
+      }
+
       setProgress(100);
       setCurrentStep('生成完成');
 
@@ -289,6 +373,16 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         })),
         autoMountedKBs,
       };
+
+      // 设置输出到构建计划
+      if (enableBuildPlan) {
+        buildPlanStore.setOutput({
+          nodes,
+          edges,
+          agentConfig: dsl,
+          dsl,
+        });
+      }
 
       setLastResult(result);
       return result;
