@@ -98,6 +98,8 @@ import { EdgeMappingPanel } from "@/components/builder/variables/EdgeMappingPane
 import { useVariableStore } from "@/stores/variableStore";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
+import { CanvasHighlightControls } from "@/components/builder/CanvasHighlightControls";
+import { useCanvasHighlight } from "@/hooks/useCanvasHighlight";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
@@ -266,6 +268,14 @@ const Builder = () => {
     onNodeUpdate: handleNodeDebugUpdate,
     onEdgeUpdate: handleEdgeDebugUpdate,
   });
+
+  // Canvas highlight hook for data flow animation
+  const {
+    isAnimating: isHighlightAnimating,
+    startAnimation: startHighlightAnimation,
+    getNodeHighlightClass,
+    getEdgeHighlightData,
+  } = useCanvasHighlight();
 
   // Update edges with debug mode info
   useEffect(() => {
@@ -1600,6 +1610,9 @@ const Builder = () => {
                 </motion.div>
               )}
             </ReactFlow>
+
+            {/* Canvas Highlight Controls - for data flow animation */}
+            <CanvasHighlightControls />
 
             {/* Build Replay Overlay */}
             {replayState.isReplaying && (

@@ -14,11 +14,19 @@ import {
   Circle,
   Play,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import type { DataFlowPath, NodeSpec } from '@/types/verificationTypes';
 
 interface DataFlowVisualizationProps {
@@ -26,6 +34,7 @@ interface DataFlowVisualizationProps {
   nodes: NodeSpec[];
   highlightedPath?: string[];
   onPathSelect?: (path: DataFlowPath) => void;
+  onHighlightOnCanvas?: (path: DataFlowPath) => void;
   className?: string;
 }
 
@@ -68,6 +77,7 @@ export function DataFlowVisualization({
   nodes,
   highlightedPath,
   onPathSelect,
+  onHighlightOnCanvas,
   className,
 }: DataFlowVisualizationProps) {
   const [selectedPathIndex, setSelectedPathIndex] = useState(0);
@@ -113,15 +123,48 @@ export function DataFlowVisualization({
             <GitBranch className="h-4 w-4 text-primary" />
             数据流路径
           </CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleAnimate}
-            disabled={isAnimating}
-          >
-            <Play className="h-3 w-3 mr-1" />
-            演示
-          </Button>
+          <div className="flex items-center gap-2">
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleAnimate}
+                    disabled={isAnimating}
+                  >
+                    <Play className="h-3 w-3 mr-1" />
+                    演示
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>在面板内演示数据流</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {selectedPath && onHighlightOnCanvas && (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => {
+                        onHighlightOnCanvas(selectedPath);
+                        toast({
+                          title: '画布高亮已启动',
+                          description: '请查看右侧画布上的数据流动画',
+                        });
+                      }}
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      画布高亮
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>在画布上高亮显示数据流路径</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
