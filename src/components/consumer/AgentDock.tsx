@@ -1,21 +1,31 @@
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { useRef } from "react";
-import { Plus, Bot } from "lucide-react";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { useRef, useState } from "react";
+import { Plus, Bot, MessageCircle, MoreHorizontal, Trash2, Edit, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMyAgents } from "@/hooks/useAgents";
+import { useMyAgents, useDeleteAgent } from "@/hooks/useAgents";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { toast } from "sonner";
 
 interface DockItemProps {
   agent?: {
     id: string;
     name: string;
     avatar?: string;
+    hasActiveSession?: boolean;
   };
   isAddButton?: boolean;
   mouseX: any;
   onClick: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
 }
 
-function DockItem({ agent, isAddButton, mouseX, onClick }: DockItemProps) {
+function DockItem({ agent, isAddButton, mouseX, onClick, onDelete, onEdit }: DockItemProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   const distance = useTransform(mouseX, (val: number) => {
@@ -23,7 +33,7 @@ function DockItem({ agent, isAddButton, mouseX, onClick }: DockItemProps) {
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [48, 64, 48]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [56, 72, 56]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   const getAvatarUrl = (name: string) => {
@@ -31,7 +41,7 @@ function DockItem({ agent, isAddButton, mouseX, onClick }: DockItemProps) {
     return `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}&backgroundColor=1a1a2e`;
   };
 
-  return (
+  const content = (
     <motion.div
       ref={ref}
       style={{ width }}
@@ -70,16 +80,56 @@ function DockItem({ agent, isAddButton, mouseX, onClick }: DockItemProps) {
           )}
         </div>
 
+        {/* Active session indicator */}
+        {agent?.hasActiveSession && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-background flex items-center justify-center"
+          >
+            <MessageCircle className="w-2 h-2 text-primary-foreground" />
+          </motion.div>
+        )}
+
         {/* Tooltip */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileHover={{ opacity: 1, y: 0 }}
-          className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-popover border border-border text-xs whitespace-nowrap pointer-events-none"
+          className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-popover border border-border text-xs whitespace-nowrap pointer-events-none shadow-lg"
         >
-          {isAddButton ? "创建新 Agent" : agent?.name}
+          {isAddButton ? "创建新智能体" : agent?.name}
         </motion.div>
       </div>
     </motion.div>
+  );
+
+  if (isAddButton) {
+    return content;
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        {content}
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onClick={onClick}>
+          <MessageCircle className="mr-2 h-4 w-4" />
+          开始对话
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onEdit}>
+          <Edit className="mr-2 h-4 w-4" />
+          编辑智能体
+        </ContextMenuItem>
+        <ContextMenuItem 
+          onClick={onDelete}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          删除智能体
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -93,8 +143,10 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
   const result = useMyAgents();
   const agents = result.data;
   const isLoading = result.isLoading;
+  const deleteAgent = useDeleteAgent();
 
-  const recentAgents = (agents || []).slice(0, 5);
+  // Show all agents (no slicing)
+  const allAgents = agents || [];
 
   const handleAgentClick = (agentId: string) => {
     navigate(`/runtime?agent=${agentId}`);
@@ -106,6 +158,19 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
     } else {
       navigate('/builder');
     }
+  };
+
+  const handleDeleteAgent = async (agentId: string, agentName: string) => {
+    try {
+      await deleteAgent.mutateAsync(agentId);
+      toast.success(`已删除智能体 "${agentName}"`);
+    } catch (error) {
+      toast.error("删除失败，请重试");
+    }
+  };
+
+  const handleEditAgent = (agentId: string) => {
+    navigate(`/builder?agent=${agentId}`);
   };
 
   if (isLoading) {
@@ -122,32 +187,44 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
-        className="flex items-end gap-3 px-4 py-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50"
+        className="flex items-end gap-3 px-4 py-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 max-w-[90vw] overflow-x-auto"
       >
-        {recentAgents.length > 0 ? (
-          <>
-            {recentAgents.map((agent) => (
-              <DockItem
-                key={agent.id}
-                agent={{
-                  id: agent.id,
-                  name: agent.name,
-                  avatar: (agent.manifest as any)?.avatar,
-                }}
-                mouseX={mouseX}
-                onClick={() => handleAgentClick(agent.id)}
-              />
-            ))}
-            
-            {/* Separator */}
-            <div className="w-px h-10 bg-border/50 mx-1" />
-          </>
-        ) : (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm px-4">
-            <Bot className="h-4 w-4" />
-            <span>还没有 Agent</span>
-          </div>
-        )}
+        <AnimatePresence mode="popLayout">
+          {allAgents.length > 0 ? (
+            <>
+              {allAgents.map((agent) => (
+                <motion.div
+                  key={agent.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <DockItem
+                    agent={{
+                      id: agent.id,
+                      name: agent.name,
+                      avatar: (agent.manifest as any)?.avatar,
+                      hasActiveSession: false,
+                    }}
+                    mouseX={mouseX}
+                    onClick={() => handleAgentClick(agent.id)}
+                    onDelete={() => handleDeleteAgent(agent.id, agent.name)}
+                    onEdit={() => handleEditAgent(agent.id)}
+                  />
+                </motion.div>
+              ))}
+              
+              {/* Separator */}
+              <div className="w-px h-12 bg-border/50 mx-1 flex-shrink-0" />
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm px-4">
+              <Bot className="h-4 w-4" />
+              <span>还没有智能体</span>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Add button */}
         <DockItem
@@ -162,9 +239,9 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="text-center text-xs text-muted-foreground/40 mt-2"
+        className="text-center text-xs text-muted-foreground/60 mt-3"
       >
-        最近使用的 Agent
+        我的智能体 · 右键查看更多操作
       </motion.p>
     </motion.div>
   );

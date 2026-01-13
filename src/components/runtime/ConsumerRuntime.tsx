@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -9,8 +9,10 @@ import {
   User,
   Sparkles,
   Terminal,
-  Code2,
   Wrench,
+  History,
+  Brain,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,11 +21,24 @@ import { useAppModeStore } from "@/stores/appModeStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAgent } from "@/hooks/useAgents";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useChatSession } from "@/hooks/useChatSession";
+import { useAgentChat, ChatMessage as AgentChatMessage } from "@/hooks/useAgentChat";
+import { useMemoryContext } from "@/hooks/useMemory";
+import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 import logoIcon from "@/assets/logo-icon.png";
 
 interface Message {
@@ -37,6 +52,7 @@ interface AgentConfig {
   name: string;
   systemPrompt: string;
   model: string;
+  agentId?: string;
 }
 
 export function ConsumerRuntime() {
@@ -49,14 +65,68 @@ export function ConsumerRuntime() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
-  const [chatSessionId] = useState(() => `session-${Date.now()}`);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Get agentId from URL
-  const agentId = searchParams.get('agentId');
-  // Note: useAgent refetches automatically when window regains focus via React Query defaults
+  // Get agentId from URL - support both 'agent' and 'agentId' params
+  const agentId = searchParams.get('agent') || searchParams.get('agentId');
   const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId);
+
+  // Chat session management for persistence
+  const {
+    session,
+    messages: persistedMessages,
+    isLoading: isLoadingSession,
+    loadSession,
+    createSession,
+    addMessage: saveMessageToDb,
+    updateLastAssistantMessage,
+    sessions,
+    findOrCreateSessionForAgent,
+  } = useChatSession();
+
+  // Memory context for long-term memory
+  const { generateContext, hasMemories } = useMemoryContext(agentId || undefined);
+  const memoryContext = generateContext();
+  
+  // Auto memory extraction
+  const { extractAndSaveMemories } = useAutoMemoryExtraction(agentId || undefined);
+
+  // AI Chat hook
+  const { streamChat, isLoading: isAiLoading, error: aiError } = useAgentChat({
+    agentConfig: agentConfig ? {
+      ...agentConfig,
+      agentId: agentId || undefined,
+    } : undefined,
+  });
+
+  // Initialize session for the agent
+  useEffect(() => {
+    const initSession = async () => {
+      if (agentId && user && !isInitialized) {
+        const existingSession = await findOrCreateSessionForAgent(agentId);
+        if (existingSession) {
+          setIsInitialized(true);
+        }
+      }
+    };
+    initSession();
+  }, [agentId, user, isInitialized, findOrCreateSessionForAgent]);
+
+  // Load persisted messages into local state
+  useEffect(() => {
+    if (persistedMessages && persistedMessages.length > 0 && isInitialized) {
+      const formattedMessages: Message[] = persistedMessages.map((m, i) => ({
+        id: m.id || `msg-${i}`,
+        role: m.role as 'user' | 'assistant',
+        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+        timestamp: m.timestamp,
+      }));
+      setMessages(formattedMessages);
+    }
+  }, [persistedMessages, isInitialized]);
 
   // Load agent config when agent data is available
   useEffect(() => {
@@ -66,10 +136,11 @@ export function ConsumerRuntime() {
         name: agent.name,
         systemPrompt: manifest?.systemPrompt || `你是${agent.name}，一个专业的AI助手。`,
         model: agent.model || 'gpt-4',
+        agentId: agent.id,
       });
 
-      // Add welcome message
-      if (messages.length === 0) {
+      // Add welcome message if no persisted messages
+      if (messages.length === 0 && isInitialized && (!persistedMessages || persistedMessages.length === 0)) {
         const welcomeMessage: Message = {
           id: 'welcome',
           role: 'assistant',
@@ -77,25 +148,21 @@ export function ConsumerRuntime() {
           timestamp: new Date(),
         };
         setMessages([welcomeMessage]);
+        // Save welcome message
+        saveMessageToDb({
+          role: 'assistant',
+          content: welcomeMessage.content,
+        });
       }
     }
-  }, [agent]);
-
-  // Handle initial prompt from URL (legacy support)
-  useEffect(() => {
-    const prompt = searchParams.get('prompt');
-    if (prompt && !agentId) {
-      handleSubmit(prompt);
-      navigate('/runtime', { replace: true });
-    }
-  }, [searchParams, agentId]);
+  }, [agent, isInitialized, persistedMessages]);
 
   // Auto scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, streamingContent]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -109,9 +176,9 @@ export function ConsumerRuntime() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleMode]);
 
-  const handleSubmit = async (value?: string) => {
+  const handleSubmit = useCallback(async (value?: string) => {
     const messageContent = value || input.trim();
-    if (!messageContent || isLoading) return;
+    if (!messageContent || isLoading || isAiLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -123,20 +190,77 @@ export function ConsumerRuntime() {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setStreamingContent("");
 
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      const agentName = agentConfig?.name || '智能助手';
-      const assistantMessage: Message = {
+    // Save user message to database
+    await saveMessageToDb({
+      role: 'user',
+      content: messageContent,
+    });
+
+    // Build messages for AI with memory context
+    const systemPromptWithMemory = agentConfig 
+      ? `${agentConfig.systemPrompt}\n\n${memoryContext ? `## 用户记忆上下文\n${memoryContext}` : ''}`
+      : '';
+
+    const chatMessages: AgentChatMessage[] = [
+      ...messages.filter(m => m.id !== 'welcome').map(m => ({
+        role: m.role,
+        content: m.content,
+      })),
+      { role: 'user' as const, content: messageContent },
+    ];
+
+    let fullResponse = "";
+
+    try {
+      await streamChat({
+        messages: chatMessages,
+        onDelta: (delta) => {
+          fullResponse += delta;
+          setStreamingContent(fullResponse);
+        },
+        onDone: async () => {
+          // Create final assistant message
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: fullResponse,
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, assistantMessage]);
+          setStreamingContent("");
+          setIsLoading(false);
+
+          // Save assistant message to database
+          await saveMessageToDb({
+            role: 'assistant',
+            content: fullResponse,
+          });
+
+          // Extract and save memories from this conversation turn
+          extractAndSaveMemories(messageContent, fullResponse);
+        },
+        onThinking: (module, message, level) => {
+          console.log(`[${module}] ${message} (${level})`);
+        },
+      });
+    } catch (error) {
+      console.error("Chat error:", error);
+      setIsLoading(false);
+      setStreamingContent("");
+      
+      // Fallback response on error
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `我已收到你的请求："${messageContent}"。\n\n作为${agentName}，我会帮助你完成这个任务。目前这是一个演示响应，实际功能正在开发中。\n\n你可以继续描述你的需求。`,
+        content: "抱歉，我遇到了一些问题。请稍后再试。",
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500);
-  };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  }, [input, isLoading, isAiLoading, messages, agentConfig, memoryContext, streamChat, saveMessageToDb, extractAndSaveMemories]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -145,8 +269,18 @@ export function ConsumerRuntime() {
     }
   };
 
+  const handleNewConversation = async () => {
+    if (agentId) {
+      await createSession(agentId);
+      setMessages([]);
+      setIsInitialized(false);
+      // Reinitialize
+      setTimeout(() => setIsInitialized(true), 100);
+    }
+  };
+
   // Show loading state while fetching agent
-  if (agentId && isLoadingAgent) {
+  if (agentId && (isLoadingAgent || isLoadingSession)) {
     return (
       <AuroraBackground>
         <div className="min-h-screen flex items-center justify-center">
@@ -156,7 +290,7 @@ export function ConsumerRuntime() {
             className="text-center"
           >
             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">正在加载...</p>
+            <p className="text-muted-foreground">正在加载对话...</p>
           </motion.div>
         </div>
       </AuroraBackground>
@@ -188,6 +322,17 @@ export function ConsumerRuntime() {
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
                   <span className="font-semibold text-sm">{agentConfig.name}</span>
+                  {memoryContext && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <Brain className="h-3 w-3" />
+                          记忆
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>此智能体已启用长期记忆</TooltipContent>
+                    </Tooltip>
+                  )}
                 </>
               ) : (
                 <>
@@ -199,7 +344,64 @@ export function ConsumerRuntime() {
 
             {/* Actions */}
             <div className="flex items-center gap-1">
-              {/* Open in Studio button - only show if we have an agent */}
+              {/* New conversation */}
+              {agentId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleNewConversation}
+                      className="h-9 w-9"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>新建对话</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* History panel */}
+              {agentId && sessions && sessions.length > 1 && (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>历史对话</SheetTitle>
+                      <SheetDescription>
+                        查看与此智能体的历史对话记录
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-4 space-y-2">
+                      {sessions
+                        .filter(s => s.agentId === agentId)
+                        .map((s) => (
+                          <Button
+                            key={s.id}
+                            variant={session?.id === s.id ? "secondary" : "ghost"}
+                            className="w-full justify-start text-left"
+                            onClick={() => loadSession(s.id)}
+                          >
+                            <div className="truncate">
+                              {new Date(s.createdAt).toLocaleDateString('zh-CN', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                          </Button>
+                        ))}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+
+              {/* Open in Studio button */}
               {agentId && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -210,10 +412,9 @@ export function ConsumerRuntime() {
                         ejectToStudio({
                           agentId,
                           targetPage: 'builder',
-                          chatSessionId,
-                          returnUrl: `/runtime?agentId=${agentId}`,
+                          chatSessionId: session?.id || '',
+                          returnUrl: `/runtime?agent=${agentId}`,
                         });
-                        // Navigate after animation starts
                         setTimeout(() => {
                           navigate(`/builder/${agentId}`);
                         }, 800);
@@ -221,7 +422,7 @@ export function ConsumerRuntime() {
                       className="gap-2 border-primary/30 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5"
                     >
                       <Wrench className="h-4 w-4" />
-                      <span className="hidden sm:inline">Open in Studio</span>
+                      <span className="hidden sm:inline">Studio</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>查看 Agent 配置和调试</TooltipContent>
@@ -250,7 +451,7 @@ export function ConsumerRuntime() {
         <div className="flex-1 pt-20 pb-32">
           <ScrollArea ref={scrollRef} className="h-full">
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-              {/* Empty state - only show if no agent and no messages */}
+              {/* Empty state */}
               {messages.length === 0 && !agentConfig && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -308,8 +509,27 @@ export function ConsumerRuntime() {
                 ))}
               </AnimatePresence>
 
+              {/* Streaming content */}
+              {streamingContent && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl px-4 py-3 max-w-[80%]">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {streamingContent}
+                      <span className="inline-block w-2 h-4 bg-primary/50 ml-1 animate-pulse" />
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Loading indicator */}
-              {isLoading && (
+              {isLoading && !streamingContent && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -340,7 +560,7 @@ export function ConsumerRuntime() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="输入你的消息..."
-                disabled={isLoading}
+                disabled={isLoading || isAiLoading}
                 rows={1}
                 className="
                   w-full bg-transparent py-4 pl-5 pr-14
@@ -354,10 +574,10 @@ export function ConsumerRuntime() {
               <Button
                 size="icon"
                 onClick={() => handleSubmit()}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || isAiLoading}
                 className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-xl"
               >
-                {isLoading ? (
+                {isLoading || isAiLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Send className="h-4 w-4" />
