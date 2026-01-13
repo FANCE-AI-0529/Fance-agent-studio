@@ -242,6 +242,11 @@ export interface GeneratedEdge {
   targetHandle?: string;
   animated?: boolean;
   data?: Record<string, unknown>;
+  style?: {
+    stroke?: string;
+    strokeDasharray?: string;
+    strokeWidth?: number;
+  };
 }
 
 export interface GeneratedVariableMapping {

@@ -221,8 +221,9 @@ serve(async (req) => {
 
 // ========== 同步 Skills ==========
 
+// deno-lint-ignore no-explicit-any
 async function syncSkills(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   assetId?: string,
   generateEmbeddingsFlag = true,
@@ -300,8 +301,9 @@ async function syncSkills(
   return result;
 }
 
+// deno-lint-ignore no-explicit-any
 async function syncMCPTools(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   assetId?: string,
   generateEmbeddingsFlag = true,
@@ -373,8 +375,9 @@ async function syncMCPTools(
   return result;
 }
 
+// deno-lint-ignore no-explicit-any
 async function syncKnowledgeBases(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   assetId?: string,
   generateEmbeddingsFlag = true
