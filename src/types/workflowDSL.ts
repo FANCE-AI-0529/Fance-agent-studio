@@ -215,6 +215,18 @@ export interface SemanticAsset {
   similarity?: number;           // 语义相似度得分
 }
 
+// ========== 合规报告类型 ==========
+
+export interface ComplianceReport {
+  isCompliant: boolean;
+  totalRiskyOperations: number;
+  protectedOperations: number;
+  unprotectedOperations: string[];
+  autoFixedOperations: string[];
+  permissionsDeclared: string[];
+  recommendations: string[];
+}
+
 // ========== 生成结果类型 ==========
 
 export interface GeneratedWorkflow {
@@ -225,6 +237,8 @@ export interface GeneratedWorkflow {
   injectedInterventions: InjectedIntervention[];
   warnings: GenerationWarning[];
   suggestions: GenerationSuggestion[];
+  complianceReport?: ComplianceReport;
+  requiredPermissions?: string[];
 }
 
 export interface GeneratedNode {

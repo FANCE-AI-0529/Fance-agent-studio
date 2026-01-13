@@ -19,6 +19,7 @@ import {
   Info,
   CheckCircle2,
   XCircle,
+  Shield,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -31,7 +32,10 @@ import {
   InjectedIntervention,
   GenerationWarning,
   RiskLevel,
+  ComplianceReport,
 } from "@/types/workflowDSL";
+import { ComplianceReportPanel, PermissionBadges } from "./ComplianceReportPanel";
+import { PERMISSION_METADATA } from "@/utils/policyInjector";
 
 // ========== 类型定义 ==========
 
@@ -49,6 +53,8 @@ interface WorkflowPreviewProps {
   isLoading?: boolean;
   progress?: number;
   currentStep?: string;
+  complianceReport?: ComplianceReport | null;
+  requiredPermissions?: string[];
 }
 
 // ========== 风险级别配置 ==========
@@ -69,10 +75,13 @@ export function WorkflowPreview({
   isLoading,
   progress = 0,
   currentStep,
+  complianceReport,
+  requiredPermissions = [],
 }: WorkflowPreviewProps) {
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
   const [visibleNodes, setVisibleNodes] = useState<Set<string>>(new Set());
   const [animationComplete, setAnimationComplete] = useState(false);
+  const [showCompliance, setShowCompliance] = useState(false);
 
   // 渐进式节点显示动画
   useEffect(() => {

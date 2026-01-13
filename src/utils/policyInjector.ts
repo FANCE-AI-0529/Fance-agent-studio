@@ -29,6 +29,27 @@ interface MCPRiskMapping {
   };
 }
 
+// ========== 合规报告类型 ==========
+
+export interface ComplianceReport {
+  isCompliant: boolean;
+  totalRiskyOperations: number;
+  protectedOperations: number;
+  unprotectedOperations: string[];
+  autoFixedOperations: string[];
+  permissionsDeclared: string[];
+  recommendations: string[];
+}
+
+// ========== 权限元数据类型 ==========
+
+export interface PermissionMeta {
+  label: string;
+  description: string;
+  riskLevel: RiskLevel;
+  icon: string;
+}
+
 // ========== MPLP 风险规则库 ==========
 
 export const MPLP_RISK_RULES: RiskRule[] = [
@@ -126,6 +147,21 @@ export const MCP_RISK_MAPPING: MCPRiskMapping = {
   'slack:post_channel': { riskLevel: 'medium', reason: '频道发布' },
 };
 
+// ========== 权限元数据定义 ==========
+
+export const PERMISSION_METADATA: Record<string, PermissionMeta> = {
+  read: { label: "读取", description: "读取数据和文件", riskLevel: "low", icon: "Eye" },
+  write: { label: "写入", description: "创建或修改数据", riskLevel: "medium", icon: "Edit" },
+  delete: { label: "删除", description: "删除数据或文件", riskLevel: "high", icon: "Trash2" },
+  network: { label: "网络", description: "发送外部请求", riskLevel: "medium", icon: "Globe" },
+  payment: { label: "支付", description: "执行支付操作", riskLevel: "high", icon: "CreditCard" },
+  execute: { label: "执行", description: "运行代码或脚本", riskLevel: "high", icon: "Terminal" },
+  rag_query: { label: "RAG查询", description: "检索知识库", riskLevel: "low", icon: "Database" },
+  email: { label: "邮件", description: "发送邮件通知", riskLevel: "medium", icon: "Globe" },
+  storage: { label: "存储", description: "文件存储操作", riskLevel: "medium", icon: "Database" },
+  auth: { label: "认证", description: "身份认证操作", riskLevel: "high", icon: "Shield" },
+};
+
 // ========== MPLP 策略阈值 ==========
 
 const POLICY_THRESHOLDS: Record<MPLPPolicy, { minRiskForIntervention: RiskLevel }> = {
@@ -150,6 +186,13 @@ export function validateAndInjectPolicies(
 
   // 深拷贝工作流
   const validatedWorkflow: WorkflowDSL = JSON.parse(JSON.stringify(workflow));
+  
+  // 跟踪已处理的节点，避免重复注入
+  const processedNodes = new Map<string, boolean>();
+  
+  // 收集所有已存在的干预节点
+  const existingInterventions = new Set<string>();
+  collectExistingInterventions(validatedWorkflow.stages, existingInterventions);
 
   // 设置治理策略
   validatedWorkflow.governance = {
@@ -160,7 +203,15 @@ export function validateAndInjectPolicies(
 
   // 遍历所有阶段和节点
   for (const stage of validatedWorkflow.stages) {
-    processStageNodes(stage, threshold.minRiskForIntervention, injectedInterventions, warnings);
+    processStageNodes(
+      stage, 
+      threshold.minRiskForIntervention, 
+      injectedInterventions, 
+      warnings,
+      processedNodes,
+      existingInterventions,
+      validatedWorkflow.stages
+    );
   }
 
   return {
@@ -170,44 +221,114 @@ export function validateAndInjectPolicies(
   };
 }
 
+// ========== 收集已存在的干预节点 ==========
+
+function collectExistingInterventions(stages: StageSpec[], existing: Set<string>): void {
+  for (const stage of stages) {
+    for (let i = 0; i < stage.nodes.length; i++) {
+      const node = stage.nodes[i];
+      if (node.type === 'intervention') {
+        // 记录这个干预节点保护的目标节点
+        const targetId = node.config?.targetNodeId as string;
+        if (targetId) {
+          existing.add(targetId);
+        }
+      }
+    }
+    // 递归处理分支
+    if (stage.branches) {
+      for (const branch of stage.branches) {
+        const branchStage: StageSpec = {
+          id: `branch-${branch.id}`,
+          name: branch.name,
+          type: 'sequential',
+          nodes: branch.nodes,
+        };
+        collectExistingInterventions([branchStage], existing);
+      }
+    }
+  }
+}
+
+// ========== 检查节点的前置路径是否已有干预节点 ==========
+
+function hasUpstreamIntervention(
+  nodeId: string,
+  nodeIndex: number,
+  stageNodes: NodeSpec[],
+  existingInterventions: Set<string>
+): boolean {
+  // 检查是否已被保护
+  if (existingInterventions.has(nodeId)) {
+    return true;
+  }
+  
+  // 检查前一个节点是否是干预节点
+  if (nodeIndex > 0) {
+    const prevNode = stageNodes[nodeIndex - 1];
+    if (prevNode.type === 'intervention') {
+      const targetId = prevNode.config?.targetNodeId as string;
+      if (targetId === nodeId) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
 // ========== 处理阶段节点 ==========
 
 function processStageNodes(
   stage: StageSpec,
   minRiskLevel: RiskLevel,
   interventions: InjectedIntervention[],
-  warnings: GenerationWarning[]
+  warnings: GenerationWarning[],
+  processedNodes: Map<string, boolean>,
+  existingInterventions: Set<string>,
+  allStages: StageSpec[]
 ): void {
   const nodesToInsert: Array<{ index: number; intervention: NodeSpec }> = [];
 
   for (let i = 0; i < stage.nodes.length; i++) {
     const node = stage.nodes[i];
+    
+    // 跳过已处理的节点
+    if (processedNodes.has(node.id)) {
+      continue;
+    }
+    
     const riskAnalysis = analyzeNodeRisk(node);
 
     // 更新节点的风险级别
     node.riskLevel = riskAnalysis.riskLevel;
+    processedNodes.set(node.id, true);
 
     // 检查是否需要干预
     if (shouldInjectIntervention(riskAnalysis.riskLevel, minRiskLevel)) {
-      const intervention = createInterventionNode(node, riskAnalysis);
-      
-      nodesToInsert.push({ index: i, intervention });
-      
-      interventions.push({
-        nodeId: intervention.id,
-        beforeNodeId: node.id,
-        type: riskAnalysis.interventionType,
-        reason: riskAnalysis.reason,
-        riskLevel: riskAnalysis.riskLevel,
-      });
+      // 检查是否已有前置干预节点
+      if (!hasUpstreamIntervention(node.id, i, stage.nodes, existingInterventions)) {
+        const intervention = createInterventionNode(node, riskAnalysis);
+        
+        nodesToInsert.push({ index: i, intervention });
+        existingInterventions.add(node.id);
+        
+        interventions.push({
+          nodeId: intervention.id,
+          beforeNodeId: node.id,
+          type: riskAnalysis.interventionType,
+          reason: riskAnalysis.reason,
+          riskLevel: riskAnalysis.riskLevel,
+        });
 
-      // 添加警告
-      warnings.push({
-        code: 'RISK_DETECTED',
-        message: `检测到${getRiskLevelLabel(riskAnalysis.riskLevel)}操作: ${riskAnalysis.reason}`,
-        nodeId: node.id,
-        severity: riskAnalysis.riskLevel === 'high' ? 'warning' : 'info',
-      });
+        // 添加警告
+        warnings.push({
+          code: 'RISK_DETECTED',
+          message: `检测到${getRiskLevelLabel(riskAnalysis.riskLevel)}操作: ${riskAnalysis.reason}`,
+          nodeId: node.id,
+          severity: riskAnalysis.riskLevel === 'high' ? 'warning' : 'info',
+        });
+      }
     }
   }
 
@@ -226,7 +347,15 @@ function processStageNodes(
         type: 'sequential',
         nodes: branch.nodes,
       };
-      processStageNodes(branchStage, minRiskLevel, interventions, warnings);
+      processStageNodes(
+        branchStage, 
+        minRiskLevel, 
+        interventions, 
+        warnings,
+        processedNodes,
+        existingInterventions,
+        allStages
+      );
       branch.nodes = branchStage.nodes;
     }
   }
@@ -365,6 +494,148 @@ function generateInterventionMessage(
     default:
       return `请确认是否执行"${action}"。`;
   }
+}
+
+// ========== 从工作流中提取所需权限 ==========
+
+export function extractRequiredPermissions(workflow: WorkflowDSL): string[] {
+  const permissions = new Set<string>();
+  
+  const processNodes = (nodes: NodeSpec[]) => {
+    for (const node of nodes) {
+      if (node.type === 'mcp_action') {
+        const name = (node.name || '').toLowerCase();
+        const assetId = (node.assetId || '').toLowerCase();
+        const combined = `${name} ${assetId}`;
+        
+        // 根据 MCP 工具类型添加权限
+        if (/delete|remove|drop|destroy|erase|purge/.test(combined)) {
+          permissions.add('delete');
+        }
+        if (/write|create|insert|add|update|modify/.test(combined)) {
+          permissions.add('write');
+        }
+        if (/email|send|notify|broadcast/.test(combined)) {
+          permissions.add('email');
+          permissions.add('network');
+        }
+        if (/payment|pay|charge|transfer|refund|stripe/.test(combined)) {
+          permissions.add('payment');
+        }
+        if (/execute|script|code|eval|run/.test(combined)) {
+          permissions.add('execute');
+        }
+        if (/api|webhook|http|request|fetch/.test(combined)) {
+          permissions.add('network');
+        }
+        if (/file|storage|upload|download/.test(combined)) {
+          permissions.add('storage');
+        }
+        if (/auth|login|password|credential|token/.test(combined)) {
+          permissions.add('auth');
+        }
+        if (/read|get|fetch|query|select/.test(combined)) {
+          permissions.add('read');
+        }
+      }
+      
+      if (node.type === 'knowledge') {
+        permissions.add('read');
+        permissions.add('rag_query');
+      }
+      
+      if (node.type === 'skill') {
+        permissions.add('read');
+      }
+    }
+  };
+
+  for (const stage of workflow.stages) {
+    processNodes(stage.nodes);
+    if (stage.branches) {
+      for (const branch of stage.branches) {
+        processNodes(branch.nodes);
+      }
+    }
+  }
+  
+  return Array.from(permissions);
+}
+
+// ========== 生成合规报告 ==========
+
+export function generateComplianceReport(
+  workflow: WorkflowDSL,
+  injectedInterventions: InjectedIntervention[],
+  mplpPolicy: MPLPPolicy = 'default'
+): ComplianceReport {
+  const report: ComplianceReport = {
+    isCompliant: true,
+    totalRiskyOperations: 0,
+    protectedOperations: 0,
+    unprotectedOperations: [],
+    autoFixedOperations: [],
+    permissionsDeclared: extractRequiredPermissions(workflow),
+    recommendations: [],
+  };
+
+  const threshold = POLICY_THRESHOLDS[mplpPolicy];
+  const protectedNodeIds = new Set(injectedInterventions.map(i => i.beforeNodeId));
+
+  const analyzeNodes = (nodes: NodeSpec[]) => {
+    for (const node of nodes) {
+      const riskAnalysis = analyzeNodeRisk(node);
+      
+      // 检查是否需要保护
+      if (shouldInjectIntervention(riskAnalysis.riskLevel, threshold.minRiskForIntervention)) {
+        report.totalRiskyOperations++;
+        
+        if (protectedNodeIds.has(node.id)) {
+          report.protectedOperations++;
+          report.autoFixedOperations.push(
+            `已为"${node.name || node.id}"添加${getInterventionName(riskAnalysis.interventionType)}`
+          );
+        } else if (node.type === 'intervention') {
+          // 跳过干预节点本身
+        } else {
+          report.unprotectedOperations.push(
+            `"${node.name || node.id}": ${riskAnalysis.reason}`
+          );
+          report.isCompliant = false;
+        }
+      }
+    }
+  };
+
+  for (const stage of workflow.stages) {
+    analyzeNodes(stage.nodes);
+    if (stage.branches) {
+      for (const branch of stage.branches) {
+        analyzeNodes(branch.nodes);
+      }
+    }
+  }
+
+  // 生成建议
+  if (report.unprotectedOperations.length > 0) {
+    report.recommendations.push(
+      `建议为 ${report.unprotectedOperations.length} 个未保护操作添加人工确认节点`
+    );
+  }
+  
+  if (report.permissionsDeclared.includes('payment')) {
+    report.recommendations.push(
+      '检测到支付权限，建议在生产环境启用严格模式 (strict)'
+    );
+  }
+  
+  if (report.permissionsDeclared.includes('delete')) {
+    report.recommendations.push(
+      '检测到删除权限，建议添加操作日志记录'
+    );
+  }
+
+  return report;
 }
 
 // ========== 批量风险评估 ==========
