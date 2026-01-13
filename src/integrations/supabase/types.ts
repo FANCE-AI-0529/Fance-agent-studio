@@ -1395,6 +1395,70 @@ export type Database = {
         }
         Relationships: []
       }
+      core_memories: {
+        Row: {
+          agent_id: string | null
+          category: string
+          created_at: string | null
+          id: string
+          is_read_only: boolean | null
+          key: string
+          priority: number | null
+          token_count: number | null
+          updated_at: string | null
+          user_id: string
+          value: string
+        }
+        Insert: {
+          agent_id?: string | null
+          category: string
+          created_at?: string | null
+          id?: string
+          is_read_only?: boolean | null
+          key: string
+          priority?: number | null
+          token_count?: number | null
+          updated_at?: string | null
+          user_id: string
+          value: string
+        }
+        Update: {
+          agent_id?: string | null
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_read_only?: boolean | null
+          key?: string
+          priority?: number | null
+          token_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "core_memories_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "core_memories_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "core_memories_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_earnings: {
         Row: {
           amount: number
@@ -1740,6 +1804,73 @@ export type Database = {
           },
           {
             foreignKeyName: "document_processing_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dreaming_tasks: {
+        Row: {
+          agent_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input: Json | null
+          output: Json | null
+          priority: number | null
+          started_at: string | null
+          status: string | null
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          priority?: number | null
+          started_at?: string | null
+          status?: string | null
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          priority?: number | null
+          started_at?: string | null
+          status?: string | null
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dreaming_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dreaming_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dreaming_tasks_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "trending_agents"
@@ -2652,6 +2783,76 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "llm_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_archives: {
+        Row: {
+          agent_id: string | null
+          compressed_at: string | null
+          emotional_tone: string | null
+          expires_at: string | null
+          id: string
+          key_insights: Json | null
+          original_message_count: number | null
+          session_id: string | null
+          summary: string
+          token_count: number | null
+          topics_discussed: Json | null
+          user_id: string
+          user_patterns: Json | null
+        }
+        Insert: {
+          agent_id?: string | null
+          compressed_at?: string | null
+          emotional_tone?: string | null
+          expires_at?: string | null
+          id?: string
+          key_insights?: Json | null
+          original_message_count?: number | null
+          session_id?: string | null
+          summary: string
+          token_count?: number | null
+          topics_discussed?: Json | null
+          user_id: string
+          user_patterns?: Json | null
+        }
+        Update: {
+          agent_id?: string | null
+          compressed_at?: string | null
+          emotional_tone?: string | null
+          expires_at?: string | null
+          id?: string
+          key_insights?: Json | null
+          original_message_count?: number | null
+          session_id?: string | null
+          summary?: string
+          token_count?: number | null
+          topics_discussed?: Json | null
+          user_id?: string
+          user_patterns?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_archives_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_archives_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_archives_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
             referencedColumns: ["id"]
           },
         ]
