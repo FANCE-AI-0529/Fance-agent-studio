@@ -106,7 +106,7 @@ export function HackerTransition() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.1 }}
                 className={`
-                  ${line.includes('ACCESS GRANTED') || line.includes('ready') 
+                  ${line?.includes('ACCESS GRANTED') || line?.includes('ready') 
                     ? 'text-green-400 font-bold' 
                     : 'text-primary/80'
                   }
