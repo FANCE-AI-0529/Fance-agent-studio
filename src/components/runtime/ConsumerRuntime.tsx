@@ -152,10 +152,15 @@ export function ConsumerRuntime() {
     enabled: !!agentId && isInitialized,
   });
 
-  // Context hot reload hook
+  // Context hot reload hook - memoize initialConfig to avoid infinite loops
+  const initialHotReloadConfig = useMemo(() => {
+    if (!agentConfig) return null;
+    return { ...agentConfig, agentId: agentId || '' };
+  }, [agentConfig?.name, agentConfig?.systemPrompt, agentConfig?.model, agentId]);
+
   const { effectiveConfig, configVersion } = useAgentContextHotReload({
     agentId,
-    initialConfig: agentConfig ? { ...agentConfig, agentId: agentId || '' } : null,
+    initialConfig: initialHotReloadConfig,
     onConfigUpdate: handleConfigUpdate,
   });
 

@@ -120,11 +120,18 @@ export function useStudioSyncNotifications({
   const recentEvents = useGlobalAgentStore((state) => state.recentEvents);
   const agentConfig = useGlobalAgentStore((state) => state.agentConfig);
   const setAgentId = useGlobalAgentStore((state) => state.setAgentId);
-  const subscribe = useGlobalAgentStore((state) => state.subscribe);
+  const isSubscribed = useGlobalAgentStore((state) => state.isSubscribed);
   
   // Track processed event timestamps to avoid duplicates
   const processedEventsRef = useRef<Set<string>>(new Set());
   const prevConfigRef = useRef<AgentConfig | null>(null);
+  
+  // Store callbacks in refs to avoid dependency issues
+  const onSystemMessageRef = useRef(onSystemMessage);
+  onSystemMessageRef.current = onSystemMessage;
+  
+  const onContextRefreshRef = useRef(onContextRefresh);
+  onContextRefreshRef.current = onContextRefresh;
 
   // Subscribe to agent updates when agentId changes
   useEffect(() => {
@@ -170,39 +177,39 @@ export function useStudioSyncNotifications({
         timestamp: event.timestamp,
       };
       
-      onSystemMessage(systemMessage);
+      onSystemMessageRef.current(systemMessage);
     });
-  }, [recentEvents, agentId, enabled, onSystemMessage]);
+  }, [recentEvents, agentId, enabled]);
 
   // Handle context refresh on agent config changes
   useEffect(() => {
-    if (!enabled || !agentConfig || !onContextRefresh) return;
+    if (!enabled || !agentConfig) return;
 
     const prevConfig = prevConfigRef.current;
-    
-    if (prevConfig && prevConfig.id === agentConfig.id) {
-      // Check if manifest/systemPrompt changed
-      const prevManifest = prevConfig.manifest;
-      const newManifest = agentConfig.manifest;
-      
-      if (JSON.stringify(prevManifest) !== JSON.stringify(newManifest)) {
-        // Trigger context refresh
-        onContextRefresh(agentConfig);
-      }
-    }
-    
     prevConfigRef.current = agentConfig;
-  }, [agentConfig, enabled, onContextRefresh]);
+    
+    if (!prevConfig || prevConfig.id !== agentConfig.id) return;
+    
+    // Check if manifest/systemPrompt changed
+    const prevManifest = prevConfig.manifest;
+    const newManifest = agentConfig.manifest;
+    
+    if (JSON.stringify(prevManifest) !== JSON.stringify(newManifest)) {
+      // Trigger context refresh
+      onContextRefreshRef.current?.(agentConfig);
+    }
+  }, [agentConfig, enabled]);
 
   // Expose manual refresh method
   const forceRefresh = useCallback(() => {
-    if (agentConfig && onContextRefresh) {
-      onContextRefresh(agentConfig);
+    const config = useGlobalAgentStore.getState().agentConfig;
+    if (config) {
+      onContextRefreshRef.current?.(config);
     }
-  }, [agentConfig, onContextRefresh]);
+  }, []);
 
   return {
     forceRefresh,
-    isSubscribed: useGlobalAgentStore((state) => state.isSubscribed),
+    isSubscribed,
   };
 }
