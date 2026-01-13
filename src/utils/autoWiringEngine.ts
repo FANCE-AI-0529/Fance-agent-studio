@@ -529,3 +529,18 @@ export function getDraftEdges(
 // ========== 导出置信度阈值 ==========
 
 export { CONFIDENCE_THRESHOLDS };
+
+// ========== 智能胶水层集成 ==========
+// 重新导出智能连线相关模块供外部使用
+
+export { inferIOPorts, inferAllNodeIOPorts } from '@/utils/ioTypeInference';
+export { needsTypeAdapter, createAdapterNode, TYPE_COMPATIBILITY_MATRIX } from '@/utils/typeAdapterInjector';
+export { injectManusConnections, detectMCPOperationType, needsManusLogging } from '@/utils/manusWiringIntegration';
+export type { 
+  IOPort, 
+  IODataType, 
+  WiringConnection, 
+  AdapterNodeSpec, 
+  ManusLoggerNodeSpec,
+  IntelligentWiringResult 
+} from '@/types/wiringTypes';
