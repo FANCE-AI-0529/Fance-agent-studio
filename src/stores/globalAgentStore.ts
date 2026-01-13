@@ -68,6 +68,7 @@ export interface GlobalAgentState {
   lastSyncedAt: Date | null;
   isDirty: boolean;
   isSyncing: boolean;
+  isGraphModifying: boolean; // True when graph is being modified (for Consumer UI indicator)
   syncError: string | null;
   
   // Subscription State
@@ -121,6 +122,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       lastSyncedAt: null,
       isDirty: false,
       isSyncing: false,
+      isGraphModifying: false,
       syncError: null,
       isSubscribed: false,
       channel: null,
@@ -217,7 +219,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
         const { agentId } = get();
         if (!agentId) return null;
         
-        set({ isSyncing: true });
+        set({ isSyncing: true, isGraphModifying: true });
         
         try {
           const { data, error } = await supabase
@@ -240,6 +242,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
           set((state) => ({
             nodes: [...state.nodes, newNode],
             isSyncing: false,
+            isGraphModifying: false,
             isDirty: false,
           }));
           
@@ -248,7 +251,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
           return newNode;
         } catch (error: any) {
           console.error('Failed to add node:', error);
-          set({ isSyncing: false, syncError: error.message });
+          set({ isSyncing: false, isGraphModifying: false, syncError: error.message });
           return null;
         }
       },
@@ -644,6 +647,7 @@ export const selectEdges = (state: GlobalAgentState) => state.edges;
 export const selectAgentConfig = (state: GlobalAgentState) => state.agentConfig;
 export const selectIsSyncing = (state: GlobalAgentState) => state.isSyncing;
 export const selectIsSubscribed = (state: GlobalAgentState) => state.isSubscribed;
+export const selectIsGraphModifying = (state: GlobalAgentState) => state.isGraphModifying;
 export const selectRecentEvents = (state: GlobalAgentState) => state.recentEvents;
 export const selectRemoteEvents = (state: GlobalAgentState) => 
   state.recentEvents.filter(e => e.source === 'remote');

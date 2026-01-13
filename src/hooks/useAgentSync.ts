@@ -1,6 +1,10 @@
 import { useEffect, useCallback, useMemo } from 'react';
-import { useGlobalAgentStore, selectNodes, selectEdges, selectAgentConfig, selectRemoteEvents, type SyncEvent } from '@/stores/globalAgentStore';
+import { useGlobalAgentStore, selectRemoteEvents } from '@/stores/globalAgentStore';
+import type { SyncEvent } from '@/stores/globalAgentStore';
 import type { Node, Edge } from '@xyflow/react';
+
+// Re-export SyncEvent for consumers
+export type { SyncEvent };
 
 /**
  * Hook to synchronize an agent with the global store and Realtime

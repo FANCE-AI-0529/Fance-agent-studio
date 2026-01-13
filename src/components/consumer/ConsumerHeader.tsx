@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAppModeStore } from "@/stores/appModeStore";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConsumerSyncBadge } from "@/components/consumer/ConsumerSyncBadge";
 import logoIcon from "@/assets/logo-icon.png";
 import {
   Tooltip,
@@ -45,6 +46,9 @@ export function ConsumerHeader() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
+          {/* Studio Live Sync indicator */}
+          <ConsumerSyncBadge />
+          
           <ThemeToggle />
           
           {/* Chat history */}
