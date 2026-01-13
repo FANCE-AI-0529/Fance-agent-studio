@@ -3,6 +3,8 @@
 // Build Plan Types - Builder's Self-Planning System
 // =====================================================
 
+import type { AgentScore, RedTeamResults, TestRunResult } from './agentEvals';
+
 // 构建计划阶段状态
 export type BuildPhaseStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
@@ -80,6 +82,16 @@ export interface KnowledgeBaseSuggestion {
   isAutoMounted?: boolean;
 }
 
+// 评估结果
+export interface EvaluationResult {
+  score: AgentScore;
+  testRuns: TestRunResult[];
+  redTeamResults: RedTeamResults;
+  passed: boolean;
+  duration: number;
+  completedAt: string;
+}
+
 // 完整构建计划
 export interface BuildPlan {
   id: string;
@@ -94,6 +106,7 @@ export interface BuildPlan {
     skillGeneration: BuildPlanPhase;
     assembly: BuildPlanPhase;
     validation: BuildPlanPhase;
+    evaluation: BuildPlanPhase;  // 新增：智能体评估阶段
   };
   
   // 分析结果
@@ -128,6 +141,9 @@ export interface BuildPlan {
     }>;
     retryCount: number;
   };
+  
+  // 评估结果 (新增)
+  evaluationResult?: EvaluationResult;
 }
 
 // 构建计划事件
@@ -175,6 +191,11 @@ export function createInitialBuildPlan(description: string): BuildPlan {
       validation: {
         id: 'validation',
         name: '沙箱验证',
+        status: 'pending',
+      },
+      evaluation: {
+        id: 'evaluation',
+        name: '智能体质检',
         status: 'pending',
       },
     },

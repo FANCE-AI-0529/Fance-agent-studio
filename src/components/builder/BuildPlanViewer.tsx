@@ -18,6 +18,8 @@ import {
   Package,
   TestTube2,
   AlertTriangle,
+  ClipboardCheck,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBuildPlanStore } from '@/stores/buildPlanStore';
@@ -33,6 +35,7 @@ const PHASE_ICONS: Record<keyof BuildPlan['phases'], React.ElementType> = {
   skillGeneration: FileCode2,
   assembly: Package,
   validation: TestTube2,
+  evaluation: ClipboardCheck,
 };
 
 // 状态颜色映射
@@ -64,6 +67,7 @@ export function BuildPlanViewer({
     'skillGeneration',
     'assembly',
     'validation',
+    'evaluation',
   ];
 
   const completedCount = useMemo(() => {
@@ -302,6 +306,70 @@ export function BuildPlanViewer({
                     </span>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Evaluation Result */}
+          {currentPlan.evaluationResult && (
+            <div className="pt-2 border-t border-border">
+              <div className="text-primary mb-1">## Agent 质检报告</div>
+              <div className="text-xs space-y-2">
+                {/* 综合评分 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">综合评分:</span>
+                  <span className={cn(
+                    'font-bold',
+                    currentPlan.evaluationResult.score.overall >= 80 ? 'text-green-500' :
+                    currentPlan.evaluationResult.score.overall >= 60 ? 'text-yellow-500' : 'text-destructive'
+                  )}>
+                    {currentPlan.evaluationResult.score.overall.toFixed(0)}分
+                  </span>
+                </div>
+                
+                {/* 分项评分 */}
+                <div className="grid grid-cols-2 gap-1 text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    逻辑自洽: {currentPlan.evaluationResult.score.logicCoherence.toFixed(0)}%
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    安全合规: {currentPlan.evaluationResult.score.securityCompliance.toFixed(0)}%
+                  </div>
+                </div>
+                
+                {/* 红队测试 */}
+                {currentPlan.evaluationResult.redTeamResults && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">红队测试:</span>
+                    <span className={cn(
+                      currentPlan.evaluationResult.redTeamResults.securityScore === 100 
+                        ? 'text-green-500' : 'text-destructive'
+                    )}>
+                      {currentPlan.evaluationResult.redTeamResults.attacksBlocked}/
+                      {currentPlan.evaluationResult.redTeamResults.totalAttacks} 攻击已拦截
+                    </span>
+                  </div>
+                )}
+                
+                {/* 通过状态 */}
+                <div className={cn(
+                  'flex items-center gap-2 pt-1',
+                  currentPlan.evaluationResult.passed ? 'text-green-500' : 'text-destructive'
+                )}>
+                  {currentPlan.evaluationResult.passed ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>质检通过，可安全交付</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3 w-3" />
+                      <span>质检未通过，需要修复</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
