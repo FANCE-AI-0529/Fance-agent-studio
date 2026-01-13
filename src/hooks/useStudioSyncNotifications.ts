@@ -1,11 +1,13 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useGlobalAgentStore, SyncEvent, AgentConfig } from '@/stores/globalAgentStore';
 import type { SystemMessage, SystemMessageType } from '@/components/consumer/SystemBubble';
+import { MCP_CAPABILITY_MAP } from '@/hooks/useCapabilityGuide';
 
 interface UseStudioSyncNotificationsOptions {
   agentId: string | null;
   onSystemMessage: (message: SystemMessage) => void;
   onContextRefresh?: (newConfig: AgentConfig) => void;
+  onPersonalityChange?: (newPersonalityName?: string) => void;
   enabled?: boolean;
 }
 
@@ -32,8 +34,12 @@ function getSystemMessageType(event: SyncEvent): SystemMessageType | null {
       if (nodeType === 'knowledge' || nodeType === 'knowledgeBase') {
         return 'knowledge_mounted';
       }
-      // skill, mcp, generatedSkill, etc.
-      if (['skill', 'mcp', 'generatedSkill', 'mcpAction'].includes(nodeType)) {
+      // MCP tools get their own type
+      if (['mcp', 'mcpAction', 'mcpTool'].includes(nodeType)) {
+        return 'mcp_connected';
+      }
+      // skill, generatedSkill, etc.
+      if (['skill', 'generatedSkill'].includes(nodeType)) {
         return 'skill_added';
       }
       return 'skill_added'; // Default for other node types
@@ -45,6 +51,11 @@ function getSystemMessageType(event: SyncEvent): SystemMessageType | null {
       return 'skill_removed';
       
     case 'agent_updated':
+      // Check if manifest/personality changed
+      const changedFields = data?.changedFields || [];
+      if (changedFields.includes('manifest') || changedFields.includes('personality_config')) {
+        return 'personality_updated';
+      }
       return 'config_updated';
       
     default:
@@ -52,8 +63,38 @@ function getSystemMessageType(event: SyncEvent): SystemMessageType | null {
   }
 }
 
+// Generate intelligent MCP capability description
+function generateMcpDescription(nodeData: any): { 
+  description: string; 
+  suggestion: string;
+} {
+  const mcpType = nodeData?.mcp_server || nodeData?.tool_name || nodeData?.name || '';
+  const mcpTypeLower = mcpType.toLowerCase();
+  const nodeName = nodeData?.name || nodeData?.label || '新工具';
+  
+  // Try to match known MCP types
+  for (const [key, capability] of Object.entries(MCP_CAPABILITY_MAP)) {
+    if (mcpTypeLower.includes(key)) {
+      return {
+        description: `[${nodeName}] 能力已上线。现在您可以让我${capability.action}了，试试说 "${capability.example}"`,
+        suggestion: capability.example,
+      };
+    }
+  }
+  
+  // Default description
+  return {
+    description: `[${nodeName}] 能力已上线。现在您可以使用这个功能了。`,
+    suggestion: `使用 ${nodeName}`,
+  };
+}
+
 // Generate human-readable message content
-function generateMessageContent(event: SyncEvent): { title: string; description: string } {
+function generateMessageContent(event: SyncEvent): { 
+  title: string; 
+  description: string;
+  suggestion?: string;
+} {
   const { type, data } = event;
   const nodeName = extractNodeName(data);
   const nodeType = data?.node_type || data?.type;
@@ -66,9 +107,19 @@ function generateMessageContent(event: SyncEvent): { title: string; description:
           description: `[${nodeName}] 知识库已添加到我的记忆中。现在您可以询问相关问题了。`,
         };
       }
+      // MCP tools - use intelligent description
+      if (['mcp', 'mcpAction', 'mcpTool'].includes(nodeType)) {
+        const { description, suggestion } = generateMcpDescription(data);
+        return {
+          title: '新能力已连接',
+          description,
+          suggestion,
+        };
+      }
       return {
         title: '新技能上线',
         description: `[${nodeName}] 能力已上线。现在您可以让我使用这个功能了。`,
+        suggestion: `使用 ${nodeName}`,
       };
       
     case 'node_removed':
@@ -86,7 +137,7 @@ function generateMessageContent(event: SyncEvent): { title: string; description:
     case 'agent_updated':
       // Detect what changed
       const changedFields = data?.changedFields || [];
-      if (changedFields.includes('manifest')) {
+      if (changedFields.includes('manifest') || changedFields.includes('personality_config')) {
         return {
           title: '角色设定已更新',
           description: '我的行为模式已经调整。接下来的对话将使用新的设定。',
@@ -115,6 +166,7 @@ export function useStudioSyncNotifications({
   agentId,
   onSystemMessage,
   onContextRefresh,
+  onPersonalityChange,
   enabled = true,
 }: UseStudioSyncNotificationsOptions) {
   const recentEvents = useGlobalAgentStore((state) => state.recentEvents);
@@ -132,6 +184,9 @@ export function useStudioSyncNotifications({
   
   const onContextRefreshRef = useRef(onContextRefresh);
   onContextRefreshRef.current = onContextRefresh;
+
+  const onPersonalityChangeRef = useRef(onPersonalityChange);
+  onPersonalityChangeRef.current = onPersonalityChange;
 
   // Subscribe to agent updates when agentId changes
   useEffect(() => {
@@ -166,7 +221,14 @@ export function useStudioSyncNotifications({
       const messageType = getSystemMessageType(event);
       if (!messageType) return;
       
-      const { title, description } = generateMessageContent(event);
+      const { title, description, suggestion } = generateMessageContent(event);
+      
+      // Trigger personality change animation if applicable
+      if (messageType === 'personality_updated') {
+        const manifest = event.data?.manifest as any;
+        const personalityName = manifest?.name || manifest?.roleName;
+        onPersonalityChangeRef.current?.(personalityName);
+      }
       
       const systemMessage: SystemMessage = {
         id: `system-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -174,6 +236,7 @@ export function useStudioSyncNotifications({
         title,
         description,
         skillName: extractNodeName(event.data),
+        suggestion,
         timestamp: event.timestamp,
       };
       
@@ -195,6 +258,11 @@ export function useStudioSyncNotifications({
     const newManifest = agentConfig.manifest;
     
     if (JSON.stringify(prevManifest) !== JSON.stringify(newManifest)) {
+      // Trigger personality change animation
+      const manifest = newManifest as any;
+      const personalityName = manifest?.name || manifest?.roleName;
+      onPersonalityChangeRef.current?.(personalityName);
+      
       // Trigger context refresh
       onContextRefreshRef.current?.(agentConfig);
     }
