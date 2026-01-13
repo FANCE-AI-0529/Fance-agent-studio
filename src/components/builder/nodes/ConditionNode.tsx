@@ -63,8 +63,8 @@ const operatorLabels: Record<ConditionOperator, string> = {
 };
 
 // Generate condition preview text
-function generateConditionPreview(rules: ConditionRule[]): string {
-  if (rules.length === 0) return "未配置条件";
+function generateConditionPreview(rules: ConditionRule[] | undefined): string {
+  if (!rules || rules.length === 0) return "未配置条件";
 
   return rules
     .map((rule, index) => {
