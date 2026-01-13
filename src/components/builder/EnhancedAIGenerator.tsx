@@ -17,6 +17,7 @@ import {
   RefreshCw,
   AlertTriangle,
   SkipForward,
+  FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,9 +43,12 @@ import { useWorkflowGenerator } from "@/hooks/useWorkflowGenerator";
 import { WorkflowPreview } from "./WorkflowPreview";
 import { BuildPlanViewer } from "./BuildPlanViewer";
 import { ValidationProgressPanel, ValidationPhase } from "./ValidationProgressPanel";
+import AgentScorecard from "./AgentScorecard";
+import EvalProgressPanel from "./EvalProgressPanel";
 import { useBuildPlanStore } from "@/stores/buildPlanStore";
 import { useSandboxValidation } from "@/hooks/useSandboxValidation";
 import { useSelfHealing } from "@/hooks/useSelfHealing";
+import { useAgentEvals } from "@/hooks/useAgentEvals";
 import { aiAgentScenarios, AIAgentScenario } from "@/data/aiAgentScenarios";
 import type { Node, Edge } from "@xyflow/react";
 import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
@@ -578,7 +582,7 @@ export function EnhancedAIGenerator({
             <div className="w-[420px] flex flex-col bg-muted/30">
               <Tabs value={activePreviewTab} onValueChange={setActivePreviewTab} className="flex flex-col h-full">
                 <div className="px-4 pt-4 border-b border-border">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="workflow" className="text-xs">
                       工作流预览
                     </TabsTrigger>
@@ -587,6 +591,10 @@ export function EnhancedAIGenerator({
                     </TabsTrigger>
                     <TabsTrigger value="validation" className="text-xs">
                       验证状态
+                    </TabsTrigger>
+                    <TabsTrigger value="scorecard" className="text-xs">
+                      <FileCheck className="h-3 w-3 mr-1" />
+                      质检报告
                     </TabsTrigger>
                   </TabsList>
                 </div>
@@ -621,6 +629,14 @@ export function EnhancedAIGenerator({
                       onRetry={handleRetryValidation}
                       onSkipValidation={handleSkipValidation}
                     />
+                  </TabsContent>
+
+                  <TabsContent value="scorecard" className="h-full m-0 overflow-auto p-4">
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">质检报告功能即将上线</p>
+                      <p className="text-xs mt-1">Agent 评估完成后将在此显示详细报告</p>
+                    </div>
                   </TabsContent>
                 </div>
 
