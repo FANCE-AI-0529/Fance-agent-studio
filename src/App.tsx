@@ -11,6 +11,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { ModeAwareLayout } from "@/components/layout/ModeAwareLayout";
 import { StudioOnlyRoute } from "@/components/layout/StudioOnlyRoute";
 import { HackerTransition } from "@/components/consumer/HackerTransition";
+import { EjectTransition } from "@/components/consumer/EjectTransition";
 import { useAppModeStore } from "@/stores/appModeStore";
 import Index from "./pages/Index";
 import Builder from "./pages/Builder";
@@ -79,8 +80,14 @@ function AppRoutes() {
 
   // Mode-aware Runtime layout - no MainLayout wrapper in consumer mode
   const ModeAwareRuntimeLayout = () => {
-    const { mode, isTransitioning } = useAppModeStore();
+    const { mode, isTransitioning, ejectContext } = useAppModeStore();
     
+    // Use Eject transition if we have context (carrying data between modes)
+    if (isTransitioning && ejectContext) {
+      return <EjectTransition context={ejectContext} />;
+    }
+    
+    // Regular mode transition
     if (isTransitioning) {
       return <HackerTransition />;
     }

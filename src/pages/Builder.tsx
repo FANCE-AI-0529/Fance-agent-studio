@@ -42,6 +42,8 @@ import {
   Variable,
   Bug,
   FlaskConical,
+  ArrowLeft,
+  MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,6 +120,7 @@ import { findTemplateById } from "@/data/agentTemplates";
 import { PersonalityConfig, getDefaultPersonalityConfig, mergePersonalityWithPrompt } from "@/utils/personalityToPrompt";
 import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
 import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
+import { useAppModeStore } from "@/stores/appModeStore";
 import { NodeTypes, EdgeTypes } from "@xyflow/react";
 
 // Custom node types - including Manus Kernel and Generated Skills
@@ -197,6 +200,10 @@ const Builder = () => {
   const [autoGenerateFromInspiration, setAutoGenerateFromInspiration] = useState(false);
   const [inspirationTitle, setInspirationTitle] = useState<string | null>(null);
   const [showDeployConfirmDialog, setShowDeployConfirmDialog] = useState(false);
+
+  // Eject context - check if we came from Consumer mode
+  const { ejectContext, returnToConsumer, clearEjectContext } = useAppModeStore();
+  const isFromConsumerMode = ejectContext?.agentId === agentIdParam && ejectContext?.targetPage === 'builder';
 
   const { setSelectedEdgeId, mockData: currentVariables } = useVariableStore();
 
@@ -1130,6 +1137,30 @@ const Builder = () => {
           {/* Toolbar */}
           <div className="h-12 px-3 flex items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center gap-2">
+              {/* Return to Chat button - only show if came from Consumer mode */}
+              {isFromConsumerMode && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                      onClick={() => {
+                        const returnUrl = ejectContext?.returnUrl || '/runtime';
+                        returnToConsumer(returnUrl);
+                        setTimeout(() => navigate(returnUrl), 800);
+                      }}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      返回对话
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>返回 Consumer 模式</TooltipContent>
+                </Tooltip>
+              )}
+
+              {isFromConsumerMode && <div className="h-5 w-px bg-border" />}
+
               {/* Left panel toggle */}
               <Tooltip>
                 <TooltipTrigger asChild>
