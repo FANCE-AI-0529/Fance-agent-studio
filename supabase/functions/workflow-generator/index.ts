@@ -242,8 +242,9 @@ interface AssetSearchResult {
   knowledgeBases: Array<{ id: string; name: string; description?: string }>;
 }
 
+// deno-lint-ignore no-explicit-any
 async function searchRelevantAssets(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   description: string,
   userId: string
 ): Promise<AssetSearchResult> {
