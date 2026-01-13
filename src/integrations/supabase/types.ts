@@ -1900,6 +1900,7 @@ export type Database = {
       }
       knowledge_bases: {
         Row: {
+          auto_profile_status: string | null
           chunk_overlap: number | null
           chunk_size: number | null
           chunks_count: number | null
@@ -1912,13 +1913,18 @@ export type Database = {
           graph_enabled: boolean | null
           id: string
           index_status: string | null
+          intent_tags: string[] | null
+          last_profiled_at: string | null
           metadata: Json | null
           name: string
           nodes_count: number | null
+          summary_embedding: string | null
           updated_at: string | null
+          usage_context: string | null
           user_id: string
         }
         Insert: {
+          auto_profile_status?: string | null
           chunk_overlap?: number | null
           chunk_size?: number | null
           chunks_count?: number | null
@@ -1931,13 +1937,18 @@ export type Database = {
           graph_enabled?: boolean | null
           id?: string
           index_status?: string | null
+          intent_tags?: string[] | null
+          last_profiled_at?: string | null
           metadata?: Json | null
           name: string
           nodes_count?: number | null
+          summary_embedding?: string | null
           updated_at?: string | null
+          usage_context?: string | null
           user_id: string
         }
         Update: {
+          auto_profile_status?: string | null
           chunk_overlap?: number | null
           chunk_size?: number | null
           chunks_count?: number | null
@@ -1950,10 +1961,14 @@ export type Database = {
           graph_enabled?: boolean | null
           id?: string
           index_status?: string | null
+          intent_tags?: string[] | null
+          last_profiled_at?: string | null
           metadata?: Json | null
           name?: string
           nodes_count?: number | null
+          summary_embedding?: string | null
           updated_at?: string | null
+          usage_context?: string | null
           user_id?: string
         }
         Relationships: []
