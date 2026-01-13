@@ -7,13 +7,37 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SandboxValidationResult } from './useSandboxValidation';
-import type { GeneratedSkillSpec } from '@/types/buildPlan';
+
+// 技能规格类型 (支持简化版本用于验证)
+interface SkillSpec {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  capabilities?: string[];
+  inputSchema?: Record<string, unknown>;
+  outputSchema?: Record<string, unknown>;
+  templateContent?: string;
+  generatedAt?: string;
+  isGenerated?: boolean;
+}
+
+// 完整的生成技能规格 (用于返回)
+interface GeneratedSkillSpec extends SkillSpec {
+  description: string;
+  category: string;
+  capabilities: string[];
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+  generatedAt: string;
+  isGenerated: true;
+}
 
 const MAX_RETRIES = 3;
 
 export interface HealingResult {
   success: boolean;
-  regeneratedSkills: GeneratedSkillSpec[];
+  regeneratedSkills: SkillSpec[];
   patchedConfig?: Record<string, unknown>;
   attempts: number;
   healingLog: string[];
@@ -80,7 +104,7 @@ export function useSelfHealing() {
   const heal = useCallback(async (
     validationResult: SandboxValidationResult,
     originalDescription: string,
-    failedSkills: GeneratedSkillSpec[],
+    failedSkills: SkillSpec[],
     currentAttempt: number
   ): Promise<HealingResult> => {
     if (!user) {
@@ -117,7 +141,7 @@ export function useSelfHealing() {
       setHealingProgress(20);
 
       // 2. 根据策略执行修复
-      const regeneratedSkills: GeneratedSkillSpec[] = [];
+      const regeneratedSkills: SkillSpec[] = [];
 
       switch (analysis.fixStrategy) {
         case 'regenerate': {
@@ -131,9 +155,9 @@ export function useSelfHealing() {
               const { data, error } = await supabase.functions.invoke('generate-skill-template', {
                 body: {
                   name: skill.name,
-                  description: `${skill.description} (修复版本 #${currentAttempt + 1})`,
-                  category: skill.category,
-                  capabilities: skill.capabilities,
+                  description: `${skill.description || skill.name} (修复版本 #${currentAttempt + 1})`,
+                  category: skill.category || 'general',
+                  capabilities: skill.capabilities || [],
                   errorContext: validationResult.testRuns[0]?.error,
                   simplify: true, // 请求生成更简单的版本
                 },
@@ -142,12 +166,12 @@ export function useSelfHealing() {
               if (error) {
                 log.push(`[${new Date().toLocaleTimeString()}] ❌ 重新生成 ${skill.name} 失败: ${error.message}`);
               } else {
-                const newSkill: GeneratedSkillSpec = {
+                const newSkill: SkillSpec = {
                   id: `healed-${skill.id}-${currentAttempt}`,
                   name: skill.name,
-                  description: skill.description,
-                  category: skill.category,
-                  capabilities: skill.capabilities,
+                  description: skill.description || skill.name,
+                  category: skill.category || 'general',
+                  capabilities: skill.capabilities || [],
                   inputSchema: data?.inputSchema || {},
                   outputSchema: data?.outputSchema || {},
                   templateContent: data?.templateContent,
@@ -172,12 +196,14 @@ export function useSelfHealing() {
           // 返回简化版本的技能
           for (const skill of failedSkills) {
             regeneratedSkills.push({
-              ...skill,
               id: `simplified-${skill.id}`,
-              description: `${skill.description} (简化版)`,
-              capabilities: skill.capabilities.slice(0, 2),
+              name: skill.name,
+              description: `${skill.description || skill.name} (简化版)`,
+              category: skill.category,
+              capabilities: (skill.capabilities || []).slice(0, 2),
               templateContent: undefined, // 移除复杂模板
               generatedAt: new Date().toISOString(),
+              isGenerated: true,
             });
             log.push(`[${new Date().toLocaleTimeString()}] ✓ 已简化 ${skill.name}`);
           }
@@ -199,8 +225,13 @@ export function useSelfHealing() {
           setHealingLog([...log]);
           setHealingProgress(40);
 
-          // 返回原始技能
-          regeneratedSkills.push(...failedSkills);
+          // 返回原始技能 (保持类型兼容)
+          for (const skill of failedSkills) {
+            regeneratedSkills.push({
+              ...skill,
+              generatedAt: skill.generatedAt || new Date().toISOString(),
+            });
+          }
           break;
         }
       }
