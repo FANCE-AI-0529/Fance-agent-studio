@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,8 +15,11 @@ import {
   Puzzle,
   Eye,
   Calendar,
-  Rocket,
+  Wand2,
+  Brain,
+  Zap,
 } from "lucide-react";
+import { InspirationGenerateDialog } from "@/components/inspiration/InspirationGenerateDialog";
 
 const categoryColors: Record<string, string> = {
   "效率提升": "bg-primary/10 text-primary",
@@ -73,6 +77,7 @@ const getRecommendedSkills = (category: string) => {
 export default function InspirationDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
 
   const { data: inspiration, isLoading } = useQuery({
     queryKey: ["inspiration-detail", id],
@@ -237,18 +242,24 @@ export default function InspirationDetail() {
         </Card>
 
         {/* Recommended Skills */}
-        <Card>
+        <Card className="border-cognitive/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Puzzle className="h-5 w-5 text-cognitive" />
               推荐技能
+              <Badge variant="outline" className="ml-auto">
+                {skills.length} 项
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              一键生成时将自动添加以下技能：
+            </p>
             <div className="flex flex-wrap gap-2">
               {skills.map((skill, index) => (
                 <Badge key={index} variant="secondary" className="px-3 py-1.5">
-                  <Sparkles className="h-3 w-3 mr-1.5" />
+                  <Sparkles className="h-3 w-3 mr-1.5 text-cognitive" />
                   {skill}
                 </Badge>
               ))}
@@ -256,17 +267,66 @@ export default function InspirationDetail() {
           </CardContent>
         </Card>
 
+        {/* Auto-config preview */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-primary/10">
+                <Zap className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">一键生成智能体</h3>
+                <p className="text-sm text-muted-foreground">
+                  自动配置 Manus 内核 + {skills.length} 个技能 + {steps.length} 个工作流步骤
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <Brain className="h-4 w-4" />
+              <span>内置 Manus 规划内核，支持任务拆解和进度跟踪</span>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* CTA */}
-        <div className="flex justify-center pt-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 pt-4">
           <Button
             size="lg"
             className="gap-2"
+            onClick={() => setShowGenerateDialog(true)}
+          >
+            <Wand2 className="h-5 w-5" />
+            一键生成这个智能体
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2"
             onClick={() => navigate("/builder")}
           >
-            <Rocket className="h-5 w-5" />
-            立即创建这个智能体
+            自定义创建
           </Button>
         </div>
+
+        {/* Generate Dialog */}
+        <InspirationGenerateDialog
+          open={showGenerateDialog}
+          onOpenChange={setShowGenerateDialog}
+          inspiration={{
+            id: inspiration.id,
+            title: inspiration.title,
+            description: inspiration.description || null,
+            story_content: inspiration.story_content || null,
+            image_url: null,
+            agent_id: null,
+            category: inspiration.category,
+            featured_date: inspiration.featured_date || null,
+            view_count: inspiration.view_count || 0,
+            created_at: inspiration.created_at,
+          }}
+          steps={steps}
+          skills={skills}
+        />
       </div>
     </MainLayout>
   );

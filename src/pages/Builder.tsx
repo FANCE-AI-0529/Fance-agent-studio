@@ -432,6 +432,48 @@ const Builder = () => {
     }
   }, [searchParams, agentIdParam, templateApplied, publishedSkills, setNodes, setEdges, setSearchParams]);
 
+  // Handle inspiration auto-generation from URL parameters
+  useEffect(() => {
+    const inspirationId = searchParams.get("inspiration");
+    const autoGenerate = searchParams.get("autoGenerate") === "true";
+    const description = searchParams.get("desc");
+    const title = searchParams.get("title");
+    const category = searchParams.get("category");
+
+    if (inspirationId && autoGenerate && description && !templateApplied && !agentIdParam) {
+      const decodedDesc = decodeURIComponent(description);
+      const decodedTitle = title ? decodeURIComponent(title) : "灵感智能体";
+      const decodedCategory = category ? decodeURIComponent(category) : "通用";
+
+      // Set basic agent config from inspiration
+      setAgentConfig((prev) => ({
+        ...prev,
+        name: decodedTitle,
+        department: decodedCategory,
+      }));
+
+      // Open AI Generator and trigger generation
+      setShowAIGenerator(true);
+      
+      // Clear URL params to prevent re-triggering
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("inspiration");
+      newParams.delete("autoGenerate");
+      newParams.delete("desc");
+      newParams.delete("title");
+      newParams.delete("category");
+      setSearchParams(newParams, { replace: true });
+      
+      setTemplateApplied(true);
+
+      // Toast notification
+      toast({
+        title: "正在生成智能体",
+        description: `基于「${decodedTitle}」灵感自动配置中...`,
+      });
+    }
+  }, [searchParams, agentIdParam, templateApplied, setSearchParams]);
+
   // Helper function to get category keywords
   function getCategoryKeywords(category: string): string[] {
     const mapping: Record<string, string[]> = {
@@ -445,6 +487,10 @@ const Builder = () => {
       "document-parsing": ["文档", "解析", "PDF"],
       "web-search": ["搜索", "网页", "查询"],
       "education": ["教育", "学习", "辅导"],
+      "效率提升": ["文档处理", "任务", "会议", "效率"],
+      "生活助手": ["日程", "健康", "购物", "旅行"],
+      "学习成长": ["知识", "语言", "学习", "教育"],
+      "创意灵感": ["头脑风暴", "创意", "设计", "故事"],
     };
     return mapping[category] || [];
   }
