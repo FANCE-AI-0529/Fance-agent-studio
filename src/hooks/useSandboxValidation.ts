@@ -37,13 +37,14 @@ interface AgentConfig {
   department?: string;
 }
 
-// 生成的技能类型
+// 生成的技能类型 (支持简化版本)
 interface GeneratedSkillSpec {
   id: string;
   name: string;
-  description: string;
-  capabilities: string[];
+  description?: string;
+  capabilities?: string[];
   templateContent?: string;
+  isGenerated?: boolean;
 }
 
 export function useSandboxValidation() {
