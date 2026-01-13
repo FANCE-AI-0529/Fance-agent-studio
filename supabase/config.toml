@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.claim-invite-code]
 verify_jwt = false
+
+[functions.red-team-agent]
+verify_jwt = false
