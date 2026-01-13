@@ -13,7 +13,8 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  Clock
+  Clock,
+  Database,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useManusMemoryStore } from '@/stores/manusMemoryStore';
 import { MANUS_FILE_PATHS } from '@/data/manusKernel';
+import { format } from 'date-fns';
 
 interface ManusMemoryPanelProps {
   agentId: string | null;
@@ -277,6 +279,18 @@ export function ManusMemoryPanel({
                   <Activity className="h-3 w-3 mr-1" />
                   进度
                 </TabsTrigger>
+                <TabsTrigger
+                  value="knowledge"
+                  className="text-xs px-2 py-1.5 rounded-t data-[state=active]:bg-secondary/50 data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  <Database className="h-3 w-3 mr-1" />
+                  知识库
+                  {store.knowledgeMountLog.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0 h-4">
+                      {store.knowledgeMountLog.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               {/* 内容区域 */}
@@ -366,6 +380,35 @@ export function ManusMemoryPanel({
                         />
                       ) : (
                         renderMarkdownPreview(store.progress || '# 进度日志\n\n暂无记录')
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="knowledge" className="m-0 h-full">
+                  <ScrollArea className="h-[300px]">
+                    <div className="p-3 space-y-2">
+                      {store.knowledgeMountLog.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Database className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                          <p className="text-xs text-muted-foreground">暂无知识库操作日志</p>
+                        </div>
+                      ) : (
+                        store.knowledgeMountLog.map((log, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs">
+                            <span className="text-muted-foreground text-[10px] font-mono">
+                              {format(new Date(log.timestamp), 'HH:mm:ss')}
+                            </span>
+                            <span className={cn(
+                              log.type === 'mount' && 'text-green-500',
+                              log.type === 'unmount' && 'text-orange-500',
+                              log.type === 'query' && 'text-blue-500',
+                              log.type === 'system' && 'text-muted-foreground',
+                            )}>
+                              {log.message}
+                            </span>
+                          </div>
+                        ))
                       )}
                     </div>
                   </ScrollArea>

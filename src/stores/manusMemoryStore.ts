@@ -24,6 +24,14 @@ export interface DecisionRecord {
   timestamp: string;
 }
 
+export interface KnowledgeMountLog {
+  type: 'mount' | 'query' | 'system' | 'unmount';
+  timestamp: string;
+  message: string;
+  knowledgeBaseId?: string;
+  knowledgeBaseName?: string;
+}
+
 export interface ManusMemoryState {
   // 当前会话 ID
   sessionId: string | null;
@@ -48,6 +56,10 @@ export interface ManusMemoryState {
   // 记录
   errors: ErrorRecord[];
   decisions: DecisionRecord[];
+  
+  // 知识库状态 (Phase 4)
+  mountedKnowledgeBases: string[];
+  knowledgeMountLog: KnowledgeMountLog[];
   
   // 状态标志
   isInitialized: boolean;
@@ -77,6 +89,12 @@ export interface ManusMemoryState {
   checkThreeStrikeProtocol: () => boolean;
   checkFiveQuestionReboot: () => boolean;
   
+  // 知识库操作 (Phase 4)
+  addMountedKnowledgeBase: (kbId: string) => void;
+  removeMountedKnowledgeBase: (kbId: string) => void;
+  addKnowledgeMountLog: (log: Omit<KnowledgeMountLog, 'timestamp'>) => void;
+  clearKnowledgeMountLog: () => void;
+  
   resetSession: () => void;
 }
 
@@ -95,6 +113,8 @@ const initialState = {
   questionCount: 0,
   errors: [],
   decisions: [],
+  mountedKnowledgeBases: [],
+  knowledgeMountLog: [],
   isInitialized: false,
   needsFindingsUpdate: false,
   needsRebootCheck: false,
@@ -217,6 +237,33 @@ export const useManusMemoryStore = create<ManusMemoryState>()(
         return get().questionCount >= 5;
       },
       
+      // 知识库操作 (Phase 4)
+      addMountedKnowledgeBase: (kbId: string) => {
+        set(state => ({
+          mountedKnowledgeBases: [...state.mountedKnowledgeBases, kbId],
+        }));
+      },
+      
+      removeMountedKnowledgeBase: (kbId: string) => {
+        set(state => ({
+          mountedKnowledgeBases: state.mountedKnowledgeBases.filter(id => id !== kbId),
+        }));
+      },
+      
+      addKnowledgeMountLog: (log) => {
+        const newLog: KnowledgeMountLog = {
+          ...log,
+          timestamp: new Date().toISOString(),
+        };
+        set(state => ({
+          knowledgeMountLog: [...state.knowledgeMountLog, newLog],
+        }));
+      },
+      
+      clearKnowledgeMountLog: () => {
+        set({ knowledgeMountLog: [] });
+      },
+      
       resetSession: () => {
         set(initialState);
       },
@@ -232,6 +279,8 @@ export const useManusMemoryStore = create<ManusMemoryState>()(
         totalPhases: state.totalPhases,
         errors: state.errors,
         decisions: state.decisions,
+        mountedKnowledgeBases: state.mountedKnowledgeBases,
+        knowledgeMountLog: state.knowledgeMountLog,
       }),
     }
   )
