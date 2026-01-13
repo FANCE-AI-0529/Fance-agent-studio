@@ -42,24 +42,12 @@ export function ConsumerRuntime() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Handle initial prompt or first message from URL
+  // Handle initial prompt from URL
   useEffect(() => {
     const prompt = searchParams.get('prompt');
-    const firstMessage = searchParams.get('firstMessage');
-    const agentId = searchParams.get('agentId');
-    
-    if (firstMessage) {
-      // Show welcome message from invisible builder
-      setMessages([{
-        id: 'welcome',
-        role: 'assistant',
-        content: decodeURIComponent(firstMessage),
-        timestamp: new Date(),
-      }]);
-      // Clear URL params but keep agentId for future use
-      navigate(`/runtime${agentId ? `?agentId=${agentId}` : ''}`, { replace: true });
-    } else if (prompt) {
+    if (prompt) {
       handleSubmit(prompt);
+      // Clear the URL param
       navigate('/runtime', { replace: true });
     }
   }, [searchParams]);
