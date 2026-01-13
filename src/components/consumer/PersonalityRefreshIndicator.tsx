@@ -5,18 +5,14 @@ import { cn } from "@/lib/utils";
 interface PersonalityRefreshIndicatorProps {
   isRefreshing: boolean;
   newPersonalityName?: string;
-  onComplete?: () => void;
 }
 
 export function PersonalityRefreshIndicator({ 
   isRefreshing, 
   newPersonalityName,
-  onComplete,
 }: PersonalityRefreshIndicatorProps) {
   return (
-    <AnimatePresence
-      onExitComplete={onComplete}
-    >
+    <AnimatePresence>
       {isRefreshing && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -100,7 +96,7 @@ export function PersonalityRefreshIndicator({
               </motion.div>
 
               {/* Sparkle particles */}
-              {[...Array(3)].map((_, i) => (
+              {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, scale: 0 }}
@@ -148,7 +144,7 @@ export function PersonalityRefreshIndicator({
 
             {/* Progress dots */}
             <div className="flex gap-1.5">
-              {[...Array(3)].map((_, i) => (
+              {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
                   animate={{ 
