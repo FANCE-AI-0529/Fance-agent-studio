@@ -161,42 +161,65 @@ export function useAccessMemory() {
 }
 
 // Generate context string from memories for AI
-export function useMemoryContext(agentId?: string) {
+export function useMemoryContext(agentId?: string, manusFiles?: { filePath: string; content: string }[]) {
   const { data: memories = [] } = useUserMemories(agentId);
 
   const generateContext = () => {
-    if (memories.length === 0) return "";
+    const hasMemories = memories.length > 0;
+    const hasManusFiles = manusFiles && manusFiles.length > 0;
+    
+    if (!hasMemories && !hasManusFiles) return "";
 
-    const grouped = {
-      preference: memories.filter((m) => m.memoryType === "preference"),
-      fact: memories.filter((m) => m.memoryType === "fact"),
-      context: memories.filter((m) => m.memoryType === "context"),
-    };
+    let context = "";
 
-    let context = "## 用户记忆信息\n\n";
+    // Add user memories section
+    if (hasMemories) {
+      const grouped = {
+        preference: memories.filter((m) => m.memoryType === "preference"),
+        fact: memories.filter((m) => m.memoryType === "fact"),
+        context: memories.filter((m) => m.memoryType === "context"),
+      };
 
-    if (grouped.preference.length > 0) {
-      context += "### 用户偏好\n";
-      grouped.preference.forEach((m) => {
-        context += `- ${m.key}: ${m.value}\n`;
-      });
-      context += "\n";
+      context += "## 用户记忆信息\n\n";
+
+      if (grouped.preference.length > 0) {
+        context += "### 用户偏好\n";
+        grouped.preference.forEach((m) => {
+          context += `- ${m.key}: ${m.value}\n`;
+        });
+        context += "\n";
+      }
+
+      if (grouped.fact.length > 0) {
+        context += "### 重要事实\n";
+        grouped.fact.forEach((m) => {
+          context += `- ${m.key}: ${m.value}\n`;
+        });
+        context += "\n";
+      }
+
+      if (grouped.context.length > 0) {
+        context += "### 对话上下文\n";
+        grouped.context.forEach((m) => {
+          context += `- ${m.key}: ${m.value}\n`;
+        });
+        context += "\n";
+      }
     }
 
-    if (grouped.fact.length > 0) {
-      context += "### 重要事实\n";
-      grouped.fact.forEach((m) => {
-        context += `- ${m.key}: ${m.value}\n`;
-      });
-      context += "\n";
-    }
-
-    if (grouped.context.length > 0) {
-      context += "### 对话上下文\n";
-      grouped.context.forEach((m) => {
-        context += `- ${m.key}: ${m.value}\n`;
-      });
-      context += "\n";
+    // Add Manus kernel files section
+    if (hasManusFiles) {
+      context += "\n## 智能体工作状态\n\n";
+      
+      for (const file of manusFiles) {
+        const fileName = file.filePath.split("/").pop() || file.filePath;
+        context += `### ${fileName}\n`;
+        // Only include first 500 chars of each file to avoid context overflow
+        const truncatedContent = file.content.length > 500 
+          ? file.content.slice(0, 500) + "\n...(truncated)"
+          : file.content;
+        context += `${truncatedContent}\n\n`;
+      }
     }
 
     return context;
@@ -206,5 +229,6 @@ export function useMemoryContext(agentId?: string) {
     memories,
     generateContext,
     hasMemories: memories.length > 0,
+    hasManusFiles: manusFiles && manusFiles.length > 0,
   };
 }

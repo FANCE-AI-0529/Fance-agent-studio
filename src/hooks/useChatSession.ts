@@ -239,6 +239,42 @@ export function useChatSession() {
     return true;
   }, [session, loadSessions]);
 
+  // Find or create session for a specific agent
+  const findOrCreateSessionForAgent = useCallback(async (agentId: string | null) => {
+    if (!user) {
+      return null;
+    }
+
+    // Find existing session for this agent
+    let query = supabase
+      .from("sessions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (agentId) {
+      query = query.eq("agent_id", agentId);
+    } else {
+      query = query.is("agent_id", null);
+    }
+
+    const { data: existingSessions, error } = await query;
+
+    if (error) {
+      console.error("Error finding session:", error);
+      return null;
+    }
+
+    // If session exists, load it
+    if (existingSessions && existingSessions.length > 0) {
+      return loadSession(existingSessions[0].id);
+    }
+
+    // Otherwise create new session
+    return createSession(agentId || undefined);
+  }, [user, loadSession, createSession]);
+
   // Load sessions on mount
   useEffect(() => {
     if (user) {
@@ -258,5 +294,6 @@ export function useChatSession() {
     updateLastAssistantMessage,
     deleteSession,
     setMessages,
+    findOrCreateSessionForAgent,
   };
 }
