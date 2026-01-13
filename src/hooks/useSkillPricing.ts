@@ -1,11 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useSessionContext } from "@supabase/auth-helpers-react";
 import type { PricingModel, BulkDiscount } from "@/types/economy";
 
 export function useSkillPricing(skillId: string | null) {
-  const { session } = useSessionContext();
   const queryClient = useQueryClient();
 
   const { data: pricing, isLoading } = useQuery({
@@ -45,20 +43,22 @@ export function useSkillPricing(skillId: string | null) {
     }) => {
       if (!skillId) throw new Error("Skill ID required");
 
+      const upsertData = {
+        skill_id: skillId,
+        pricing_model: pricingModel,
+        price_per_call: pricePerCall || 0,
+        monthly_price: monthlyPrice,
+        yearly_price: yearlyPrice,
+        one_time_price: oneTimePrice,
+        trial_calls: trialCalls || 0,
+        bulk_discounts: bulkDiscounts || [],
+        creator_share: creatorShare,
+        is_active: true,
+      };
+
       const { data, error } = await supabase
         .from("skill_pricing")
-        .upsert({
-          skill_id: skillId,
-          pricing_model: pricingModel,
-          price_per_call: pricePerCall || 0,
-          monthly_price: monthlyPrice,
-          yearly_price: yearlyPrice,
-          one_time_price: oneTimePrice,
-          trial_calls: trialCalls || 0,
-          bulk_discounts: bulkDiscounts || [],
-          creator_share: creatorShare,
-          is_active: true,
-        }, { onConflict: "skill_id" })
+        .upsert(upsertData as any, { onConflict: "skill_id" })
         .select()
         .single();
 

@@ -1,12 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useSessionContext } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/contexts/AuthContext";
 import type { PayoutMethod } from "@/types/economy";
 
 export function useCreatorRevenue() {
-  const { session } = useSessionContext();
-  const user = session?.user;
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: summary, isLoading: summaryLoading } = useQuery({

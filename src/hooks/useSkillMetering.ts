@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useSessionContext } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/contexts/AuthContext";
 import type { MeteringResult } from "@/types/economy";
 
 export class InsufficientBalanceError extends Error {
@@ -17,8 +17,7 @@ export class InsufficientBalanceError extends Error {
 }
 
 export function useSkillMetering() {
-  const { session } = useSessionContext();
-  const user = session?.user;
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const meterSkillCall = useMutation({
