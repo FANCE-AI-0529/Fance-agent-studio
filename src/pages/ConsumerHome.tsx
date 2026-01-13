@@ -141,12 +141,12 @@ export default function ConsumerHome() {
               y: 0
             }} transition={{
               delay: 0.2
-            }} className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
-                  <span className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-[#241e1e] bg-[#423333]">
+            }} className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+                  <span className="text-foreground">
                     构建你的
                   </span>
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-primary to-purple-400 bg-clip-text text-transparent">
+                  <span className="text-foreground">
                     智能数字员工
                   </span>
                 </motion.h1>
