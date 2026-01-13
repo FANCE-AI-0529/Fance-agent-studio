@@ -19,6 +19,7 @@ import {
   Layers,
   Target,
   FileText,
+  HelpCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -183,6 +184,61 @@ const eventConfig: Record<TraceEventType, EventConfig> = {
     label: "[RAG:Source]",
     color: "text-primary",
     bgColor: "bg-primary/10",
+  },
+  // Manus Kernel event configs
+  manus_init: {
+    icon: Brain,
+    label: "[Manus] Init",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+  },
+  manus_read: {
+    icon: FileText,
+    label: "[Manus] Read",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+  },
+  manus_update: {
+    icon: FileText,
+    label: "[Manus] Update",
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
+  manus_hook_pre: {
+    icon: Clock,
+    label: "[Manus] Pre",
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+  },
+  manus_hook_post: {
+    icon: CheckCircle2,
+    label: "[Manus] Post",
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-500/10",
+  },
+  manus_violation: {
+    icon: AlertCircle,
+    label: "[Manus] Violation",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10",
+  },
+  manus_2action_rule: {
+    icon: Target,
+    label: "[Manus] 2-Action",
+    color: "text-orange-500",
+    bgColor: "bg-orange-500/10",
+  },
+  manus_3strike: {
+    icon: XCircle,
+    label: "[Manus] 3-Strike",
+    color: "text-red-500",
+    bgColor: "bg-red-500/10",
+  },
+  manus_5question: {
+    icon: HelpCircle,
+    label: "[Manus] 5-Question",
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-500/10",
   },
 };
 

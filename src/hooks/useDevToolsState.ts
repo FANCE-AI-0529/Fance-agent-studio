@@ -9,6 +9,7 @@ export type DevToolsTab =
   | 'taskchain' 
   | 'history' 
   | 'rag'
+  | 'manus'
   | 'debug';
 
 interface DevToolsState {
@@ -73,7 +74,8 @@ export const DEVTOOLS_SHORTCUTS = {
     taskchain: { key: '5', ctrlKey: true, label: 'Ctrl+5' },
     history: { key: '6', ctrlKey: true, label: 'Ctrl+6' },
     rag: { key: '7', ctrlKey: true, label: 'Ctrl+7' },
-    debug: { key: '8', ctrlKey: true, label: 'Ctrl+8' },
+    manus: { key: '8', ctrlKey: true, label: 'Ctrl+8' },
+    debug: { key: '9', ctrlKey: true, label: 'Ctrl+9' },
   },
 } as const;
 
@@ -86,5 +88,6 @@ export const DEVTOOLS_TABS = [
   { id: 'taskchain' as const, label: '任务链', icon: 'Link' },
   { id: 'history' as const, label: '执行历史', icon: 'History' },
   { id: 'rag' as const, label: 'RAG', icon: 'Search' },
+  { id: 'manus' as const, label: 'Manus', icon: 'Brain' },
   { id: 'debug' as const, label: '调试', icon: 'Bug' },
 ] as const;

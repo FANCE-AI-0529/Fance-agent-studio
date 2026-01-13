@@ -30,6 +30,8 @@ import {
   type DevToolsTab,
 } from "@/hooks/useDevToolsState";
 
+import { Brain } from "lucide-react";
+
 // 内联 Tab 图标映射
 const TAB_ICONS: Record<string, React.ElementType> = {
   GitBranch,
@@ -39,6 +41,7 @@ const TAB_ICONS: Record<string, React.ElementType> = {
   Link,
   History,
   Search,
+  Brain,
   Bug,
 };
 
@@ -51,6 +54,7 @@ interface DevToolsPanelProps {
   renderTaskChain?: () => React.ReactNode;
   renderHistory?: () => React.ReactNode;
   renderRAG?: () => React.ReactNode;
+  renderManus?: () => React.ReactNode;
   renderDebug?: () => React.ReactNode;
   
   // 回调
@@ -65,6 +69,7 @@ export function DevToolsPanel({
   renderTaskChain,
   renderHistory,
   renderRAG,
+  renderManus,
   renderDebug,
   onClose,
 }: DevToolsPanelProps) {
@@ -115,6 +120,7 @@ export function DevToolsPanel({
       taskchain: renderTaskChain,
       history: renderHistory,
       rag: renderRAG,
+      manus: renderManus,
       debug: renderDebug,
     };
 
