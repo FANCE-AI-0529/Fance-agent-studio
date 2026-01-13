@@ -28,6 +28,7 @@ import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
 import { useStudioSyncNotifications } from "@/hooks/useStudioSyncNotifications";
 import { useAgentContextHotReload } from "@/hooks/useAgentContextHotReload";
 import { SystemBubble, SystemMessage } from "@/components/consumer/SystemBubble";
+import { PersonalityRefreshIndicator } from "@/components/consumer/PersonalityRefreshIndicator";
 import {
   Tooltip,
   TooltipContent,
@@ -79,6 +80,8 @@ export function ConsumerRuntime() {
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const [streamingContent, setStreamingContent] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isPersonalityRefreshing, setIsPersonalityRefreshing] = useState(false);
+  const [newPersonalityName, setNewPersonalityName] = useState<string | undefined>();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -136,6 +139,17 @@ export function ConsumerRuntime() {
     console.log('[ConsumerRuntime] Hot-reloaded agent config:', newConfig.name);
   }, []);
 
+  // Handle personality change with animation
+  const handlePersonalityChange = useCallback((personalityName?: string) => {
+    setNewPersonalityName(personalityName);
+    setIsPersonalityRefreshing(true);
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+      setIsPersonalityRefreshing(false);
+      setNewPersonalityName(undefined);
+    }, 2000);
+  }, []);
+
   // Studio sync notifications hook
   const { isSubscribed: isSyncSubscribed } = useStudioSyncNotifications({
     agentId,
@@ -149,6 +163,7 @@ export function ConsumerRuntime() {
         agentId: storeConfig.id,
       });
     },
+    onPersonalityChange: handlePersonalityChange,
     enabled: !!agentId && isInitialized,
   });
 
@@ -268,7 +283,7 @@ export function ConsumerRuntime() {
   }, [toggleMode]);
 
   const handleSubmit = useCallback(async (value?: string) => {
-    const messageContent = value || input.trim();
+    const messageContent = value?.trim() || input.trim();
     if (!messageContent || isLoading || isAiLoading) return;
 
     const userMessage: Message = {
@@ -359,6 +374,15 @@ export function ConsumerRuntime() {
       handleSubmit();
     }
   };
+
+  // Handle "Try it" button click - fill input with suggestion
+  const handleTryIt = useCallback((suggestion: string) => {
+    setInput(suggestion);
+    // Focus the input
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  }, []);
 
   const handleNewConversation = async () => {
     if (agentId) {
@@ -582,6 +606,7 @@ export function ConsumerRuntime() {
                       <SystemBubble 
                         key={item.id} 
                         message={item}
+                        onTryIt={handleTryIt}
                         onExpand={agentId ? () => {
                           ejectToStudio({
                             agentId,
@@ -721,6 +746,12 @@ export function ConsumerRuntime() {
         <MiniStudioPreview
           agentId={agentId}
           latestAgentMessage={latestAssistantMessage}
+        />
+
+        {/* Personality Refresh Indicator */}
+        <PersonalityRefreshIndicator
+          isRefreshing={isPersonalityRefreshing}
+          newPersonalityName={newPersonalityName}
         />
       </div>
     </AuroraBackground>
