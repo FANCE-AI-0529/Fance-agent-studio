@@ -736,6 +736,81 @@ export type Database = {
           },
         ]
       }
+      agent_templates: {
+        Row: {
+          bg_gradient: string | null
+          category: string
+          color: string
+          created_at: string | null
+          department: string | null
+          description: string | null
+          icon_id: string
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          model: string
+          mplp_policy: string | null
+          name: string
+          personality_config: Json | null
+          rating: number | null
+          sort_order: number | null
+          suggested_skill_categories: string[] | null
+          system_prompt: string
+          tags: string[] | null
+          template_key: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          bg_gradient?: string | null
+          category: string
+          color?: string
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          icon_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          model?: string
+          mplp_policy?: string | null
+          name: string
+          personality_config?: Json | null
+          rating?: number | null
+          sort_order?: number | null
+          suggested_skill_categories?: string[] | null
+          system_prompt: string
+          tags?: string[] | null
+          template_key: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          bg_gradient?: string | null
+          category?: string
+          color?: string
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          icon_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          model?: string
+          mplp_policy?: string | null
+          name?: string
+          personality_config?: Json | null
+          rating?: number | null
+          sort_order?: number | null
+          suggested_skill_categories?: string[] | null
+          system_prompt?: string
+          tags?: string[] | null
+          template_key?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       agent_webhooks: {
         Row: {
           agent_id: string
