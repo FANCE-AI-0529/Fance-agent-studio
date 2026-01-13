@@ -662,6 +662,63 @@ export type Database = {
           },
         ]
       }
+      asset_semantic_index: {
+        Row: {
+          asset_id: string
+          asset_type: string
+          capabilities: string[] | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          embedding: Json | null
+          id: string
+          input_schema: Json | null
+          is_active: boolean | null
+          metadata: Json | null
+          name: string
+          output_schema: Json | null
+          risk_level: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          asset_type: string
+          capabilities?: string[] | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          embedding?: Json | null
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          name: string
+          output_schema?: Json | null
+          risk_level?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          asset_type?: string
+          capabilities?: string[] | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          embedding?: Json | null
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          name?: string
+          output_schema?: Json | null
+          risk_level?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       bundle_purchases: {
         Row: {
           amount: number
@@ -3776,6 +3833,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          dsl: Json
+          id: string
+          is_public: boolean | null
+          name: string
+          tags: string[] | null
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          dsl: Json
+          id?: string
+          is_public?: boolean | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          dsl?: Json
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
