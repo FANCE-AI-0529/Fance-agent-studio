@@ -9,7 +9,8 @@ import {
   Link, 
   Unlink, 
   Settings, 
-  Circle 
+  Circle,
+  Wrench,
 } from "lucide-react";
 import { useGlobalAgentStore, SyncEvent } from "@/stores/globalAgentStore";
 import {
@@ -74,6 +75,7 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
   // Precise selectors to avoid re-render loops
   const isSubscribed = useGlobalAgentStore((s) => s.isSubscribed);
   const isSyncing = useGlobalAgentStore((s) => s.isSyncing);
+  const isGraphModifying = useGlobalAgentStore((s) => s.isGraphModifying);
   const agentId = useGlobalAgentStore((s) => s.agentId);
   const agentConfig = useGlobalAgentStore((s) => s.agentConfig);
   const lastSyncedAt = useGlobalAgentStore((s) => s.lastSyncedAt);
@@ -93,6 +95,18 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
   };
 
   const getStatus = () => {
+    // Priority 1: Graph is being modified
+    if (isGraphModifying) {
+      return {
+        icon: Wrench,
+        label: "架构变更中...",
+        color: "text-amber-500",
+        dotColor: "bg-amber-500",
+        pulse: true,
+        isModifying: true,
+      };
+    }
+    
     if (!isSubscribed) {
       return {
         icon: WifiOff,
@@ -100,6 +114,7 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
         color: "text-muted-foreground",
         dotColor: "bg-muted-foreground",
         pulse: false,
+        isModifying: false,
       };
     }
     
@@ -110,6 +125,7 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
         color: "text-primary",
         dotColor: "bg-primary",
         pulse: true,
+        isModifying: false,
       };
     }
     
@@ -119,6 +135,7 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
       color: "text-emerald-500",
       dotColor: "bg-emerald-500",
       pulse: false,
+      isModifying: false,
     };
   };
 
@@ -135,14 +152,29 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className={cn(
-            "flex items-center gap-1.5 px-2 py-1 rounded-full",
+            "relative flex items-center gap-1.5 px-2 py-1 rounded-full",
             "bg-background/50 backdrop-blur-sm border border-border/50",
             "text-xs font-medium cursor-pointer select-none",
             "hover:bg-background/80 hover:border-border transition-colors",
             status.color,
+            status.isModifying && "border-amber-500/50",
             className
           )}
         >
+          {/* Architecture modifying indicator */}
+          {status.isModifying && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute -top-1 -right-1"
+            >
+              <span className="flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+              </span>
+            </motion.div>
+          )}
+          
           {/* Animated dot */}
           <div className="relative">
             <div className={cn(
@@ -170,7 +202,8 @@ export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
           {/* Icon */}
           <Icon className={cn(
             "h-3 w-3",
-            isSyncing && "animate-spin"
+            isSyncing && !status.isModifying && "animate-spin",
+            status.isModifying && "animate-pulse"
           )} />
           
           {/* Label - hidden on small screens */}

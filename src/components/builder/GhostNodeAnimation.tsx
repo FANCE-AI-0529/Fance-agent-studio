@@ -4,7 +4,7 @@ import { useReactFlow, Node } from "@xyflow/react";
 import { useRemoteSyncEvents } from "@/hooks/useAgentSync";
 import type { SyncEvent } from "@/stores/globalAgentStore";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Move, Settings } from "lucide-react";
+import { Plus, Trash2, Move, Settings, Link as LinkIcon } from "lucide-react";
 
 interface GhostNodeAnimationProps {
   onAnimationStart?: (nodeId: string) => void;
@@ -19,23 +19,56 @@ interface GhostNode {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
 }
 
+interface GhostEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  sourcePos: { x: number; y: number };
+  targetPos: { x: number; y: number };
+}
+
 export function GhostNodeAnimation({
   onAnimationStart,
   onAnimationComplete,
 }: GhostNodeAnimationProps) {
   const [ghostNodes, setGhostNodes] = useState<GhostNode[]>([]);
-  const { setCenter, getZoom } = useReactFlow();
+  const [ghostEdges, setGhostEdges] = useState<GhostEdge[]>([]);
+  const { setCenter, getZoom, getNodes } = useReactFlow();
   const animatingRef = useRef<Set<string>>(new Set());
 
   // Handle incoming remote events
   const handleRemoteEvent = useCallback((event: SyncEvent) => {
     if (event.source === 'local') return; // Ignore local changes
     
-    // Only handle node changes
-    if (!event.type.includes('node')) return;
-    
     const payload = event.data as any;
     if (!payload) return;
+
+    // Handle edge events
+    if (event.type === 'edge_added') {
+      const sourceNode = getNodes().find(n => n.id === payload.source_node);
+      const targetNode = getNodes().find(n => n.id === payload.target_node);
+      
+      if (sourceNode && targetNode) {
+        const ghostEdge: GhostEdge = {
+          id: `ghost-edge-${Date.now()}`,
+          sourceId: payload.source_node,
+          targetId: payload.target_node,
+          sourcePos: sourceNode.position,
+          targetPos: targetNode.position,
+        };
+
+        setGhostEdges(prev => [...prev, ghostEdge]);
+
+        // Remove after animation
+        setTimeout(() => {
+          setGhostEdges(prev => prev.filter(e => e.id !== ghostEdge.id));
+        }, 1500);
+      }
+      return;
+    }
+    
+    // Only handle node changes
+    if (!event.type.includes('node')) return;
 
     const nodeId = payload.node_id || payload.id || 'unknown';
     const nodeType = payload.node_type || 'skill';
@@ -71,17 +104,27 @@ export function GhostNodeAnimation({
       animatingRef.current.delete(ghostNode.id);
       onAnimationComplete?.(nodeId);
     }, 1500);
-  }, [setCenter, getZoom, onAnimationStart, onAnimationComplete]);
+  }, [setCenter, getZoom, getNodes, onAnimationStart, onAnimationComplete]);
 
   // Subscribe to remote sync events
   useRemoteSyncEvents(handleRemoteEvent);
 
   return (
-    <AnimatePresence>
-      {ghostNodes.map((ghost) => (
-        <GhostNodeOverlay key={ghost.id} ghost={ghost} />
-      ))}
-    </AnimatePresence>
+    <>
+      {/* Ghost Nodes */}
+      <AnimatePresence>
+        {ghostNodes.map((ghost) => (
+          <GhostNodeOverlay key={ghost.id} ghost={ghost} />
+        ))}
+      </AnimatePresence>
+
+      {/* Ghost Edges - Growing Line Animation */}
+      <AnimatePresence>
+        {ghostEdges.map((edge) => (
+          <GhostEdgeOverlay key={edge.id} edge={edge} />
+        ))}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -181,6 +224,55 @@ function GhostNodeOverlay({ ghost }: GhostNodeOverlayProps) {
           transition={{ duration: 1, delay: 0.2 }}
           className="absolute inset-0 rounded-xl border-2 border-primary"
         />
+      </div>
+    </motion.div>
+  );
+}
+
+interface GhostEdgeOverlayProps {
+  edge: GhostEdge;
+}
+
+function GhostEdgeOverlay({ edge }: GhostEdgeOverlayProps) {
+  // Calculate edge path
+  const dx = edge.targetPos.x - edge.sourcePos.x;
+  const dy = edge.targetPos.y - edge.sourcePos.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="pointer-events-none fixed z-40"
+      style={{
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+      }}
+    >
+      {/* Edge growing indicator */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 backdrop-blur-sm border border-blue-500/30">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", damping: 15 }}
+        >
+          <LinkIcon className="h-4 w-4 text-blue-500" />
+        </motion.div>
+        <span className="text-xs font-medium text-blue-500">
+          连接建立中...
+        </span>
+        <motion.div
+          className="w-12 h-1 bg-blue-500/20 rounded-full overflow-hidden"
+        >
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="h-full bg-blue-500 rounded-full"
+          />
+        </motion.div>
       </div>
     </motion.div>
   );

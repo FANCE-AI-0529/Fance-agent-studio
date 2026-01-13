@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useGlobalAgentStore } from '@/stores/globalAgentStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { GraphCommand, GraphNodeType } from '@/types/graphCommandTypes';
 
 // ============= Types =============
 
@@ -13,7 +14,9 @@ export type ModificationAction =
   | 'change_name'
   | 'change_config'
   | 'add_trigger'
-  | 'remove_trigger';
+  | 'remove_trigger'
+  | 'add_mcp'
+  | 'add_router';
 
 export interface ModificationIntent {
   action: ModificationAction;
@@ -99,6 +102,31 @@ const MODIFICATION_PATTERNS: Array<{
     extractTarget: (match) => ({
       targetName: match[1]?.trim(),
       description: `添加定时触发器`,
+    }),
+  },
+  // MCP 工具模式
+  {
+    patterns: [
+      /(?:连接?|接入|集成)(.+?)(?:工具|服务|API)?$/i,
+      /(?:调用|使用)(.+?)(?:接口|API)/i,
+    ],
+    action: 'add_mcp' as ModificationAction,
+    extractTarget: (match) => ({
+      targetName: match[1]?.trim(),
+      description: `连接「${match[1]?.trim()}」服务`,
+      nodeType: 'mcp_action' as GraphNodeType,
+    }),
+  },
+  // 路由模式
+  {
+    patterns: [
+      /(?:添加|设置)(?:一个?)?(?:分支|路由|条件)/i,
+    ],
+    action: 'add_router' as ModificationAction,
+    extractTarget: (match) => ({
+      targetName: 'Router',
+      description: `添加路由分支`,
+      nodeType: 'router' as GraphNodeType,
     }),
   },
 ];
