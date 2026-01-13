@@ -111,6 +111,10 @@ export function useCanvasHighlight() {
     pathInfo: store.pathInfo,
     highlightConfig: store.highlightConfig,
     
+    // 数据快照状态
+    showDataSnapshot: store.showDataSnapshot,
+    dataSnapshots: store.dataSnapshots,
+    
     // 核心动作
     startAnimation,
     stopAnimation,
@@ -127,10 +131,15 @@ export function useCanvasHighlight() {
     setLoopAnimation: store.setLoopAnimation,
     setHighlightConfig: store.setHighlightConfig,
     
+    // 数据快照动作
+    setShowDataSnapshot: store.setShowDataSnapshot,
+    setDataSnapshots: store.setDataSnapshots,
+    
     // 查询
     isNodeHighlighted: store.isNodeHighlighted,
     isEdgeHighlighted: store.isEdgeHighlighted,
     getCurrentNodeId: store.getCurrentNodeId,
+    getCurrentNodeSnapshot: store.getCurrentNodeSnapshot,
     
     // 辅助函数
     getNodeHighlightClass,

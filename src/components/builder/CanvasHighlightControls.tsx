@@ -15,6 +15,7 @@ import {
   Repeat,
   X,
   Zap,
+  Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,6 +46,7 @@ export function CanvasHighlightControls() {
     animationSpeed,
     loopAnimation,
     pathInfo,
+    showDataSnapshot,
     stopAnimation,
     pauseAnimation,
     resumeAnimation,
@@ -52,6 +54,7 @@ export function CanvasHighlightControls() {
     stepBackward,
     setAnimationSpeed,
     setLoopAnimation,
+    setShowDataSnapshot,
     getCurrentNodeId,
   } = useCanvasHighlight();
 
@@ -197,6 +200,23 @@ export function CanvasHighlightControls() {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>循环播放</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant={showDataSnapshot ? 'secondary' : 'ghost'}
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setShowDataSnapshot(!showDataSnapshot)}
+                        >
+                          <Database className={cn(
+                            "h-4 w-4",
+                            showDataSnapshot && "text-primary"
+                          )} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{showDataSnapshot ? '隐藏数据快照' : '显示数据快照'}</TooltipContent>
                     </Tooltip>
                   </div>
                 </TooltipProvider>

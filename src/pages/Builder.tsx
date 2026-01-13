@@ -99,6 +99,7 @@ import { useVariableStore } from "@/stores/variableStore";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
 import { CanvasHighlightControls } from "@/components/builder/CanvasHighlightControls";
+import { NodeDataSnapshotPanel } from "@/components/builder/snapshot/NodeDataSnapshotPanel";
 import { useCanvasHighlight } from "@/hooks/useCanvasHighlight";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
@@ -1613,6 +1614,9 @@ const Builder = () => {
 
             {/* Canvas Highlight Controls - for data flow animation */}
             <CanvasHighlightControls />
+            
+            {/* Node Data Snapshot Panel - shows input/output data during animation */}
+            <NodeDataSnapshotPanel />
 
             {/* Build Replay Overlay */}
             {replayState.isReplaying && (
