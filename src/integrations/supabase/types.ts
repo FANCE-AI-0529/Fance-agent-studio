@@ -3006,6 +3006,101 @@ export type Database = {
           },
         ]
       }
+      network_access_logs: {
+        Row: {
+          block_reason: string | null
+          bytes_in: number | null
+          bytes_out: number | null
+          domain: string
+          duration_ms: number | null
+          execution_id: string | null
+          id: string
+          method: string
+          response_status: number | null
+          status: string
+          timestamp: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          block_reason?: string | null
+          bytes_in?: number | null
+          bytes_out?: number | null
+          domain: string
+          duration_ms?: number | null
+          execution_id?: string | null
+          id?: string
+          method: string
+          response_status?: number | null
+          status: string
+          timestamp?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          block_reason?: string | null
+          bytes_in?: number | null
+          bytes_out?: number | null
+          domain?: string
+          duration_ms?: number | null
+          execution_id?: string | null
+          id?: string
+          method?: string
+          response_status?: number | null
+          status?: string
+          timestamp?: string | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_access_logs_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "sandbox_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_policies: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          mode: string
+          mplp_bindings: Json | null
+          name: string
+          updated_at: string | null
+          user_id: string
+          whitelist: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          mode: string
+          mplp_bindings?: Json | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+          whitelist?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          mode?: string
+          mplp_bindings?: Json | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+          whitelist?: Json | null
+        }
+        Relationships: []
+      }
       point_transactions: {
         Row: {
           amount: number
@@ -3095,6 +3190,101 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sandbox_executions: {
+        Row: {
+          agent_id: string | null
+          completed_at: string
+          config: Json
+          cpu_time_ms: number | null
+          created_at: string | null
+          error: Json | null
+          execution_time_ms: number
+          execution_token: string
+          id: string
+          input: Json | null
+          memory_peak_mb: number | null
+          network_bytes_in: number | null
+          network_bytes_out: number | null
+          network_requests_count: number | null
+          output: Json | null
+          skill_id: string | null
+          started_at: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          completed_at: string
+          config: Json
+          cpu_time_ms?: number | null
+          created_at?: string | null
+          error?: Json | null
+          execution_time_ms: number
+          execution_token: string
+          id?: string
+          input?: Json | null
+          memory_peak_mb?: number | null
+          network_bytes_in?: number | null
+          network_bytes_out?: number | null
+          network_requests_count?: number | null
+          output?: Json | null
+          skill_id?: string | null
+          started_at: string
+          success: boolean
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          completed_at?: string
+          config?: Json
+          cpu_time_ms?: number | null
+          created_at?: string | null
+          error?: Json | null
+          execution_time_ms?: number
+          execution_token?: string
+          id?: string
+          input?: Json | null
+          memory_peak_mb?: number | null
+          network_bytes_in?: number | null
+          network_bytes_out?: number | null
+          network_requests_count?: number | null
+          output?: Json | null
+          skill_id?: string | null
+          started_at?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sandbox_executions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandbox_executions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandbox_executions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandbox_executions_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduler_metrics: {
         Row: {
