@@ -289,6 +289,88 @@ export type Database = {
           },
         ]
       }
+      agent_evaluations: {
+        Row: {
+          agent_id: string
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          eval_type: string
+          id: string
+          logic_coherence_score: number | null
+          overall_score: number | null
+          passed: boolean | null
+          red_team_results: Json | null
+          response_quality_score: number | null
+          response_speed_grade: string | null
+          security_compliance_score: number | null
+          status: string
+          test_cases: Json | null
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          eval_type?: string
+          id?: string
+          logic_coherence_score?: number | null
+          overall_score?: number | null
+          passed?: boolean | null
+          red_team_results?: Json | null
+          response_quality_score?: number | null
+          response_speed_grade?: string | null
+          security_compliance_score?: number | null
+          status?: string
+          test_cases?: Json | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          eval_type?: string
+          id?: string
+          logic_coherence_score?: number | null
+          overall_score?: number | null
+          passed?: boolean | null
+          red_team_results?: Json | null
+          response_quality_score?: number | null
+          response_speed_grade?: string | null
+          security_compliance_score?: number | null
+          status?: string
+          test_cases?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_evaluations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_evaluations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_evaluations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_graph_edges: {
         Row: {
           agent_id: string
@@ -1852,6 +1934,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      eval_test_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          expected_behavior: string | null
+          forbidden_patterns: Json | null
+          id: string
+          input_template: string
+          is_system: boolean | null
+          name: string
+          required_patterns: Json | null
+          risk_level: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          expected_behavior?: string | null
+          forbidden_patterns?: Json | null
+          id?: string
+          input_template: string
+          is_system?: boolean | null
+          name: string
+          required_patterns?: Json | null
+          risk_level?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          expected_behavior?: string | null
+          forbidden_patterns?: Json | null
+          id?: string
+          input_template?: string
+          is_system?: boolean | null
+          name?: string
+          required_patterns?: Json | null
+          risk_level?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       intent_history: {
         Row: {
