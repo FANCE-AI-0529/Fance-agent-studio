@@ -41,6 +41,7 @@ import {
   TestTube2,
   Variable,
   Bug,
+  FlaskConical,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,7 @@ import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
+import { GenerationVerificationPanel } from "@/components/builder/verification";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import {
   AlertDialog,
@@ -182,6 +184,7 @@ const Builder = () => {
   const [leftPanelTab, setLeftPanelTab] = useState<"skills" | "variables">("skills");
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showVerificationPanel, setShowVerificationPanel] = useState(false);
 
   const { setSelectedEdgeId, mockData: currentVariables } = useVariableStore();
 
@@ -1196,6 +1199,21 @@ const Builder = () => {
                 <TooltipContent>调试模式</TooltipContent>
               </Tooltip>
 
+              {/* Verification Test Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={showVerificationPanel ? "default" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowVerificationPanel(true)}
+                  >
+                    <FlaskConical className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>验证测试</TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1715,6 +1733,19 @@ const Builder = () => {
             });
           }}
         />
+
+        {/* Verification Test Panel Dialog */}
+        <Dialog open={showVerificationPanel} onOpenChange={setShowVerificationPanel}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>一键生成链路验证</DialogTitle>
+              <DialogDescription>
+                验证语义搜索、拓扑生成、自动布线和合规注入的完整流程
+              </DialogDescription>
+            </DialogHeader>
+            <GenerationVerificationPanel />
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
