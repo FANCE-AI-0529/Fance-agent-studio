@@ -28,14 +28,15 @@ import { cn } from '@/lib/utils';
 import { useCombinationVerification } from '@/hooks/useCombinationVerification';
 import { TopologyCheckResult } from './TopologyCheckResult';
 import { DataFlowVisualization } from './DataFlowVisualization';
-import type { HellTestScenario, VerificationResult, NodeSpec } from '@/types/verificationTypes';
+import type { HellTestScenario, VerificationResult, NodeSpec, DataFlowPath } from '@/types/verificationTypes';
 
 interface CombinationTestPanelProps {
   className?: string;
   onApplyResult?: (result: VerificationResult) => void;
+  onHighlightOnCanvas?: (path: DataFlowPath) => void;
 }
 
-export function CombinationTestPanel({ className, onApplyResult }: CombinationTestPanelProps) {
+export function CombinationTestPanel({ className, onApplyResult, onHighlightOnCanvas }: CombinationTestPanelProps) {
   const {
     scenarios,
     isRunning,
@@ -321,6 +322,7 @@ export function CombinationTestPanel({ className, onApplyResult }: CombinationTe
                   paths={result.dataFlow.paths}
                   nodes={extractNodes(result.generatedDSL)}
                   highlightedPath={result.dataFlow.highlightedPath}
+                  onHighlightOnCanvas={onHighlightOnCanvas}
                 />
               </TabsContent>
 
