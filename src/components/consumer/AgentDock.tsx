@@ -182,7 +182,7 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.6 }}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+      className="fixed bottom-8 left-0 right-0 flex justify-center z-50 px-4"
     >
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
