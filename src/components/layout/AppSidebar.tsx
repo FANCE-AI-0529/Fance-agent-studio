@@ -13,8 +13,10 @@ import {
   Users,
   BookOpen,
   Lock,
+  Sparkles,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
+import { useAppModeStore } from "@/stores/appModeStore";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -55,6 +57,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
+  const { toggleMode } = useAppModeStore();
 
   // Dialog states
   const [userManagementOpen, setUserManagementOpen] = useState(false);
@@ -173,6 +176,28 @@ export function AppSidebar() {
               </div>
             )}
           </SidebarContent>
+
+          {/* Magic Mode Toggle */}
+          <div className="px-3 py-2 border-t border-sidebar-border">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleMode}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 ${
+                    collapsed ? "justify-center" : ""
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4 flex-shrink-0" />
+                  {!collapsed && <span className="text-sm font-medium">返回魔法界面</span>}
+                </button>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right" className="font-medium">
+                  返回魔法界面
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
 
           {/* User Section */}
           <div className="mt-auto border-t border-sidebar-border">
