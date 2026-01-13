@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useGlobalAgentStore, selectRemoteEvents } from '@/stores/globalAgentStore';
 import type { SyncEvent } from '@/stores/globalAgentStore';
 import type { Node, Edge } from '@xyflow/react';
@@ -11,27 +11,26 @@ export type { SyncEvent };
  * Use this in both Consumer and Studio to ensure they share the same state
  */
 export function useAgentSync(agentId: string | null) {
-  const store = useGlobalAgentStore();
-  const {
-    setAgentId,
-    loadAgent,
-    clearAgent,
-    subscribe,
-    unsubscribe,
-    isSubscribed,
-    isSyncing,
-    syncError,
-    lastSyncedAt,
-    agentConfig,
-    nodes: rawNodes,
-    edges: rawEdges,
-  } = store;
+  // ✅ Use precise selectors to avoid re-renders on unrelated store changes
+  const storeAgentId = useGlobalAgentStore((s) => s.agentId);
+  const setAgentId = useGlobalAgentStore((s) => s.setAgentId);
+  const loadAgent = useGlobalAgentStore((s) => s.loadAgent);
+  const clearAgent = useGlobalAgentStore((s) => s.clearAgent);
+  const subscribe = useGlobalAgentStore((s) => s.subscribe);
+  const unsubscribe = useGlobalAgentStore((s) => s.unsubscribe);
+  const isSubscribed = useGlobalAgentStore((s) => s.isSubscribed);
+  const isSyncing = useGlobalAgentStore((s) => s.isSyncing);
+  const syncError = useGlobalAgentStore((s) => s.syncError);
+  const lastSyncedAt = useGlobalAgentStore((s) => s.lastSyncedAt);
+  const agentConfig = useGlobalAgentStore((s) => s.agentConfig);
+  const rawNodes = useGlobalAgentStore((s) => s.nodes);
+  const rawEdges = useGlobalAgentStore((s) => s.edges);
 
   // Initialize agent when ID changes
   useEffect(() => {
     if (agentId) {
       // Only set if different to avoid re-subscription
-      if (store.agentId !== agentId) {
+      if (storeAgentId !== agentId) {
         setAgentId(agentId);
       }
     }
@@ -40,7 +39,7 @@ export function useAgentSync(agentId: string | null) {
       // Don't clear on unmount - let the store persist
       // clearAgent();
     };
-  }, [agentId, setAgentId, store.agentId]);
+  }, [agentId, setAgentId, storeAgentId]);
 
   // Convert DB nodes to ReactFlow format
   const reactFlowNodes: Node[] = useMemo(() => {
@@ -91,9 +90,8 @@ export function useAgentSync(agentId: string | null) {
     reload,
     subscribe,
     unsubscribe,
-    
-    // Store reference for direct actions
-    store,
+    clearAgent,
+    loadAgent,
   };
 }
 
@@ -105,8 +103,13 @@ export function useRemoteSyncEvents(
   onEvent?: (event: SyncEvent) => void
 ) {
   const remoteEvents = useGlobalAgentStore(selectRemoteEvents);
-  const lastEventRef = { current: null as SyncEvent | null };
-
+  const lastEventRef = useRef<SyncEvent | null>(null);
+  const onEventRef = useRef(onEvent);
+  
+  // Keep callback ref updated
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
   useEffect(() => {
     if (remoteEvents.length > 0) {
       const latestEvent = remoteEvents[remoteEvents.length - 1];
@@ -116,10 +119,10 @@ export function useRemoteSyncEvents(
         lastEventRef.current?.timestamp.getTime() !== latestEvent.timestamp.getTime()
       ) {
         lastEventRef.current = latestEvent;
-        onEvent?.(latestEvent);
+        onEventRef.current?.(latestEvent);
       }
     }
-  }, [remoteEvents, onEvent]);
+  }, [remoteEvents]);
 
   return remoteEvents;
 }
@@ -128,7 +131,11 @@ export function useRemoteSyncEvents(
  * Hook for graph node operations
  */
 export function useGraphNodeOperations() {
-  const { addNode, updateNode, updateNodePosition, removeNode } = useGlobalAgentStore();
+  // ✅ Use precise selectors for actions
+  const addNode = useGlobalAgentStore((s) => s.addNode);
+  const updateNode = useGlobalAgentStore((s) => s.updateNode);
+  const updateNodePosition = useGlobalAgentStore((s) => s.updateNodePosition);
+  const removeNode = useGlobalAgentStore((s) => s.removeNode);
 
   const addReactFlowNode = useCallback(async (
     nodeId: string,
@@ -175,7 +182,10 @@ export function useGraphNodeOperations() {
  * Hook for graph edge operations
  */
 export function useGraphEdgeOperations() {
-  const { addEdge, updateEdge, removeEdge } = useGlobalAgentStore();
+  // ✅ Use precise selectors for actions
+  const addEdge = useGlobalAgentStore((s) => s.addEdge);
+  const updateEdge = useGlobalAgentStore((s) => s.updateEdge);
+  const removeEdge = useGlobalAgentStore((s) => s.removeEdge);
 
   const addReactFlowEdge = useCallback(async (
     edgeId: string,

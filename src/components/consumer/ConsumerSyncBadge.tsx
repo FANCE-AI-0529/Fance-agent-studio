@@ -13,7 +13,10 @@ interface ConsumerSyncBadgeProps {
 }
 
 export function ConsumerSyncBadge({ className }: ConsumerSyncBadgeProps) {
-  const { isSubscribed, isSyncing, agentId } = useGlobalAgentStore();
+  // ✅ Use precise selectors to avoid infinite loops
+  const isSubscribed = useGlobalAgentStore((s) => s.isSubscribed);
+  const isSyncing = useGlobalAgentStore((s) => s.isSyncing);
+  const agentId = useGlobalAgentStore((s) => s.agentId);
   
   // Don't show if no agent is loaded
   if (!agentId) return null;

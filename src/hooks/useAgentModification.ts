@@ -110,7 +110,12 @@ export function useAgentModification() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
   
-  const store = useGlobalAgentStore();
+  // ✅ Use precise selectors to avoid infinite loops
+  const agentId = useGlobalAgentStore((s) => s.agentId);
+  const nodes = useGlobalAgentStore((s) => s.nodes);
+  const addNode = useGlobalAgentStore((s) => s.addNode);
+  const removeNode = useGlobalAgentStore((s) => s.removeNode);
+  const updateAgentConfig = useGlobalAgentStore((s) => s.updateAgentConfig);
 
   /**
    * Parse a user message to detect modification intent
@@ -161,8 +166,6 @@ export function useAgentModification() {
     setIsProcessing(true);
     
     try {
-      const { agentId, addNode, removeNode, updateAgentConfig } = store;
-      
       if (!agentId) {
         throw new Error('No agent selected');
       }
@@ -189,7 +192,6 @@ export function useAgentModification() {
         
         case 'remove_skill': {
           // Find and remove the skill node by name
-          const nodes = store.nodes;
           const targetNode = nodes.find(
             n => n.node_type === 'skill' && 
             (n.data as any)?.name?.includes(pendingIntent.targetName)
@@ -259,7 +261,7 @@ export function useAgentModification() {
     } finally {
       setIsProcessing(false);
     }
-  }, [pendingIntent, store]);
+  }, [pendingIntent, agentId, nodes, addNode, removeNode, updateAgentConfig]);
 
   /**
    * Cancel the pending modification
