@@ -40,7 +40,7 @@ import { aiAgentScenarios, AIAgentScenario } from "@/data/aiAgentScenarios";
 import type { Node, Edge } from "@xyflow/react";
 import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import type { MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
-import type { MPLPPolicy, InjectedIntervention, GenerationWarning, RiskLevel } from "@/types/workflowDSL";
+import type { MPLPPolicy, InjectedIntervention, GenerationWarning, RiskLevel, ComplianceReport } from "@/types/workflowDSL";
 
 // ========== 类型定义 ==========
 
@@ -57,6 +57,8 @@ interface GenerationResult {
   interventions: InjectedIntervention[];
   riskAssessment: RiskAssessment;
   dsl: any;
+  complianceReport?: ComplianceReport;
+  requiredPermissions?: string[];
 }
 
 interface EnhancedAIGeneratorProps {
@@ -351,6 +353,8 @@ export function EnhancedAIGenerator({
                   isLoading={isGenerating}
                   progress={progress}
                   currentStep={currentStep}
+                  complianceReport={lastResult?.complianceReport || null}
+                  requiredPermissions={lastResult?.requiredPermissions || []}
                 />
               </div>
 

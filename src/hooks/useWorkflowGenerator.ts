@@ -13,9 +13,16 @@ import {
   GenerationWarning,
   InjectedIntervention,
   RiskLevel,
+  ComplianceReport,
 } from '@/types/workflowDSL';
 import { convertDSLToGraph, convertToReactFlowFormat } from '@/utils/dslToGraph';
-import { validateAndInjectPolicies, assessWorkflowRisk } from '@/utils/policyInjector';
+import { 
+  validateAndInjectPolicies, 
+  assessWorkflowRisk,
+  generateComplianceReport,
+  extractRequiredPermissions,
+  PERMISSION_METADATA,
+} from '@/utils/policyInjector';
 
 // ========== 类型定义 ==========
 
@@ -39,6 +46,8 @@ export interface GenerationResult {
   warnings: GenerationWarning[];
   interventions: InjectedIntervention[];
   riskAssessment: RiskAssessment;
+  complianceReport: ComplianceReport;
+  requiredPermissions: string[];
 }
 
 export interface UseWorkflowGeneratorReturn {
@@ -181,11 +190,27 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         style: { stroke: 'hsl(var(--primary))', strokeWidth: 2 },
       }));
 
-      setProgress(90);
+      setProgress(80);
       setCurrentStep('正在评估风险...');
 
       // Step 4: 风险评估
       const riskAssessment = assessWorkflowRisk(dsl);
+
+      setProgress(90);
+      setCurrentStep('正在进行合规检查...');
+
+      // Step 5: 生成合规报告和权限提取
+      const requiredPermissions = extractRequiredPermissions(dsl);
+      const complianceReport = generateComplianceReport(dsl, interventions, mplpPolicy);
+
+      // 如果有未保护的高危操作，添加额外警告
+      if (complianceReport.unprotectedOperations.length > 0) {
+        policyWarnings.push({
+          code: 'UNPROTECTED_OPERATION',
+          message: `检测到 ${complianceReport.unprotectedOperations.length} 个未保护的高危操作`,
+          severity: 'warning',
+        });
+      }
 
       setProgress(100);
       setCurrentStep('生成完成');
@@ -197,6 +222,8 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         warnings: [...apiWarnings, ...policyWarnings],
         interventions,
         riskAssessment,
+        complianceReport,
+        requiredPermissions,
       };
 
       setLastResult(result);

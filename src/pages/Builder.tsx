@@ -1688,8 +1688,15 @@ const Builder = () => {
             // Mount knowledge bases if provided
             knowledgeBases?.forEach(kb => addKnowledgeBase(kb));
             
-            // Show risk warning if high risk
-            if (result?.riskAssessment?.overallRisk === 'high') {
+            // Show auto-fix notification if interventions were added
+            if (result?.complianceReport?.autoFixedOperations?.length > 0) {
+              toast({
+                title: "已自动添加安全确认",
+                description: `为了安全，系统已为 ${result.complianceReport.autoFixedOperations.length} 个高危操作添加了人工审批流程`,
+                duration: 6000,
+              });
+            } else if (result?.riskAssessment?.overallRisk === 'high') {
+              // Show risk warning if high risk
               toast({
                 title: "检测到高风险操作",
                 description: `已自动添加 ${result.interventions.length} 个干预节点`,
