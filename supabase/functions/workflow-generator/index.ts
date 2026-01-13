@@ -106,10 +106,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Generation error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -117,22 +118,48 @@ serve(async (req) => {
 
 // ========== 搜索相关资产 ==========
 
-async function searchRelevantAssets(
-  supabase: ReturnType<typeof createClient>,
-  description: string,
-  userId: string
-): Promise<{
+interface SkillRow {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+}
+
+interface KnowledgeBaseRow {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+interface AssetRow {
+  id: string;
+  asset_type: string;
+  asset_id: string;
+  name: string;
+  description: string | null;
+  capabilities: string[] | null;
+  is_active: boolean;
+}
+
+interface AssetSearchResult {
   skills: Array<{ id: string; name: string; description?: string; capabilities: string[] }>;
   mcpTools: Array<{ id: string; name: string; description?: string; capabilities: string[] }>;
   knowledgeBases: Array<{ id: string; name: string; description?: string }>;
-}> {
+}
+
+// deno-lint-ignore no-explicit-any
+async function searchRelevantAssets(
+  supabase: any,
+  description: string,
+  userId: string
+): Promise<AssetSearchResult> {
   // 从语义索引搜索
   const { data: assets } = await supabase
     .from('asset_semantic_index')
     .select('*')
     .eq('user_id', userId)
     .eq('is_active', true)
-    .limit(50);
+    .limit(50) as { data: AssetRow[] | null };
 
   if (!assets || assets.length === 0) {
     // 如果没有索引，直接查询原表
@@ -140,36 +167,36 @@ async function searchRelevantAssets(
       .from('skills')
       .select('id, name, description, category')
       .eq('author_id', userId)
-      .limit(20);
+      .limit(20) as { data: SkillRow[] | null };
 
     const { data: kbs } = await supabase
       .from('knowledge_bases')
       .select('id, name, description')
       .eq('user_id', userId)
-      .limit(10);
+      .limit(10) as { data: KnowledgeBaseRow[] | null };
 
     return {
-      skills: (skills || []).map(s => ({
+      skills: (skills || []).map((s: SkillRow) => ({
         id: s.id,
         name: s.name,
-        description: s.description,
+        description: s.description || undefined,
         capabilities: [],
       })),
       mcpTools: [],
-      knowledgeBases: (kbs || []).map(k => ({
+      knowledgeBases: (kbs || []).map((k: KnowledgeBaseRow) => ({
         id: k.id,
         name: k.name,
-        description: k.description,
+        description: k.description || undefined,
       })),
     };
   }
 
   // 简单文本匹配排序
   const descLower = description.toLowerCase();
-  const scored = assets.map(a => ({
+  const scored = assets.map((a: AssetRow) => ({
     ...a,
-    score: calculateRelevance(a, descLower),
-  })).sort((a, b) => b.score - a.score);
+    score: calculateRelevance({ name: a.name, description: a.description, capabilities: a.capabilities }, descLower),
+  })).sort((x, y) => y.score - x.score);
 
   return {
     skills: scored
@@ -178,7 +205,7 @@ async function searchRelevantAssets(
       .map(a => ({
         id: a.asset_id,
         name: a.name,
-        description: a.description,
+        description: a.description || undefined,
         capabilities: a.capabilities || [],
       })),
     mcpTools: scored
@@ -187,7 +214,7 @@ async function searchRelevantAssets(
       .map(a => ({
         id: a.asset_id,
         name: a.name,
-        description: a.description,
+        description: a.description || undefined,
         capabilities: a.capabilities || [],
       })),
     knowledgeBases: scored
@@ -196,16 +223,16 @@ async function searchRelevantAssets(
       .map(a => ({
         id: a.asset_id,
         name: a.name,
-        description: a.description,
+        description: a.description || undefined,
       })),
   };
 }
 
-function calculateRelevance(asset: Record<string, unknown>, query: string): number {
+function calculateRelevance(asset: { name: string; description: string | null; capabilities: string[] | null }, query: string): number {
   let score = 0;
-  const name = ((asset.name as string) || '').toLowerCase();
-  const desc = ((asset.description as string) || '').toLowerCase();
-  const caps = (asset.capabilities as string[]) || [];
+  const name = (asset.name || '').toLowerCase();
+  const desc = (asset.description || '').toLowerCase();
+  const caps = asset.capabilities || [];
 
   const words = query.split(/\s+/).filter(w => w.length > 1);
   
@@ -222,7 +249,7 @@ function calculateRelevance(asset: Record<string, unknown>, query: string): numb
 
 async function generateWorkflowDSL(
   description: string,
-  assets: ReturnType<typeof searchRelevantAssets> extends Promise<infer T> ? T : never,
+  assets: AssetSearchResult,
   mplpPolicy: string,
   maxNodes: number
 ): Promise<WorkflowDSL> {
