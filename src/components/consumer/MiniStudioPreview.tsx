@@ -2,17 +2,13 @@ import React, { useMemo, useState, useCallback } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
   Node,
   Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Maximize2, Minimize2, X, Building2, Zap } from 'lucide-react';
+import { Maximize2, Minimize2, Building2, Zap, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAgentSync } from '@/hooks/useAgentSync';
@@ -20,6 +16,7 @@ import { useMiniPreviewHighlight } from '@/hooks/useMiniPreviewHighlight';
 import { useAppModeStore } from '@/stores/appModeStore';
 import { miniNodeTypes } from './MiniNodes';
 import { flowingEdgeTypes } from './FlowingEdge';
+import { MiniPreviewTooltip } from './MiniPreviewTooltip';
 
 interface MiniStudioPreviewProps {
   agentId: string | null;
@@ -37,6 +34,7 @@ export const MiniStudioPreview = React.memo(({
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isHovered, setIsHovered] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Get agent sync data
   const { nodes: syncedNodes, edges: syncedEdges, isSyncing } = useAgentSync(agentId);
@@ -46,6 +44,12 @@ export const MiniStudioPreview = React.memo(({
 
   // Get app mode store for transition
   const { ejectToStudio, startTransition } = useAppModeStore();
+
+  // Get active node type for tooltip
+  const activeNodeType = useMemo(() => {
+    if (!highlightState.isActive || highlightState.nodeTypes.length === 0) return null;
+    return highlightState.nodeTypes[0];
+  }, [highlightState]);
 
   // Transform synced nodes to add highlight state
   const displayNodes: Node[] = useMemo(() => {
@@ -77,9 +81,11 @@ export const MiniStudioPreview = React.memo(({
     }));
   }, [syncedEdges, displayNodes, highlightState.isActive]);
 
-  // Handle expand to full Studio
+  // Handle expand to full Studio with smooth transition
   const handleExpandToStudio = useCallback(() => {
-    if (!agentId) return;
+    if (!agentId || isTransitioning) return;
+
+    setIsTransitioning(true);
 
     // Start transition animation
     startTransition('to-studio');
@@ -93,8 +99,9 @@ export const MiniStudioPreview = React.memo(({
     // Navigate to Builder after animation
     setTimeout(() => {
       navigate(`/builder/${agentId}`);
+      setIsTransitioning(false);
     }, 600);
-  }, [agentId, startTransition, ejectToStudio, navigate]);
+  }, [agentId, startTransition, ejectToStudio, navigate, isTransitioning]);
 
   // Toggle expanded state
   const toggleExpanded = useCallback(() => {
@@ -110,13 +117,19 @@ export const MiniStudioPreview = React.memo(({
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0, scale: 0.8, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        animate={{ 
+          opacity: isTransitioning ? 0 : 1, 
+          scale: isTransitioning ? 1.5 : 1, 
+          y: isTransitioning ? -100 : 0 
+        }}
         exit={{ opacity: 0, scale: 0.8, y: 20 }}
+        transition={{ duration: isTransitioning ? 0.6 : 0.3, ease: 'easeInOut' }}
         className={cn(
           "fixed z-50 transition-all duration-300",
           isExpanded
             ? "bottom-4 right-4 w-80 h-64"
             : "bottom-4 right-4 w-12 h-12",
+          isTransitioning && "pointer-events-none",
           className
         )}
         onMouseEnter={() => setIsHovered(true)}
@@ -162,7 +175,8 @@ export const MiniStudioPreview = React.memo(({
               "bg-background/95 backdrop-blur-md",
               "border border-border/50",
               "shadow-xl shadow-black/20",
-              "flex flex-col"
+              "flex flex-col",
+              isTransitioning && "ring-4 ring-primary/50"
             )}
           >
             {/* Header */}
@@ -181,6 +195,7 @@ export const MiniStudioPreview = React.memo(({
                   className="h-6 w-6"
                   onClick={handleExpandToStudio}
                   title="在 Studio 中打开"
+                  disabled={isTransitioning}
                 >
                   <Maximize2 className="w-3 h-3" />
                 </Button>
@@ -222,6 +237,16 @@ export const MiniStudioPreview = React.memo(({
                 />
               </ReactFlow>
 
+              {/* Node tooltip */}
+              {activeNodeType && (
+                <MiniPreviewTooltip
+                  nodeType={activeNodeType}
+                  keyword={highlightState.matchedKeyword}
+                  isVisible={highlightState.isActive}
+                  className="top-2 left-2"
+                />
+              )}
+
               {/* Active indicator overlay */}
               {highlightState.isActive && highlightState.matchedKeyword && (
                 <motion.div
@@ -242,15 +267,17 @@ export const MiniStudioPreview = React.memo(({
               )}
             </div>
 
-            {/* Footer */}
-            <div
-              className="px-3 py-1.5 border-t border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
+            {/* Footer with smooth transition hint */}
+            <motion.div
+              whileHover={{ backgroundColor: 'hsl(var(--muted) / 0.4)' }}
+              className="px-3 py-1.5 border-t border-border/50 bg-muted/20 cursor-pointer transition-colors flex items-center justify-between"
               onClick={handleExpandToStudio}
             >
               <span className="text-[10px] text-muted-foreground">
-                点击查看完整架构 →
+                点击查看完整架构
               </span>
-            </div>
+              <ExternalLink className="w-3 h-3 text-muted-foreground" />
+            </motion.div>
           </motion.div>
         )}
       </motion.div>
