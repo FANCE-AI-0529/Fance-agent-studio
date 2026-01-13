@@ -31,6 +31,8 @@ const ACTION_ICONS: Record<ModificationAction, React.ElementType> = {
   'change_config': Wrench,
   'add_trigger': Clock,
   'remove_trigger': Clock,
+  'add_mcp': Wrench,
+  'add_router': Wrench,
 };
 
 const ACTION_COLORS: Record<ModificationAction, string> = {
@@ -42,6 +44,8 @@ const ACTION_COLORS: Record<ModificationAction, string> = {
   'change_config': 'text-yellow-500 bg-yellow-500/10',
   'add_trigger': 'text-cyan-500 bg-cyan-500/10',
   'remove_trigger': 'text-gray-500 bg-gray-500/10',
+  'add_mcp': 'text-indigo-500 bg-indigo-500/10',
+  'add_router': 'text-teal-500 bg-teal-500/10',
 };
 
 const ACTION_LABELS: Record<ModificationAction, string> = {
@@ -53,6 +57,8 @@ const ACTION_LABELS: Record<ModificationAction, string> = {
   'change_config': '修改配置',
   'add_trigger': '添加触发器',
   'remove_trigger': '移除触发器',
+  'add_mcp': '添加 MCP 工具',
+  'add_router': '添加路由节点',
 };
 
 export function ModificationConfirmCard({

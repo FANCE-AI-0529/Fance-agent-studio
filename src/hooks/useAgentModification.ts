@@ -312,6 +312,8 @@ export function useAgentModification() {
       'change_config': '修改配置',
       'add_trigger': '添加触发器',
       'remove_trigger': '移除触发器',
+      'add_mcp': '添加 MCP 工具',
+      'add_router': '添加路由节点',
     };
     return labels[action] || action;
   }, []);
