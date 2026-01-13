@@ -163,6 +163,16 @@
     border-color: hsl(var(--border));
   }
 
+  /* Prevent FOUC - hide until theme is resolved */
+  html:not(.light):not(.dark) {
+    visibility: hidden;
+  }
+  
+  html.light,
+  html.dark {
+    visibility: visible;
+  }
+
   html {
     color-scheme: light dark;
   }
@@ -173,6 +183,12 @@
 
   html.light {
     color-scheme: light;
+  }
+
+  /* Disable transitions during theme change */
+  html.disable-transitions,
+  html.disable-transitions * {
+    transition: none !important;
   }
 
   body {

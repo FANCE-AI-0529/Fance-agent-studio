@@ -1,5 +1,6 @@
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,8 +9,43 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Helper to disable transitions during theme change
+const disableTransitions = () => {
+  document.documentElement.classList.add('disable-transitions');
+  // Re-enable after a short delay
+  setTimeout(() => {
+    document.documentElement.classList.remove('disable-transitions');
+  }, 100);
+};
+
 export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleThemeChange = (newTheme: string) => {
+    disableTransitions();
+    setTheme(newTheme);
+  };
+
+  // Show placeholder during SSR/hydration
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size={collapsed ? "icon" : "sm"}
+        className={collapsed ? "h-8 w-8" : "w-full justify-start gap-2 px-2"}
+        disabled
+      >
+        <div className="h-4 w-4 rounded-full bg-muted animate-pulse" />
+        {!collapsed && <span className="text-muted-foreground">主题</span>}
+      </Button>
+    );
+  }
 
   if (collapsed) {
     return (
@@ -18,8 +54,9 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
         size="icon"
         className="h-8 w-8"
         onClick={() => {
-          if (theme === "dark") setTheme("light");
-          else if (theme === "light") setTheme("system");
+          disableTransitions();
+          if (resolvedTheme === "dark") setTheme("light");
+          else if (resolvedTheme === "light") setTheme("system");
           else setTheme("dark");
         }}
       >
@@ -40,15 +77,15 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
+        <DropdownMenuItem onClick={() => handleThemeChange("light")}>
           <Sun className="h-4 w-4 mr-2" />
           浅色模式
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
+        <DropdownMenuItem onClick={() => handleThemeChange("dark")}>
           <Moon className="h-4 w-4 mr-2" />
           深色模式
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
+        <DropdownMenuItem onClick={() => handleThemeChange("system")}>
           <Monitor className="h-4 w-4 mr-2" />
           跟随系统
         </DropdownMenuItem>
