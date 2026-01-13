@@ -332,6 +332,70 @@ export type Database = {
           },
         ]
       }
+      agent_memory_files: {
+        Row: {
+          agent_id: string | null
+          content: string
+          created_at: string | null
+          file_path: string
+          file_type: string
+          id: string
+          last_modified_by: string | null
+          metadata: Json | null
+          session_id: string | null
+          updated_at: string | null
+          version: number
+        }
+        Insert: {
+          agent_id?: string | null
+          content?: string
+          created_at?: string | null
+          file_path: string
+          file_type?: string
+          id?: string
+          last_modified_by?: string | null
+          metadata?: Json | null
+          session_id?: string | null
+          updated_at?: string | null
+          version?: number
+        }
+        Update: {
+          agent_id?: string | null
+          content?: string
+          created_at?: string | null
+          file_path?: string
+          file_type?: string
+          id?: string
+          last_modified_by?: string | null
+          metadata?: Json | null
+          session_id?: string | null
+          updated_at?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_memory_files_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_memory_files_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_memory_files_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_skills: {
         Row: {
           agent_id: string
@@ -1783,6 +1847,51 @@ export type Database = {
         }
         Relationships: []
       }
+      kernel_skills: {
+        Row: {
+          content: string
+          created_at: string | null
+          description: string | null
+          file_templates: Json
+          hooks: Json
+          id: string
+          is_active: boolean | null
+          name: string
+          rules: Json | null
+          skill_id: string
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          description?: string | null
+          file_templates?: Json
+          hooks?: Json
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rules?: Json | null
+          skill_id: string
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          description?: string | null
+          file_templates?: Json
+          hooks?: Json
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rules?: Json | null
+          skill_id?: string
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       knowledge_bases: {
         Row: {
           chunk_overlap: number | null
@@ -2885,9 +2994,12 @@ export type Database = {
           inputs: Json | null
           is_featured: boolean | null
           is_free: boolean | null
+          is_kernel: boolean | null
+          is_mandatory: boolean | null
           is_official: boolean | null
           is_published: boolean
           is_verified: boolean | null
+          kernel_hooks: Json | null
           knowledge_base_id: string | null
           mcp_resources: Json | null
           mcp_tools: Json | null
@@ -2922,9 +3034,12 @@ export type Database = {
           inputs?: Json | null
           is_featured?: boolean | null
           is_free?: boolean | null
+          is_kernel?: boolean | null
+          is_mandatory?: boolean | null
           is_official?: boolean | null
           is_published?: boolean
           is_verified?: boolean | null
+          kernel_hooks?: Json | null
           knowledge_base_id?: string | null
           mcp_resources?: Json | null
           mcp_tools?: Json | null
@@ -2959,9 +3074,12 @@ export type Database = {
           inputs?: Json | null
           is_featured?: boolean | null
           is_free?: boolean | null
+          is_kernel?: boolean | null
+          is_mandatory?: boolean | null
           is_official?: boolean | null
           is_published?: boolean
           is_verified?: boolean | null
+          kernel_hooks?: Json | null
           knowledge_base_id?: string | null
           mcp_resources?: Json | null
           mcp_tools?: Json | null
