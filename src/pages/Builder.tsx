@@ -94,6 +94,7 @@ import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
+import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import {
   AlertDialog,
@@ -1672,11 +1673,11 @@ const Builder = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* AI Agent Generator Modal */}
-        <AIAgentGenerator
+        {/* Enhanced AI Workflow Generator Modal */}
+        <EnhancedAIGenerator
           isOpen={showAIGenerator}
           onClose={() => setShowAIGenerator(false)}
-          onApply={(nodes, edges, config, knowledgeBases) => {
+          onApply={(nodes, edges, config, knowledgeBases, result) => {
             // Update canvas nodes and edges
             setNodes(nodes);
             setEdges(edges);
@@ -1687,13 +1688,22 @@ const Builder = () => {
             // Mount knowledge bases if provided
             knowledgeBases?.forEach(kb => addKnowledgeBase(kb));
             
+            // Show risk warning if high risk
+            if (result?.riskAssessment?.overallRisk === 'high') {
+              toast({
+                title: "检测到高风险操作",
+                description: `已自动添加 ${result.interventions.length} 个干预节点`,
+                variant: "destructive",
+              });
+            }
+            
             // Fit view after a short delay
             setTimeout(() => {
               reactFlowInstance?.fitView({ padding: 0.2 });
             }, 100);
             
             toast({
-              title: "智能体已生成",
+              title: "工作流已生成",
               description: `已创建 ${nodes.length} 个节点和 ${edges.length} 条连线`,
             });
           }}
