@@ -8,6 +8,10 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { ModeAwareLayout } from "@/components/layout/ModeAwareLayout";
+import { StudioOnlyRoute } from "@/components/layout/StudioOnlyRoute";
+import { HackerTransition } from "@/components/consumer/HackerTransition";
+import { useAppModeStore } from "@/stores/appModeStore";
 import Index from "./pages/Index";
 import Builder from "./pages/Builder";
 import Foundry from "./pages/Foundry";
@@ -89,9 +93,7 @@ function AppRoutes() {
         path="/"
         element={
           <ProtectedRoute>
-            <MainLayout>
-              <Index />
-            </MainLayout>
+            <ModeAwareLayout />
           </ProtectedRoute>
         }
       />
