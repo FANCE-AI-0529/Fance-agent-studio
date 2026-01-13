@@ -73,6 +73,7 @@ import ParallelNode, { ParallelNodeData } from "@/components/builder/nodes/Paral
 import MCPActionNode, { MCPActionNodeData } from "@/components/builder/nodes/MCPActionNode";
 import InterventionNode, { InterventionNodeData } from "@/components/builder/nodes/InterventionNode";
 import ManusKernelNode from "@/components/builder/nodes/ManusKernelNode";
+import GeneratedSkillNode from "@/components/builder/nodes/GeneratedSkillNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "@/components/builder/edges/ManusLifecycleEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
@@ -119,7 +120,7 @@ import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
 import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
 import { NodeTypes, EdgeTypes } from "@xyflow/react";
 
-// Custom node types - including Manus Kernel
+// Custom node types - including Manus Kernel and Generated Skills
 const nodeTypes: NodeTypes = {
   skill: SkillNode,
   agent: AgentNode,
@@ -132,6 +133,7 @@ const nodeTypes: NodeTypes = {
   mcpAction: MCPActionNode,
   intervention: InterventionNode,
   manus: ManusKernelNode, // Manus Kernel node type
+  generatedSkill: GeneratedSkillNode, // AI 即时生成的技能节点
 };
 
 // Custom edge types - including Manus Lifecycle edge
