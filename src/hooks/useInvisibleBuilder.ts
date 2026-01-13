@@ -1,6 +1,6 @@
 // =====================================================
-// 隐形构建器 Hook - 带 RAG 澄清交互
-// Invisible Builder Hook - With RAG Clarification
+// 隐形构建器 Hook - 带 RAG 澄清交互 + 图谱同步
+// Invisible Builder Hook - With RAG Clarification + Graph Sync
 // =====================================================
 
 import { useState, useCallback, useRef } from "react";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { MagicStep } from "@/components/consumer/MagicLoader";
 import type { Json } from "@/integrations/supabase/types";
 import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecision } from "@/hooks/useKnowledgeMatching";
+import { useGlobalAgentStore } from "@/stores/globalAgentStore";
 import { toast } from "sonner";
 
 export interface InvisibleBuildResult {
@@ -67,6 +68,9 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
   const abortRef = useRef(false);
   const resolveDecisionRef = useRef<((value: KnowledgeMatchResult[]) => void) | null>(null);
   const selectedKBsRef = useRef<KnowledgeMatchResult[]>([]);
+  
+  // Global agent store for graph sync
+  const globalAgentStore = useGlobalAgentStore();
   
   const { matchKnowledgeBases } = useKnowledgeMatching();
 
@@ -320,6 +324,96 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
 
       if (saveError) throw new Error(saveError.message || '保存失败');
       if (abortRef.current) throw new Error('已取消');
+
+      // ============= Write Graph Data to Database =============
+      // This enables real-time sync with Studio
+      const agentId = agentData.id;
+      
+      // Set agent ID in global store to enable sync
+      globalAgentStore.setAgentId(agentId);
+      
+      // Create Manus Core node (center node)
+      const manusNode = await globalAgentStore.addNode({
+        agent_id: agentId,
+        node_id: 'manus-core',
+        node_type: 'manus',
+        position_x: 400,
+        position_y: 300,
+        data: {
+          name: agentName,
+          model: config?.model || 'gpt-4',
+          status: 'active',
+        },
+      });
+      
+      // Create skill nodes (radially distributed around core)
+      const skillNodePromises = skills.map(async (skill: string, index: number) => {
+        const angle = (index * 2 * Math.PI) / Math.max(skills.length, 1);
+        const radius = 180;
+        const x = 400 + Math.cos(angle) * radius;
+        const y = 300 + Math.sin(angle) * radius;
+        
+        return globalAgentStore.addNode({
+          agent_id: agentId,
+          node_id: `skill-${skill.toLowerCase().replace(/\s+/g, '-')}-${index}`,
+          node_type: 'skill',
+          position_x: x,
+          position_y: y,
+          data: {
+            name: skill,
+            category: 'generated',
+            description: `AI 生成的 ${skill} 技能`,
+          },
+        });
+      });
+      
+      const skillNodes = await Promise.all(skillNodePromises);
+      
+      // Create knowledge base nodes (if any)
+      const kbNodePromises = mountedKnowledgeBases.map(async (kb, index) => {
+        const angle = ((skills.length + index) * 2 * Math.PI) / Math.max(skills.length + mountedKnowledgeBases.length, 1);
+        const radius = 220;
+        const x = 400 + Math.cos(angle) * radius;
+        const y = 300 + Math.sin(angle) * radius;
+        
+        return globalAgentStore.addNode({
+          agent_id: agentId,
+          node_id: `kb-${kb.id}`,
+          node_type: 'knowledge',
+          position_x: x,
+          position_y: y,
+          data: {
+            id: kb.id,
+            name: kb.name,
+            type: 'knowledge_base',
+          },
+        });
+      });
+      
+      const kbNodes = await Promise.all(kbNodePromises);
+      
+      // Create edges from all nodes to Manus Core
+      const allNodes = [...skillNodes.filter(Boolean), ...kbNodes.filter(Boolean)];
+      const edgePromises = allNodes.map(async (node, index) => {
+        if (!node) return null;
+        return globalAgentStore.addEdge({
+          agent_id: agentId,
+          edge_id: `edge-${node.node_id}-to-core`,
+          source_node: node.node_id,
+          target_node: 'manus-core',
+          edge_type: 'animated',
+          data: {},
+        });
+      });
+      
+      await Promise.all(edgePromises);
+      
+      console.log('[InvisibleBuilder] Graph data written to database:', {
+        agentId,
+        manusNode: manusNode?.node_id,
+        skillNodes: skillNodes.length,
+        kbNodes: kbNodes.length,
+      });
 
       // Step 5: Complete
       await advanceToStep(4, `${agentName} 已就绪 ✨`);
