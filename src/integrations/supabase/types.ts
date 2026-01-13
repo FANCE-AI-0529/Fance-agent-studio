@@ -289,6 +289,128 @@ export type Database = {
           },
         ]
       }
+      agent_graph_edges: {
+        Row: {
+          agent_id: string
+          created_at: string
+          data: Json | null
+          edge_id: string
+          edge_type: string | null
+          id: string
+          source_node: string
+          target_node: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          data?: Json | null
+          edge_id: string
+          edge_type?: string | null
+          id?: string
+          source_node: string
+          target_node: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          data?: Json | null
+          edge_id?: string
+          edge_type?: string | null
+          id?: string
+          source_node?: string
+          target_node?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_graph_edges_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_graph_edges_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_graph_edges_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_graph_nodes: {
+        Row: {
+          agent_id: string
+          created_at: string
+          data: Json
+          id: string
+          node_id: string
+          node_type: string
+          position_x: number
+          position_y: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          data?: Json
+          id?: string
+          node_id: string
+          node_type: string
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          node_id?: string
+          node_type?: string
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_graph_nodes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_graph_nodes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_graph_nodes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_likes: {
         Row: {
           agent_id: string
