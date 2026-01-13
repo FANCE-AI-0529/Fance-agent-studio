@@ -18,6 +18,8 @@ interface GenerateRequest {
   mplpPolicy?: 'permissive' | 'default' | 'strict';
   includeKnowledge?: boolean;
   maxNodes?: number;
+  selectedKnowledgeBaseIds?: string[]; // User-selected KBs from clarification
+  skipKnowledge?: boolean; // User chose to skip KB mounting
 }
 
 interface WorkflowDSL {
@@ -29,6 +31,36 @@ interface WorkflowDSL {
   governance?: { mplpPolicy: string; auditLogging: boolean };
   metadata?: { category?: string; extractedParams?: ExtractedParams };
 }
+
+// ========== RAG Decision Types ==========
+
+type RAGDecisionAction = 'AUTO_MOUNT' | 'ASK_USER' | 'REQUEST_UPLOAD' | 'SKIP';
+
+interface RAGDecisionResult {
+  status: 'continue' | 'clarification_needed';
+  reason?: 'auto_mount' | 'multiple_candidates' | 'no_match';
+  action?: RAGDecisionAction;
+  candidates?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    score: number;
+    matchReason: string;
+  }>;
+  question?: string;
+  autoMountedKB?: {
+    id: string;
+    name: string;
+    score: number;
+  };
+}
+
+// RAG Decision Thresholds
+const RAG_THRESHOLDS = {
+  autoMountThreshold: 0.85,   // Auto mount when score > 0.85
+  askUserThreshold: 0.60,     // Ask user when score > 0.60 but < 0.85
+  ambiguityGap: 0.10,         // Ask if top scores are within 0.10 gap
+};
 
 interface StageSpec {
   id: string;
@@ -122,6 +154,8 @@ serve(async (req) => {
       mplpPolicy = 'default',
       includeKnowledge = true,
       maxNodes = 10,
+      selectedKnowledgeBaseIds,
+      skipKnowledge = false,
     } = request;
 
     if (!description || !userId) {
@@ -149,8 +183,53 @@ serve(async (req) => {
       }
     }
     
-    // 4. 知识库自动匹配
-    const autoMountedKBs = await matchKnowledgeBasesForContext(supabase, description, userId, assetsResponse);
+    // 4. RAG Decision State Machine - Phase 3
+    let autoMountedKBs: KnowledgeBaseSuggestion[] = [];
+    
+    // If user already made a selection or skipped, use that
+    if (selectedKnowledgeBaseIds && selectedKnowledgeBaseIds.length > 0) {
+      // User selected specific KBs - fetch them
+      const { data: selectedKBs } = await supabase
+        .from('knowledge_bases')
+        .select('id, name, description')
+        .in('id', selectedKnowledgeBaseIds);
+      
+      autoMountedKBs = (selectedKBs || []).map((kb: { id: string; name: string; description?: string }) => ({
+        id: kb.id,
+        name: kb.name,
+        description: kb.description,
+        intentTags: [],
+        matchScore: 1.0, // User selected = 100% confidence
+      }));
+    } else if (!skipKnowledge && includeKnowledge) {
+      // Run RAG decision state machine
+      const ragDecision = await executeRAGDecision(supabase, description, userId, assetsResponse);
+      
+      // If clarification needed, return early
+      if (ragDecision.status === 'clarification_needed') {
+        return new Response(
+          JSON.stringify({
+            status: 'clarification_needed',
+            reason: ragDecision.reason,
+            action: ragDecision.action,
+            candidates: ragDecision.candidates,
+            question: ragDecision.question,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Auto mount case
+      if (ragDecision.autoMountedKB) {
+        autoMountedKBs = [{
+          id: ragDecision.autoMountedKB.id,
+          name: ragDecision.autoMountedKB.name,
+          description: '',
+          intentTags: [],
+          matchScore: ragDecision.autoMountedKB.score,
+        }];
+      }
+    }
 
     // 5. 生成工作流 DSL (包含生成的技能和自动挂载的知识库)
     const dsl = await generateWorkflowDSL(
@@ -954,6 +1033,107 @@ function createGeneratedSkillNode(suggestion: SkillSuggestion): NodeSpec {
     isGenerated: true,
     generatedAt: new Date().toISOString(),
   };
+}
+
+// ========== RAG Decision State Machine (Phase 3) ==========
+
+// deno-lint-ignore no-explicit-any
+async function executeRAGDecision(
+  supabase: any,
+  description: string,
+  userId: string,
+  assets: AssetSearchResult
+): Promise<RAGDecisionResult> {
+  // Get matched knowledge bases with scores
+  const matchedKBs = await matchKnowledgeBasesForContext(supabase, description, userId, assets);
+  
+  // If no matches at all
+  if (matchedKBs.length === 0) {
+    return {
+      status: 'clarification_needed',
+      reason: 'no_match',
+      action: 'REQUEST_UPLOAD',
+      candidates: [],
+      question: '我没有找到相关资料。您可以直接把文件拖给我，我立马学习！',
+    };
+  }
+  
+  const top1 = matchedKBs[0];
+  const top2 = matchedKBs[1];
+  
+  // Decision Logic based on thresholds
+  // Case 1: Score > 0.85 → AUTO_MOUNT
+  if (top1.matchScore > RAG_THRESHOLDS.autoMountThreshold) {
+    return {
+      status: 'continue',
+      reason: 'auto_mount',
+      autoMountedKB: {
+        id: top1.id,
+        name: top1.name,
+        score: top1.matchScore,
+      },
+    };
+  }
+  
+  // Case 2: Score > 0.6 but < 0.85, OR multiple candidates with close scores
+  if (top1.matchScore > RAG_THRESHOLDS.askUserThreshold) {
+    // Check if there's ambiguity (top1 and top2 are close)
+    const hasAmbiguity = top2 && 
+      (top1.matchScore - top2.matchScore) < RAG_THRESHOLDS.ambiguityGap;
+    
+    if (hasAmbiguity || matchedKBs.length > 1) {
+      return {
+        status: 'clarification_needed',
+        reason: 'multiple_candidates',
+        action: 'ASK_USER',
+        candidates: matchedKBs.slice(0, 4).map(kb => ({
+          id: kb.id,
+          name: kb.name,
+          description: kb.description,
+          score: kb.matchScore,
+          matchReason: kb.intentTags?.join('、') || '语义相关',
+        })),
+        question: generateClarificationQuestion(matchedKBs.slice(0, 2)),
+      };
+    }
+    
+    // Single confident match - auto mount
+    return {
+      status: 'continue',
+      reason: 'auto_mount',
+      autoMountedKB: {
+        id: top1.id,
+        name: top1.name,
+        score: top1.matchScore,
+      },
+    };
+  }
+  
+  // Case 3: Score <= 0.6 → Suggest upload or skip
+  return {
+    status: 'clarification_needed',
+    reason: 'no_match',
+    action: 'REQUEST_UPLOAD',
+    candidates: matchedKBs.slice(0, 2).map(kb => ({
+      id: kb.id,
+      name: kb.name,
+      description: kb.description,
+      score: kb.matchScore,
+      matchReason: '匹配度较低',
+    })),
+    question: '我没有找到高度相关的资料。您可以上传新文件，或选择使用通用知识回答。',
+  };
+}
+
+function generateClarificationQuestion(topKBs: KnowledgeBaseSuggestion[]): string {
+  if (topKBs.length === 0) {
+    return '未找到相关知识库';
+  }
+  if (topKBs.length === 1) {
+    return `检测到可能相关的知识库「${topKBs[0].name}」，需要使用它来回答吗？`;
+  }
+  const names = topKBs.map(kb => `「${kb.name}」`).join('和');
+  return `检测到多个相关知识库：${names}，您想使用哪个？`;
 }
 
 // ========== 知识库自动匹配 ==========
