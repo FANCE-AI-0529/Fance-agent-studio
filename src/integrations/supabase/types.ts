@@ -3277,6 +3277,60 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_settlements: {
+        Row: {
+          created_at: string
+          creator_id: string
+          currency: string | null
+          currency_amount: number | null
+          exchange_rate: number | null
+          id: string
+          net_amount: number
+          payout_details: Json | null
+          payout_method: string | null
+          period_end: string
+          period_start: string
+          platform_fee: number
+          processed_at: string | null
+          status: string
+          total_tokens: number
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          currency?: string | null
+          currency_amount?: number | null
+          exchange_rate?: number | null
+          id?: string
+          net_amount: number
+          payout_details?: Json | null
+          payout_method?: string | null
+          period_end: string
+          period_start: string
+          platform_fee: number
+          processed_at?: string | null
+          status?: string
+          total_tokens: number
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          currency?: string | null
+          currency_amount?: number | null
+          exchange_rate?: number | null
+          id?: string
+          net_amount?: number
+          payout_details?: Json | null
+          payout_method?: string | null
+          period_end?: string
+          period_start?: string
+          platform_fee?: number
+          processed_at?: string | null
+          status?: string
+          total_tokens?: number
+        }
+        Relationships: []
+      }
       sandbox_executions: {
         Row: {
           agent_id: string | null
@@ -3642,6 +3696,62 @@ export type Database = {
           },
         ]
       }
+      skill_pricing: {
+        Row: {
+          bulk_discounts: Json | null
+          created_at: string
+          creator_share: number
+          id: string
+          is_active: boolean | null
+          monthly_price: number | null
+          one_time_price: number | null
+          price_per_call: number | null
+          pricing_model: string
+          skill_id: string
+          trial_calls: number | null
+          updated_at: string
+          yearly_price: number | null
+        }
+        Insert: {
+          bulk_discounts?: Json | null
+          created_at?: string
+          creator_share?: number
+          id?: string
+          is_active?: boolean | null
+          monthly_price?: number | null
+          one_time_price?: number | null
+          price_per_call?: number | null
+          pricing_model: string
+          skill_id: string
+          trial_calls?: number | null
+          updated_at?: string
+          yearly_price?: number | null
+        }
+        Update: {
+          bulk_discounts?: Json | null
+          created_at?: string
+          creator_share?: number
+          id?: string
+          is_active?: boolean | null
+          monthly_price?: number | null
+          one_time_price?: number | null
+          price_per_call?: number | null
+          pricing_model?: string
+          skill_id?: string
+          trial_calls?: number | null
+          updated_at?: string
+          yearly_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_pricing_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: true
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_ratings: {
         Row: {
           created_at: string
@@ -3673,6 +3783,128 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "skill_ratings_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          pricing_id: string
+          skill_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          pricing_id: string
+          skill_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          pricing_id?: string
+          skill_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_subscriptions_pricing_id_fkey"
+            columns: ["pricing_id"]
+            isOneToOne: false
+            referencedRelation: "skill_pricing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_subscriptions_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_usage_records: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          creator_earnings: number
+          execution_id: string | null
+          id: string
+          platform_fee: number
+          pricing_model: string
+          skill_id: string
+          success: boolean
+          tokens_charged: number
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          creator_earnings?: number
+          execution_id?: string | null
+          id?: string
+          platform_fee?: number
+          pricing_model: string
+          skill_id: string
+          success?: boolean
+          tokens_charged?: number
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          creator_earnings?: number
+          execution_id?: string | null
+          id?: string
+          platform_fee?: number
+          pricing_model?: string
+          skill_id?: string
+          success?: boolean
+          tokens_charged?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_usage_records_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_usage_records_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_usage_records_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_usage_records_skill_id_fkey"
             columns: ["skill_id"]
             isOneToOne: false
             referencedRelation: "skills"
@@ -4318,6 +4550,153 @@ export type Database = {
           },
         ]
       }
+      token_holds: {
+        Row: {
+          amount: number
+          created_at: string
+          expires_at: string
+          id: string
+          reason: string
+          reference_id: string | null
+          released_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          reason: string
+          reference_id?: string | null
+          released_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          reason?: string
+          reference_id?: string | null
+          released_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      token_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          reference_type: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          description: string
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      token_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          frozen_balance: number
+          id: string
+          lifetime_earned: number
+          lifetime_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          frozen_balance?: number
+          id?: string
+          lifetime_earned?: number
+          lifetime_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          frozen_balance?: number
+          id?: string
+          lifetime_earned?: number
+          lifetime_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      topup_orders: {
+        Row: {
+          bonus_tokens: number | null
+          completed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          payment_amount: number
+          payment_id: string | null
+          payment_method: string
+          status: string
+          token_amount: number
+          user_id: string
+        }
+        Insert: {
+          bonus_tokens?: number | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_amount: number
+          payment_id?: string | null
+          payment_method: string
+          status?: string
+          token_amount: number
+          user_id: string
+        }
+        Update: {
+          bonus_tokens?: number | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_amount?: number
+          payment_id?: string | null
+          payment_method?: string
+          status?: string
+          token_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       trace_logs: {
         Row: {
           created_at: string
@@ -4868,7 +5247,18 @@ export type Database = {
         Returns: undefined
       }
       clone_agent: { Args: { source_id: string }; Returns: string }
+      complete_topup_order: { Args: { p_order_id: string }; Returns: Json }
       cosine_similarity: { Args: { a: Json; b: Json }; Returns: number }
+      create_token_hold: {
+        Args: {
+          p_amount: number
+          p_expires_minutes?: number
+          p_reason: string
+          p_reference_id?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       find_similar_entities: {
         Args: {
           p_agent_id?: string
@@ -4947,6 +5337,20 @@ export type Database = {
           similarity: number
         }[]
       }
+      process_skill_payment: {
+        Args: {
+          p_amount: number
+          p_creator_id: string
+          p_creator_share: number
+          p_execution_id?: string
+          p_platform_fee: number
+          p_pricing_model?: string
+          p_skill_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      release_token_hold: { Args: { p_hold_id: string }; Returns: Json }
       submit_skill_rating: {
         Args: { p_rating: number; p_review?: string; p_skill_id: string }
         Returns: undefined
