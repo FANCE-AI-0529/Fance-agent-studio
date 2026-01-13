@@ -1,5 +1,8 @@
 project_id = "izkiwlbxkeczzttryhbi"
 
+[functions.streaming-generator]
+verify_jwt = false
+
 [functions.agent-chat]
 verify_jwt = false
 
