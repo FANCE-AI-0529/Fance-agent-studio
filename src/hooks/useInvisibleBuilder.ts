@@ -69,8 +69,10 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
   const resolveDecisionRef = useRef<((value: KnowledgeMatchResult[]) => void) | null>(null);
   const selectedKBsRef = useRef<KnowledgeMatchResult[]>([]);
   
-  // Global agent store for graph sync
-  const globalAgentStore = useGlobalAgentStore();
+  // ✅ Use precise selectors for store actions to avoid infinite loops
+  const setAgentId = useGlobalAgentStore((s) => s.setAgentId);
+  const addNode = useGlobalAgentStore((s) => s.addNode);
+  const addEdge = useGlobalAgentStore((s) => s.addEdge);
   
   const { matchKnowledgeBases } = useKnowledgeMatching();
 
@@ -327,14 +329,14 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
 
       // ============= Write Graph Data to Database =============
       // This enables real-time sync with Studio
-      const agentId = agentData.id;
+      const newAgentId = agentData.id;
       
       // Set agent ID in global store to enable sync
-      globalAgentStore.setAgentId(agentId);
+      setAgentId(newAgentId);
       
       // Create Manus Core node (center node)
-      const manusNode = await globalAgentStore.addNode({
-        agent_id: agentId,
+      const manusNode = await addNode({
+        agent_id: newAgentId,
         node_id: 'manus-core',
         node_type: 'manus',
         position_x: 400,
@@ -353,8 +355,8 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         const x = 400 + Math.cos(angle) * radius;
         const y = 300 + Math.sin(angle) * radius;
         
-        return globalAgentStore.addNode({
-          agent_id: agentId,
+        return addNode({
+          agent_id: newAgentId,
           node_id: `skill-${skill.toLowerCase().replace(/\s+/g, '-')}-${index}`,
           node_type: 'skill',
           position_x: x,
@@ -376,8 +378,8 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         const x = 400 + Math.cos(angle) * radius;
         const y = 300 + Math.sin(angle) * radius;
         
-        return globalAgentStore.addNode({
-          agent_id: agentId,
+        return addNode({
+          agent_id: newAgentId,
           node_id: `kb-${kb.id}`,
           node_type: 'knowledge',
           position_x: x,
@@ -396,8 +398,8 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       const allNodes = [...skillNodes.filter(Boolean), ...kbNodes.filter(Boolean)];
       const edgePromises = allNodes.map(async (node, index) => {
         if (!node) return null;
-        return globalAgentStore.addEdge({
-          agent_id: agentId,
+        return addEdge({
+          agent_id: newAgentId,
           edge_id: `edge-${node.node_id}-to-core`,
           source_node: node.node_id,
           target_node: 'manus-core',
@@ -409,7 +411,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       await Promise.all(edgePromises);
       
       console.log('[InvisibleBuilder] Graph data written to database:', {
-        agentId,
+        agentId: newAgentId,
         manusNode: manusNode?.node_id,
         skillNodes: skillNodes.length,
         kbNodes: kbNodes.length,
