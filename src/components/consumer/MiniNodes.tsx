@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Brain, Wrench, BookOpen, Zap, Database, MessageSquare } from 'lucide-react';
+import { Brain, Wrench, BookOpen, Zap, Database, MessageSquare, GitBranch, UserCheck, Puzzle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MiniNodeData {
@@ -145,6 +145,76 @@ export const MiniActionNode = React.memo(({ data }: NodeProps) => {
 
 MiniActionNode.displayName = 'MiniActionNode';
 
+// Router Node - for conditional branching
+export const MiniRouterNode = React.memo(({ data }: NodeProps) => {
+  const nodeData = data as MiniNodeData;
+  const isActive = nodeData?.isActive || false;
+
+  return (
+    <div
+      className={cn(
+        "w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-teal-600/40 border border-teal-500/50",
+        "flex items-center justify-center transition-all duration-300",
+        "hover:scale-110 cursor-pointer",
+        isActive && "animate-pulse shadow-[0_0_15px_rgba(20,184,166,0.5)]"
+      )}
+    >
+      <GitBranch className="w-4 h-4 text-teal-400" />
+      <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-teal-400/50" />
+      <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !bg-teal-400/50" />
+      <Handle type="source" position={Position.Right} id="branch" className="!w-1.5 !h-1.5 !bg-teal-400/50" />
+    </div>
+  );
+});
+
+MiniRouterNode.displayName = 'MiniRouterNode';
+
+// Intervention Node - for human review
+export const MiniInterventionNode = React.memo(({ data }: NodeProps) => {
+  const nodeData = data as MiniNodeData;
+  const isActive = nodeData?.isActive || false;
+
+  return (
+    <div
+      className={cn(
+        "w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/20 to-rose-600/40 border border-rose-500/50",
+        "flex items-center justify-center transition-all duration-300",
+        "hover:scale-110 cursor-pointer",
+        isActive && "animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.5)]"
+      )}
+    >
+      <UserCheck className="w-4 h-4 text-rose-400" />
+      <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-rose-400/50" />
+      <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !bg-rose-400/50" />
+    </div>
+  );
+});
+
+MiniInterventionNode.displayName = 'MiniInterventionNode';
+
+// MCP Tool Node - for external service calls
+export const MiniMcpToolNode = React.memo(({ data }: NodeProps) => {
+  const nodeData = data as MiniNodeData;
+  const isActive = nodeData?.isActive || false;
+
+  return (
+    <div
+      className={cn(
+        "w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-600/40 border border-indigo-500/50",
+        "flex items-center justify-center transition-all duration-300",
+        "hover:scale-110 cursor-pointer",
+        isActive && "animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+      )}
+    >
+      <Puzzle className="w-4 h-4 text-indigo-400" />
+      <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-indigo-400/50" />
+      <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !bg-indigo-400/50" />
+    </div>
+  );
+});
+
+MiniMcpToolNode.displayName = 'MiniMcpToolNode';
+
 // Node types mapping for ReactFlow
 export const miniNodeTypes = {
   manus: MiniManusNode,
@@ -156,6 +226,10 @@ export const miniNodeTypes = {
   output: MiniOutputNode,
   action: MiniActionNode,
   mcpAction: MiniActionNode,
+  router: MiniRouterNode,
+  intervention: MiniInterventionNode,
+  mcp: MiniMcpToolNode,
+  mcpTool: MiniMcpToolNode,
   // Fallback for unknown types
   default: MiniSkillNode,
 };

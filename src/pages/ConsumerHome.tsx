@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuroraBackground } from "@/components/consumer/AuroraBackground";
@@ -10,6 +10,7 @@ import { MagicLoader } from "@/components/consumer/MagicLoader";
 import { BuildCompletionCard } from "@/components/consumer/BuildCompletionCard";
 import { ClarificationCard } from "@/components/consumer/ClarificationCard";
 import { UploadGuideCard } from "@/components/consumer/UploadGuideCard";
+import { MiniStudioPreview } from "@/components/consumer/MiniStudioPreview";
 import { useInvisibleBuilder, type InvisibleBuildResult } from "@/hooks/useInvisibleBuilder";
 import { useInlineUpload } from "@/hooks/useInlineUpload";
 import { useAppModeStore } from "@/stores/appModeStore";
@@ -267,6 +268,16 @@ export default function ConsumerHome() {
                 isPaused={isPaused}
                 clarificationComponent={renderClarificationComponent()}
               />
+              
+              {/* Mini Studio Preview during build */}
+              {buildResult?.agentId && (
+                <MiniStudioPreview
+                  agentId={buildResult.agentId}
+                  latestAgentMessage={steps[currentStepIndex]?.text || null}
+                  defaultExpanded={true}
+                  className="!bottom-20"
+                />
+              )}
             </motion.div>
           )}
 
