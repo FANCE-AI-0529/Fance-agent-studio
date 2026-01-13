@@ -77,6 +77,27 @@ function AppRoutes() {
     return <>{children}</>;
   };
 
+  // Mode-aware Runtime layout - no MainLayout wrapper in consumer mode
+  const ModeAwareRuntimeLayout = () => {
+    const { mode, isTransitioning } = useAppModeStore();
+    
+    if (isTransitioning) {
+      return <HackerTransition />;
+    }
+    
+    // Consumer mode - Runtime handles its own layout
+    if (mode === 'consumer') {
+      return <Runtime />;
+    }
+    
+    // Studio mode - wrap with MainLayout
+    return (
+      <MainLayout>
+        <Runtime />
+      </MainLayout>
+    );
+  };
+
   return (
     <Routes>
       <Route
@@ -141,9 +162,7 @@ function AppRoutes() {
         path="/runtime"
         element={
           <ProtectedRoute>
-            <MainLayout>
-              <Runtime />
-            </MainLayout>
+            <ModeAwareRuntimeLayout />
           </ProtectedRoute>
         }
       />
