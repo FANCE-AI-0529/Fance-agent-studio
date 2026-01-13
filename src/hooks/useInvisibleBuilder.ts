@@ -394,8 +394,35 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       
       const kbNodes = await Promise.all(kbNodePromises);
       
+      // ============= Create MCP Action Nodes =============
+      const mcpActions = config?.suggestedMCPActions || [];
+      const mcpNodePromises = mcpActions.slice(0, 3).map(async (mcp: any, index: number) => {
+        const totalItems = skills.length + mountedKnowledgeBases.length + mcpActions.length;
+        const angle = ((skills.length + mountedKnowledgeBases.length + index) * 2 * Math.PI) / Math.max(totalItems, 1);
+        const radius = 250;
+        const x = 400 + Math.cos(angle) * radius;
+        const y = 300 + Math.sin(angle) * radius;
+        
+        return addNode({
+          agent_id: newAgentId,
+          node_id: `mcp-${mcp.serverId}-${index}`,
+          node_type: 'mcp_action',
+          position_x: x,
+          position_y: y,
+          data: {
+            name: mcp.serverName || mcp.toolName,
+            serverId: mcp.serverId,
+            toolName: mcp.toolName,
+            riskLevel: mcp.riskLevel || 'low',
+            reason: mcp.reason,
+          },
+        });
+      });
+      
+      const mcpNodes = await Promise.all(mcpNodePromises);
+      
       // Create edges from all nodes to Manus Core
-      const allNodes = [...skillNodes.filter(Boolean), ...kbNodes.filter(Boolean)];
+      const allNodes = [...skillNodes.filter(Boolean), ...kbNodes.filter(Boolean), ...mcpNodes.filter(Boolean)];
       const edgePromises = allNodes.map(async (node, index) => {
         if (!node) return null;
         return addEdge({
@@ -415,6 +442,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         manusNode: manusNode?.node_id,
         skillNodes: skillNodes.length,
         kbNodes: kbNodes.length,
+        mcpNodes: mcpNodes.length,
       });
 
       // Step 5: Complete

@@ -114,20 +114,24 @@ serve(async (req) => {
 ## MCP动作推荐（如果需要外部系统集成）
 6. suggestedMCPActions: 推荐的MCP动作列表
    每个动作包含：
-   - serverId: 服务器ID（如 "database", "email", "github", "google-calendar", "slack", "notion"）
-   - serverName: 服务器名称（如 "数据库", "邮件服务"）
-   - toolName: 工具名称（如 "query_database", "send_email"）
-   - reason: 推荐原因
-   - riskLevel: 风险级别 "low" | "medium" | "high"
+    - serverId: 服务器ID（如 "database", "email", "github", "google-calendar", "slack", "notion", "weather", "search"）
+    - serverName: 服务器名称（如 "数据库", "邮件服务", "天气查询"）
+    - toolName: 工具名称（如 "query_database", "send_email", "get_weather"）
+    - reason: 推荐原因
+    - riskLevel: 风险级别 "low" | "medium" | "high"
 
-分析关键词映射MCP：
-- 邮件/通知/发送 -> email服务
-- 订单/库存/查询 -> database服务  
-- GitHub/Issue/代码 -> github服务
-- 日历/日程/会议 -> google-calendar服务
-- Slack/消息/通知 -> slack服务
-- Notion/文档/笔记 -> notion服务
-- 删除/退款/支付 -> 标记为high风险
+分析关键词映射MCP（必须严格匹配）：
+- 天气/气温/温度/天气预报 -> weather服务, get_weather工具
+- 搜索/查询/搜一下/查一下 -> search服务, web_search工具
+- 邮件/通知/发送/发邮件 -> email服务, send_email工具
+- 订单/库存/数据库 -> database服务, query_database工具
+- GitHub/Issue/代码/仓库 -> github服务, create_issue工具
+- 日历/日程/会议/预约 -> google-calendar服务, create_event工具
+- Slack/消息/群发 -> slack服务, send_message工具
+- Notion/文档/笔记/页面 -> notion服务, create_page工具
+- PDF/解析/文档分析 -> document-parser服务, parse_document工具
+- 财务/财报/分析报告 -> finance-analyzer服务, analyze_report工具
+- 删除/退款/支付/转账 -> 标记为high风险
 
 ## 知识库推荐（如果需要知识检索）
 7. suggestedKnowledgeBases: 推荐的知识库列表
