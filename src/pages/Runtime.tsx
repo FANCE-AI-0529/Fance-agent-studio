@@ -59,8 +59,11 @@ import { SceneBackground, scenePresets } from "@/components/runtime/SceneBackgro
 import { ScenarioSelector } from "@/components/runtime/ScenarioSelector";
 import { ScenarioPrompts } from "@/components/runtime/ScenarioPrompts";
 import { MemoryPanel } from "@/components/runtime/MemoryPanel";
+import { ManusMemoryPanel } from "@/components/runtime/ManusMemoryPanel";
+import { ManusStatusBadge } from "@/components/runtime/ManusStatusIndicator";
 import { ImmersiveHeader } from "@/components/runtime/ImmersiveHeader";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
+import { useManusKernel } from "@/hooks/useManusKernel";
 import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "@/hooks/useScenarios";
 import { useMemoryContext } from "@/hooks/useMemory";
 import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
@@ -1459,6 +1462,12 @@ const Runtime = () => {
                   renderTrace={renderTraceContent}
                   renderContext={renderContextContent}
                   renderCircuit={renderCircuitContent}
+                  renderManus={() => (
+                    <ManusMemoryPanel
+                      agentId={selectedAgent?.id || null}
+                      onUpdateFile={async () => true}
+                    />
+                  )}
                   onClose={() => setIsDeveloperMode(false)}
                 />
               </ResizablePanel>

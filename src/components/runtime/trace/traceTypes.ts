@@ -27,7 +27,17 @@ export type TraceEventType =
   | "rag_graph_traverse"    // [RAG:Graph] Graph traversal
   | "rag_context_inject"    // [MPLP:Trace] Context injection
   | "rag_source_found"      // [RAG:Source] Source document found
-  | "rag_entity_match";     // [RAG:Entity] Entity matched
+  | "rag_entity_match"      // [RAG:Entity] Entity matched
+  // Manus Kernel event types
+  | "manus_init"            // [Manus] Initialize memory files
+  | "manus_read"            // [Manus] Read memory file
+  | "manus_update"          // [Manus] Update memory file
+  | "manus_hook_pre"        // [Manus] PreToolUse Hook
+  | "manus_hook_post"       // [Manus] PostToolUse Hook
+  | "manus_violation"       // [Manus] Protocol violation detected
+  | "manus_2action_rule"    // [Manus] 2-Action Rule triggered
+  | "manus_3strike"         // [Manus] 3-Strike Protocol triggered
+  | "manus_5question";      // [Manus] 5-Question Reboot triggered
 
 export interface TraceEventData {
   skillName?: string;
@@ -63,6 +73,16 @@ export interface TraceEventData {
   ragSourceDocumentName?: string; // Source document name
   ragChunksCount?: number;        // Number of chunks found
   ragNodesCount?: number;         // Number of nodes found
+  // Manus-specific fields
+  manusFilePath?: string;           // Memory file path
+  manusFileContent?: string;        // Memory file content preview
+  manusPhase?: number;              // Current phase number
+  manusPhaseCount?: number;         // Total phase count
+  manusViolationType?: string;      // Violation type
+  manusRuleTriggered?: string;      // Rule that was triggered
+  manusActionCount?: number;        // Action count for rules
+  manusStrikeCount?: number;        // Strike count for 3-strike
+  manusQuestionCount?: number;      // Question count for 5-question
 }
 
 export interface TraceEvent {
