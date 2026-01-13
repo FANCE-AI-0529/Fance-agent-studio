@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { useIntentDrift } from "./useIntentDrift";
+import { supabase } from "@/integrations/supabase/client";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
@@ -140,15 +141,26 @@ export function useAgentChat({
     onThinking?.("MPLP:Gateway", isMultimodal ? "处理多模态请求..." : "连接AI网关...", "info");
 
     try {
+      // Get the user's session token for authenticated requests
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        const errorMessage = "请先登录后再使用智能体";
+        onThinking?.("MPLP:Gateway", errorMessage, "error");
+        setError(errorMessage);
+        setIsLoading(false);
+        return;
+      }
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ messages, agentConfig }),
       });
-
       if (!resp.ok) {
         const errorData = await resp.json().catch(() => ({}));
         const errorCode = errorData.code || "UNKNOWN";
