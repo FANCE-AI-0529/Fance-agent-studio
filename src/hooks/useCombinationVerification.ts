@@ -134,7 +134,7 @@ export function useCombinationVerification(): UseCombinationVerificationReturn {
     } finally {
       setIsRunning(false);
     }
-  }, [user?.id, scenarios]);
+  }, [scenarios]);
 
   /**
    * 运行所有验证场景
