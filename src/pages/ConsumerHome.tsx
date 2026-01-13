@@ -149,7 +149,7 @@ export default function ConsumerHome() {
                     构建你的
                   </span>
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-primary to-purple-400 bg-clip-text text-transparent">
+                  <span className="text-foreground">
                     智能数字员工
                   </span>
                 </motion.h1>
