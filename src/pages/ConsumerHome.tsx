@@ -8,7 +8,10 @@ import { InspirationCapsules } from "@/components/consumer/InspirationCapsules";
 import { AgentDock } from "@/components/consumer/AgentDock";
 import { MagicLoader } from "@/components/consumer/MagicLoader";
 import { BuildCompletionCard } from "@/components/consumer/BuildCompletionCard";
+import { ClarificationCard } from "@/components/consumer/ClarificationCard";
+import { UploadGuideCard } from "@/components/consumer/UploadGuideCard";
 import { useInvisibleBuilder, type InvisibleBuildResult } from "@/hooks/useInvisibleBuilder";
+import { useInlineUpload } from "@/hooks/useInlineUpload";
 import { useAppModeStore } from "@/stores/appModeStore";
 import { Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -22,7 +25,31 @@ export default function ConsumerHome() {
   const [buildResult, setBuildResult] = useState<InvisibleBuildResult | null>(null);
   const { toggleMode } = useAppModeStore();
 
-  const { build, isBuilding, steps, currentStepIndex, error, reset: resetBuilder } = useInvisibleBuilder();
+  const { 
+    build, 
+    isBuilding, 
+    isPaused,
+    steps, 
+    currentStepIndex, 
+    error, 
+    reset: resetBuilder,
+    clarificationState,
+    handleKnowledgeSelection,
+    handleSkipKnowledge,
+    handleFileUploaded,
+  } = useInvisibleBuilder();
+
+  const {
+    uploadStatus,
+    uploadProgress,
+    uploadedFileName,
+    handleUpload,
+    reset: resetUpload,
+  } = useInlineUpload({
+    onComplete: (kb) => {
+      handleFileUploaded(kb);
+    },
+  });
 
   // Keyboard shortcut for developer mode
   useEffect(() => {
@@ -98,8 +125,39 @@ export default function ConsumerHome() {
 
   const handleBackToInput = () => {
     resetBuilder();
+    resetUpload();
     setBuildResult(null);
     setViewState("input");
+  };
+
+  // Render clarification component based on state
+  const renderClarificationComponent = () => {
+    if (!clarificationState) return null;
+
+    if (clarificationState.type === 'ask_user') {
+      return (
+        <ClarificationCard
+          question={clarificationState.question || ''}
+          matches={clarificationState.matches}
+          onSelect={handleKnowledgeSelection}
+          onSkip={handleSkipKnowledge}
+        />
+      );
+    }
+
+    if (clarificationState.type === 'suggest_upload') {
+      return (
+        <UploadGuideCard
+          onUpload={handleUpload}
+          onSkip={handleSkipKnowledge}
+          uploadProgress={uploadProgress}
+          uploadStatus={uploadStatus}
+          uploadedFileName={uploadedFileName || undefined}
+        />
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -202,7 +260,13 @@ export default function ConsumerHome() {
               transition={{ duration: 0.4 }}
               className="w-full max-w-lg mx-auto px-4"
             >
-              <MagicLoader steps={steps} currentStepIndex={currentStepIndex} agentName={buildResult?.agentName} />
+              <MagicLoader 
+                steps={steps} 
+                currentStepIndex={currentStepIndex} 
+                agentName={buildResult?.agentName}
+                isPaused={isPaused}
+                clarificationComponent={renderClarificationComponent()}
+              />
             </motion.div>
           )}
 

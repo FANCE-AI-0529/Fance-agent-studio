@@ -1,13 +1,22 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TypewriterText } from "@/components/ui/typewriter-text";
+import type { KnowledgeMatchResult } from "@/hooks/useKnowledgeMatching";
+
+// Clarification interaction embedded in a step
+export interface StepClarification {
+  type: 'knowledge_selection' | 'upload_guide';
+  matches?: KnowledgeMatchResult[];
+  question?: string;
+}
 
 export interface MagicStep {
   id: string;
   text: string;
   subtext?: string;
-  status: 'pending' | 'active' | 'complete';
+  status: 'pending' | 'active' | 'complete' | 'paused';
+  clarification?: StepClarification;
 }
 
 interface MagicLoaderProps {
@@ -15,14 +24,21 @@ interface MagicLoaderProps {
   currentStepIndex: number;
   agentName?: string;
   className?: string;
+  isPaused?: boolean;
+  // Clarification interaction callbacks
+  clarificationComponent?: React.ReactNode;
 }
 
 export function MagicLoader({ 
   steps, 
   currentStepIndex, 
   agentName,
-  className 
+  className,
+  isPaused = false,
+  clarificationComponent,
 }: MagicLoaderProps) {
+  const currentStep = steps[currentStepIndex];
+  const showClarification = isPaused && currentStep?.status === 'paused' && clarificationComponent;
   return (
     <div className={cn("flex flex-col items-center justify-center py-20", className)}>
       {/* Magic orb animation */}
@@ -37,13 +53,16 @@ export function MagicLoader({
             left: -60,
             top: -60,
           }}
-          animate={{
+          animate={isPaused ? {
+            scale: 1,
+            opacity: 0.3,
+          } : {
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
           }}
           transition={{
             duration: 2,
-            repeat: Infinity,
+            repeat: isPaused ? 0 : Infinity,
             ease: "easeInOut",
           }}
         />
@@ -51,7 +70,9 @@ export function MagicLoader({
         {/* Inner orb */}
         <motion.div
           className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center"
-          animate={{
+          animate={isPaused ? {
+            boxShadow: '0 0 30px hsl(var(--primary) / 0.4)',
+          } : {
             boxShadow: [
               '0 0 20px hsl(var(--primary) / 0.3)',
               '0 0 40px hsl(var(--primary) / 0.5)',
@@ -60,20 +81,24 @@ export function MagicLoader({
           }}
           transition={{
             duration: 2,
-            repeat: Infinity,
+            repeat: isPaused ? 0 : Infinity,
             ease: "easeInOut",
           }}
         >
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            animate={isPaused ? { rotate: 0 } : { rotate: 360 }}
+            transition={{ duration: 8, repeat: isPaused ? 0 : Infinity, ease: "linear" }}
           >
-            <Sparkles className="h-8 w-8 text-primary" />
+            {isPaused ? (
+              <Pause className="h-8 w-8 text-primary" />
+            ) : (
+              <Sparkles className="h-8 w-8 text-primary" />
+            )}
           </motion.div>
         </motion.div>
 
-        {/* Floating particles */}
-        {Array.from({ length: 6 }).map((_, i) => (
+        {/* Floating particles - only show when not paused */}
+        {!isPaused && Array.from({ length: 6 }).map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1.5 h-1.5 rounded-full bg-primary/60"
@@ -103,7 +128,7 @@ export function MagicLoader({
         animate={{ opacity: 1, y: 0 }}
         className="text-xl font-semibold text-foreground mb-2"
       >
-        {agentName ? `正在创建 ${agentName}` : '正在施展魔法'}
+        {isPaused ? '需要您的确认' : agentName ? `正在创建 ${agentName}` : '正在施展魔法'}
       </motion.h2>
       
       <motion.p
@@ -112,8 +137,23 @@ export function MagicLoader({
         transition={{ delay: 0.2 }}
         className="text-sm text-muted-foreground mb-10"
       >
-        请稍候，AI 正在为你构建专属数字员工
+        {isPaused ? '请完成以下选择后继续' : '请稍候，AI 正在为你构建专属数字员工'}
       </motion.p>
+
+      {/* Clarification Card - Render when paused */}
+      <AnimatePresence>
+        {showClarification && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="w-full mb-8"
+          >
+            {clarificationComponent}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Steps list */}
       <div className="w-full max-w-sm space-y-3">
@@ -130,6 +170,7 @@ export function MagicLoader({
               className={cn(
                 "flex items-center gap-3 p-3 rounded-xl transition-all",
                 step.status === 'active' && "bg-primary/5 border border-primary/20",
+                step.status === 'paused' && "bg-amber-500/5 border border-amber-500/20",
                 step.status === 'complete' && "bg-muted/30",
                 step.status === 'pending' && "opacity-50"
               )}
@@ -139,10 +180,13 @@ export function MagicLoader({
                 "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
                 step.status === 'complete' && "bg-green-500/20 text-green-500",
                 step.status === 'active' && "bg-primary/20 text-primary",
+                step.status === 'paused' && "bg-amber-500/20 text-amber-500",
                 step.status === 'pending' && "bg-muted text-muted-foreground"
               )}>
                 {step.status === 'complete' ? (
                   <Check className="h-3.5 w-3.5" />
+                ) : step.status === 'paused' ? (
+                  <Pause className="h-3.5 w-3.5" />
                 ) : step.status === 'active' ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
