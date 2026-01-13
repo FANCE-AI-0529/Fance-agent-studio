@@ -555,3 +555,32 @@
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Mini Studio Preview - Particle Animation */
+@keyframes particle-flow {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+.flowing-particle {
+  filter: drop-shadow(0 0 2px hsl(var(--primary)));
+}
+
+/* Mini node pulse animation */
+@keyframes mini-node-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 20px 10px hsl(var(--primary) / 0.2); }
+}
+
+.mini-node-active {
+  animation: mini-node-pulse 1.5s ease-in-out infinite;
+}
+
+/* Mini Studio Canvas overrides */
+.mini-studio-canvas .react-flow__node {
+  cursor: default !important;
+}
+
+.mini-studio-canvas .react-flow__edge {
+  pointer-events: none;
+}

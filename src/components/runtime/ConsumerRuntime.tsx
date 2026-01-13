@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -39,6 +39,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { MiniStudioPreview } from "@/components/consumer/MiniStudioPreview";
 import logoIcon from "@/assets/logo-icon.png";
 
 interface Message {
@@ -102,7 +103,18 @@ export function ConsumerRuntime() {
     } : undefined,
   });
 
-  // Initialize session for the agent
+  // Track latest assistant message for MiniStudioPreview highlights
+  const latestAssistantMessage = useMemo(() => {
+    const assistantMessages = messages.filter(m => m.role === 'assistant');
+    if (assistantMessages.length > 0) {
+      return assistantMessages[assistantMessages.length - 1].content;
+    }
+    // Also consider streaming content
+    if (streamingContent) {
+      return streamingContent;
+    }
+    return null;
+  }, [messages, streamingContent]);
   useEffect(() => {
     const initSession = async () => {
       if (agentId && user && !isInitialized) {
@@ -590,6 +602,12 @@ export function ConsumerRuntime() {
             </p>
           </div>
         </div>
+
+        {/* Mini Studio Preview - PiP Widget */}
+        <MiniStudioPreview
+          agentId={agentId}
+          latestAgentMessage={latestAssistantMessage}
+        />
       </div>
     </AuroraBackground>
   );
