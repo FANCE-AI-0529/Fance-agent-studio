@@ -7,6 +7,14 @@ import { Node, Edge } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
 import type { BuildPlan, GeneratedSkillSpec, KnowledgeBaseSuggestion, AssetMatch } from '@/types/buildPlan';
 import type { MPLPPolicy } from '@/types/workflowDSL';
+import { 
+  extractConditions, 
+  needsConditionNode, 
+  generateConditionRules,
+  getBranchActions,
+  inferMCPFromAction,
+  type ExtractedCondition 
+} from './intentConditionExtractor';
 
 // 组装输入
 export interface AssemblyInput {
@@ -17,6 +25,7 @@ export interface AssemblyInput {
   mplpPolicy: MPLPPolicy;
   agentName?: string;
   systemPrompt?: string;
+  userDescription?: string; // Added for condition extraction
 }
 
 // 组装输出
@@ -269,6 +278,75 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
     previousNodeId = genSkillNodeId;
   }
 
+  // 5.5 检测并添加条件节点 (如果用户描述包含条件逻辑)
+  const userDescription = input.userDescription || plan.description || '';
+  const conditionResult = extractConditions(userDescription);
+  
+  let conditionNodeId: string | null = null;
+  let conditionTrueBranchId: string | null = null;
+  
+  if (conditionResult.hasCondition && conditionResult.conditions.length > 0) {
+    conditionNodeId = createNodeId();
+    const rules = generateConditionRules(conditionResult.conditions);
+    const branchActions = getBranchActions(conditionResult.conditions);
+    
+    nodes.push({
+      id: conditionNodeId,
+      type: 'condition',
+      position: { x: 0, y: 0 },
+      data: {
+        id: conditionNodeId,
+        name: '条件判断',
+        rules: rules,
+        mode: 'simple',
+        expression: `${rules[0]?.field} ${rules[0]?.operator === 'greater_than' ? '>' : rules[0]?.operator === 'less_than' ? '<' : '='} ${rules[0]?.value}`,
+      },
+    });
+    
+    edges.push({
+      id: `edge-${previousNodeId}-${conditionNodeId}`,
+      source: previousNodeId,
+      target: conditionNodeId,
+      type: 'animatedFlow',
+      animated: true,
+    });
+    
+    // Check if we need to add an MCP node for the true branch
+    if (branchActions.trueAction) {
+      const mcpInfo = inferMCPFromAction(branchActions.trueAction);
+      if (mcpInfo) {
+        conditionTrueBranchId = createNodeId();
+        nodes.push({
+          id: conditionTrueBranchId,
+          type: 'mcpAction',
+          position: { x: 0, y: 0 },
+          data: {
+            id: conditionTrueBranchId,
+            name: branchActions.trueAction,
+            serverId: mcpInfo.serverId,
+            toolName: mcpInfo.toolName,
+            riskLevel: 'medium',
+            triggeredByCondition: true,
+          },
+        });
+        
+        // True branch to MCP action
+        edges.push({
+          id: `edge-${conditionNodeId}-true-${conditionTrueBranchId}`,
+          source: conditionNodeId,
+          sourceHandle: 'true-out',
+          target: conditionTrueBranchId,
+          type: 'animatedFlow',
+          animated: true,
+          style: { stroke: 'hsl(var(--success))' },
+        });
+      }
+    }
+    
+    previousNodeId = conditionNodeId;
+    warnings.push('已自动添加条件判断节点，请确认条件表达式是否正确');
+  }
+
   // 6. 添加 Agent 核心节点
   const agentNodeId = createNodeId();
   nodes.push({
@@ -314,6 +392,30 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
     type: 'animatedFlow',
     animated: true,
   });
+
+  // If we have a condition with true branch, also connect true branch to output
+  if (conditionTrueBranchId) {
+    edges.push({
+      id: `edge-${conditionTrueBranchId}-${outputNodeId}`,
+      source: conditionTrueBranchId,
+      target: outputNodeId,
+      type: 'animatedFlow',
+      animated: true,
+    });
+  }
+  
+  // If we have a condition, also add false branch to output
+  if (conditionNodeId) {
+    edges.push({
+      id: `edge-${conditionNodeId}-false-${outputNodeId}`,
+      source: conditionNodeId,
+      sourceHandle: 'false-out',
+      target: outputNodeId,
+      type: 'animatedFlow',
+      animated: true,
+      style: { stroke: 'hsl(var(--muted-foreground))', strokeDasharray: '3,3' },
+    });
+  }
 
   // 8. 使用 Dagre 自动布局
   const layoutedNodes = applyDagreLayout(nodes, edges);

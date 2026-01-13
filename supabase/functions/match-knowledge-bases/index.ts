@@ -217,6 +217,28 @@ function makeDecision(matches: MatchResult[], query: string): MatchResponse {
   // 澄清区：有多个候选在 [0.6, 0.85]
   const candidates = matches.filter(m => m.score >= THRESHOLDS.CLARIFY_MIN);
   
+  // 增强：如果有多个高分匹配（都 > 0.7），强制触发澄清
+  const highScoreCandidates = matches.filter(m => m.score >= 0.7);
+  if (highScoreCandidates.length >= 2) {
+    // 检查是否是同类型知识库（如"国内报销"和"海外报销"）
+    const names = highScoreCandidates.map(m => m.knowledgeBase.name);
+    const hasSimilarNames = names.some((name, i) => 
+      names.some((other, j) => i !== j && (
+        name.includes('报销') && other.includes('报销') ||
+        name.includes('政策') && other.includes('政策') ||
+        name.includes('规范') && other.includes('规范')
+      ))
+    );
+    
+    if (hasSimilarNames) {
+      return {
+        matches: highScoreCandidates.slice(0, 4),
+        decision: 'ask_user',
+        clarifyQuestion: generateClarifyQuestion(highScoreCandidates.slice(0, 4)),
+      };
+    }
+  }
+  
   if (candidates.length >= 2) {
     return {
       matches: candidates.slice(0, 3),
