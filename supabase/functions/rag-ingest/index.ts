@@ -87,8 +87,23 @@ serve(async (req) => {
 
       // Get content to chunk
       const content = document.content || "";
-      if (!content) {
-        throw new Error("Document has no content");
+      if (!content || content.trim().length === 0) {
+        // Update document status to failed with clear message
+        await supabase
+          .from("knowledge_documents")
+          .update({ 
+            status: "failed",
+            error_message: "文档内容为空，请先上传或输入文档内容",
+          })
+          .eq("id", documentId);
+
+        return new Response(
+          JSON.stringify({ 
+            error: "Document has no content", 
+            message: "请先为文档添加内容再进行索引" 
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       // Chunk the content
