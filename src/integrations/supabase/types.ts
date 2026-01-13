@@ -531,6 +531,7 @@ export type Database = {
       agents: {
         Row: {
           author_id: string | null
+          build_metadata: Json | null
           category: string | null
           clones_count: number | null
           created_at: string
@@ -551,6 +552,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          build_metadata?: Json | null
           category?: string | null
           clones_count?: number | null
           created_at?: string
@@ -571,6 +573,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          build_metadata?: Json | null
           category?: string | null
           clones_count?: number | null
           created_at?: string

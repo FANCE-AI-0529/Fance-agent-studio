@@ -103,6 +103,8 @@ import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
 import { GenerationVerificationPanel } from "@/components/builder/verification";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
+import { useAgentBuildReplay } from "@/hooks/useAgentBuildReplay";
+import { BuildReplayOverlay } from "@/components/builder/BuildReplayOverlay";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -205,6 +207,17 @@ const Builder = () => {
   const { ejectContext, returnToConsumer, clearEjectContext } = useAppModeStore();
   const isFromConsumerMode = ejectContext?.agentId === agentIdParam && ejectContext?.targetPage === 'builder';
 
+  // Build replay hook for Consumer → Studio transition
+  const {
+    state: replayState,
+    startReplay,
+    skipReplay,
+    pauseReplay,
+    resumeReplay,
+  } = useAgentBuildReplay(isFromConsumerMode ? agentIdParam || null : null);
+
+  // Note: replay effects are defined after existingAgent declaration below
+
   const { setSelectedEdgeId, mockData: currentVariables } = useVariableStore();
 
   const { parseAdjustment, applyAdjustment } = useConfigAdjustment();
@@ -304,6 +317,22 @@ const Builder = () => {
   const saveAgent = useSaveAgentWithSkills();
   const deployAgent = useDeployAgent();
   const deleteAgent = useDeleteAgent();
+
+  // Start replay when coming from Consumer mode
+  useEffect(() => {
+    if (isFromConsumerMode && existingAgent && !replayState.isComplete && !replayState.isReplaying) {
+      startReplay();
+    }
+  }, [isFromConsumerMode, existingAgent, replayState.isComplete, replayState.isReplaying, startReplay]);
+
+  // Apply replay nodes/edges to canvas when complete
+  useEffect(() => {
+    if (replayState.isComplete && replayState.visibleNodes.length > 0) {
+      setNodes(replayState.visibleNodes);
+      setEdges(replayState.visibleEdges);
+      clearEjectContext();
+    }
+  }, [replayState.isComplete, replayState.visibleNodes, replayState.visibleEdges, setNodes, setEdges, clearEjectContext]);
 
   // Load existing agent data
   useEffect(() => {
@@ -1571,6 +1600,17 @@ const Builder = () => {
                 </motion.div>
               )}
             </ReactFlow>
+
+            {/* Build Replay Overlay */}
+            {replayState.isReplaying && (
+              <BuildReplayOverlay
+                state={replayState}
+                agentName={existingAgent?.name}
+                onSkip={skipReplay}
+                onPause={pauseReplay}
+                onResume={resumeReplay}
+              />
+            )}
           </div>
         </div>
 
