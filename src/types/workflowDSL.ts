@@ -213,6 +213,71 @@ export interface SemanticAsset {
   outputSchema: Record<string, unknown>;
   riskLevel: RiskLevel;
   similarity?: number;           // 语义相似度得分
+  matchReason?: string;          // 匹配原因
+  
+  // 知识库专属字段
+  intent_tags?: string[];           // 意图标签，如 ["company_policy", "financial_report"]
+  context_hook?: string;            // 上下文钩子，如 "用户提到报销时自动注入"
+  retrieval_config?: {
+    mode: 'vector' | 'graph' | 'hybrid';
+    topK: number;
+    graphDepth?: number;
+  };
+  
+  // 即时生成标记
+  isGenerated?: boolean;            // 是否为 AI 即时生成
+  generatedAt?: string;             // 生成时间
+}
+
+// ========== 资产缺口分析类型 ==========
+
+export interface AssetGapAnalysis {
+  coverageScore: number;                          // 覆盖度评分 (0-1)
+  matchedAssets: SemanticAsset[];                 // 已匹配的资产
+  missingCapabilities: string[];                  // 缺失的能力
+  suggestedSkills: SkillGenerationSuggestion[];   // 建议生成的技能
+  suggestedKnowledgeBases: KnowledgeBaseSuggestion[]; // 建议挂载的知识库
+}
+
+export interface SkillGenerationSuggestion {
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+  requiredInputs: Array<{ name: string; type: string; description: string }>;
+  expectedOutputs: Array<{ name: string; type: string; description: string }>;
+  reason: string;                 // 为什么需要生成这个技能
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface KnowledgeBaseSuggestion {
+  id?: string;                    // 如果是现有知识库
+  name: string;
+  description: string;
+  retrievalMode: 'vector' | 'graph' | 'hybrid';
+  intentTags: string[];
+  contextHook: string;
+  autoInject: boolean;            // 是否自动注入
+  matchScore?: number;            // 匹配分数
+}
+
+// ========== 即时生成技能结果 ==========
+
+export interface GeneratedSkillSpec {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+  skillMd: string;                // SKILL.md 内容
+  handlerCode?: string;           // 处理器代码
+  configYaml?: string;            // 配置文件
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+  riskLevel: RiskLevel;
+  isTemporary: boolean;           // 是否为临时技能
+  generatedAt: string;
+  generatedFor: string;           // 为哪个需求生成
 }
 
 // ========== 合规报告类型 ==========

@@ -732,11 +732,13 @@ export type Database = {
           asset_type: string
           capabilities: string[] | null
           category: string | null
+          context_hook: string | null
           created_at: string | null
           description: string | null
           embedding: Json | null
           id: string
           input_schema: Json | null
+          intent_tags: string[] | null
           is_active: boolean | null
           metadata: Json | null
           name: string
@@ -750,11 +752,13 @@ export type Database = {
           asset_type: string
           capabilities?: string[] | null
           category?: string | null
+          context_hook?: string | null
           created_at?: string | null
           description?: string | null
           embedding?: Json | null
           id?: string
           input_schema?: Json | null
+          intent_tags?: string[] | null
           is_active?: boolean | null
           metadata?: Json | null
           name: string
@@ -768,11 +772,13 @@ export type Database = {
           asset_type?: string
           capabilities?: string[] | null
           category?: string | null
+          context_hook?: string | null
           created_at?: string | null
           description?: string | null
           embedding?: Json | null
           id?: string
           input_schema?: Json | null
+          intent_tags?: string[] | null
           is_active?: boolean | null
           metadata?: Json | null
           name?: string
