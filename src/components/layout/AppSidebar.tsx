@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Bot, 
   Hammer, 
@@ -58,6 +59,13 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
   const { toggleMode } = useAppModeStore();
+  const navigate = useNavigate();
+
+  // 返回魔法界面 - 同时切换模式并导航到根路由
+  const handleReturnToMagic = () => {
+    toggleMode();
+    navigate('/');
+  };
 
   // Dialog states
   const [userManagementOpen, setUserManagementOpen] = useState(false);
@@ -182,7 +190,7 @@ export function AppSidebar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={toggleMode}
+                  onClick={handleReturnToMagic}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 ${
                     collapsed ? "justify-center" : ""
                   }`}
