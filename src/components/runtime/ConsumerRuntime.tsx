@@ -14,6 +14,7 @@ import {
   Brain,
   RefreshCw,
 } from "lucide-react";
+import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AuroraBackground } from "@/components/consumer/AuroraBackground";
@@ -245,20 +246,16 @@ export function ConsumerRuntime() {
         agentId: agent.id,
       });
 
-      // Add welcome message if no persisted messages
+      // Add welcome message marker if no persisted messages
       if (messages.length === 0 && isInitialized && (!persistedMessages || persistedMessages.length === 0)) {
         const welcomeMessage: Message = {
           id: 'welcome',
           role: 'assistant',
-          content: `你好！我是 ${agent.name}。${manifest?.description || '有什么我可以帮助你的吗？'}`,
+          content: '__ENHANCED_WELCOME_CARD__', // Special marker for enhanced welcome card
           timestamp: new Date(),
         };
         setMessages([welcomeMessage]);
-        // Save welcome message
-        saveMessageToDb({
-          role: 'assistant',
-          content: welcomeMessage.content,
-        });
+        // Don't save enhanced welcome card to DB
       }
     }
   }, [agent, isInitialized, persistedMessages]);
@@ -622,6 +619,28 @@ export function ConsumerRuntime() {
                   
                   // Regular message
                   const message = item as Message;
+                  
+                  // Check for enhanced welcome card marker
+                  if (message.id === 'welcome' && message.content === '__ENHANCED_WELCOME_CARD__') {
+                    return (
+                      <motion.div
+                        key={message.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="py-4"
+                      >
+                        <EnhancedWelcomeCard 
+                          agent={agent || null}
+                          onQuickStart={(command) => {
+                            setInput(command);
+                            setTimeout(() => handleSubmit(command), 100);
+                          }}
+                        />
+                      </motion.div>
+                    );
+                  }
+                  
                   return (
                     <motion.div
                       key={message.id}
