@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import type { DataFlowPath } from '@/types/verificationTypes';
+import type { PathDataSnapshots, NodeDataSnapshot } from '@/types/dataSnapshotTypes';
 
 export interface CanvasHighlightState {
   // 路径数据
@@ -25,6 +26,10 @@ export interface CanvasHighlightState {
     passedNodeStyle: 'dim' | 'checkmark' | 'green-ring';
     edgeFlowStyle: 'particles' | 'dash' | 'pulse';
   };
+  
+  // 数据快照状态
+  showDataSnapshot: boolean;
+  dataSnapshots: PathDataSnapshots | null;
 }
 
 export interface CanvasHighlightActions {
@@ -48,6 +53,11 @@ export interface CanvasHighlightActions {
   isNodeHighlighted: (nodeId: string) => 'active' | 'passed' | 'waiting' | null;
   isEdgeHighlighted: (edgeId: string) => 'active' | 'passed' | 'waiting' | null;
   getCurrentNodeId: () => string | null;
+  getCurrentNodeSnapshot: () => NodeDataSnapshot | null;
+  
+  // 数据快照动作
+  setShowDataSnapshot: (show: boolean) => void;
+  setDataSnapshots: (snapshots: PathDataSnapshots | null) => void;
   
   // 重置
   reset: () => void;
@@ -67,6 +77,8 @@ const initialState: CanvasHighlightState = {
     passedNodeStyle: 'green-ring',
     edgeFlowStyle: 'particles',
   },
+  showDataSnapshot: false,
+  dataSnapshots: null,
 };
 
 export const useCanvasHighlightStore = create<CanvasHighlightState & CanvasHighlightActions>((set, get) => ({
@@ -205,6 +217,27 @@ export const useCanvasHighlightStore = create<CanvasHighlightState & CanvasHighl
     }
     
     return highlightedPath[currentStep] || null;
+  },
+  
+  getCurrentNodeSnapshot: () => {
+    const { highlightedPath, currentStep, isAnimating, dataSnapshots } = get();
+    
+    if (!isAnimating || !dataSnapshots || highlightedPath.length === 0) {
+      return null;
+    }
+    
+    const currentNodeId = highlightedPath[currentStep];
+    return dataSnapshots.snapshots.find(s => s.nodeId === currentNodeId) || null;
+  },
+  
+  // ========== 数据快照动作 ==========
+  
+  setShowDataSnapshot: (show: boolean) => {
+    set({ showDataSnapshot: show });
+  },
+  
+  setDataSnapshots: (snapshots: PathDataSnapshots | null) => {
+    set({ dataSnapshots: snapshots });
   },
   
   // ========== 重置 ==========
