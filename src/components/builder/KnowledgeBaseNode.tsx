@@ -24,6 +24,13 @@ export interface KnowledgeBaseNodeData {
   source_traceability?: boolean;
   onRemove?: (id: string) => void;
   onConfigure?: (id: string) => void;
+  
+  // 语义发现字段 - 用于 The Architect 自动匹配
+  intent_tags?: string[];           // 意图标签，如 ["company_policy", "financial_report"]
+  context_hook?: string;            // 上下文钩子描述
+  auto_inject_when?: string;        // 自动注入条件
+  priority?: number;                // 检索优先级
+  isAutoMounted?: boolean;          // 是否由 AI 自动挂载
 }
 
 interface KnowledgeBaseNodeProps {
