@@ -23,6 +23,8 @@ import {
   Sparkles,
   Brain,
 } from "lucide-react";
+import { useAppModeStore } from "@/stores/appModeStore";
+import { ConsumerRuntime } from "@/components/runtime/ConsumerRuntime";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -348,10 +350,17 @@ function createMCPConfirmAction(
 
 const Runtime = () => {
   const { user } = useAuth();
+  const { mode } = useAppModeStore();
+  
   const { data: deployedAgents = [], isLoading: isLoadingAgents } = useDeployedAgents();
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   
-  // Onboarding tour
+  // Consumer mode - render simplified runtime
+  if (mode === 'consumer') {
+    return <ConsumerRuntime />;
+  }
+  
+  // Onboarding tour (Studio mode only)
   const { showTour, completeTour, resetTour } = useOnboardingTour();
   
   const {
