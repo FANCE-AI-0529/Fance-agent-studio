@@ -115,7 +115,7 @@ export default function ConsumerHome() {
           y: -20
         }} transition={{
           duration: 0.4
-        }} className="w-full">
+        }} className="w-full border-[#342828]">
               {/* Hero section */}
               <div className="text-center mb-8">
                 {/* Badge */}
