@@ -187,7 +187,7 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
-        className="flex items-end gap-3 px-4 py-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 max-w-[90vw] overflow-x-auto"
+        className="flex items-center justify-center gap-4 px-6 py-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 w-[90vw] max-w-6xl min-h-[80px] overflow-x-auto"
       >
         <AnimatePresence mode="popLayout">
           {allAgents.length > 0 ? (
@@ -219,9 +219,9 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
               <div className="w-px h-12 bg-border/50 mx-1 flex-shrink-0" />
             </>
           ) : (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm px-4">
-              <Bot className="h-4 w-4" />
-              <span>还没有智能体</span>
+            <div className="flex-1 flex items-center justify-center gap-3 text-muted-foreground text-sm">
+              <Bot className="h-5 w-5" />
+              <span>还没有智能体，点击右侧按钮创建</span>
             </div>
           )}
         </AnimatePresence>
