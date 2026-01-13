@@ -1,0 +1,105 @@
+import { motion } from "framer-motion";
+import { Terminal, MessageCircle, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAppModeStore } from "@/stores/appModeStore";
+import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import logoIcon from "@/assets/logo-icon.png";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+export function ConsumerHeader() {
+  const { toggleMode } = useAppModeStore();
+  const navigate = useNavigate();
+
+  return (
+    <motion.header
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="fixed top-0 left-0 right-0 z-50 h-16"
+    >
+      <div className="h-full max-w-7xl mx-auto px-6 flex items-center justify-between">
+        {/* Logo */}
+        <motion.div 
+          className="flex items-center gap-3 cursor-pointer"
+          whileHover={{ scale: 1.02 }}
+          onClick={() => navigate('/')}
+        >
+          <div className="relative">
+            <img src={logoIcon} alt="Fance OS" className="w-9 h-9 rounded-xl" />
+            <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold text-foreground tracking-tight">
+              Fance OS
+            </span>
+            <span className="text-[10px] text-muted-foreground/60 -mt-0.5">
+              智能数字员工平台
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          
+          {/* Chat history */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate('/runtime')}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>对话记录</TooltipContent>
+          </Tooltip>
+
+          {/* Profile */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate('/profile')}
+              >
+                <User className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>个人中心</TooltipContent>
+          </Tooltip>
+
+          {/* Developer mode toggle - hidden but accessible */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMode}
+                className="h-9 w-9 text-muted-foreground/50 hover:text-primary transition-colors"
+              >
+                <Terminal className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="flex items-center gap-2">
+                <span>开发者模式</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
+                  Ctrl+Shift+D
+                </kbd>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </motion.header>
+  );
+}
