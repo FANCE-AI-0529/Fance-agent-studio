@@ -107,8 +107,8 @@ export function useNetworkPolicy() {
           name,
           description,
           mode: policy.mode,
-          whitelist: policy.whitelist as unknown as Record<string, unknown>[],
-          mplp_bindings: policy.mplpBindings as unknown as Record<string, unknown>[],
+          whitelist: JSON.parse(JSON.stringify(policy.whitelist)),
+          mplp_bindings: JSON.parse(JSON.stringify(policy.mplpBindings)),
           is_default: isDefault,
         }])
         .select()
