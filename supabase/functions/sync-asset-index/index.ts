@@ -375,6 +375,74 @@ async function syncMCPTools(
   return result;
 }
 
+// ========== 知识库意图映射 (Knowledge Intent Map) ==========
+
+const KNOWLEDGE_INTENT_MAP: Record<string, string[]> = {
+  'hr': ['company_policy', 'hr_rules', 'employee'],
+  '员工': ['employee', 'hr_rules', 'company_policy'],
+  '人事': ['hr_rules', 'employee', 'company_policy'],
+  '财务': ['financial_report', 'accounting', 'reimbursement'],
+  '报销': ['reimbursement', 'finance', 'expense'],
+  '产品': ['product_docs', 'user_manual', 'faq'],
+  '技术': ['technical_docs', 'api', 'development'],
+  '客户': ['customer_support', 'crm', 'support_tickets'],
+  'faq': ['faq', 'qa', 'help'],
+  '帮助': ['help', 'support', 'faq'],
+  '手册': ['user_manual', 'guide', 'documentation'],
+  '文档': ['documentation', 'docs', 'manual'],
+  '政策': ['policy', 'rules', 'compliance'],
+  '合规': ['compliance', 'legal', 'policy'],
+  '法务': ['legal', 'contract', 'compliance'],
+  '销售': ['sales', 'crm', 'customer'],
+  '市场': ['marketing', 'campaign', 'content'],
+  '运营': ['operations', 'process', 'workflow'],
+  '培训': ['training', 'onboarding', 'learning'],
+  '知识': ['knowledge', 'wiki', 'documentation'],
+};
+
+// 从知识库名称/描述中提取意图标签
+function extractIntentTagsFromKB(name: string, description?: string | null): string[] {
+  const intentTags: string[] = [];
+  const text = `${name} ${description || ''}`.toLowerCase();
+  
+  for (const [keyword, tags] of Object.entries(KNOWLEDGE_INTENT_MAP)) {
+    if (text.includes(keyword.toLowerCase())) {
+      intentTags.push(...tags);
+    }
+  }
+  
+  // 去重并返回
+  return [...new Set(intentTags)];
+}
+
+// 生成上下文钩子描述
+function generateContextHook(name: string, intentTags: string[]): string {
+  if (intentTags.length === 0) return '';
+  
+  const hookParts: string[] = [];
+  
+  if (intentTags.includes('company_policy') || intentTags.includes('hr_rules')) {
+    hookParts.push('用户询问公司政策或规章制度时自动注入');
+  }
+  if (intentTags.includes('reimbursement') || intentTags.includes('finance')) {
+    hookParts.push('用户询问报销或财务问题时自动注入');
+  }
+  if (intentTags.includes('faq') || intentTags.includes('help')) {
+    hookParts.push('用户寻求帮助或咨询常见问题时自动注入');
+  }
+  if (intentTags.includes('product_docs') || intentTags.includes('user_manual')) {
+    hookParts.push('用户询问产品功能或使用方法时自动注入');
+  }
+  if (intentTags.includes('customer_support')) {
+    hookParts.push('处理客户服务请求时自动注入');
+  }
+  if (intentTags.includes('technical_docs')) {
+    hookParts.push('用户询问技术问题或API时自动注入');
+  }
+  
+  return hookParts.length > 0 ? hookParts[0] : `包含 ${name} 相关信息`;
+}
+
 // deno-lint-ignore no-explicit-any
 async function syncKnowledgeBases(
   supabase: any,
@@ -405,6 +473,10 @@ async function syncKnowledgeBases(
         if (embedding) result.embeddingsGenerated++;
       }
 
+      // 提取意图标签和上下文钩子
+      const intentTags = extractIntentTagsFromKB(kb.name as string, kb.description as string | null);
+      const contextHook = generateContextHook(kb.name as string, intentTags);
+
       const indexEntry = {
         asset_type: 'knowledge_base', 
         asset_id: kb.id, 
@@ -415,10 +487,19 @@ async function syncKnowledgeBases(
         input_schema: { query: { type: 'string', required: true }, topK: { type: 'number', default: 5 } },
         output_schema: { chunks: { type: 'array' }, context: { type: 'string' }, sources: { type: 'array' } },
         risk_level: 'low',
-        metadata: { documentCount: kb.document_count, chunkCount: kb.chunk_count, indexStatus: kb.index_status, graphStatus: kb.graph_status },
+        metadata: { 
+          documentCount: kb.document_count, 
+          chunkCount: kb.chunk_count, 
+          indexStatus: kb.index_status, 
+          graphStatus: kb.graph_status,
+          graphEnabled: kb.graph_enabled,
+        },
         embedding: embedding ? JSON.stringify(embedding) : null,
         is_active: true, 
         user_id: userId,
+        // 新增：意图标签和上下文钩子
+        intent_tags: intentTags,
+        context_hook: contextHook,
       };
 
       const { error: upsertError } = await supabase.from('asset_semantic_index').upsert(

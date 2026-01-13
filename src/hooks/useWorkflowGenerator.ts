@@ -39,6 +39,31 @@ export interface RiskAssessment {
   mediumRiskNodes: string[];
 }
 
+// Gap Analysis 结果
+export interface GapAnalysisResult {
+  coverageScore: number;
+  missingCapabilities: string[];
+  suggestedSkills: SkillSuggestion[];
+  suggestedKnowledgeBases: KnowledgeBaseSuggestion[];
+}
+
+export interface SkillSuggestion {
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+  reason: string;
+}
+
+export interface KnowledgeBaseSuggestion {
+  id: string;
+  name: string;
+  description?: string;
+  intentTags: string[];
+  contextHook?: string;
+  matchScore: number;
+}
+
 export interface GenerationResult {
   dsl: WorkflowDSL;
   nodes: Node[];
@@ -48,6 +73,10 @@ export interface GenerationResult {
   riskAssessment: RiskAssessment;
   complianceReport: ComplianceReport;
   requiredPermissions: string[];
+  // 新增：缺口分析和生成结果
+  gapAnalysis?: GapAnalysisResult;
+  generatedSkills?: Array<{ id: string; name: string; isGenerated: boolean }>;
+  autoMountedKBs?: KnowledgeBaseSuggestion[];
 }
 
 export interface UseWorkflowGeneratorReturn {
@@ -74,6 +103,7 @@ const DSL_TO_CANVAS_NODE_TYPE: Record<string, string> = {
   loop: 'loop',
   intervention: 'intervention',
   output: 'output',
+  generatedSkill: 'generatedSkill', // AI 即时生成的技能
   // 从 dslToGraph 生成的类型
   triggerNode: 'trigger',
   agentNode: 'agent',
@@ -85,6 +115,7 @@ const DSL_TO_CANVAS_NODE_TYPE: Record<string, string> = {
   loopNode: 'loop',
   interventionNode: 'intervention',
   outputNode: 'output',
+  generatedSkillNode: 'generatedSkill',
 };
 
 // ========== 主 Hook ==========
@@ -151,6 +182,20 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         severity: 'info' as const,
       }));
 
+      // 提取缺口分析结果
+      const gapAnalysis: GapAnalysisResult | undefined = data.gapAnalysis;
+      const generatedSkills = data.suggestedAssets?.generatedSkills || [];
+      const autoMountedKBs = data.suggestedAssets?.autoMountedKBs || [];
+
+      // 如果有缺口，添加警告
+      if (gapAnalysis && gapAnalysis.coverageScore < 0.6) {
+        apiWarnings.push({
+          code: 'LOW_COVERAGE',
+          message: `资产覆盖度较低 (${(gapAnalysis.coverageScore * 100).toFixed(0)}%)，已自动生成 ${generatedSkills.length} 个技能`,
+          severity: 'warning' as const,
+        });
+      }
+
       setProgress(50);
       setCurrentStep('正在应用治理策略...');
 
@@ -173,15 +218,26 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
       const flowFormat = convertToReactFlowFormat(graphResult);
 
       // 映射节点类型到画布支持的类型
-      const nodes: Node[] = flowFormat.nodes.map((node) => ({
-        ...node,
-        type: DSL_TO_CANVAS_NODE_TYPE[node.type || ''] || node.type,
-        data: {
-          ...node.data,
-          id: node.id,
-          name: node.data?.label || node.data?.name || node.id,
-        },
-      }));
+      const nodes: Node[] = flowFormat.nodes.map((node) => {
+        const nodeType = DSL_TO_CANVAS_NODE_TYPE[node.type || ''] || node.type;
+        const nodeData = node.data as Record<string, unknown> | undefined;
+        const isGenerated = nodeData?.isGenerated || nodeType === 'generatedSkill';
+        const nodeConfig = nodeData?.config as Record<string, unknown> | undefined;
+        
+        return {
+          ...node,
+          type: nodeType,
+          data: {
+            ...nodeData,
+            id: node.id,
+            name: nodeData?.label || nodeData?.name || node.id,
+            isGenerated,
+            // 为知识库节点添加自动挂载标识
+            isAutoMounted: nodeConfig?.isAutoMounted || 
+              autoMountedKBs.some((kb: KnowledgeBaseSuggestion) => kb.id === nodeData?.assetId),
+          },
+        };
+      });
 
       const edges: Edge[] = flowFormat.edges.map((edge) => ({
         ...edge,
@@ -224,6 +280,14 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         riskAssessment,
         complianceReport,
         requiredPermissions,
+        // 新增：缺口分析和生成结果
+        gapAnalysis,
+        generatedSkills: generatedSkills.map((s: { id: string; name: string }) => ({
+          id: s.id,
+          name: s.name,
+          isGenerated: true,
+        })),
+        autoMountedKBs,
       };
 
       setLastResult(result);

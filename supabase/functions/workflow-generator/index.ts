@@ -50,6 +50,8 @@ interface NodeSpec {
   outputKey: string;
   riskLevel?: string;
   requiresConfirmation?: boolean;
+  isGenerated?: boolean;  // 标记为 AI 即时生成的节点
+  generatedAt?: string;   // 生成时间戳
 }
 
 interface BranchSpec {
@@ -58,6 +60,32 @@ interface BranchSpec {
   condition: string;
   nodes: NodeSpec[];
   isDefault?: boolean;
+}
+
+// ========== Gap Analysis 类型 ==========
+
+interface GapAnalysisResult {
+  coverageScore: number;
+  missingCapabilities: string[];
+  suggestedSkills: SkillSuggestion[];
+  suggestedKnowledgeBases: KnowledgeBaseSuggestion[];
+}
+
+interface SkillSuggestion {
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+  reason: string;
+}
+
+interface KnowledgeBaseSuggestion {
+  id: string;
+  name: string;
+  description?: string;
+  intentTags: string[];
+  contextHook?: string;
+  matchScore: number;
 }
 
 // ========== 参数提取类型 ==========
@@ -109,24 +137,46 @@ serve(async (req) => {
     // 1. 搜索相关资产
     const assetsResponse = await searchRelevantAssets(supabase, description, userId);
     
-    // 2. 生成工作流 DSL
+    // 2. 缺口分析 (Gap Detection) - The Architect 核心能力
+    const gapAnalysis = await analyzeAssetGaps(description, assetsResponse);
+    
+    // 3. 即时技能生成 (如果覆盖度低于阈值)
+    const generatedSkillNodes: NodeSpec[] = [];
+    if (gapAnalysis.coverageScore < 0.6 && gapAnalysis.suggestedSkills.length > 0) {
+      for (const suggestion of gapAnalysis.suggestedSkills.slice(0, 3)) {
+        const generatedNode = createGeneratedSkillNode(suggestion);
+        generatedSkillNodes.push(generatedNode);
+      }
+    }
+    
+    // 4. 知识库自动匹配
+    const autoMountedKBs = await matchKnowledgeBasesForContext(supabase, description, userId, assetsResponse);
+
+    // 5. 生成工作流 DSL (包含生成的技能和自动挂载的知识库)
     const dsl = await generateWorkflowDSL(
       description,
       assetsResponse,
       mplpPolicy,
       maxNodes,
-      extractedParams
+      extractedParams,
+      generatedSkillNodes,
+      autoMountedKBs
     );
 
-    // 3. 验证并注入策略
+    // 6. 验证并注入策略
     const validatedDSL = validateAndEnhanceDSL(dsl, mplpPolicy, extractedParams);
 
     return new Response(
       JSON.stringify({
         dsl: validatedDSL,
-        suggestedAssets: assetsResponse,
+        suggestedAssets: {
+          ...assetsResponse,
+          generatedSkills: generatedSkillNodes,
+          autoMountedKBs,
+        },
         warnings: validatedDSL.warnings || [],
         extractedParams,
+        gapAnalysis,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -349,7 +399,9 @@ async function generateWorkflowDSL(
   assets: AssetSearchResult,
   mplpPolicy: string,
   maxNodes: number,
-  extractedParams: ExtractedParams
+  extractedParams: ExtractedParams,
+  generatedSkillNodes: NodeSpec[] = [],
+  autoMountedKBs: KnowledgeBaseSuggestion[] = []
 ): Promise<WorkflowDSL> {
   // 分析描述，提取意图
   const analysis = analyzeDescription(description);
@@ -391,9 +443,14 @@ async function generateWorkflowDSL(
 
   let nodeIndex = 0;
 
-  // 如果需要知识检索，添加知识库节点
-  if (analysis.needsKnowledge && assets.knowledgeBases.length > 0) {
-    const kb = assets.knowledgeBases[0];
+  // 如果需要知识检索，添加知识库节点（优先使用自动匹配的知识库）
+  const knowledgeBases = autoMountedKBs.length > 0 
+    ? autoMountedKBs.map(kb => ({ id: kb.id, name: kb.name, description: kb.description }))
+    : assets.knowledgeBases;
+
+  if (analysis.needsKnowledge && knowledgeBases.length > 0) {
+    const kb = knowledgeBases[0];
+    const isAutoMounted = autoMountedKBs.some(akb => akb.id === kb.id);
     mainStage.nodes.push({
       id: `node-${nodeIndex++}`,
       type: 'knowledge',
@@ -403,12 +460,24 @@ async function generateWorkflowDSL(
       config: {
         retrievalMode: 'hybrid',
         topK: 5,
+        isAutoMounted,
       },
       inputMappings: [{
         targetField: 'query',
         sourceExpression: '{{trigger.message}}',
       }],
       outputKey: 'knowledge_context',
+    });
+  }
+
+  // 添加 AI 即时生成的技能节点
+  for (const generatedNode of generatedSkillNodes.slice(0, Math.min(2, maxNodes - mainStage.nodes.length))) {
+    mainStage.nodes.push({
+      ...generatedNode,
+      id: `node-${nodeIndex++}`,
+      inputMappings: mainStage.nodes.length > 0 
+        ? [{ targetField: 'input', sourceExpression: `{{${mainStage.nodes[mainStage.nodes.length - 1].outputKey}}}` }]
+        : [{ targetField: 'input', sourceExpression: '{{trigger.message}}' }],
     });
   }
 
@@ -730,6 +799,10 @@ function validateAndEnhanceDSL(
       if (node.riskLevel === 'high') {
         warnings.push(`节点 "${node.name}" 被标记为高风险操作，已自动添加确认步骤`);
       }
+      // 标记 AI 生成的节点
+      if (node.isGenerated) {
+        warnings.push(`节点 "${node.name}" 由 AI 即时生成，建议保存到技能库`);
+      }
     }
   }
 
@@ -747,4 +820,235 @@ function validateAndEnhanceDSL(
   }
 
   return { ...dsl, warnings };
+}
+
+// ========== Gap Analysis 缺口分析引擎 ==========
+
+const REQUIRED_CAPABILITY_PATTERNS: Record<string, RegExp> = {
+  '数据分析': /分析|统计|报表|图表|可视化|dashboard/i,
+  '邮件发送': /邮件|email|mail|通知|发送|notify/i,
+  '数据库操作': /查询|数据库|sql|存储|读取|写入/i,
+  '文件处理': /文件|excel|pdf|csv|文档|上传|下载/i,
+  '知识检索': /知识|rag|问答|faq|检索|搜索/i,
+  '支付处理': /支付|payment|退款|refund|订单|交易/i,
+  '用户认证': /登录|认证|auth|验证|token/i,
+  '消息通信': /消息|slack|teams|webhook|推送/i,
+  '日程调度': /定时|调度|cron|schedule|每天|每周/i,
+  'API调用': /api|http|rest|接口|调用/i,
+  '自然语言处理': /nlp|情感|分类|实体|意图|理解/i,
+  '图像处理': /图片|图像|ocr|识别|image/i,
+};
+
+function analyzeAssetGaps(
+  description: string,
+  assets: AssetSearchResult
+): GapAnalysisResult {
+  const descLower = description.toLowerCase();
+  
+  // 1. 提取需求中的能力
+  const requiredCapabilities: string[] = [];
+  for (const [capability, pattern] of Object.entries(REQUIRED_CAPABILITY_PATTERNS)) {
+    if (pattern.test(descLower)) {
+      requiredCapabilities.push(capability);
+    }
+  }
+  
+  // 2. 分析现有资产覆盖的能力
+  const coveredCapabilities = new Set<string>();
+  
+  for (const skill of assets.skills) {
+    for (const cap of skill.capabilities) {
+      coveredCapabilities.add(cap);
+    }
+    // 根据技能名称推断能力
+    for (const [capability, pattern] of Object.entries(REQUIRED_CAPABILITY_PATTERNS)) {
+      if (pattern.test(skill.name) || pattern.test(skill.description || '')) {
+        coveredCapabilities.add(capability);
+      }
+    }
+  }
+  
+  for (const mcp of assets.mcpTools) {
+    for (const cap of mcp.capabilities) {
+      coveredCapabilities.add(cap);
+    }
+  }
+  
+  // 3. 计算缺口
+  const missingCapabilities = requiredCapabilities.filter(cap => !coveredCapabilities.has(cap));
+  
+  // 4. 计算覆盖度
+  const coverageScore = requiredCapabilities.length > 0
+    ? (requiredCapabilities.length - missingCapabilities.length) / requiredCapabilities.length
+    : 1.0;
+  
+  // 5. 生成技能建议
+  const suggestedSkills: SkillSuggestion[] = missingCapabilities.slice(0, 3).map(capability => ({
+    name: generateSkillName(capability),
+    description: `自动生成的 ${capability} 技能，用于满足工作流需求`,
+    category: inferSkillCategory(capability),
+    capabilities: [capability],
+    reason: `需求中需要 "${capability}" 能力，但现有资产中未找到匹配项`,
+  }));
+  
+  return {
+    coverageScore,
+    missingCapabilities,
+    suggestedSkills,
+    suggestedKnowledgeBases: [], // 由 matchKnowledgeBasesForContext 填充
+  };
+}
+
+function generateSkillName(capability: string): string {
+  const nameMap: Record<string, string> = {
+    '数据分析': '智能数据分析器',
+    '邮件发送': '邮件通知服务',
+    '数据库操作': '数据库查询工具',
+    '文件处理': '文件处理器',
+    '知识检索': '知识检索引擎',
+    '支付处理': '支付处理服务',
+    '用户认证': '用户认证模块',
+    '消息通信': '消息推送服务',
+    '日程调度': '任务调度器',
+    'API调用': 'API网关服务',
+    '自然语言处理': 'NLP处理器',
+    '图像处理': '图像处理服务',
+  };
+  return nameMap[capability] || `${capability}处理器`;
+}
+
+function inferSkillCategory(capability: string): string {
+  const categoryMap: Record<string, string> = {
+    '数据分析': '分析',
+    '邮件发送': '通信',
+    '数据库操作': '数据',
+    '文件处理': '工具',
+    '知识检索': '知识',
+    '支付处理': '交易',
+    '用户认证': '安全',
+    '消息通信': '通信',
+    '日程调度': '自动化',
+    'API调用': '集成',
+    '自然语言处理': 'AI',
+    '图像处理': 'AI',
+  };
+  return categoryMap[capability] || '通用';
+}
+
+function createGeneratedSkillNode(suggestion: SkillSuggestion): NodeSpec {
+  return {
+    id: `generated-skill-${Date.now()}`,
+    type: 'generatedSkill',
+    name: suggestion.name,
+    description: suggestion.description,
+    assetType: 'generated_skill',
+    config: {
+      capabilities: suggestion.capabilities,
+      category: suggestion.category,
+      reason: suggestion.reason,
+      isTemporary: true,
+    },
+    inputMappings: [],
+    outputKey: `generated_${suggestion.name.replace(/\s+/g, '_').toLowerCase()}`,
+    riskLevel: 'low',
+    isGenerated: true,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ========== 知识库自动匹配 ==========
+
+const KNOWLEDGE_INTENT_KEYWORDS: Record<string, string[]> = {
+  'company_policy': ['政策', '规定', '制度', '规章', '公司'],
+  'hr_rules': ['人事', 'HR', '员工', '请假', '考勤'],
+  'reimbursement': ['报销', '费用', '报账', '发票'],
+  'financial_report': ['财务', '财报', '预算', '账务'],
+  'product_docs': ['产品', '功能', '使用', '手册'],
+  'faq': ['FAQ', '问答', '常见问题', '帮助'],
+  'customer_support': ['客服', '售后', '投诉', '反馈'],
+  'technical_docs': ['技术', 'API', '开发', '接口'],
+};
+
+// deno-lint-ignore no-explicit-any
+async function matchKnowledgeBasesForContext(
+  supabase: any,
+  description: string,
+  userId: string,
+  assets: AssetSearchResult
+): Promise<KnowledgeBaseSuggestion[]> {
+  const descLower = description.toLowerCase();
+  const matchedKBs: KnowledgeBaseSuggestion[] = [];
+  
+  // 从语义索引中查询知识库
+  const { data: kbAssets } = await supabase
+    .from('asset_semantic_index')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('asset_type', 'knowledge_base')
+    .eq('is_active', true)
+    .limit(20);
+  
+  if (!kbAssets || kbAssets.length === 0) {
+    // 使用 assets 中的知识库作为回退
+    for (const kb of assets.knowledgeBases) {
+      matchedKBs.push({
+        id: kb.id,
+        name: kb.name,
+        description: kb.description,
+        intentTags: [],
+        matchScore: 0.3,
+      });
+    }
+    return matchedKBs.slice(0, 3);
+  }
+  
+  // 计算每个知识库的匹配分数
+  for (const kbAsset of kbAssets) {
+    let matchScore = 0;
+    const matchedTags: string[] = [];
+    
+    // 检查意图标签匹配
+    const intentTags = kbAsset.intent_tags || [];
+    for (const tag of intentTags) {
+      const keywords = KNOWLEDGE_INTENT_KEYWORDS[tag] || [];
+      if (keywords.some(kw => descLower.includes(kw.toLowerCase()))) {
+        matchScore += 0.2;
+        matchedTags.push(tag);
+      }
+    }
+    
+    // 检查名称匹配
+    const kbName = (kbAsset.name || '').toLowerCase();
+    if (descLower.includes(kbName) || kbName.split(/\s+/).some((word: string) => descLower.includes(word))) {
+      matchScore += 0.3;
+    }
+    
+    // 检查描述匹配
+    const kbDesc = (kbAsset.description || '').toLowerCase();
+    const descWords = descLower.split(/\s+/).filter((w: string) => w.length > 2);
+    const matchedDescWords = descWords.filter((w: string) => kbDesc.includes(w));
+    matchScore += (matchedDescWords.length / Math.max(descWords.length, 1)) * 0.2;
+    
+    // 检查上下文钩子
+    const contextHook = kbAsset.context_hook || '';
+    if (contextHook && descWords.some((w: string) => contextHook.toLowerCase().includes(w))) {
+      matchScore += 0.15;
+    }
+    
+    if (matchScore > 0.2) {
+      matchedKBs.push({
+        id: kbAsset.asset_id,
+        name: kbAsset.name,
+        description: kbAsset.description,
+        intentTags: matchedTags,
+        contextHook: kbAsset.context_hook,
+        matchScore,
+      });
+    }
+  }
+  
+  // 按匹配分数排序，返回前3个
+  return matchedKBs
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, 3);
 }

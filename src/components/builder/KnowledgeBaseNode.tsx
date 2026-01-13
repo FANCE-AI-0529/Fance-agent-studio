@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { Position } from "@xyflow/react";
-import { BookOpen, Database, X, Settings, Network, FileText, Layers } from "lucide-react";
+import { BookOpen, Database, X, Settings, Network, FileText, Layers, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -193,6 +193,42 @@ const KnowledgeBaseNode: React.FC<KnowledgeBaseNodeProps> = memo(({ id, data, se
             <span className="ml-2">| 深度: {data.graph_depth}</span>
           )}
         </div>
+
+        {/* Intent Tags - 新增：显示意图标签 */}
+        {data.intent_tags && data.intent_tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {data.intent_tags.slice(0, 3).map((tag, idx) => (
+              <Badge 
+                key={idx}
+                variant="outline" 
+                className="text-[10px] px-1.5 py-0 h-4 border-purple-500/30 text-purple-600 dark:text-purple-400"
+              >
+                {tag}
+              </Badge>
+            ))}
+            {data.intent_tags.length > 3 && (
+              <Badge 
+                variant="outline" 
+                className="text-[10px] px-1.5 py-0 h-4 border-muted-foreground/30"
+              >
+                +{data.intent_tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Auto-mounted badge - 新增：AI自动挂载标识 */}
+        {data.isAutoMounted && (
+          <div className="flex items-center gap-1 pt-1">
+            <Badge 
+              variant="secondary" 
+              className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+            >
+              <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+              AI 自动挂载
+            </Badge>
+          </div>
+        )}
       </div>
     </div>
   );

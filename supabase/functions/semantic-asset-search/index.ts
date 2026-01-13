@@ -70,6 +70,20 @@ const INTENT_CAPABILITY_MAP: Record<string, string[]> = {
   '数据': ['查询', '数据库', '分析'],
 };
 
+// 知识库意图映射 - 用于自动匹配知识库
+const KNOWLEDGE_INTENT_MAP: Record<string, string[]> = {
+  '报销': ['reimbursement', 'finance', 'company_policy'],
+  '财务': ['financial_report', 'accounting', 'finance'],
+  '员工': ['employee', 'hr_rules', 'company_policy'],
+  '政策': ['company_policy', 'policy', 'rules'],
+  '产品': ['product_docs', 'user_manual', 'faq'],
+  '技术': ['technical_docs', 'api', 'development'],
+  '客户': ['customer_support', 'crm', 'faq'],
+  '帮助': ['help', 'faq', 'support'],
+  '培训': ['training', 'onboarding', 'learning'],
+  '合规': ['compliance', 'legal', 'policy'],
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -291,7 +305,26 @@ function calculateEnhancedSimilarity(
     matchReasons.push('知识库优先');
   }
 
-  // 6. 风险匹配加成（如果查询涉及高风险操作）
+  // 6. 知识库意图标签匹配 (新增)
+  if (asset.asset_type === 'knowledge_base') {
+    const intentTags = (asset.intent_tags as string[]) || [];
+    if (intentTags.length > 0) {
+      const matchedIntentTags = matchKnowledgeIntentTags(queryLower, intentTags);
+      if (matchedIntentTags.length > 0) {
+        score += 0.15 * (matchedIntentTags.length / intentTags.length);
+        matchReasons.push(`意图标签匹配(${matchedIntentTags.join(',')})`);
+      }
+    }
+    
+    // 上下文钩子匹配
+    const contextHook = (asset.context_hook as string) || '';
+    if (contextHook && queryWords.some(qw => contextHook.toLowerCase().includes(qw))) {
+      score += 0.1;
+      matchReasons.push('上下文钩子匹配');
+    }
+  }
+
+  // 7. 风险匹配加成（如果查询涉及高风险操作）
   const riskLevel = asset.risk_level as string;
   if (riskLevel === 'high' && /退款|删除|支付|转账/i.test(queryLower)) {
     score += 0.05;
@@ -302,4 +335,21 @@ function calculateEnhancedSimilarity(
     similarity: Math.min(score, 1.0),
     matchReason: matchReasons.join(', ') || '基础匹配',
   };
+}
+
+// 匹配知识库意图标签 (新增函数)
+function matchKnowledgeIntentTags(query: string, intentTags: string[]): string[] {
+  const matchedTags: string[] = [];
+  
+  for (const [keyword, relatedTags] of Object.entries(KNOWLEDGE_INTENT_MAP)) {
+    if (query.includes(keyword)) {
+      for (const tag of relatedTags) {
+        if (intentTags.includes(tag)) {
+          matchedTags.push(tag);
+        }
+      }
+    }
+  }
+  
+  return [...new Set(matchedTags)];
 }
