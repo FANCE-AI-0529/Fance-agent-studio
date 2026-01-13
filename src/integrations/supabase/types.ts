@@ -650,6 +650,92 @@ export type Database = {
           },
         ]
       }
+      agent_snapshots: {
+        Row: {
+          agent_id: string
+          change_stats: Json | null
+          commit_hash: string
+          commit_message: string
+          created_at: string
+          graph_data: Json
+          id: string
+          is_auto_save: boolean | null
+          manifest: Json
+          mounted_skills: Json
+          mplp_policy: string
+          parent_snapshot_id: string | null
+          personality_config: Json | null
+          system_prompt: string | null
+          trigger_source: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          change_stats?: Json | null
+          commit_hash: string
+          commit_message?: string
+          created_at?: string
+          graph_data?: Json
+          id?: string
+          is_auto_save?: boolean | null
+          manifest?: Json
+          mounted_skills?: Json
+          mplp_policy?: string
+          parent_snapshot_id?: string | null
+          personality_config?: Json | null
+          system_prompt?: string | null
+          trigger_source?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          change_stats?: Json | null
+          commit_hash?: string
+          commit_message?: string
+          created_at?: string
+          graph_data?: Json
+          id?: string
+          is_auto_save?: boolean | null
+          manifest?: Json
+          mounted_skills?: Json
+          mplp_policy?: string
+          parent_snapshot_id?: string | null
+          personality_config?: Json | null
+          system_prompt?: string | null
+          trigger_source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_snapshots_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_snapshots_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_snapshots_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_snapshots_parent_snapshot_id_fkey"
+            columns: ["parent_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "agent_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_webhooks: {
         Row: {
           agent_id: string
@@ -3778,6 +3864,44 @@ export type Database = {
           },
         ]
       }
+      snapshot_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          snapshot_id: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          snapshot_id: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          snapshot_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snapshot_tags_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "agent_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_chain_executions: {
         Row: {
           chain_description: string | null
@@ -4761,6 +4885,7 @@ export type Database = {
         }[]
       }
       generate_agent_api_key: { Args: never; Returns: string }
+      generate_commit_hash: { Args: never; Returns: string }
       generate_conversation_share_token: { Args: never; Returns: string }
       generate_share_token: { Args: never; Returns: string }
       get_next_skill_version_number: {
