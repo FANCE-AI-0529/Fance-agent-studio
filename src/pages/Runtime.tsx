@@ -66,6 +66,8 @@ import { useDevToolsState } from "@/hooks/useDevToolsState";
 import { useManusKernel } from "@/hooks/useManusKernel";
 import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "@/hooks/useScenarios";
 import { useMemoryContext } from "@/hooks/useMemory";
+import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
+import { useManusSessionFiles } from "@/hooks/useManusSessionFiles";
 import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
 import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { useChatSession } from "@/hooks/useChatSession";
@@ -361,6 +363,7 @@ const Runtime = () => {
     loadSession,
     addMessage,
     deleteSession,
+    findOrCreateSessionForAgent,
   } = useChatSession();
 
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
@@ -397,6 +400,12 @@ const Runtime = () => {
   
   // Memory context for AI
   const { generateContext: generateMemoryContext, hasMemories } = useMemoryContext(selectedAgent?.id);
+  
+  // Auto memory extraction
+  const { extractAndSaveMemories } = useAutoMemoryExtraction(selectedAgent?.id);
+  
+  // Manus session files management
+  const { ensureManusFiles } = useManusSessionFiles();
 
   // Get selected model info
   const selectedModel = availableModels.find(m => m.id === selectedModelId) || availableModels[0];
@@ -493,14 +502,27 @@ const Runtime = () => {
     }
   }, [chatSession, isLoadingSession, user, localMessages.length, selectedAgent]);
 
-  // Reset messages when agent changes
-  const handleAgentChange = useCallback((agent: Agent | null) => {
+  // Reset messages when agent changes and load existing session
+  const handleAgentChange = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
-    setLocalMessages([]);
+    
+    // Clear temporary state
     trace.clearSessions();
     setContextMemory([]);
     setCurrentThinkingLogs([]);
-  }, [trace]);
+    
+    // Find or create session for this agent (preserves chat history)
+    if (user) {
+      const session = await findOrCreateSessionForAgent(agent?.id ?? null);
+      if (!session) {
+        // If no session, just clear messages for welcome screen
+        setLocalMessages([]);
+      }
+      // If session loaded, persistedMessages will update via useEffect
+    } else {
+      setLocalMessages([]);
+    }
+  }, [trace, user, findOrCreateSessionForAgent]);
 
   const handleTraceEvent = useCallback((type: string, data: Record<string, unknown>) => {
     if (type === "error") {
@@ -831,6 +853,11 @@ const Runtime = () => {
           endTraceSession("completed");
 
           updateContextMemory(null, messageContent);
+          
+          // Auto-extract memories from the conversation
+          if (assistantContentRef.current) {
+            extractAndSaveMemories(messageContent, assistantContentRef.current);
+          }
 
           if (chatSession) {
             await addMessage({
@@ -913,6 +940,10 @@ const Runtime = () => {
       if (!activeSession) {
         toast.error("创建会话失败");
         return;
+      }
+      // Initialize Manus kernel files for new session
+      if (activeSession) {
+        ensureManusFiles(activeSession.id, agentId || null);
       }
     }
 
