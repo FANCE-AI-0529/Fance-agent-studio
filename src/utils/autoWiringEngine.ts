@@ -1,12 +1,12 @@
 // =====================================================
-// 自动布线引擎 - Auto-Wiring Engine
+// 自动布线引擎 - Auto-Wiring Engine (增强版)
 // 负责智能推断节点间的变量映射
+// 支持草稿边机制 + 置信度标记
 // =====================================================
 
 import { 
   NodeSpec, 
   InputMapping, 
-  SemanticAsset,
   GeneratedVariableMapping 
 } from '@/types/workflowDSL';
 import { 
@@ -27,8 +27,33 @@ interface SchemaField {
 interface WiringCandidate {
   sourceField: SchemaField;
   targetField: SchemaField;
-  confidence: number;        // 匹配置信度 0-1
-  matchReason: string;       // 匹配原因
+  confidence: number;
+  matchReason: string;
+}
+
+// ========== 布线结果类型 ==========
+
+export interface WiringResult {
+  mapping: InputMapping;
+  confidence: number;
+  status: 'confirmed' | 'draft';
+  matchReason: string;
+}
+
+export interface EdgeWithConfidence {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  style?: Record<string, unknown>;
+  data: {
+    confidence: number;
+    status: 'confirmed' | 'draft';
+    needsReview: boolean;
+    matchReason?: string;
+    mappings?: InputMapping[];
+  };
 }
 
 // ========== 节点输入 Schema 定义 ==========
@@ -37,6 +62,8 @@ export const nodeInputSchemas: Record<string, Record<string, { type: VariableTyp
   agent: {
     'context': { type: 'object', description: '上下文信息' },
     'user_message': { type: 'string', required: true, description: '用户消息' },
+    'knowledge_context': { type: 'string', description: '知识库上下文' },
+    'tool_results': { type: 'object', description: '工具执行结果' },
     'system_prompt_override': { type: 'string', description: '系统提示词覆盖' },
   },
   skill: {
@@ -68,20 +95,28 @@ export const nodeInputSchemas: Record<string, Record<string, { type: VariableTyp
 
 const SEMANTIC_KEYWORDS: Record<string, string[]> = {
   // 通用字段
-  'message': ['content', 'text', 'body', 'data', 'response', 'output'],
-  'content': ['message', 'text', 'body', 'data', 'response', 'output'],
-  'query': ['question', 'search', 'input', 'message', 'text'],
-  'result': ['output', 'response', 'data', 'answer'],
-  'context': ['metadata', 'info', 'state', 'data'],
+  'message': ['content', 'text', 'body', 'data', 'response', 'output', 'result'],
+  'content': ['message', 'text', 'body', 'data', 'response', 'output', 'result'],
+  'query': ['question', 'search', 'input', 'message', 'text', 'prompt'],
+  'result': ['output', 'response', 'data', 'answer', 'content'],
+  'context': ['metadata', 'info', 'state', 'data', 'background'],
   
   // 特定领域
   'temperature': ['temp', 'weather_temp', 'current_temp'],
-  'email': ['mail', 'message', 'content'],
-  'name': ['title', 'label', 'display_name'],
-  'id': ['identifier', 'key', 'uuid'],
-  'url': ['link', 'href', 'path'],
-  'user': ['author', 'creator', 'owner'],
-  'time': ['timestamp', 'date', 'datetime', 'created_at'],
+  'email': ['mail', 'message', 'content', 'to', 'recipient'],
+  'name': ['title', 'label', 'display_name', 'subject'],
+  'id': ['identifier', 'key', 'uuid', 'ref'],
+  'url': ['link', 'href', 'path', 'endpoint'],
+  'user': ['author', 'creator', 'owner', 'sender'],
+  'time': ['timestamp', 'date', 'datetime', 'created_at', 'updated_at'],
+  'recipients': ['to', 'email', 'addresses', 'receivers'],
+};
+
+// ========== 置信度阈值 ==========
+
+const CONFIDENCE_THRESHOLDS = {
+  CONFIRMED: 0.7,  // 自动确认阈值
+  DRAFT: 0.4,      // 草稿阈值（低于此不连接）
 };
 
 // ========== 主函数：自动推断变量映射 ==========
@@ -104,7 +139,7 @@ export function inferVariableMappings(
   
   // 4. 选择高置信度的映射
   for (const candidate of candidates) {
-    if (candidate.confidence >= 0.5) {
+    if (candidate.confidence >= CONFIDENCE_THRESHOLDS.DRAFT) {
       mappings.push({
         targetField: candidate.targetField.path,
         sourceExpression: `{{${sourceNode.outputKey || sourceNode.id}.output.${candidate.sourceField.path}}}`,
@@ -113,6 +148,72 @@ export function inferVariableMappings(
   }
   
   return mappings;
+}
+
+// ========== 增强：带置信度的映射推断 ==========
+
+export function inferVariableMappingsWithConfidence(
+  sourceNode: NodeSpec,
+  targetNode: NodeSpec,
+  existingVariables: Map<string, SchemaField[]>
+): WiringResult[] {
+  const results: WiringResult[] = [];
+  
+  const sourceOutputs = getNodeOutputFields(sourceNode, existingVariables);
+  const targetInputs = getNodeInputFields(targetNode);
+  const candidates = findWiringCandidates(sourceOutputs, targetInputs, sourceNode.id);
+  
+  for (const candidate of candidates) {
+    if (candidate.confidence >= CONFIDENCE_THRESHOLDS.DRAFT) {
+      results.push({
+        mapping: {
+          targetField: candidate.targetField.path,
+          sourceExpression: `{{${sourceNode.outputKey || sourceNode.id}.output.${candidate.sourceField.path}}}`,
+        },
+        confidence: candidate.confidence,
+        status: candidate.confidence >= CONFIDENCE_THRESHOLDS.CONFIRMED ? 'confirmed' : 'draft',
+        matchReason: candidate.matchReason,
+      });
+    }
+  }
+  
+  return results;
+}
+
+// ========== 创建带置信度的边 ==========
+
+export function createEdgeWithConfidence(
+  sourceNodeId: string,
+  targetNodeId: string,
+  wiringResults: WiringResult[]
+): EdgeWithConfidence {
+  // 计算整体置信度（取平均）
+  const avgConfidence = wiringResults.length > 0
+    ? wiringResults.reduce((sum, r) => sum + r.confidence, 0) / wiringResults.length
+    : 0.5;
+  
+  // 确定状态
+  const hasLowConfidence = wiringResults.some(r => r.status === 'draft');
+  const status = hasLowConfidence ? 'draft' : 'confirmed';
+  
+  // 汇总匹配原因
+  const matchReasons = [...new Set(wiringResults.map(r => r.matchReason))];
+  
+  return {
+    id: `edge-${sourceNodeId}-${targetNodeId}`,
+    source: sourceNodeId,
+    target: targetNodeId,
+    style: status === 'draft' 
+      ? { stroke: '#ef4444', strokeDasharray: '5,5', strokeWidth: 2 }
+      : { stroke: 'hsl(var(--primary))', strokeWidth: 2 },
+    data: {
+      confidence: avgConfidence,
+      status,
+      needsReview: status === 'draft',
+      matchReason: matchReasons.join('; '),
+      mappings: wiringResults.map(r => r.mapping),
+    },
+  };
 }
 
 // ========== 获取节点输出字段 ==========
@@ -211,10 +312,10 @@ function calculateMatchConfidence(source: SchemaField, target: SchemaField): num
   else if (sourceName.includes(targetName) || targetName.includes(sourceName)) {
     confidence += 0.3;
   }
-  // 4. 语义关键词匹配 (权重: 0.2)
+  // 4. 语义关键词匹配 (权重: 0.25)
   else {
     const semanticMatch = checkSemanticMatch(sourceName, targetName);
-    confidence += semanticMatch * 0.2;
+    confidence += semanticMatch * 0.25;
   }
   
   // 5. 必填字段加权 (权重: 0.1)
@@ -236,8 +337,9 @@ function calculateMatchConfidence(source: SchemaField, target: SchemaField): num
 function checkSemanticMatch(source: string, target: string): number {
   // 检查是否在语义关键词表中
   for (const [key, synonyms] of Object.entries(SEMANTIC_KEYWORDS)) {
-    const sourceMatches = source.includes(key) || synonyms.some(s => source.includes(s));
-    const targetMatches = target.includes(key) || synonyms.some(s => target.includes(s));
+    const allTerms = [key, ...synonyms];
+    const sourceMatches = allTerms.some(t => source.includes(t) || t.includes(source));
+    const targetMatches = allTerms.some(t => target.includes(t) || t.includes(target));
     
     if (sourceMatches && targetMatches) {
       return 1.0;
@@ -274,8 +376,11 @@ function getMatchReason(source: SchemaField, target: SchemaField, confidence: nu
   if (sourceName.includes(targetName) || targetName.includes(sourceName)) {
     return '字段名部分匹配';
   }
-  if (confidence >= 0.5) {
-    return '语义相似度匹配';
+  if (confidence >= CONFIDENCE_THRESHOLDS.CONFIRMED) {
+    return '语义相似度高';
+  }
+  if (confidence >= CONFIDENCE_THRESHOLDS.DRAFT) {
+    return '类型兼容，需人工确认';
   }
   return '类型兼容匹配';
 }
@@ -302,6 +407,35 @@ export function autoWireWorkflow(
       result.set(edgeKey, mappings);
       
       // 更新变量上下文
+      const outputFields = getNodeOutputFields(sourceNode, variableContext);
+      variableContext.set(sourceNode.id, outputFields);
+    }
+  }
+  
+  return result;
+}
+
+// ========== 批量自动布线（带置信度） ==========
+
+export function autoWireWorkflowWithConfidence(
+  nodes: NodeSpec[],
+  edges: { source: string; target: string }[]
+): Map<string, EdgeWithConfidence> {
+  const result = new Map<string, EdgeWithConfidence>();
+  const variableContext = new Map<string, SchemaField[]>();
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  
+  for (const edge of edges) {
+    const sourceNode = nodeMap.get(edge.source);
+    const targetNode = nodeMap.get(edge.target);
+    
+    if (sourceNode && targetNode) {
+      const wiringResults = inferVariableMappingsWithConfidence(sourceNode, targetNode, variableContext);
+      const edgeWithConfidence = createEdgeWithConfidence(edge.source, edge.target, wiringResults);
+      
+      const edgeKey = `${edge.source}->${edge.target}`;
+      result.set(edgeKey, edgeWithConfidence);
+      
       const outputFields = getNodeOutputFields(sourceNode, variableContext);
       variableContext.set(sourceNode.id, outputFields);
     }
@@ -343,8 +477,8 @@ export function validateMappings(
 
 function isValidExpression(expr: string): boolean {
   // 检查基本的变量引用格式 {{node.path}}
-  const pattern = /^\{\{[\w\-]+(\.\w+)+\}\}$/;
-  return pattern.test(expr);
+  const pattern = /^\{\{[\w\-]+(\.\w+)*\}\}$/;
+  return pattern.test(expr) || expr.startsWith('{') || expr.startsWith('[');
 }
 
 // ========== 生成映射建议 ==========
@@ -383,3 +517,15 @@ export function generateMappingSuggestions(
   
   return suggestions.sort((a, b) => b.confidence - a.confidence);
 }
+
+// ========== 获取草稿边列表 ==========
+
+export function getDraftEdges(
+  edgesWithConfidence: Map<string, EdgeWithConfidence>
+): EdgeWithConfidence[] {
+  return Array.from(edgesWithConfidence.values()).filter(e => e.data.status === 'draft');
+}
+
+// ========== 导出置信度阈值 ==========
+
+export { CONFIDENCE_THRESHOLDS };
