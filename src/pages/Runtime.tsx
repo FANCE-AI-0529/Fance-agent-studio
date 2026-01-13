@@ -49,6 +49,7 @@ import { MessageBubble } from "@/components/runtime/MessageBubble";
 import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import WelcomeGuide from "@/components/runtime/WelcomeGuide";
+import { EnhancedWelcomeCard } from "@/components/runtime/EnhancedWelcomeCard";
 import OnboardingTour, { useOnboardingTour } from "@/components/runtime/OnboardingTour";
 import { QuickCommandMenu, MessageTemplates } from "@/components/runtime/QuickCommandMenu";
 import { FileUploadButton } from "@/components/runtime/FileUploadButton";
@@ -1286,12 +1287,14 @@ const Runtime = () => {
                 {/* Messages or Welcome Guide */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-0">
                   {localMessages.length === 0 && currentPhase === "idle" ? (
-                    <WelcomeGuide 
-                      agent={selectedAgent} 
-                      onCommandClick={(command) => {
-                        setInput(command);
-                      }}
-                    />
+                    <div className="flex-1 flex items-center justify-center py-8">
+                      <EnhancedWelcomeCard 
+                        agent={selectedAgent} 
+                        onQuickStart={(command) => {
+                          setInput(command);
+                        }}
+                      />
+                    </div>
                   ) : (
                     <>
                       {localMessages.map(message => {
