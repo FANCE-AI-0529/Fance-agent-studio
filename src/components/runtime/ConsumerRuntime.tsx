@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AuroraBackground } from "@/components/consumer/AuroraBackground";
 import { useAppModeStore } from "@/stores/appModeStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAgent } from "@/hooks/useAgents";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Tooltip,
@@ -30,6 +31,12 @@ interface Message {
   timestamp: Date;
 }
 
+interface AgentConfig {
+  name: string;
+  systemPrompt: string;
+  model: string;
+}
+
 export function ConsumerRuntime() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -39,18 +46,45 @@ export function ConsumerRuntime() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Handle initial prompt from URL
+  // Get agentId from URL
+  const agentId = searchParams.get('agentId');
+  const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId);
+
+  // Load agent config when agent data is available
+  useEffect(() => {
+    if (agent) {
+      const manifest = agent.manifest as any;
+      setAgentConfig({
+        name: agent.name,
+        systemPrompt: manifest?.systemPrompt || `你是${agent.name}，一个专业的AI助手。`,
+        model: agent.model || 'gpt-4',
+      });
+
+      // Add welcome message
+      if (messages.length === 0) {
+        const welcomeMessage: Message = {
+          id: 'welcome',
+          role: 'assistant',
+          content: `你好！我是 ${agent.name}。${manifest?.description || '有什么我可以帮助你的吗？'}`,
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMessage]);
+      }
+    }
+  }, [agent]);
+
+  // Handle initial prompt from URL (legacy support)
   useEffect(() => {
     const prompt = searchParams.get('prompt');
-    if (prompt) {
+    if (prompt && !agentId) {
       handleSubmit(prompt);
-      // Clear the URL param
       navigate('/runtime', { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, agentId]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -88,10 +122,11 @@ export function ConsumerRuntime() {
 
     // Simulate AI response (replace with actual API call)
     setTimeout(() => {
+      const agentName = agentConfig?.name || '智能助手';
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `我已收到你的请求："${messageContent}"。\n\n作为你的智能助手，我会帮助你完成这个任务。目前这是一个演示响应，实际功能正在开发中。\n\n你可以继续描述你的需求，或者使用左上角的返回按钮回到首页。`,
+        content: `我已收到你的请求："${messageContent}"。\n\n作为${agentName}，我会帮助你完成这个任务。目前这是一个演示响应，实际功能正在开发中。\n\n你可以继续描述你的需求。`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, assistantMessage]);
@@ -105,6 +140,24 @@ export function ConsumerRuntime() {
       handleSubmit();
     }
   };
+
+  // Show loading state while fetching agent
+  if (agentId && isLoadingAgent) {
+    return (
+      <AuroraBackground>
+        <div className="min-h-screen flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center"
+          >
+            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">正在加载...</p>
+          </motion.div>
+        </div>
+      </AuroraBackground>
+    );
+  }
 
   return (
     <AuroraBackground>
@@ -123,10 +176,21 @@ export function ConsumerRuntime() {
               返回
             </Button>
 
-            {/* Logo */}
+            {/* Agent name or Logo */}
             <div className="flex items-center gap-2">
-              <img src={logoIcon} alt="Fance OS" className="w-7 h-7 rounded-lg" />
-              <span className="font-semibold text-sm">Fance OS</span>
+              {agentConfig ? (
+                <>
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="font-semibold text-sm">{agentConfig.name}</span>
+                </>
+              ) : (
+                <>
+                  <img src={logoIcon} alt="Fance OS" className="w-7 h-7 rounded-lg" />
+                  <span className="font-semibold text-sm">Fance OS</span>
+                </>
+              )}
             </div>
 
             {/* Actions */}
@@ -153,8 +217,8 @@ export function ConsumerRuntime() {
         <div className="flex-1 pt-20 pb-32">
           <ScrollArea ref={scrollRef} className="h-full">
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-              {/* Empty state */}
-              {messages.length === 0 && (
+              {/* Empty state - only show if no agent and no messages */}
+              {messages.length === 0 && !agentConfig && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
