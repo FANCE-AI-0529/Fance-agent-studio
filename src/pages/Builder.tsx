@@ -72,7 +72,9 @@ import ConditionNode, { ConditionNodeData } from "@/components/builder/nodes/Con
 import ParallelNode, { ParallelNodeData } from "@/components/builder/nodes/ParallelNode";
 import MCPActionNode, { MCPActionNodeData } from "@/components/builder/nodes/MCPActionNode";
 import InterventionNode, { InterventionNodeData } from "@/components/builder/nodes/InterventionNode";
+import ManusKernelNode from "@/components/builder/nodes/ManusKernelNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
+import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "@/components/builder/edges/ManusLifecycleEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
 import { MCPActionDragItem, InterventionDragItem } from "@/components/builder/MCPActionsPanel";
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
@@ -117,7 +119,7 @@ import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
 import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
 import { NodeTypes, EdgeTypes } from "@xyflow/react";
 
-// Custom node types
+// Custom node types - including Manus Kernel
 const nodeTypes: NodeTypes = {
   skill: SkillNode,
   agent: AgentNode,
@@ -129,11 +131,13 @@ const nodeTypes: NodeTypes = {
   parallel: ParallelNode,
   mcpAction: MCPActionNode,
   intervention: InterventionNode,
+  manus: ManusKernelNode, // Manus Kernel node type
 };
 
-// Custom edge types
+// Custom edge types - including Manus Lifecycle edge
 const edgeTypes: EdgeTypes = {
   [ANIMATED_FLOW_EDGE]: AnimatedFlowEdge,
+  [MANUS_LIFECYCLE_EDGE]: ManusLifecycleEdge, // Golden thinking bus edge
 };
 
 // Initial agent node in center

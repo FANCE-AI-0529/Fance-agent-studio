@@ -71,16 +71,39 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Manus Protocol instruction - mandatory for all agents
+    const MANUS_PROTOCOL_INSTRUCTION = `
+## [Manus Protocol] - 强制架构规范
+作为 Agent OS 架构师，构建智能体时你必须遵循以下协议：
+
+**第一步（强制）- Manus 内核挂载**：
+- 所有生成的 Agent 都会自动注入 Manus Kernel (core-manus-planning)
+- Manus 节点是智能体的"大脑"，提供：
+  - task_plan.md (任务规划板)
+  - findings.md (知识发现库)  
+  - progress.md (进度追踪器)
+
+**第二步（业务）- 技能挂载**：
+- 根据用户需求推荐 Skill 或 MCP 工具
+- 所有业务逻辑都通过 Manus 内核协调
+
+**第三步（System Prompt 设计）**：
+- 生成的 systemPrompt 应该强调 Agent 需要维护自己的状态文件
+- 鼓励 Agent 在每次操作后更新 findings.md 和 progress.md
+
+`;
+
     // Extended prompt for full workflow generation
     const systemPromptForGenerator = generateFullWorkflow 
-      ? `你是一个AI Agent配置和工作流设计专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成完整的配置和工作流设计。
+      ? `${MANUS_PROTOCOL_INSTRUCTION}
+你是一个AI Agent配置和工作流设计专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成完整的配置和工作流设计。
 
 请根据用户描述生成以下配置（使用JSON格式）：
 
 ## 基础配置
 1. name: Agent的名称（简短、有特色）
 2. department: 所属部门（如：营销部、技术部、客服部、内容部等）
-3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字）
+3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字。必须包含"你需要维护自己的状态文件"这个概念）
 4. suggestedSkills: 推荐的技能列表（字符串数组，如：["文案写作", "数据分析"]）
 5. personalityConfig: 性格配置
    - professional: 0-1（0=活泼，1=专业）
@@ -119,12 +142,13 @@ serve(async (req) => {
 - 研究/分析/论文 -> 研究资料, graph模式
 
 直接返回JSON对象，不要包含其他文字。确保JSON格式正确。`
-      : `你是一个AI Agent配置生成专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成配置。
+      : `${MANUS_PROTOCOL_INSTRUCTION}
+你是一个AI Agent配置生成专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成配置。
 
 请根据用户描述生成以下配置（使用JSON格式）：
 1. name: Agent的名称（简短、有特色）
 2. department: 所属部门（如：营销部、技术部、客服部、内容部等）
-3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字）
+3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字。必须包含"你需要维护自己的状态文件"这个概念）
 4. suggestedSkills: 推荐的技能列表（字符串数组，如：["文案写作", "数据分析"]）
 5. personalityConfig: 性格配置
    - professional: 0-1（0=活泼，1=专业）

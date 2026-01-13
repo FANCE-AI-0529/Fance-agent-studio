@@ -8,6 +8,7 @@ export interface LayoutConfig {
 
 export type NodeLayerType = 
   | "trigger" 
+  | "manus"      // Manus Kernel layer - sits above agent
   | "agent" 
   | "skill" 
   | "intentRouter" 
@@ -25,8 +26,10 @@ const DEFAULT_CONFIG: LayoutConfig = {
 };
 
 // Layer order for horizontal layout
+// Manus sits between trigger and agent visually
 const LAYER_ORDER: Record<NodeLayerType, number> = {
   trigger: 0,
+  manus: 1.2,    // Manus Kernel - above agent in the thinking layer
   knowledge: 1,
   agent: 2,
   skill: 2.5,
@@ -171,7 +174,17 @@ export function autoLayoutNodes(
 export function getAgentCenterPosition(nodeCount: number): { x: number; y: number } {
   return {
     x: 400,
-    y: 250 + Math.max(0, (nodeCount - 3) * 30),
+    y: 320 + Math.max(0, (nodeCount - 3) * 30), // Moved down to accommodate Manus above
+  };
+}
+
+/**
+ * Get Manus Kernel position - directly above the agent node
+ */
+export function getManusPosition(agentPosition: { x: number; y: number }): { x: number; y: number } {
+  return {
+    x: agentPosition.x,
+    y: agentPosition.y - 180, // 180px above the agent
   };
 }
 

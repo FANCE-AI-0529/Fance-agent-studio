@@ -8,11 +8,13 @@ import {
   CanvasEdgeConfig,
   distributeSkillsAroundAgent,
   distributeKnowledgeAroundAgent,
+  getManusPosition,
 } from "@/utils/canvasLayoutEngine";
 import { toast } from "@/hooks/use-toast";
 import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import type { Skill } from "@/components/builder/SkillMarketplace";
 import type { MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
+import { MANUS_KERNEL } from "@/data/manusKernel";
 
 export interface GeneratedCanvasResult {
   nodes: Node[];
@@ -240,9 +242,29 @@ function buildWorkflowFromConfig(
   const mcpActions: MCPActionSuggestion[] = config.suggestedMCPActions || [];
   const knowledgeBases: KnowledgeBaseSuggestion[] = config.suggestedKnowledgeBases || [];
 
-  const agentPosition = { x: 400, y: 250 };
+  // Position agent lower to accommodate Manus Kernel above
+  const agentPosition = { x: 400, y: 350 };
+  const manusPosition = getManusPosition(agentPosition);
 
-  // Always add agent central node
+  // 1. MANDATORY: Add Manus Kernel node first (Kernel-First Architecture)
+  const manusNodeId = `manus-kernel-${Date.now()}`;
+  nodes.push({
+    id: manusNodeId,
+    type: "manus",
+    position: manusPosition,
+    data: {
+      id: manusNodeId,
+      name: "Manus Planning Core",
+      version: MANUS_KERNEL.version,
+      files: Object.keys(MANUS_KERNEL.fileTemplates),
+      rules: MANUS_KERNEL.rules,
+      status: 'active',
+    },
+    draggable: false, // Cannot be moved
+    deletable: false, // Cannot be deleted
+  });
+
+  // 2. Add agent central node
   nodes.push({
     id: "agent-central",
     type: "agent",
@@ -252,8 +274,24 @@ function buildWorkflowFromConfig(
       department: config.department,
       model: "Claude 3.5",
       skillCount: 0,
+      hasManusKernel: true, // Mark as having Manus Kernel injected
     },
     draggable: false,
+  });
+
+  // 3. Add golden lifecycle edge (Manus -> Agent) - the "Thinking Bus"
+  edges.push({
+    id: `edge-manus-lifecycle`,
+    source: manusNodeId,
+    sourceHandle: "lifecycle",
+    target: "agent-central",
+    targetHandle: "lifecycle_hook",
+    type: "manusLifecycle", // Special golden edge type
+    animated: true,
+    data: {
+      edgeType: "manus_bus",
+      label: "思维主总线",
+    },
   });
 
   if (!generateFullWorkflow) {
@@ -488,21 +526,38 @@ function extractIntentRoutes(description: string): Array<{ id: string; name: str
   ];
 }
 
-// Generate manifest from config
+// Generate manifest from config with Manus Kernel injection
 function generateManifest(config: AIGeneratedConfig): Record<string, unknown> {
+  // Manus Protocol role prefix - injected into all agents
+  const MANUS_ROLE_PREFIX = `You work like Manus. You MUST maintain your state in \`task_plan.md\`, \`findings.md\`, and \`progress.md\`. Never rely solely on context window. Read \`SKILL.md\` for strict protocols.
+
+`;
+
   return {
     version: "1.0.0",
     metadata: {
       name: config.name,
       department: config.department,
-      description: `${config.name} - AI生成的智能体`,
+      description: `${config.name} - Manus-powered AI Agent`,
       created_at: new Date().toISOString(),
+    },
+    // Manus Kernel configuration - mandatory for all agents
+    kernel: {
+      type: 'manus-planning',
+      version: MANUS_KERNEL.version,
+      config: {
+        autoInitialize: true,
+        twoActionRule: true,
+        threeStrikeProtocol: true,
+        fiveQuestionReboot: true,
+      },
     },
     runtime: {
       provider: "anthropic",
       model: "claude-3-5-sonnet-20241022",
     },
-    system_prompt: config.systemPrompt,
+    // Inject Manus role prefix into system prompt
+    system_prompt: MANUS_ROLE_PREFIX + config.systemPrompt,
     personality: config.personalityConfig,
   };
 }
