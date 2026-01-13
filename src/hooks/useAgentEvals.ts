@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Json } from '@/integrations/supabase/types';
 import {
   TestCase,
   TestRunResult,
@@ -105,12 +106,20 @@ export interface UseAgentEvalsReturn {
   events: EvalPipelineEvent[];
   evaluationResult: EvaluationResult | null;
   error: string | null;
+  
+  // 历史状态
+  evaluationHistory: EvaluationResult[];
+  isLoadingHistory: boolean;
 
   // 操作
   generateTestCases: (request: GenerateTestCasesRequest) => Promise<TestCase[]>;
   runEvaluation: (request: RunEvaluationRequest) => Promise<EvaluationResult | null>;
   runRedTeamTests: (agentConfig: RunEvaluationRequest['agentConfig']) => Promise<RedTeamResults>;
   reset: () => void;
+  
+  // 数据库操作
+  saveEvaluation: (result: EvaluationResult) => Promise<string | null>;
+  fetchEvaluationHistory: (agentId: string) => Promise<EvaluationResult[]>;
 }
 
 // =====================================================
@@ -127,6 +136,10 @@ export function useAgentEvals(): UseAgentEvalsReturn {
   const [events, setEvents] = useState<EvalPipelineEvent[]>([]);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // 历史状态
+  const [evaluationHistory, setEvaluationHistory] = useState<EvaluationResult[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // 添加事件
   const addEvent = useCallback((
@@ -488,7 +501,17 @@ export function useAgentEvals(): UseAgentEvalsReturn {
       };
 
       setEvaluationResult(result);
-      addEvent('saving_results', 'completed', '评估结果已保存');
+      
+      // 自动保存到数据库
+      const savedId = await saveEvaluation(result);
+      if (savedId) {
+        // 更新 result 的 id 为数据库 id
+        result.id = savedId;
+        setEvaluationResult(result);
+        addEvent('saving_results', 'completed', `评估结果已保存 (ID: ${savedId.slice(0, 8)}...)`);
+      } else {
+        addEvent('saving_results', 'completed', '评估完成 (未登录，结果未保存)');
+      }
       setProgress(100);
 
       toast({
@@ -515,6 +538,112 @@ export function useAgentEvals(): UseAgentEvalsReturn {
     }
   }, [generateTestCases, runSingleTest, runRedTeamTests, addEvent, toast]);
 
+  // 保存评估结果到数据库
+  const saveEvaluation = useCallback(async (
+    result: EvaluationResult
+  ): Promise<string | null> => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        console.warn('User not authenticated, skipping save');
+        return null;
+      }
+
+      const { data, error: insertError } = await supabase
+        .from('agent_evaluations')
+        .insert({
+          agent_id: result.agentId,
+          user_id: userData.user.id,
+          eval_type: result.evalType,
+          status: result.status,
+          overall_score: result.score.overall,
+          logic_coherence_score: result.score.logicCoherence,
+          security_compliance_score: result.score.securityCompliance,
+          response_quality_score: result.score.responseQuality,
+          response_speed_grade: result.score.responseSpeedGrade,
+          test_cases: result.testRuns as unknown as Json,
+          red_team_results: result.redTeamResults as unknown as Json,
+          passed: result.passed,
+          duration_ms: result.duration,
+          completed_at: result.completedAt,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+      return data.id;
+    } catch (err) {
+      console.error('Failed to save evaluation:', err);
+      return null;
+    }
+  }, []);
+
+  // 查询评估历史
+  const fetchEvaluationHistory = useCallback(async (
+    agentId: string
+  ): Promise<EvaluationResult[]> => {
+    setIsLoadingHistory(true);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('agent_evaluations')
+        .select('*')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (fetchError) throw fetchError;
+
+      const results: EvaluationResult[] = (data || []).map(row => {
+        const testRuns = (row.test_cases as unknown as TestRunResult[]) ?? [];
+        return {
+          id: row.id,
+          agentId: row.agent_id,
+          evalType: row.eval_type as EvaluationResult['evalType'],
+          status: row.status as EvaluationResult['status'],
+          score: {
+            overall: Number(row.overall_score) || 0,
+            logicCoherence: Number(row.logic_coherence_score) || 0,
+            securityCompliance: Number(row.security_compliance_score) || 0,
+            responseQuality: Number(row.response_quality_score) || 0,
+            responseSpeedGrade: (row.response_speed_grade ?? 'C') as SpeedGrade,
+            avgResponseTime: testRuns.length > 0 
+              ? Math.round(testRuns.reduce((a, t) => a + (t.duration || 0), 0) / testRuns.length)
+              : 0,
+          },
+          testRuns,
+          testSummary: {
+            total: testRuns.length,
+            passed: testRuns.filter(t => t.passed).length,
+            failed: testRuns.filter(t => !t.passed).length,
+            passRate: testRuns.length > 0
+              ? Math.round((testRuns.filter(t => t.passed).length / testRuns.length) * 100)
+              : 0,
+          },
+          redTeamResults: (row.red_team_results as unknown as RedTeamResults) ?? {
+            totalAttacks: 0,
+            attacksBlocked: 0,
+            attacksPassed: 0,
+            securityScore: 100,
+            attacks: [],
+            vulnerabilities: [],
+          },
+          duration: row.duration_ms ?? 0,
+          passed: row.passed ?? false,
+          createdAt: row.created_at,
+          completedAt: row.completed_at ?? undefined,
+        };
+      });
+
+      setEvaluationHistory(results);
+      return results;
+    } catch (err) {
+      console.error('Failed to fetch evaluation history:', err);
+      return [];
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
   // 重置
   const reset = useCallback(() => {
     setIsEvaluating(false);
@@ -532,10 +661,14 @@ export function useAgentEvals(): UseAgentEvalsReturn {
     events,
     evaluationResult,
     error,
+    evaluationHistory,
+    isLoadingHistory,
     generateTestCases,
     runEvaluation,
     runRedTeamTests,
     reset,
+    saveEvaluation,
+    fetchEvaluationHistory,
   };
 }
 

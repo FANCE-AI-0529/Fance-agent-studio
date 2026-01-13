@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   RotateCcw,
   FileCheck,
-  X
+  X,
+  History
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { EvaluationResult, AgentScore, TestRunResult, SpeedGrade, TestCategory } from '@/types/agentEvals';
 import RedTeamResultsPanel from './RedTeamResultsPanel';
+import EvalHistoryPanel from './EvalHistoryPanel';
 
 interface AgentScorecardProps {
   evaluationResult: EvaluationResult;
+  agentId?: string;
   onClose?: () => void;
   onRerun?: () => void;
+  showHistory?: boolean;
+  onSelectHistoryEval?: (result: EvaluationResult) => void;
   className?: string;
 }
 
@@ -282,12 +287,16 @@ const getSecurityStatus = (score: number): 'success' | 'warning' | 'error' => {
 // Main AgentScorecard Component
 const AgentScorecard: React.FC<AgentScorecardProps> = ({
   evaluationResult,
+  agentId,
   onClose,
   onRerun,
+  showHistory = false,
+  onSelectHistoryEval,
   className,
 }) => {
   const { score, testRuns, redTeamResults, passed, duration } = evaluationResult;
   const [showRedTeam, setShowRedTeam] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
 
   return (
     <Card className={cn('w-full overflow-hidden', className)}>
@@ -308,6 +317,16 @@ const AgentScorecard: React.FC<AgentScorecardProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {showHistory && agentId && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+              >
+                <History className="h-4 w-4 mr-1" />
+                历史
+              </Button>
+            )}
             {onRerun && (
               <Button variant="ghost" size="sm" onClick={onRerun}>
                 <RotateCcw className="h-4 w-4 mr-1" />
@@ -379,6 +398,26 @@ const AgentScorecard: React.FC<AgentScorecardProps> = ({
             <TestRunsCollapsible testRuns={testRuns} />
           </div>
         )}
+
+        {/* History Panel */}
+        <AnimatePresence>
+          {showHistoryPanel && agentId && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border rounded-lg p-4 overflow-hidden"
+            >
+              <EvalHistoryPanel
+                agentId={agentId}
+                currentEvaluationId={evaluationResult.id}
+                onSelectEvaluation={(result) => {
+                  onSelectHistoryEval?.(result);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Final Verdict */}
         <motion.div
