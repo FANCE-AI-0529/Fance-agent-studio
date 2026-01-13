@@ -8,7 +8,9 @@ import {
   Bot, 
   User,
   Sparkles,
-  Terminal
+  Terminal,
+  Code2,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,17 +43,19 @@ export function ConsumerRuntime() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toggleMode } = useAppModeStore();
+  const { toggleMode, ejectToStudio } = useAppModeStore();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
+  const [chatSessionId] = useState(() => `session-${Date.now()}`);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Get agentId from URL
   const agentId = searchParams.get('agentId');
+  // Note: useAgent refetches automatically when window regains focus via React Query defaults
   const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId);
 
   // Load agent config when agent data is available
@@ -194,7 +198,36 @@ export function ConsumerRuntime() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {/* Open in Studio button - only show if we have an agent */}
+              {agentId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        ejectToStudio({
+                          agentId,
+                          targetPage: 'builder',
+                          chatSessionId,
+                          returnUrl: `/runtime?agentId=${agentId}`,
+                        });
+                        // Navigate after animation starts
+                        setTimeout(() => {
+                          navigate(`/builder/${agentId}`);
+                        }, 800);
+                      }}
+                      className="gap-2 border-primary/30 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5"
+                    >
+                      <Wrench className="h-4 w-4" />
+                      <span className="hidden sm:inline">Open in Studio</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>查看 Agent 配置和调试</TooltipContent>
+                </Tooltip>
+              )}
+              
               <ThemeToggle />
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -207,7 +240,7 @@ export function ConsumerRuntime() {
                     <Terminal className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>开发者模式</TooltipContent>
+                <TooltipContent>开发者模式 (Ctrl+Shift+D)</TooltipContent>
               </Tooltip>
             </div>
           </div>
