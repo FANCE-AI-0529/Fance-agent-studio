@@ -1032,11 +1032,14 @@ export type Database = {
           id: string
           input_schema: Json | null
           intent_tags: string[] | null
+          io_spec: Json | null
           is_active: boolean | null
           metadata: Json | null
           name: string
           output_schema: Json | null
           risk_level: string | null
+          slot_type: string | null
+          tags: string[] | null
           updated_at: string | null
           user_id: string
         }
@@ -1052,11 +1055,14 @@ export type Database = {
           id?: string
           input_schema?: Json | null
           intent_tags?: string[] | null
+          io_spec?: Json | null
           is_active?: boolean | null
           metadata?: Json | null
           name: string
           output_schema?: Json | null
           risk_level?: string | null
+          slot_type?: string | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id: string
         }
@@ -1072,11 +1078,14 @@ export type Database = {
           id?: string
           input_schema?: Json | null
           intent_tags?: string[] | null
+          io_spec?: Json | null
           is_active?: boolean | null
           metadata?: Json | null
           name?: string
           output_schema?: Json | null
           risk_level?: string | null
+          slot_type?: string | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id?: string
         }

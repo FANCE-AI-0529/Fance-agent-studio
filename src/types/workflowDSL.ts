@@ -201,6 +201,9 @@ export interface WorkflowMetadata {
 
 // ========== 语义资产类型 ==========
 
+/** 功能槽位类型 - 基于"感知-决策-行动"三层架构 */
+export type SlotType = 'perception' | 'decision' | 'action' | 'hybrid';
+
 export interface SemanticAsset {
   id: string;
   assetType: 'skill' | 'mcp_tool' | 'knowledge_base';
@@ -214,6 +217,14 @@ export interface SemanticAsset {
   riskLevel: RiskLevel;
   similarity?: number;           // 语义相似度得分
   matchReason?: string;          // 匹配原因
+  
+  // 混合编排引擎新增字段
+  slot_type?: SlotType;          // 功能槽位类型：感知/决策/行动
+  io_spec?: {                    // 标准化 IO 规范 - 用于自动连线
+    input: { type: string; properties?: Record<string, unknown> };
+    output: { type: string; properties?: Record<string, unknown> };
+  };
+  tags?: string[];               // 功能标签，如 ["read", "write", "decision"]
   
   // 知识库专属字段
   intent_tags?: string[];           // 意图标签，如 ["company_policy", "financial_report"]

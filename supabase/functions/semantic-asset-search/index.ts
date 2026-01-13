@@ -12,6 +12,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type SlotType = 'perception' | 'decision' | 'action' | 'hybrid';
+
 interface SearchRequest {
   query: string;
   assetTypes?: ('skill' | 'mcp_tool' | 'knowledge_base')[];
@@ -21,6 +23,9 @@ interface SearchRequest {
   minSimilarity?: number;
   userId?: string;
   useVectorSearch?: boolean;
+  // 混合编排引擎新增
+  slotTypes?: SlotType[];         // 按槽位过滤
+  groupBySlot?: boolean;          // 是否按槽位分组返回
 }
 
 interface SemanticAsset {
@@ -36,6 +41,13 @@ interface SemanticAsset {
   riskLevel: 'low' | 'medium' | 'high';
   similarity: number;
   matchReason?: string;
+  // 混合编排引擎新增
+  slotType?: SlotType;
+  ioSpec?: {
+    input: { type: string; properties?: Record<string, unknown> };
+    output: { type: string; properties?: Record<string, unknown> };
+  };
+  tags?: string[];
 }
 
 // 语义能力关键词映射
@@ -104,6 +116,8 @@ serve(async (req) => {
       minSimilarity = 0.2,
       userId,
       useVectorSearch = true,
+      slotTypes,
+      groupBySlot = false,
     } = request;
 
     if (!query) {
@@ -142,6 +156,11 @@ serve(async (req) => {
       queryBuilder = queryBuilder.overlaps('capabilities', allCapabilities);
     }
 
+    // 槽位过滤（混合编排引擎新增）
+    if (slotTypes && slotTypes.length > 0) {
+      queryBuilder = queryBuilder.in('slot_type', slotTypes);
+    }
+
     const { data: assets, error } = await queryBuilder.limit(100);
 
     if (error) {
@@ -177,6 +196,10 @@ serve(async (req) => {
           riskLevel: asset.risk_level || 'low',
           similarity,
           matchReason,
+          // 混合编排引擎新增字段
+          slotType: asset.slot_type || 'hybrid',
+          ioSpec: asset.io_spec || null,
+          tags: asset.tags || [],
         };
       })
       .filter(asset => asset.similarity >= minSimilarity)
@@ -188,6 +211,14 @@ serve(async (req) => {
     const mcpTools = scoredAssets.filter(a => a.assetType === 'mcp_tool');
     const knowledgeBases = scoredAssets.filter(a => a.assetType === 'knowledge_base');
 
+    // 5. 按槽位分组（混合编排引擎新增）
+    const slotGroups = groupBySlot ? {
+      perception: scoredAssets.filter(a => a.slotType === 'perception'),
+      decision: scoredAssets.filter(a => a.slotType === 'decision'),
+      action: scoredAssets.filter(a => a.slotType === 'action'),
+      hybrid: scoredAssets.filter(a => a.slotType === 'hybrid'),
+    } : undefined;
+
     return new Response(
       JSON.stringify({
         skills,
@@ -196,6 +227,8 @@ serve(async (req) => {
         totalCount: scoredAssets.length,
         extractedCapabilities: allCapabilities,
         query: query,
+        // 混合编排引擎新增
+        slotGroups,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
