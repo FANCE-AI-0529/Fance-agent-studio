@@ -77,21 +77,22 @@ export function ConsumerHeader() {
             <TooltipContent>个人中心</TooltipContent>
           </Tooltip>
 
-          {/* Developer mode toggle - hidden but accessible */}
+          {/* Developer mode toggle - more visible */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="outline"
+                size="sm"
                 onClick={toggleMode}
-                className="h-9 w-9 text-muted-foreground/50 hover:text-primary transition-colors"
+                className="h-9 gap-2 text-xs border-primary/30 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all"
               >
-                <Terminal className="h-4 w-4" />
+                <Terminal className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">开发者模式</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               <div className="flex items-center gap-2">
-                <span>开发者模式</span>
+                <span>进入开发者工作室</span>
                 <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">
                   Ctrl+Shift+D
                 </kbd>
