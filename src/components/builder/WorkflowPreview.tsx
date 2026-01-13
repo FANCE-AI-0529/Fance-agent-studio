@@ -3,7 +3,7 @@
 // Workflow Preview Component
 // =====================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
@@ -71,6 +71,45 @@ export function WorkflowPreview({
   currentStep,
 }: WorkflowPreviewProps) {
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+  const [visibleNodes, setVisibleNodes] = useState<Set<string>>(new Set());
+  const [animationComplete, setAnimationComplete] = useState(false);
+
+  // 渐进式节点显示动画
+  useEffect(() => {
+    if (!dsl?.stages || isLoading) {
+      setVisibleNodes(new Set());
+      setAnimationComplete(false);
+      return;
+    }
+
+    // 收集所有节点 ID
+    const allNodeIds: string[] = [];
+    dsl.stages.forEach((stage) => {
+      stage.nodes.forEach((node) => {
+        allNodeIds.push(node.id);
+      });
+    });
+
+    // 渐进式显示节点
+    allNodeIds.forEach((nodeId, index) => {
+      setTimeout(() => {
+        setVisibleNodes((prev) => new Set([...prev, nodeId]));
+        if (index === allNodeIds.length - 1) {
+          setAnimationComplete(true);
+        }
+      }, 100 + index * 80); // 每个节点延迟 80ms 出现
+    });
+
+    // 动画完成后自动展开所有阶段
+    setTimeout(() => {
+      setExpandedStages(new Set(dsl.stages.map((s) => s.id)));
+    }, 100 + allNodeIds.length * 80 + 200);
+
+    return () => {
+      setVisibleNodes(new Set());
+      setAnimationComplete(false);
+    };
+  }, [dsl, isLoading]);
 
   const toggleStage = (stageId: string) => {
     setExpandedStages((prev) => {
@@ -146,6 +185,7 @@ export function WorkflowPreview({
               isExpanded={expandedStages.has(stage.id)}
               onToggle={() => toggleStage(stage.id)}
               riskAssessment={riskAssessment}
+              visibleNodes={visibleNodes}
             />
           ))}
         </div>
@@ -347,12 +387,14 @@ function StageCard({
   isExpanded,
   onToggle,
   riskAssessment,
+  visibleNodes,
 }: {
   stage: StageSpec;
   index: number;
   isExpanded: boolean;
   onToggle: () => void;
   riskAssessment: RiskAssessment | null;
+  visibleNodes: Set<string>;
 }) {
   const stageTypeLabel = {
     sequential: "顺序执行",
@@ -410,6 +452,7 @@ function StageCard({
                   index={nodeIndex}
                   isHighRisk={riskAssessment?.highRiskNodes.includes(node.id)}
                   isMediumRisk={riskAssessment?.mediumRiskNodes.includes(node.id)}
+                  isVisible={visibleNodes.has(node.id)}
                 />
               ))}
 
@@ -442,11 +485,13 @@ function NodePreviewCard({
   index,
   isHighRisk,
   isMediumRisk,
+  isVisible = true,
 }: {
   node: NodeSpec;
   index: number;
   isHighRisk?: boolean;
   isMediumRisk?: boolean;
+  isVisible?: boolean;
 }) {
   const nodeTypeIcon: Record<string, typeof Brain> = {
     agent: Brain,
@@ -458,7 +503,19 @@ function NodePreviewCard({
   const Icon = nodeTypeIcon[node.type] || GitBranch;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: -20, scale: 0.9 }}
+      animate={
+        isVisible
+          ? { opacity: 1, x: 0, scale: 1 }
+          : { opacity: 0, x: -20, scale: 0.9 }
+      }
+      transition={{ 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 25,
+        delay: index * 0.05 
+      }}
       className={cn(
         "flex items-center gap-2 p-2 rounded text-xs",
         isHighRisk
@@ -483,7 +540,7 @@ function NodePreviewCard({
       {node.requiresConfirmation && (
         <ShieldAlert className="h-3 w-3 text-yellow-500" />
       )}
-    </div>
+    </motion.div>
   );
 }
 
