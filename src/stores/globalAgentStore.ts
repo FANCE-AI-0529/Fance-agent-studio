@@ -553,7 +553,16 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
               nodes: [...state.nodes, newNode],
               lastSyncedAt: new Date(),
             }));
-            get()._addSyncEvent({ type: 'node_added', source: 'remote', data: newNode });
+            // Enhance event data with readable skill name for notifications
+            get()._addSyncEvent({ 
+              type: 'node_added', 
+              source: 'remote', 
+              data: {
+                ...newNode,
+                skillName: newNode.data?.name || newNode.data?.label || newNode.data?.title || '新技能',
+                skillDescription: newNode.data?.description,
+              }
+            });
           }
         } else if (eventType === 'UPDATE') {
           const updatedNode = payload.new as GraphNode;
@@ -570,7 +579,16 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             nodes: state.nodes.filter(n => n.node_id !== deletedNode.node_id),
             lastSyncedAt: new Date(),
           }));
-          get()._addSyncEvent({ type: 'node_removed', source: 'remote', data: deletedNode });
+          // Enhance event data with readable skill name for notifications
+          get()._addSyncEvent({ 
+            type: 'node_removed', 
+            source: 'remote', 
+            data: {
+              ...deletedNode,
+              skillName: deletedNode.data?.name || deletedNode.data?.label || deletedNode.data?.title || '技能',
+              skillDescription: deletedNode.data?.description,
+            }
+          });
         }
       },
 
@@ -611,12 +629,34 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       _handleAgentChange: (payload) => {
         console.log(`[GlobalAgentStore] Agent change:`, payload);
         
+        const oldAgent = payload.old as AgentConfig | null;
         const updatedAgent = payload.new as AgentConfig;
+        
+        // Detect which fields changed
+        const changedFields: string[] = [];
+        if (oldAgent) {
+          if (oldAgent.name !== updatedAgent.name) changedFields.push('name');
+          if (oldAgent.model !== updatedAgent.model) changedFields.push('model');
+          if (oldAgent.mplp_policy !== updatedAgent.mplp_policy) changedFields.push('mplp_policy');
+          if (JSON.stringify(oldAgent.manifest) !== JSON.stringify(updatedAgent.manifest)) {
+            changedFields.push('manifest');
+          }
+          if (JSON.stringify(oldAgent.personality_config) !== JSON.stringify(updatedAgent.personality_config)) {
+            changedFields.push('personality_config');
+          }
+        }
+        
         set((state) => ({
           agentConfig: updatedAgent,
           lastSyncedAt: new Date(),
         }));
-        get()._addSyncEvent({ type: 'agent_updated', source: 'remote', data: updatedAgent });
+        
+        // Include changedFields in event data for notifications
+        get()._addSyncEvent({ 
+          type: 'agent_updated', 
+          source: 'remote', 
+          data: { ...updatedAgent, changedFields } 
+        });
       },
 
       _addSyncEvent: (event) => {

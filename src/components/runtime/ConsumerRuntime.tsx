@@ -25,6 +25,9 @@ import { useChatSession } from "@/hooks/useChatSession";
 import { useAgentChat, ChatMessage as AgentChatMessage } from "@/hooks/useAgentChat";
 import { useMemoryContext } from "@/hooks/useMemory";
 import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
+import { useStudioSyncNotifications } from "@/hooks/useStudioSyncNotifications";
+import { useAgentContextHotReload } from "@/hooks/useAgentContextHotReload";
+import { SystemBubble, SystemMessage } from "@/components/consumer/SystemBubble";
 import {
   Tooltip,
   TooltipContent,
@@ -42,6 +45,9 @@ import { Badge } from "@/components/ui/badge";
 import { MiniStudioPreview } from "@/components/consumer/MiniStudioPreview";
 import logoIcon from "@/assets/logo-icon.png";
 
+// Union type for all message types in the chat
+type ChatItem = Message | SystemMessage;
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -56,6 +62,10 @@ interface AgentConfig {
   agentId?: string;
 }
 
+function isSystemMessage(item: ChatItem): item is SystemMessage {
+  return 'type' in item && typeof (item as SystemMessage).type === 'string';
+}
+
 export function ConsumerRuntime() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -63,6 +73,7 @@ export function ConsumerRuntime() {
   const { toggleMode, ejectToStudio } = useAppModeStore();
   
   const [messages, setMessages] = useState<Message[]>([]);
+  const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
@@ -103,6 +114,51 @@ export function ConsumerRuntime() {
     } : undefined,
   });
 
+  // Studio sync notifications - listen for remote changes
+  const handleSystemMessage = useCallback((msg: SystemMessage) => {
+    setSystemMessages(prev => [...prev, msg]);
+    // Auto-scroll when system message arrives
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 100);
+  }, []);
+
+  // Context hot reload - update config when Studio changes manifest
+  const handleConfigUpdate = useCallback((newConfig: { name: string; systemPrompt: string; model: string; agentId: string }) => {
+    setAgentConfig({
+      name: newConfig.name,
+      systemPrompt: newConfig.systemPrompt,
+      model: newConfig.model,
+      agentId: newConfig.agentId,
+    });
+    console.log('[ConsumerRuntime] Hot-reloaded agent config:', newConfig.name);
+  }, []);
+
+  // Studio sync notifications hook
+  const { isSubscribed: isSyncSubscribed } = useStudioSyncNotifications({
+    agentId,
+    onSystemMessage: handleSystemMessage,
+    onContextRefresh: (storeConfig) => {
+      const manifest = storeConfig.manifest as any;
+      handleConfigUpdate({
+        name: storeConfig.name,
+        systemPrompt: manifest?.systemPrompt || `你是${storeConfig.name}，一个专业的AI助手。`,
+        model: storeConfig.model,
+        agentId: storeConfig.id,
+      });
+    },
+    enabled: !!agentId && isInitialized,
+  });
+
+  // Context hot reload hook
+  const { effectiveConfig, configVersion } = useAgentContextHotReload({
+    agentId,
+    initialConfig: agentConfig ? { ...agentConfig, agentId: agentId || '' } : null,
+    onConfigUpdate: handleConfigUpdate,
+  });
+
   // Track latest assistant message for MiniStudioPreview highlights
   const latestAssistantMessage = useMemo(() => {
     const assistantMessages = messages.filter(m => m.role === 'assistant');
@@ -115,6 +171,13 @@ export function ConsumerRuntime() {
     }
     return null;
   }, [messages, streamingContent]);
+
+  // Merge messages and system messages for display
+  const allChatItems = useMemo<ChatItem[]>(() => {
+    const items: ChatItem[] = [...messages, ...systemMessages];
+    // Sort by timestamp
+    return items.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }, [messages, systemMessages]);
   useEffect(() => {
     const initSession = async () => {
       if (agentId && user && !isInitialized) {
@@ -285,6 +348,7 @@ export function ConsumerRuntime() {
     if (agentId) {
       await createSession(agentId);
       setMessages([]);
+      setSystemMessages([]); // Clear system messages on new conversation
       setIsInitialized(false);
       // Reinitialize
       setTimeout(() => setIsInitialized(true), 100);
@@ -343,6 +407,17 @@ export function ConsumerRuntime() {
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>此智能体已启用长期记忆</TooltipContent>
+                    </Tooltip>
+                  )}
+                  {isSyncSubscribed && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="gap-1 text-xs border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          同步
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>已与 Studio 实时同步 (v{configVersion})</TooltipContent>
                     </Tooltip>
                   )}
                 </>
@@ -482,43 +557,66 @@ export function ConsumerRuntime() {
                 </motion.div>
               )}
 
-              {/* Messages */}
+              {/* Messages (including system messages) */}
               <AnimatePresence mode="popLayout">
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {message.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                        <Bot className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                    
-                    <div
-                      className={`
-                        max-w-[80%] rounded-2xl px-4 py-3
-                        ${message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card/80 backdrop-blur-sm border border-border/50'
-                        }
-                      `}
+                {allChatItems.map((item) => {
+                  // System message
+                  if (isSystemMessage(item)) {
+                    return (
+                      <SystemBubble 
+                        key={item.id} 
+                        message={item}
+                        onExpand={agentId ? () => {
+                          ejectToStudio({
+                            agentId,
+                            targetPage: 'builder',
+                            chatSessionId: session?.id || '',
+                            returnUrl: `/runtime?agent=${agentId}`,
+                          });
+                          setTimeout(() => navigate(`/builder/${agentId}`), 800);
+                        } : undefined}
+                      />
+                    );
+                  }
+                  
+                  // Regular message
+                  const message = item as Message;
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {message.content}
-                      </p>
-                    </div>
-
-                    {message.role === 'user' && (
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                      {message.role === 'assistant' && (
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                          <Bot className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                      
+                      <div
+                        className={`
+                          max-w-[80%] rounded-2xl px-4 py-3
+                          ${message.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card/80 backdrop-blur-sm border border-border/50'
+                          }
+                        `}
+                      >
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                          {message.content}
+                        </p>
                       </div>
-                    )}
-                  </motion.div>
-                ))}
+
+                      {message.role === 'user' && (
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
 
               {/* Streaming content */}
