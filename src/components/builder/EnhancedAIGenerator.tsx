@@ -105,11 +105,14 @@ export function EnhancedAIGenerator({
   // 验证阶段状态
   const [validationPhase, setValidationPhase] = useState<ValidationPhase>('idle');
   
+  // 评估阶段状态
+  const [evalPhase, setEvalPhase] = useState<'idle' | 'running' | 'complete'>('idle');
+  
   // 当前激活的预览 Tab
   const [activePreviewTab, setActivePreviewTab] = useState<string>('workflow');
   
   // 生成的技能列表 (用于自愈) - 使用简化类型
-  const [generatedSkills, setGeneratedSkills] = useState<SimpleSkill[]>([]);
+  const [generatedSkills, setGeneratedSkills] = useState<SimpleSkill[]>();
 
 
   // Auto-generation tracking
@@ -139,6 +142,9 @@ export function EnhancedAIGenerator({
     incrementRetryCount,
     resetValidation,
   } = useSandboxValidation();
+
+  // Agent 评估
+  const agentEvals = useAgentEvals();
 
   // 错误自愈
   const {
@@ -253,6 +259,28 @@ export function EnhancedAIGenerator({
       if (validation.success) {
         setValidationPhase('complete');
         buildPlanStore.setValidationResult({ passed: true, testRuns: validation.testRuns, retryCount: 0 });
+        
+        // 🆕 自动触发质检评估
+        setEvalPhase('running');
+        setActivePreviewTab('scorecard');
+        
+        try {
+          await agentEvals.runEvaluation({
+            agentId: `gen-${Date.now()}`,
+            agentConfig: {
+              name: result.dsl?.name || 'AI 生成的智能体',
+              systemPrompt: agentConfig.systemPrompt,
+              department: result.dsl?.metadata?.category,
+              model: 'google/gemini-2.5-flash',
+            },
+            includeRedTeam: true,
+            evalType: 'pre_deploy',
+          });
+          setEvalPhase('complete');
+        } catch (evalErr) {
+          console.error('Evaluation failed:', evalErr);
+          setEvalPhase('complete'); // Still show whatever results we have
+        }
       } else if (retryCount < MAX_RETRIES) {
         // 7. 触发自愈
         setValidationPhase('healing');
@@ -369,14 +397,44 @@ export function EnhancedAIGenerator({
     handleApplyInternal();
   }, [handleApplyInternal]);
 
+  // 重新运行质检评估
+  const handleRerunEvaluation = useCallback(async () => {
+    if (!lastResult) return;
+    
+    setEvalPhase('running');
+    agentEvals.reset();
+    
+    try {
+      await agentEvals.runEvaluation({
+        agentId: `gen-${Date.now()}`,
+        agentConfig: {
+          name: lastResult.dsl?.name || 'AI 生成的智能体',
+          systemPrompt: lastResult.dsl?.stages?.[0]?.nodes?.find(
+            (n: any) => n.type === 'agent'
+          )?.config?.systemPrompt || '',
+          department: lastResult.dsl?.metadata?.category,
+          model: 'google/gemini-2.5-flash',
+        },
+        includeRedTeam: true,
+        evalType: 'manual',
+      });
+      setEvalPhase('complete');
+    } catch (err) {
+      console.error('Re-evaluation failed:', err);
+      setEvalPhase('complete');
+    }
+  }, [lastResult, agentEvals]);
+
   const handleClose = () => {
     reset();
     resetValidation();
     resetHealing();
+    agentEvals.reset();
     buildPlanStore.reset();
     setDescription("");
     setSelectedScenario(null);
     setValidationPhase('idle');
+    setEvalPhase('idle');
     setActivePreviewTab('workflow');
     setGeneratedSkills([]);
     onClose();
@@ -386,10 +444,12 @@ export function EnhancedAIGenerator({
     reset();
     resetValidation();
     resetHealing();
+    agentEvals.reset();
     buildPlanStore.reset();
     hasAutoTriggeredRef.current = false;
     hasAutoAppliedRef.current = false;
     setValidationPhase('idle');
+    setEvalPhase('idle');
     setActivePreviewTab('workflow');
     setGeneratedSkills([]);
     handleGenerate();
@@ -632,11 +692,48 @@ export function EnhancedAIGenerator({
                   </TabsContent>
 
                   <TabsContent value="scorecard" className="h-full m-0 overflow-auto p-4">
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm">质检报告功能即将上线</p>
-                      <p className="text-xs mt-1">Agent 评估完成后将在此显示详细报告</p>
-                    </div>
+                    {/* 评估进行中 - 显示进度面板 */}
+                    {evalPhase === 'running' && (
+                      <EvalProgressPanel
+                        events={agentEvals.events}
+                        currentStep={agentEvals.currentStep}
+                        progress={agentEvals.progress}
+                        isEvaluating={agentEvals.isEvaluating}
+                      />
+                    )}
+                    
+                    {/* 评估完成 - 显示评分卡 */}
+                    {evalPhase === 'complete' && agentEvals.evaluationResult && (
+                      <AgentScorecard
+                        evaluationResult={agentEvals.evaluationResult}
+                        onRerun={handleRerunEvaluation}
+                      />
+                    )}
+                    
+                    {/* 评估完成但无结果 */}
+                    {evalPhase === 'complete' && !agentEvals.evaluationResult && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <FileCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">评估未产生结果</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-3"
+                          onClick={handleRerunEvaluation}
+                        >
+                          重新评估
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* 空状态 */}
+                    {evalPhase === 'idle' && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <FileCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">等待验证完成</p>
+                        <p className="text-xs mt-1">验证通过后将自动开始质检评估</p>
+                      </div>
+                    )}
                   </TabsContent>
                 </div>
 
