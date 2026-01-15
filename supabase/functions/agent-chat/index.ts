@@ -10,6 +10,25 @@ interface AgentSkill {
   name: string;
   description?: string;
   permissions?: string[];
+  inputSchema?: Record<string, unknown>;
+}
+
+interface MCPAction {
+  id: string;
+  name: string;
+  serverId?: string;
+  toolName?: string;
+  description?: string;
+  inputSchema?: Record<string, unknown>;
+  riskLevel?: string;
+}
+
+interface AgentManifest {
+  name?: string;
+  systemPrompt?: string;
+  skills?: string[] | AgentSkill[];
+  mcpActions?: MCPAction[];
+  knowledgeBases?: Array<{ id: string; name: string }>;
 }
 
 interface AgentConfig {
@@ -18,6 +37,17 @@ interface AgentConfig {
   model?: string;
   skills?: AgentSkill[];
   mplpPolicy?: string;
+  manifest?: AgentManifest;
+}
+
+// Tool definition for Function Calling
+interface ToolDefinition {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
 }
 
 // Multimodal message content types
@@ -66,10 +96,81 @@ function validateAgentConfig(config?: AgentConfig): AgentConfig | undefined {
           description: String(s.description || '').slice(0, 500),
           permissions: Array.isArray(s.permissions) 
             ? s.permissions.slice(0, 10).map(p => String(p).slice(0, 50))
-            : []
+            : [],
+          inputSchema: s.inputSchema,
         }))
-      : []
+      : [],
+    manifest: config.manifest,
   };
+}
+
+// 🆕 Build tool definitions from agent manifest for Function Calling
+function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
+  const tools: ToolDefinition[] = [];
+  
+  if (!config) return tools;
+  
+  // Extract from skills array
+  const skills = config.skills || [];
+  for (const skill of skills) {
+    tools.push({
+      type: 'function',
+      function: {
+        name: skill.name.toLowerCase().replace(/\s+/g, '_'),
+        description: skill.description || `执行 ${skill.name} 技能`,
+        parameters: skill.inputSchema || {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+    });
+  }
+  
+  // Extract from manifest.mcpActions
+  const manifest = config.manifest;
+  if (manifest?.mcpActions && Array.isArray(manifest.mcpActions)) {
+    for (const mcp of manifest.mcpActions) {
+      tools.push({
+        type: 'function',
+        function: {
+          name: `mcp_${mcp.id || mcp.toolName || 'unknown'}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+          description: mcp.description || `调用 ${mcp.name || mcp.toolName} MCP 工具`,
+          parameters: mcp.inputSchema || {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
+      });
+    }
+  }
+  
+  // Extract from manifest.skills (if string array, convert to basic tools)
+  if (manifest?.skills && Array.isArray(manifest.skills)) {
+    for (const skill of manifest.skills) {
+      if (typeof skill === 'string') {
+        // Check if already added from config.skills
+        const skillName = skill.toLowerCase().replace(/\s+/g, '_');
+        if (!tools.some(t => t.function.name === skillName)) {
+          tools.push({
+            type: 'function',
+            function: {
+              name: skillName,
+              description: `执行 ${skill} 技能`,
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: [],
+              },
+            },
+          });
+        }
+      }
+    }
+  }
+  
+  return tools;
 }
 
 // Check if message contains multimodal content
@@ -262,17 +363,31 @@ serve(async (req) => {
       ...messages,
     ];
 
+    // 🆕 Build tool definitions for Function Calling
+    const tools = buildToolDefinitions(validatedConfig);
+    const hasTools = tools.length > 0;
+    
+    console.log(`[agent-chat] Tools available: ${tools.length}`, tools.map(t => t.function.name));
+
+    const requestBody: Record<string, unknown> = {
+      model,
+      messages: apiMessages,
+      stream: true,
+    };
+    
+    // Only add tools if there are any defined
+    if (hasTools) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = 'auto';
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model,
-        messages: apiMessages,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

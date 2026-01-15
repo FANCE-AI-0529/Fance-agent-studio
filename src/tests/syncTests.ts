@@ -170,6 +170,7 @@ export function formatSyncEventForTest(event: SyncEvent): string {
     edge_updated: '连线更新',
     edge_removed: '连线移除',
     agent_updated: 'Agent更新',
+    agent_created: 'Agent创建',
   };
   
   return `[${event.source === 'local' ? '本地' : '远程'}] ${typeLabels[event.type]} - ${new Date(event.timestamp).toLocaleTimeString()}`;

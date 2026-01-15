@@ -57,6 +57,10 @@ function getSystemMessageType(event: SyncEvent): SystemMessageType | null {
         return 'personality_updated';
       }
       return 'config_updated';
+    
+    // 🆕 新增：智能体创建事件
+    case 'agent_created':
+      return 'config_updated';
       
     default:
       return null;
@@ -152,6 +156,15 @@ function generateMessageContent(event: SyncEvent): {
       return {
         title: '配置已更新',
         description: '我的设置已经更新。对话体验可能会有所变化。',
+      };
+    
+    // 🆕 新增：智能体创建事件
+    case 'agent_created':
+      const agentName = data?.name || data?.agentName || '新智能体';
+      return {
+        title: '智能体已就绪',
+        description: `「${agentName}」创建成功，可以开始对话了！`,
+        suggestion: '让我们开始吧',
       };
       
     default:

@@ -177,7 +177,11 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
       setCurrentStep('正在检索相关资产...');
       setProgress(25);
 
-      const { data, error: fnError } = await supabase.functions.invoke('workflow-generator', {
+      let data: any;
+      let fnError: any;
+      
+      // 第一次调用
+      const firstResponse = await supabase.functions.invoke('workflow-generator', {
         body: {
           description,
           userId: user.id,
@@ -186,9 +190,37 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
           maxNodes,
         },
       });
+      
+      data = firstResponse.data;
+      fnError = firstResponse.error;
 
       if (fnError) {
         throw new Error(fnError.message);
+      }
+
+      // 🆕 处理澄清状态 - 自动跳过知识库并重试
+      if (data?.status === 'clarification_needed') {
+        console.log('[WorkflowGenerator] Clarification needed, auto-retrying with skipKnowledge=true');
+        
+        // 如果是知识库相关的澄清，自动跳过知识库
+        if (data.reason === 'no_match' || data.reason === 'multiple_candidates') {
+          const retryResponse = await supabase.functions.invoke('workflow-generator', {
+            body: {
+              description,
+              userId: user.id,
+              mplpPolicy,
+              includeKnowledge,
+              maxNodes,
+              skipKnowledge: true, // 跳过知识库挂载
+            },
+          });
+          
+          if (retryResponse.error) {
+            throw new Error(retryResponse.error.message);
+          }
+          
+          data = retryResponse.data;
+        }
       }
 
       if (!data?.dsl) {

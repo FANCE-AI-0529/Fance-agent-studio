@@ -48,7 +48,7 @@ export interface AgentConfig {
 export interface SyncEvent {
   type: 'node_added' | 'node_updated' | 'node_removed' | 
         'edge_added' | 'edge_updated' | 'edge_removed' |
-        'agent_updated';
+        'agent_updated' | 'agent_created';
   source: 'local' | 'remote';
   timestamp: Date;
   data: any;
