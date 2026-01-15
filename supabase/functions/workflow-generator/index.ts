@@ -575,14 +575,43 @@ serve(async (req) => {
   }
 
   try {
+    // ========== AUTHENTICATION CHECK ==========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required", code: "AUTH_REQUIRED" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await authSupabase.auth.getUser();
+    if (userError || !user) {
+      console.error("Authentication failed:", userError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized", code: "UNAUTHORIZED" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Use authenticated user ID instead of request body userId
+    const authenticatedUserId = user.id;
+    console.log(`User ${authenticatedUserId} generating workflow`);
+    // ========== END AUTHENTICATION ==========
+
+    // Use service role for database operations
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const request: GenerateRequest = await req.json();
     const {
       description,
-      userId,
+      // userId is now ignored in favor of authenticatedUserId
       mplpPolicy = 'default',
       includeKnowledge = true,
       maxNodes = 10,
@@ -591,10 +620,13 @@ serve(async (req) => {
       useBlueprintMode = true, // Default to blueprint mode
       selectedBlueprintId,
     } = request;
+    
+    // Use authenticated user ID
+    const userId = authenticatedUserId;
 
-    if (!description || !userId) {
+    if (!description) {
       return new Response(
-        JSON.stringify({ error: "description and userId are required" }),
+        JSON.stringify({ error: "description is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
