@@ -7,6 +7,94 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Sensitive field patterns to redact from webhook payloads and responses
+const SENSITIVE_PATTERNS = [
+  /password/i,
+  /secret/i,
+  /token/i,
+  /api[_-]?key/i,
+  /auth/i,
+  /credential/i,
+  /bearer/i,
+  /private[_-]?key/i,
+  /access[_-]?key/i,
+  /session/i,
+  /cookie/i,
+  /jwt/i,
+  /authorization/i,
+  /x-api-key/i,
+  /x-auth/i,
+];
+
+// Sanitize sensitive data from objects before storing
+function sanitizePayload(obj: unknown, depth = 0): unknown {
+  // Prevent infinite recursion
+  if (depth > 10) return "[DEPTH_LIMIT]";
+  
+  if (obj === null || obj === undefined) return obj;
+  
+  if (typeof obj === "string") {
+    // Truncate very long strings
+    if (obj.length > 500) {
+      return obj.substring(0, 500) + "...[TRUNCATED]";
+    }
+    return obj;
+  }
+  
+  if (typeof obj !== "object") return obj;
+  
+  if (Array.isArray(obj)) {
+    // Limit array length
+    const limited = obj.slice(0, 50);
+    return limited.map(item => sanitizePayload(item, depth + 1));
+  }
+  
+  const sanitized: Record<string, unknown> = {};
+  
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    // Check if key matches sensitive patterns
+    const isSensitive = SENSITIVE_PATTERNS.some(pattern => pattern.test(key));
+    
+    if (isSensitive) {
+      sanitized[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null) {
+      sanitized[key] = sanitizePayload(value, depth + 1);
+    } else if (typeof value === "string" && value.length > 500) {
+      sanitized[key] = value.substring(0, 500) + "...[TRUNCATED]";
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  
+  return sanitized;
+}
+
+// Sanitize response body string
+function sanitizeResponseBody(body: string): string {
+  if (!body) return body;
+  
+  // Truncate very long responses
+  let sanitized = body.length > 5000 ? body.substring(0, 5000) + "...[TRUNCATED]" : body;
+  
+  // Try to parse as JSON and sanitize
+  try {
+    const parsed = JSON.parse(sanitized);
+    const sanitizedObj = sanitizePayload(parsed);
+    return JSON.stringify(sanitizedObj);
+  } catch {
+    // Not JSON, apply basic redaction patterns to the string
+    for (const pattern of SENSITIVE_PATTERNS) {
+      // Create a global version of the pattern to match key-value pairs
+      const keyValuePattern = new RegExp(
+        `("${pattern.source}"\\s*:\\s*)"[^"]*"`,
+        "gi"
+      );
+      sanitized = sanitized.replace(keyValuePattern, '$1"[REDACTED]"');
+    }
+    return sanitized;
+  }
+}
+
 interface WebhookPayload {
   agentId: string;
   eventType: string;
@@ -173,15 +261,19 @@ async function triggerWebhook(
       const latencyMs = Date.now() - startTime;
       const responseBody = await response.text().catch(() => "");
 
-      // Log the attempt
+      // Sanitize payload and response before logging
+      const sanitizedPayload = sanitizePayload(webhookPayload);
+      const sanitizedResponseBody = sanitizeResponseBody(responseBody);
+
+      // Log the attempt with sanitized data
       await supabase.from("webhook_logs").insert({
         webhook_id: webhook.id,
         agent_id: webhook.agent_id,
         user_id: webhook.user_id,
         event_type: eventType,
-        payload: webhookPayload,
+        payload: sanitizedPayload,
         response_status: response.status,
-        response_body: responseBody.substring(0, 10000),
+        response_body: sanitizedResponseBody,
         latency_ms: latencyMs,
         attempt_number: attempt,
         success: response.ok,
@@ -212,13 +304,20 @@ async function triggerWebhook(
       
       console.error(`Webhook ${webhook.id} error on attempt ${attempt}:`, lastError.message);
 
-      // Log the failed attempt
+      // Sanitize payload before logging failed attempt
+      const sanitizedFailedPayload = sanitizePayload({ 
+        event: eventType, 
+        agent_id: webhook.agent_id, 
+        data 
+      });
+
+      // Log the failed attempt with sanitized data
       await supabase.from("webhook_logs").insert({
         webhook_id: webhook.id,
         agent_id: webhook.agent_id,
         user_id: webhook.user_id,
         event_type: eventType,
-        payload: { event: eventType, agent_id: webhook.agent_id, data },
+        payload: sanitizedFailedPayload,
         latency_ms: latencyMs,
         attempt_number: attempt,
         success: false,
