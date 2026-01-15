@@ -549,10 +549,28 @@ export function useAgentEvals(): UseAgentEvalsReturn {
         return null;
       }
 
+      // 处理 agent_id - 如果是临时ID或不存在，设为 null
+      let validAgentId: string | null = result.agentId;
+      if (!validAgentId || validAgentId.startsWith('temp-') || validAgentId.startsWith('draft-')) {
+        validAgentId = null;
+      } else {
+        // 验证 agent 是否存在于数据库中
+        const { data: agent } = await supabase
+          .from('agents')
+          .select('id')
+          .eq('id', validAgentId)
+          .maybeSingle();
+        
+        if (!agent) {
+          // Agent 不存在，设为 null
+          validAgentId = null;
+        }
+      }
+
       const { data, error: insertError } = await supabase
         .from('agent_evaluations')
         .insert({
-          agent_id: result.agentId,
+          agent_id: validAgentId, // 可能为 null
           user_id: userData.user.id,
           eval_type: result.evalType,
           status: result.status,
