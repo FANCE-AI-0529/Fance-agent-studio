@@ -16,6 +16,13 @@ import {
   type ExtractedCondition 
 } from './intentConditionExtractor';
 import { generateSecureSystemPrompt, inferSecurityLevel, injectSecurityBoundaries } from './securityPromptTemplate';
+import { 
+  selectLogicNode, 
+  selectMultipleLogicNodes,
+  needsLogicNode,
+  type LogicNodeCandidate,
+  type LogicNodeType
+} from './logicNodeSelector';
 
 // 组装输入
 export interface AssemblyInput {
@@ -279,73 +286,191 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
     previousNodeId = genSkillNodeId;
   }
 
-  // 5.5 检测并添加条件节点 (如果用户描述包含条件逻辑)
+  // 5.5 智能逻辑节点检测和添加
   const userDescription = input.userDescription || plan.description || '';
-  const conditionResult = extractConditions(userDescription);
   
-  let conditionNodeId: string | null = null;
-  let conditionTrueBranchId: string | null = null;
+  // 首先使用新的智能逻辑节点选择器
+  const logicNodeCandidate = selectLogicNode(userDescription);
+  let logicNodeId: string | null = null;
+  let logicBranchNodes: string[] = [];
   
-  if (conditionResult.hasCondition && conditionResult.conditions.length > 0) {
-    conditionNodeId = createNodeId();
-    const rules = generateConditionRules(conditionResult.conditions);
-    const branchActions = getBranchActions(conditionResult.conditions);
+  if (logicNodeCandidate) {
+    logicNodeId = createNodeId();
     
-    nodes.push({
-      id: conditionNodeId,
-      type: 'condition',
-      position: { x: 0, y: 0 },
-      data: {
-        id: conditionNodeId,
-        name: '条件判断',
-        rules: rules,
-        mode: 'simple',
-        expression: `${rules[0]?.field} ${rules[0]?.operator === 'greater_than' ? '>' : rules[0]?.operator === 'less_than' ? '<' : '='} ${rules[0]?.value}`,
-      },
-    });
-    
-    edges.push({
-      id: `edge-${previousNodeId}-${conditionNodeId}`,
-      source: previousNodeId,
-      target: conditionNodeId,
-      type: 'animatedFlow',
-      animated: true,
-    });
-    
-    // Check if we need to add an MCP node for the true branch
-    if (branchActions.trueAction) {
-      const mcpInfo = inferMCPFromAction(branchActions.trueAction);
-      if (mcpInfo) {
-        conditionTrueBranchId = createNodeId();
-        nodes.push({
-          id: conditionTrueBranchId,
-          type: 'mcpAction',
-          position: { x: 0, y: 0 },
-          data: {
-            id: conditionTrueBranchId,
-            name: branchActions.trueAction,
-            serverId: mcpInfo.serverId,
-            toolName: mcpInfo.toolName,
-            riskLevel: 'medium',
-            triggeredByCondition: true,
-          },
-        });
-        
-        // True branch to MCP action
+    switch (logicNodeCandidate.type) {
+      case 'intent_router':
+        nodes.push(createIntentRouterNode(logicNodeId, logicNodeCandidate));
         edges.push({
-          id: `edge-${conditionNodeId}-true-${conditionTrueBranchId}`,
-          source: conditionNodeId,
-          sourceHandle: 'true-out',
-          target: conditionTrueBranchId,
+          id: `edge-${previousNodeId}-${logicNodeId}`,
+          source: previousNodeId,
+          target: logicNodeId,
           type: 'animatedFlow',
           animated: true,
-          style: { stroke: 'hsl(var(--success))' },
         });
-      }
+        
+        // 为意图路由器创建分支节点
+        const routerConfig = logicNodeCandidate.suggestedConfig as { routes?: Array<{ id: string; name: string }> };
+        if (routerConfig.routes && routerConfig.routes.length > 0) {
+          for (const route of routerConfig.routes.slice(0, 3)) {
+            const branchId = createNodeId();
+            nodes.push({
+              id: branchId,
+              type: 'placeholder',
+              position: { x: 0, y: 0 },
+              data: {
+                id: branchId,
+                name: route.name,
+                routeId: route.id,
+                isRouteBranch: true,
+              },
+            });
+            edges.push({
+              id: `edge-${logicNodeId}-${route.id}-${branchId}`,
+              source: logicNodeId,
+              sourceHandle: `route-${route.id}`,
+              target: branchId,
+              type: 'animatedFlow',
+              animated: true,
+              style: { stroke: 'hsl(var(--primary))' },
+            });
+            logicBranchNodes.push(branchId);
+          }
+        }
+        warnings.push(`已自动添加意图路由器节点 (置信度: ${Math.round(logicNodeCandidate.confidence * 100)}%)`);
+        break;
+        
+      case 'condition':
+        nodes.push(createConditionNode(logicNodeId, logicNodeCandidate));
+        edges.push({
+          id: `edge-${previousNodeId}-${logicNodeId}`,
+          source: previousNodeId,
+          target: logicNodeId,
+          type: 'animatedFlow',
+          animated: true,
+        });
+        warnings.push(`已自动添加条件判断节点 (置信度: ${Math.round(logicNodeCandidate.confidence * 100)}%)`);
+        break;
+        
+      case 'parallel':
+        nodes.push(createParallelNode(logicNodeId, logicNodeCandidate, 'fork'));
+        edges.push({
+          id: `edge-${previousNodeId}-${logicNodeId}`,
+          source: previousNodeId,
+          target: logicNodeId,
+          type: 'animatedFlow',
+          animated: true,
+        });
+        
+        // 为并发节点创建分支
+        const parallelConfig = logicNodeCandidate.suggestedConfig as { branches?: string[] };
+        if (parallelConfig.branches && parallelConfig.branches.length > 0) {
+          for (const branch of parallelConfig.branches.slice(0, 4)) {
+            const branchId = createNodeId();
+            nodes.push({
+              id: branchId,
+              type: 'placeholder',
+              position: { x: 0, y: 0 },
+              data: {
+                id: branchId,
+                name: `并行任务: ${branch}`,
+                branchId: branch,
+                isParallelBranch: true,
+              },
+            });
+            edges.push({
+              id: `edge-${logicNodeId}-parallel-${branchId}`,
+              source: logicNodeId,
+              sourceHandle: 'parallel-out',
+              target: branchId,
+              type: 'animatedFlow',
+              animated: true,
+            });
+            logicBranchNodes.push(branchId);
+          }
+        }
+        warnings.push(`已自动添加并发执行节点 (置信度: ${Math.round(logicNodeCandidate.confidence * 100)}%)`);
+        break;
+        
+      case 'loop':
+        nodes.push(createLoopNode(logicNodeId, logicNodeCandidate));
+        edges.push({
+          id: `edge-${previousNodeId}-${logicNodeId}`,
+          source: previousNodeId,
+          target: logicNodeId,
+          type: 'animatedFlow',
+          animated: true,
+        });
+        warnings.push(`已自动添加循环执行节点 (置信度: ${Math.round(logicNodeCandidate.confidence * 100)}%)`);
+        break;
     }
     
-    previousNodeId = conditionNodeId;
-    warnings.push('已自动添加条件判断节点，请确认条件表达式是否正确');
+    previousNodeId = logicNodeId;
+  } else {
+    // 回退到旧的条件提取逻辑
+    const conditionResult = extractConditions(userDescription);
+    
+    if (conditionResult.hasCondition && conditionResult.conditions.length > 0) {
+      const conditionNodeId = createNodeId();
+      const rules = generateConditionRules(conditionResult.conditions);
+      const branchActions = getBranchActions(conditionResult.conditions);
+      
+      nodes.push({
+        id: conditionNodeId,
+        type: 'condition',
+        position: { x: 0, y: 0 },
+        data: {
+          id: conditionNodeId,
+          name: '条件判断',
+          rules: rules,
+          mode: 'simple',
+          expression: `${rules[0]?.field} ${rules[0]?.operator === 'greater_than' ? '>' : rules[0]?.operator === 'less_than' ? '<' : '='} ${rules[0]?.value}`,
+        },
+      });
+      
+      edges.push({
+        id: `edge-${previousNodeId}-${conditionNodeId}`,
+        source: previousNodeId,
+        target: conditionNodeId,
+        type: 'animatedFlow',
+        animated: true,
+      });
+      
+      // Check if we need to add an MCP node for the true branch
+      if (branchActions.trueAction) {
+        const mcpInfo = inferMCPFromAction(branchActions.trueAction);
+        if (mcpInfo) {
+          const conditionTrueBranchId = createNodeId();
+          nodes.push({
+            id: conditionTrueBranchId,
+            type: 'mcpAction',
+            position: { x: 0, y: 0 },
+            data: {
+              id: conditionTrueBranchId,
+              name: branchActions.trueAction,
+              serverId: mcpInfo.serverId,
+              toolName: mcpInfo.toolName,
+              riskLevel: 'medium',
+              triggeredByCondition: true,
+            },
+          });
+          
+          edges.push({
+            id: `edge-${conditionNodeId}-true-${conditionTrueBranchId}`,
+            source: conditionNodeId,
+            sourceHandle: 'true-out',
+            target: conditionTrueBranchId,
+            type: 'animatedFlow',
+            animated: true,
+            style: { stroke: 'hsl(var(--success))' },
+          });
+          logicBranchNodes.push(conditionTrueBranchId);
+        }
+      }
+      
+      logicNodeId = conditionNodeId;
+      previousNodeId = conditionNodeId;
+      warnings.push('已自动添加条件判断节点，请确认条件表达式是否正确');
+    }
   }
 
   // 6. 添加 Agent 核心节点
@@ -394,22 +519,24 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
     animated: true,
   });
 
-  // If we have a condition with true branch, also connect true branch to output
-  if (conditionTrueBranchId) {
-    edges.push({
-      id: `edge-${conditionTrueBranchId}-${outputNodeId}`,
-      source: conditionTrueBranchId,
-      target: outputNodeId,
-      type: 'animatedFlow',
-      animated: true,
-    });
+  // Connect logic branch nodes to output
+  if (logicBranchNodes.length > 0) {
+    for (const branchNodeId of logicBranchNodes) {
+      edges.push({
+        id: `edge-${branchNodeId}-${outputNodeId}`,
+        source: branchNodeId,
+        target: outputNodeId,
+        type: 'animatedFlow',
+        animated: true,
+      });
+    }
   }
   
-  // If we have a condition, also add false branch to output
-  if (conditionNodeId) {
+  // If we have a logic node (condition type), also add false branch to output
+  if (logicNodeId && nodes.find(n => n.id === logicNodeId)?.type === 'condition') {
     edges.push({
-      id: `edge-${conditionNodeId}-false-${outputNodeId}`,
-      source: conditionNodeId,
+      id: `edge-${logicNodeId}-false-${outputNodeId}`,
+      source: logicNodeId,
       sourceHandle: 'false-out',
       target: outputNodeId,
       type: 'animatedFlow',
@@ -519,4 +646,90 @@ function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
       },
     };
   });
+}
+
+// ========== 逻辑节点创建辅助函数 ==========
+
+/**
+ * 创建意图路由器节点
+ */
+function createIntentRouterNode(id: string, candidate: LogicNodeCandidate): Node {
+  const config = candidate.suggestedConfig as { routes?: Array<{ id: string; name: string; keywords: string[] }>; mode?: string };
+  return {
+    id,
+    type: 'intentRouter',
+    position: { x: 0, y: 0 },
+    data: {
+      id,
+      name: candidate.name,
+      mode: config.mode || 'semantic',
+      routes: config.routes || [],
+      confidence: candidate.confidence,
+      matchReason: candidate.matchReason,
+    },
+  };
+}
+
+/**
+ * 创建条件判断节点
+ */
+function createConditionNode(id: string, candidate: LogicNodeCandidate): Node {
+  const config = candidate.suggestedConfig as { rules?: Array<{ field: string; operator: string; value: unknown }>; expression?: string };
+  return {
+    id,
+    type: 'condition',
+    position: { x: 0, y: 0 },
+    data: {
+      id,
+      name: candidate.name,
+      mode: 'simple',
+      rules: config.rules || [],
+      expression: config.expression || '',
+      confidence: candidate.confidence,
+      matchReason: candidate.matchReason,
+    },
+  };
+}
+
+/**
+ * 创建并发执行节点
+ */
+function createParallelNode(id: string, candidate: LogicNodeCandidate, mode: 'fork' | 'join' = 'fork'): Node {
+  const config = candidate.suggestedConfig as { branches?: string[]; waitAll?: boolean };
+  return {
+    id,
+    type: 'parallel',
+    position: { x: 0, y: 0 },
+    data: {
+      id,
+      name: candidate.name,
+      mode,
+      branches: config.branches || [],
+      waitAll: config.waitAll ?? true,
+      confidence: candidate.confidence,
+      matchReason: candidate.matchReason,
+    },
+  };
+}
+
+/**
+ * 创建循环执行节点
+ */
+function createLoopNode(id: string, candidate: LogicNodeCandidate): Node {
+  const config = candidate.suggestedConfig as { iteratorVariable?: string; collectionExpression?: string; maxIterations?: number };
+  return {
+    id,
+    type: 'loop',
+    position: { x: 0, y: 0 },
+    data: {
+      id,
+      name: candidate.name,
+      mode: 'start',
+      iteratorVariable: config.iteratorVariable || 'item',
+      collectionExpression: config.collectionExpression || '{{items}}',
+      maxIterations: config.maxIterations || 100,
+      confidence: candidate.confidence,
+      matchReason: candidate.matchReason,
+    },
+  };
 }
