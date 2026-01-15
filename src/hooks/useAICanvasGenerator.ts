@@ -158,7 +158,7 @@ export function useAICanvasGenerator(): UseAICanvasGeneratorReturn {
         agentConfig: {
           name: aiConfig.name,
           department: aiConfig.department,
-          model: "claude-3.5",
+          model: "google/gemini-2.5-flash",
           systemPrompt: aiConfig.systemPrompt,
           avatar: { iconId: "bot", colorId: "primary" },
         },
@@ -272,7 +272,7 @@ function buildWorkflowFromConfig(
     data: {
       name: config.name,
       department: config.department,
-      model: "Claude 3.5",
+      model: "Gemini 2.5 Flash",
       skillCount: 0,
       hasManusKernel: true, // Mark as having Manus Kernel injected
     },

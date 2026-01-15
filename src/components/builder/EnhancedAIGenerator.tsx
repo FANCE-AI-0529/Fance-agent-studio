@@ -376,7 +376,7 @@ export function EnhancedAIGenerator({
     const agentConfig: SimpleAgentConfig = {
       name: inspirationTitle || lastResult.dsl?.name || "AI 生成的智能体",
       department: lastResult.dsl?.metadata?.category || "",
-      model: "claude-3.5",
+      model: "google/gemini-2.5-flash",
       systemPrompt: lastResult.dsl?.stages?.[0]?.nodes?.find(
         (n: any) => n.type === "agent"
       )?.config?.systemPrompt || "",

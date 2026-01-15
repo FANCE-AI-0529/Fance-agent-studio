@@ -357,7 +357,7 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
       id: agentNodeId,
       name: agentName || plan.extractedIntent?.role || 'AI Agent',
       systemPrompt: systemPrompt || generateSystemPrompt(plan),
-      model: 'claude-3.5',
+      model: 'google/gemini-2.5-flash',
       avatar: { iconId: 'bot', colorId: 'primary' },
     },
   });
@@ -434,7 +434,7 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
     agentConfig: {
       name: agentName || plan.extractedIntent?.role || 'AI Agent',
       systemPrompt: systemPrompt || generateSystemPrompt(plan),
-      model: 'claude-3.5',
+      model: 'google/gemini-2.5-flash',
       avatar: { iconId: 'bot', colorId: 'primary' },
       department: plan.extractedIntent?.category,
     },

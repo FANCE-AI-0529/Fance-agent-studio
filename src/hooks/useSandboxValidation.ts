@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { mapToGatewayModel } from '@/utils/modelMapping';
 
 // 验证结果类型
 export interface TestRun {
@@ -124,7 +125,8 @@ export function useSandboxValidation() {
               agentConfig: {
                 name: agentConfig.name,
                 systemPrompt: agentConfig.systemPrompt || '你是一个智能助手。',
-                model: agentConfig.model || 'claude-3.5',
+                // 映射模型名称为有效的 Gateway 模型
+                model: mapToGatewayModel(agentConfig.model),
               },
               testMessage,
               generatedSkills,
