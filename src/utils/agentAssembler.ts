@@ -15,6 +15,7 @@ import {
   inferMCPFromAction,
   type ExtractedCondition 
 } from './intentConditionExtractor';
+import { generateSecureSystemPrompt, inferSecurityLevel, injectSecurityBoundaries } from './securityPromptTemplate';
 
 // 组装输入
 export interface AssemblyInput {
@@ -470,23 +471,24 @@ function inferRiskLevel(asset: AssetMatch): string {
 }
 
 /**
- * 生成系统提示词
+ * 生成系统提示词 - 带安全边界
  */
 function generateSystemPrompt(plan: BuildPlan): string {
   const intent = plan.extractedIntent;
+  const mplpPolicy = 'default'; // 可从 plan 中获取
+  
   if (!intent) {
-    return '你是一个智能助手，请帮助用户完成任务。';
+    // 使用安全模板生成默认提示词
+    return generateSecureSystemPrompt('智能助手', ['帮助用户完成各类任务'], mplpPolicy);
   }
 
-  return `你是一个${intent.role}。
-
-你的主要能力包括：
-${intent.actions.map(a => `- ${a}`).join('\n')}
-
-${intent.requiredCapabilities.length > 0 ? `你擅长：
-${intent.requiredCapabilities.map(c => `- ${c}`).join('\n')}` : ''}
-
-请始终保持专业、友好的态度，确保完成用户的请求。`;
+  // 使用安全模板生成带边界的提示词
+  const capabilities = [
+    ...intent.actions,
+    ...(intent.requiredCapabilities || [])
+  ];
+  
+  return generateSecureSystemPrompt(intent.role, capabilities, mplpPolicy);
 }
 
 /**

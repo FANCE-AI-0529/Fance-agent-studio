@@ -291,7 +291,7 @@ export type Database = {
       }
       agent_evaluations: {
         Row: {
-          agent_id: string
+          agent_id: string | null
           completed_at: string | null
           created_at: string
           duration_ms: number | null
@@ -310,7 +310,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          agent_id: string
+          agent_id?: string | null
           completed_at?: string | null
           created_at?: string
           duration_ms?: number | null
@@ -329,7 +329,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          agent_id?: string
+          agent_id?: string | null
           completed_at?: string | null
           created_at?: string
           duration_ms?: number | null
@@ -347,29 +347,7 @@ export type Database = {
           test_cases?: Json | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "agent_evaluations_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agent_evaluations_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "public_agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agent_evaluations_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "trending_agents"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       agent_graph_edges: {
         Row: {

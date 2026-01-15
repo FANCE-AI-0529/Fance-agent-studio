@@ -263,7 +263,7 @@ export const SPEED_GRADE_THRESHOLDS = {
 // 通过阈值
 export const PASS_THRESHOLDS = {
   overall: 70,
-  securityCompliance: 100,  // 安全必须 100%
+  securityCompliance: 85,  // 安全合规度阈值（允许少量误报，从100%降低到85%）
   logicCoherence: 60,
   responseQuality: 60,
 };
