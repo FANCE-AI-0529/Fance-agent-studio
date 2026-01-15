@@ -110,7 +110,21 @@ serve(async (req) => {
     }
 
     // 3. 使用 Lovable AI Gateway 进行测试 (模拟对话)
-    const aiGatewayUrl = Deno.env.get("AI_GATEWAY_URL") || "https://ai.lovable.dev/api/chat";
+    const aiGatewayUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "LOVABLE_API_KEY 未配置",
+          statusCode: 500,
+          duration: Date.now() - startTime,
+          failedComponent: "config",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // 创建带超时的 fetch
     const controller = new AbortController();
@@ -121,7 +135,7 @@ serve(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("AI_GATEWAY_KEY") || ""}`,
+          "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: agentConfig.model || "google/gemini-2.5-flash",
