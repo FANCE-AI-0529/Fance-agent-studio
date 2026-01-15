@@ -56,6 +56,9 @@ const NODE_TYPE_MAP: Record<string, string> = {
   output: 'outputNode',
   placeholder: 'placeholder',
   generated_skill: 'generatedSkill',
+  // 新增逻辑节点类型映射
+  intent_router: 'intentRouterNode',
+  router: 'intentRouterNode',
 };
 
 // ========== Dagre 自动布局 ==========

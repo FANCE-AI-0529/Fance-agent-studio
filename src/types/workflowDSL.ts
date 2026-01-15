@@ -15,7 +15,11 @@ export type NodeType =
   | 'parallel' 
   | 'loop'
   | 'intervention'
-  | 'output';
+  | 'output'
+  | 'intent_router'   // 意图路由器节点
+  | 'router'          // 路由别名
+  | 'generated_skill' // 生成的技能
+  | 'placeholder';    // 占位符节点
 
 export type StageType = 'sequential' | 'parallel' | 'conditional' | 'loop';
 
