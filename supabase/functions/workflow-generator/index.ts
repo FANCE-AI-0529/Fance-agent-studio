@@ -700,8 +700,79 @@ serve(async (req) => {
       );
     }
     
-    // ========== Fallback: Original Generation Logic ==========
-    console.log('[Blueprint] No confident match, falling back to original generation');
+    // ========== Fallback: Use Simple-QA Blueprint ==========
+    // 当没有高置信度匹配时，使用 Simple-QA 作为默认蓝图
+    if (!selectedBlueprint) {
+      selectedBlueprint = AGENT_BLUEPRINTS.find(b => b.id === 'simple-qa') || null;
+      
+      if (selectedBlueprint) {
+        console.log('[Blueprint] No confident match, using Simple-QA as fallback blueprint');
+        
+        // Fetch hybrid assets with slot-aware retrieval
+        const hybridAssets = await fetchHybridAssetsForBlueprint(supabase, description, userId, selectedBlueprint);
+        
+        // Fill slots with matching atoms
+        const { filledSlots, unfilledSlots } = fillBlueprintSlots(selectedBlueprint, hybridAssets);
+        
+        // Generate DSL from blueprint structure
+        const blueprintDSL = generateDSLFromBlueprint(
+          selectedBlueprint,
+          filledSlots,
+          unfilledSlots,
+          description,
+          mplpPolicy,
+          extractedParams
+        );
+        
+        // Add blueprint metadata
+        if (blueprintDSL.metadata) {
+          (blueprintDSL.metadata as Record<string, unknown>).blueprintConfidence = 'fallback';
+        }
+        
+        // Validate and enhance
+        const validatedBlueprintDSL = validateAndEnhanceDSL(blueprintDSL, mplpPolicy, extractedParams);
+        
+        // Add blueprint-specific warnings
+        const blueprintWarnings = [...(validatedBlueprintDSL.warnings || [])];
+        blueprintWarnings.unshift(`使用默认蓝图: ${selectedBlueprint.name} (${selectedBlueprint.description})`);
+        
+        return new Response(
+          JSON.stringify({
+            dsl: { ...validatedBlueprintDSL, warnings: blueprintWarnings },
+            blueprintUsed: {
+              id: selectedBlueprint.id,
+              name: selectedBlueprint.name,
+              description: selectedBlueprint.description,
+              confidence: 'fallback',
+              matchedKeywords: [],
+              matchedPatterns: [],
+            },
+            filledSlots: filledSlots.map(fs => ({
+              slotId: fs.slot.id,
+              slotName: fs.slot.name,
+              slotType: fs.slot.slotType,
+              atomId: fs.atoms[0]?.id,
+              atomName: fs.atoms[0]?.name,
+              atomType: fs.atoms[0]?.type,
+            })),
+            unfilledSlots: [],
+            slotCoverage: { filled: filledSlots.length, total: selectedBlueprint.structure.slots.length, percentage: 100 },
+            warnings: blueprintWarnings,
+            extractedParams,
+            availableBlueprints: AGENT_BLUEPRINTS.map(b => ({
+              id: b.id,
+              name: b.name,
+              description: b.description,
+              category: b.category,
+            })),
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
+    // ========== Fallback: Original Generation Logic (Only if Simple-QA blueprint not found) ==========
+    console.log('[Blueprint] No blueprint available, falling back to original generation');
     
     // 1. 搜索相关资产
     const assetsResponse = await searchRelevantAssets(supabase, description, userId);
