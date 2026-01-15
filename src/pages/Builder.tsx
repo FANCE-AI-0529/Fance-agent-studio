@@ -318,7 +318,7 @@ const Builder = () => {
   const [agentConfig, setAgentConfig] = useState<SimpleAgentConfig>({
     name: "",
     department: "",
-    model: "claude-3.5",
+    model: "google/gemini-2.5-flash",
     systemPrompt: "",
     avatar: { iconId: "bot", colorId: "primary" },
   });

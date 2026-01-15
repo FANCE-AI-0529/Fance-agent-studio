@@ -66,18 +66,42 @@ const validModels = [
   "google/gemini-2.5-pro",
   "google/gemini-2.5-flash-lite",
   "google/gemini-3-pro-preview",
+  "google/gemini-3-flash-preview",
   "openai/gpt-5",
   "openai/gpt-5-mini",
   "openai/gpt-5-nano",
+  "openai/gpt-5.2",
 ];
 
 const VALID_MPLP_POLICIES = ['default', 'standard', 'strict'];
 
-function getValidModel(requestedModel?: string): string {
-  if (requestedModel && validModels.includes(requestedModel)) {
-    return requestedModel;
+// 模型映射函数 - 将无效模型名映射为有效模型
+function mapToValidModel(model?: string): string {
+  if (!model) return 'google/gemini-2.5-flash';
+  
+  // 已经是有效模型
+  if (validModels.includes(model)) {
+    return model;
   }
-  return "google/gemini-2.5-flash"; // default
+  
+  // 映射常见的无效模型名
+  const modelLower = model.toLowerCase();
+  
+  if (modelLower.includes('claude')) {
+    return 'google/gemini-2.5-flash';
+  }
+  if (modelLower.includes('gpt-4') || modelLower.includes('gpt4')) {
+    return 'openai/gpt-5-mini';
+  }
+  if (modelLower.includes('gpt-3') || modelLower.includes('gpt3')) {
+    return 'google/gemini-2.5-flash-lite';
+  }
+  
+  return 'google/gemini-2.5-flash';
+}
+
+function getValidModel(requestedModel?: string): string {
+  return mapToValidModel(requestedModel);
 }
 
 // Validate and sanitize agent configuration to prevent injection attacks

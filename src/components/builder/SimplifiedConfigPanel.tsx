@@ -38,7 +38,7 @@ import { AgentAvatarPicker, AgentAvatar, AgentAvatarDisplay } from "./AgentAvata
 export interface SimpleAgentConfig {
   name: string;
   department: string;
-  model: "claude-3.5" | "gpt-4";
+  model: string;  // 支持任意模型名称，会在运行时映射到有效的 Gateway 模型
   systemPrompt: string;
   avatar: AgentAvatar;
 }

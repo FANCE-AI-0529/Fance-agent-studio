@@ -10,6 +10,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Lovable AI Gateway 支持的模型列表
+const VALID_GATEWAY_MODELS = [
+  'google/gemini-2.5-pro',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
+  'google/gemini-3-pro-preview',
+  'google/gemini-3-flash-preview',
+  'openai/gpt-5',
+  'openai/gpt-5-mini',
+  'openai/gpt-5-nano',
+  'openai/gpt-5.2',
+];
+
+// 模型映射函数 - 将无效模型名映射为有效模型
+function mapToValidModel(model?: string): string {
+  if (!model) return 'google/gemini-2.5-flash';
+  
+  // 已经是有效模型
+  if (VALID_GATEWAY_MODELS.includes(model)) {
+    return model;
+  }
+  
+  // 映射常见的无效模型名
+  const modelLower = model.toLowerCase();
+  
+  if (modelLower.includes('claude')) {
+    return 'google/gemini-2.5-flash';
+  }
+  if (modelLower.includes('gpt-4') || modelLower.includes('gpt4')) {
+    return 'openai/gpt-5-mini';
+  }
+  if (modelLower.includes('gpt-3') || modelLower.includes('gpt3')) {
+    return 'google/gemini-2.5-flash-lite';
+  }
+  
+  return 'google/gemini-2.5-flash';
+}
+
 interface SandboxRequest {
   agentConfig: {
     name: string;
@@ -131,6 +169,10 @@ serve(async (req) => {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      // 映射模型名称为有效的 Gateway 模型
+      const validModel = mapToValidModel(agentConfig.model);
+      console.log(`[sandbox-validate] Using model: ${validModel} (requested: ${agentConfig.model})`);
+      
       const response = await fetch(aiGatewayUrl, {
         method: "POST",
         headers: {
@@ -138,7 +180,7 @@ serve(async (req) => {
           "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: agentConfig.model || "google/gemini-2.5-flash",
+          model: validModel,
           messages: [
             { role: "system", content: enhancedSystemPrompt },
             { role: "user", content: testMessage },
