@@ -76,6 +76,7 @@ import MCPActionNode, { MCPActionNodeData } from "@/components/builder/nodes/MCP
 import InterventionNode, { InterventionNodeData } from "@/components/builder/nodes/InterventionNode";
 import ManusKernelNode from "@/components/builder/nodes/ManusKernelNode";
 import GeneratedSkillNode from "@/components/builder/nodes/GeneratedSkillNode";
+import PlaceholderNode from "@/components/builder/nodes/PlaceholderNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "@/components/builder/edges/ManusLifecycleEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
@@ -140,8 +141,9 @@ const nodeTypes: NodeTypes = {
   parallel: ParallelNode,
   mcpAction: MCPActionNode,
   intervention: InterventionNode,
-  manus: ManusKernelNode, // Manus Kernel node type
-  generatedSkill: GeneratedSkillNode, // AI 即时生成的技能节点
+  manus: ManusKernelNode,
+  generatedSkill: GeneratedSkillNode,
+  placeholder: PlaceholderNode,
 };
 
 // Custom edge types - including Manus Lifecycle edge
