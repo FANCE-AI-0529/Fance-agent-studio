@@ -54,6 +54,8 @@ const NODE_TYPE_MAP: Record<string, string> = {
   loop: 'loopNode',
   intervention: 'interventionNode',
   output: 'outputNode',
+  placeholder: 'placeholder',
+  generated_skill: 'generatedSkill',
 };
 
 // ========== Dagre 自动布局 ==========
