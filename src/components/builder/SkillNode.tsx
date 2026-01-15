@@ -150,7 +150,7 @@ const SkillNode = memo(({ id, data, selected }: SkillNodeProps) => {
 
       {/* Permissions */}
       <div className="flex flex-wrap gap-1">
-        {(data.detected_permissions || data.permissions).slice(0, 3).map((perm) => (
+        {(data.detected_permissions || data.permissions || []).slice(0, 3).map((perm) => (
           <Badge
             key={perm}
             variant="outline"
@@ -159,9 +159,9 @@ const SkillNode = memo(({ id, data, selected }: SkillNodeProps) => {
             {perm}
           </Badge>
         ))}
-        {(data.detected_permissions || data.permissions).length > 3 && (
+        {(data.detected_permissions || data.permissions || []).length > 3 && (
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-            +{(data.detected_permissions || data.permissions).length - 3}
+            +{(data.detected_permissions || data.permissions || []).length - 3}
           </Badge>
         )}
       </div>
