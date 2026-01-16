@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useCreateDocument, useIngestDocument } from "@/hooks/useKnowledgeDocuments";
 import { useKnowledgeStore } from "@/stores/knowledgeStore";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface DocumentUploaderProps {
@@ -20,7 +22,28 @@ const ACCEPTED_TYPES = [
 
 const ACCEPTED_EXTENSIONS = [".pdf", ".txt", ".md", ".json"];
 
+// Helper: Get correct MIME type based on file extension
+function getMimeTypeForFile(file: File): string {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  const mimeMap: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'json': 'application/json',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  };
+  
+  if (file.type && file.type !== 'application/octet-stream' && file.type !== '') {
+    return file.type;
+  }
+  
+  return mimeMap[extension || ''] || 'text/plain';
+}
+
 export function DocumentUploader({ knowledgeBaseId }: DocumentUploaderProps) {
+  const { user } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<
     { id: string; name: string; progress: number; status: string }[]
@@ -47,12 +70,45 @@ export function DocumentUploader({ knowledgeBaseId }: DocumentUploaderProps) {
   };
 
   const readFileContent = async (file: File): Promise<string> => {
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    // Only read text-based files client-side
+    if (!["txt", "md", "json"].includes(extension || "")) {
+      return ""; // Let server handle PDFs
+    }
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsText(file);
     });
+  };
+  
+  const uploadFileToStorage = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    
+    const storagePath = `${user.id}/${knowledgeBaseId}/${file.name}`;
+    const mimeType = getMimeTypeForFile(file);
+    
+    // Create blob with correct MIME type if browser gave wrong one
+    const fileToUpload = mimeType !== file.type
+      ? new Blob([await file.arrayBuffer()], { type: mimeType })
+      : file;
+    
+    const { error } = await supabase.storage
+      .from('knowledge-documents')
+      .upload(storagePath, fileToUpload, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: mimeType,
+      });
+    
+    if (error) {
+      console.error('Storage upload failed:', error);
+      return null;
+    }
+    
+    return storagePath;
   };
 
   const handleFiles = useCallback(
@@ -94,14 +150,18 @@ export function DocumentUploader({ knowledgeBaseId }: DocumentUploaderProps) {
             )
           );
 
+          // Upload file to storage first (for PDFs and other binary files)
+          const filePath = await uploadFileToStorage(file);
+          
           // Create document record
           const doc = await createDocument.mutateAsync({
             knowledge_base_id: knowledgeBaseId,
             name: file.name,
             source_type: "upload",
             content,
+            file_path: filePath || undefined,
             file_size: file.size,
-            mime_type: file.type || `text/${extension}`,
+            mime_type: getMimeTypeForFile(file),
           });
 
           setUploadingFiles((prev) =>

@@ -102,18 +102,30 @@ export function useInlineUpload(options: UseInlineUploadOptions = {}): UseInline
 
       setUploadProgress(25);
 
-      // Step 2: Upload file to storage
+      // Step 2: Upload file to storage with proper MIME type
       const storagePath = `${user.id}/${kbData.id}/${file.name}`;
+      
+      // Determine correct MIME type based on extension if browser returns octet-stream
+      const mimeType = getMimeTypeForFile(file);
+      
+      // Create a new Blob with correct MIME type if needed
+      const fileToUpload = mimeType !== file.type 
+        ? new Blob([await file.arrayBuffer()], { type: mimeType })
+        : file;
+      
       const { error: uploadError } = await supabase.storage
         .from('knowledge-documents')
-        .upload(storagePath, file, {
+        .upload(storagePath, fileToUpload, {
           cacheControl: '3600',
           upsert: true,
+          contentType: mimeType,
         });
 
       if (uploadError) {
-        // If bucket doesn't exist, try creating document directly
-        console.warn('Storage upload failed, continuing with direct processing');
+        console.error('Storage upload failed:', uploadError.message);
+        // Mark KB as failed and throw
+        await supabase.from('knowledge_bases').update({ index_status: 'failed' }).eq('id', kbData.id);
+        throw new Error(`文件上传失败: ${uploadError.message}`);
       }
 
       setUploadProgress(50);
@@ -224,6 +236,29 @@ export function useInlineUpload(options: UseInlineUploadOptions = {}): UseInline
   };
 }
 
+// Helper: Get correct MIME type based on file extension
+function getMimeTypeForFile(file: File): string {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  // Map extensions to MIME types
+  const mimeMap: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'json': 'application/json',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  };
+  
+  // If browser detected a valid MIME type, use it
+  if (file.type && file.type !== 'application/octet-stream' && file.type !== '') {
+    return file.type;
+  }
+  
+  // Otherwise, map from extension
+  return mimeMap[extension || ''] || 'text/plain';
+}
+
 // Helper: Read file content as text
 async function readFileContent(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -241,10 +276,13 @@ async function readFileContent(file: File): Promise<string> {
     
     reader.onerror = () => reject(new Error('读取文件失败'));
     
-    // Try reading as text
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    
+    // Try reading as text for text-based files
     if (file.type.includes('text') || 
-        file.name.endsWith('.txt') || 
-        file.name.endsWith('.md')) {
+        extension === 'txt' || 
+        extension === 'md' ||
+        extension === 'json') {
       reader.readAsText(file);
     } else {
       // For PDF and other binary formats, let the server handle extraction
