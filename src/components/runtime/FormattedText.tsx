@@ -1,11 +1,14 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
+import { type AgentRole, ROLE_THEMES } from "@/constants/agentRoleThemes";
 
 interface FormattedTextProps {
   content: string;
   className?: string;
   useTerminalStyle?: boolean;
+  /** Agent role for themed highlight pills */
+  agentRole?: AgentRole;
 }
 
 /**
@@ -13,7 +16,7 @@ interface FormattedTextProps {
  * Terminal Style Mode: Uses [header], [v], [x], (!) symbols instead of **bold**
  * Legacy Mode: Supports **text** for bold, `code` for inline code, ```code``` for blocks
  */
-export function FormattedText({ content, className, useTerminalStyle = true }: FormattedTextProps) {
+export function FormattedText({ content, className, useTerminalStyle = true, agentRole }: FormattedTextProps) {
   const formatContent = (text: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
     let currentIndex = 0;
@@ -88,9 +91,12 @@ export function FormattedText({ content, className, useTerminalStyle = true }: F
       // Add formatted match
       switch (match.type) {
         case "bold":
-          // Legacy bold - render as primary color text without actual bold
+          // Render as highlight pill with role-specific colors
+          const highlightClass = agentRole 
+            ? ROLE_THEMES[agentRole].highlightClass 
+            : 'highlight-pill-default';
           parts.push(
-            <span key={keyIndex++} className="text-primary">
+            <span key={keyIndex++} className={cn("highlight-pill", highlightClass)}>
               {match.content}
             </span>
           );

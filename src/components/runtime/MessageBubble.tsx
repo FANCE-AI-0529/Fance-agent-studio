@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormattedText } from "./FormattedText";
 import { TypewriterFormattedText } from "./TypewriterFormattedText";
+import { SmartChatBubble } from "./SmartChatBubble";
 import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated";
 import { MCPToolCard, MCPToolCall } from "./MCPToolCard";
 import { CitationCard, Citation } from "./CitationCard";
@@ -12,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useMessageFeedback } from "@/hooks/useMessageFeedback";
+import { type AgentMeta, parseAgentMeta } from "@/constants/agentRoleThemes";
 
 interface MessageAttachment {
   id: string;
@@ -41,6 +43,10 @@ interface MessageBubbleProps {
   isRoleplay?: boolean;
   roleName?: string;
   avatarState?: "idle" | "thinking" | "speaking" | "listening" | "happy" | "confused";
+  // Role-based theming
+  agentMeta?: AgentMeta;
+  /** Enable smart bubble with role-based theming */
+  useSmartBubble?: boolean;
 }
 
 // Agent avatar color themes
@@ -75,6 +81,8 @@ export function MessageBubble({
   isRoleplay,
   roleName,
   avatarState = "idle",
+  agentMeta: externalAgentMeta,
+  useSmartBubble = false,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const colorTheme = agentAvatar?.colorId ? avatarColors[agentAvatar.colorId] : avatarColors.blue;
@@ -86,6 +94,10 @@ export function MessageBubble({
   
   // Feedback hook for assistant messages
   const { feedback, isLoading: feedbackLoading, submitFeedback, isLiked, isDisliked } = useMessageFeedback(id);
+  
+  // Parse agent meta from content if not provided externally (for assistant messages)
+  const { meta: parsedMeta, cleanContent } = !isUser ? parseAgentMeta(content) : { meta: null, cleanContent: content };
+  const agentMeta = externalAgentMeta || parsedMeta;
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -233,10 +245,12 @@ export function MessageBubble({
               exit={{ opacity: 0 }}
               transition={{ delay: 0.05, duration: 0.25 }}
               className={cn(
-                "relative px-4 py-3 rounded-2xl shadow-sm",
+                "relative px-4 py-3 rounded-2xl shadow-sm overflow-hidden",
                 isUser
                   ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "bg-card border border-border rounded-bl-md"
+                  : agentMeta 
+                    ? cn("bg-card border border-border rounded-bl-md", agentMeta.role && `bubble-${agentMeta.role}`)
+                    : "bg-card border border-border rounded-bl-md"
               )}
             >
               {/* Message tail effect */}
@@ -281,17 +295,19 @@ export function MessageBubble({
               <div className={cn("relative z-10", isUser ? "text-right" : "")}>
                 {role === "assistant" && isNew ? (
                   <TypewriterFormattedText 
-                    content={content} 
+                    content={cleanContent} 
                     className="text-sm leading-relaxed" 
                     speed={10}
                   />
                 ) : (
                   <FormattedText 
-                    content={content} 
+                    content={isUser ? content : cleanContent} 
                     className={cn(
                       "text-sm leading-relaxed",
-                      isUser && "text-primary-foreground"
+                      isUser && "text-primary-foreground",
+                      agentMeta?.role === 'engineer' && "font-mono"
                     )} 
+                    agentRole={agentMeta?.role}
                   />
                 )}
               </div>

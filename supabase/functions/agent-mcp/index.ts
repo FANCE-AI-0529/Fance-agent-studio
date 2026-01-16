@@ -252,9 +252,15 @@ async function handleToolsCall(
   const manifest = agent.manifest as any;
   const systemPrompt = manifest?.system_prompt || `You are ${agent.name}, an AI assistant.`;
   
-  // Terminal style instructions
+  // Terminal style instructions with role meta protocol
   const terminalStyle = `
-响应格式：禁用 ** 加粗和 # 标题。使用 [标题]、---、[v]/[x]/(!)、┌─├─└─│ 结构符号。直接输出结果，无废话。
+响应格式：禁用 # 标题。使用 [标题]、---、[v]/[x]/(!)、┌─├─└─│ 结构符号。用 **双星号** 包裹关键实体。
+
+每次回复开头必须包含元数据标签：
+- 规划架构时: <meta role="architect" mood="neutral" />
+- 编写代码时: <meta role="engineer" mood="neutral" />
+- 检索知识时: <meta role="researcher" mood="neutral" />
+- 安全警告时: <meta role="auditor" mood="warning" />
 `;
 
   let userMessage = "";
