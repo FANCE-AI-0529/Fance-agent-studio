@@ -18,6 +18,9 @@ export const TERMINAL_SYMBOLS = {
   warning: '(!)',
   pending: '[ ]',
   
+  // Emphasis - using Chinese book title marks instead of **
+  emphasis: (text: string) => `「${text}」`,
+  
   // Quote and list
   quote: '>',
   bullet: '-',

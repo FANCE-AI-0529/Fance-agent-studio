@@ -95,6 +95,8 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
           { regex: /\(Ref:\s*[^)]+\)/g, type: "ref" as const },
           { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
           { regex: /`([^`]+)`/g, type: "code" as const },
+          // 书名号强调
+          { regex: /「([^」]+)」/g, type: "emphasis" as const },
         ]
       : [
           // Legacy patterns
@@ -108,7 +110,7 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
       length: number;
       content: string;
       fullMatch: string;
-      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref";
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "emphasis";
     }
 
     const matches: Match[] = [];
@@ -184,6 +186,14 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
           parts.push(
             <span key={keyIndex++} className={TERMINAL_CLASSES.ref}>
               {match.fullMatch}
+            </span>
+          );
+          break;
+        case "emphasis":
+          // 书名号强调渲染为高亮胶囊
+          parts.push(
+            <span key={keyIndex++} className="highlight-pill highlight-pill-default">
+              {match.content}
             </span>
           );
           break;

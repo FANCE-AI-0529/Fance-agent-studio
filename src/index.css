@@ -707,6 +707,12 @@
   color: hsl(var(--role-auditor-text));
 }
 
+/* Default highlight pill (fallback) */
+.highlight-pill-default {
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+
 /* Animations */
 @keyframes pulse-gold {
   0%, 100% {

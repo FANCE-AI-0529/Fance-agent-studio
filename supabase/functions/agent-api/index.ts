@@ -122,7 +122,7 @@ serve(async (req) => {
     
     // Terminal style instructions with role meta protocol
     const terminalStyle = `
-响应格式：禁用 # 标题。使用 [标题]、---、[v]/[x]/(!)、┌─├─└─│ 结构符号。用 **双星号** 包裹关键实体。
+响应格式：禁用 # 标题。使用 [标题]、---、[v]/[x]/(!)、┌─├─└─│ 结构符号。禁止使用 **双星号**，改用「书名号」包裹关键词。
 
 每次回复开头必须包含元数据标签：
 - 规划架构时: <meta role="architect" mood="neutral" />
