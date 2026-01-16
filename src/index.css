@@ -1,3 +1,8 @@
+/* ============================================
+   NUCLEAR FIX: Production Environment Force Styles
+   ============================================ */
+
+/* Force load fonts via CDN with display=swap for performance */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
@@ -7,11 +12,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fance OS - Obsidian Theme Design System */
+/* ============================================
+   NUCLEAR: Force CSS Variables at highest priority
+   ============================================ */
 
 @layer base {
-  :root {
-    /* Light mode - clean enterprise */
+  /* FORCE: Always define both light and dark variables at :root level */
+  :root, html, body {
+    /* Light mode defaults */
     --background: 0 0% 98%;
     --foreground: 240 10% 4%;
 
@@ -83,9 +91,16 @@
     --shadow-lg: 0 8px 16px -2px hsl(0 0% 0% / 0.1);
     --shadow-xl: 0 16px 32px -4px hsl(0 0% 0% / 0.12);
     --shadow-2xl: 0 24px 48px -8px hsl(0 0% 0% / 0.15);
+
+    /* FORCE color scheme */
+    color-scheme: light dark;
   }
 
-  .dark {
+  /* NUCLEAR: Force dark mode variables with !important fallbacks */
+  .dark, 
+  html.dark,
+  html.dark body,
+  html.dark :root {
     /* Obsidian dark theme - #09090b deep black */
     --background: 240 10% 4%;
     --foreground: 0 0% 95%;
@@ -157,6 +172,9 @@
     --shadow-lg: 0 8px 16px -2px hsl(0 0% 0% / 0.5);
     --shadow-xl: 0 16px 32px -4px hsl(0 0% 0% / 0.6);
     --shadow-2xl: 0 24px 48px -8px hsl(0 0% 0% / 0.7);
+
+    /* FORCE dark color scheme */
+    color-scheme: dark;
   }
 
   * {
@@ -191,12 +209,21 @@
     transition: none !important;
   }
 
+  /* NUCLEAR: Force body styles with fallback colors */
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: 'Inter', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* NUCLEAR: Force dark mode body background */
+  html.dark body {
+    background-color: #09090b !important;
+    color: #f5f5f5 !important;
   }
 }
 
