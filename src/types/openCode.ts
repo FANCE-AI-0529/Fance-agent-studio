@@ -19,14 +19,52 @@ export interface OpenCodeSession {
   updatedAt: string;
 }
 
+export type StyleRule = 
+  | 'no-let' 
+  | 'no-else' 
+  | 'single-word' 
+  | 'no-destructure' 
+  | 'no-any' 
+  | 'no-try-catch'
+  | 'prefer-bun-api'
+  | 'no-nested-ternary';
+
 export interface StyleViolation {
-  rule: 'no-let' | 'no-else' | 'single-word' | 'no-destructure' | 'no-any' | 'no-try-catch';
+  rule: StyleRule;
   line: number;
   column: number;
   message: string;
   severity: 'error' | 'warning' | 'info';
   autoFix?: string;
   original?: string;
+}
+
+export interface SelfCheckResult {
+  passed: boolean;
+  questions: {
+    usedLet: boolean;
+    usedElse: boolean;
+    usedAny: boolean;
+    usedDestructuring: boolean;
+    usedTryCatch: boolean;
+  };
+  violations: StyleViolation[];
+  refactoredCode?: string;
+  report: string;
+}
+
+export interface OpenCodeKernelRules {
+  planFirst: boolean;
+  requireApprovalForBuild: boolean;
+  styleCheckOnWrite: boolean;
+  selfRefactorOnViolation: boolean;
+  noLetStatements: boolean;
+  noElseStatements: boolean;
+  noAnyType: boolean;
+  singleWordNaming: boolean;
+  avoidDestructuring: boolean;
+  avoidTryCatch: boolean;
+  preferBunAPIs: boolean;
 }
 
 export interface StyleCheckResult {
