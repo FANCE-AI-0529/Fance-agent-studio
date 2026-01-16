@@ -187,3 +187,77 @@ export function applyAutoFixes(code: string, violations: StyleViolation[]): stri
 
   return lines.join('\n');
 }
+
+/**
+ * Get style rules configuration for UI display
+ */
+export function getStyleRulesConfig(): Array<{
+  rule: StyleRule;
+  name: string;
+  description: string;
+  severity: 'error' | 'warning' | 'info';
+  example: { good: string; bad: string };
+}> {
+  return [
+    {
+      rule: 'no-let',
+      name: "No 'let' Statements",
+      description: 'Use const with ternary operators instead of let with if/else assignments.',
+      severity: 'error',
+      example: {
+        good: 'const value = condition ? 1 : 2;',
+        bad: 'let value;\nif (condition) value = 1;\nelse value = 2;'
+      }
+    },
+    {
+      rule: 'no-else',
+      name: "No 'else' Statements",
+      description: 'Use early returns (Guard Clauses) instead of else blocks.',
+      severity: 'error',
+      example: {
+        good: 'if (!valid) return null;\nreturn data;',
+        bad: 'if (valid) {\n  return data;\n} else {\n  return null;\n}'
+      }
+    },
+    {
+      rule: 'no-any',
+      name: "No 'any' Type",
+      description: 'Use specific types, generics, or unknown instead of any.',
+      severity: 'error',
+      example: {
+        good: 'function parse(data: unknown): Result',
+        bad: 'function parse(data: any): any'
+      }
+    },
+    {
+      rule: 'single-word',
+      name: 'Single-Word Variables',
+      description: 'Prefer single-word variable names when the context is clear.',
+      severity: 'info',
+      example: {
+        good: 'const user = getUser();',
+        bad: 'const currentUser = getUser();'
+      }
+    },
+    {
+      rule: 'no-destructure',
+      name: 'Avoid Destructuring',
+      description: 'Use obj.prop to preserve context instead of destructuring.',
+      severity: 'info',
+      example: {
+        good: 'const name = user.name;',
+        bad: 'const { name } = user;'
+      }
+    },
+    {
+      rule: 'no-try-catch',
+      name: 'Avoid try/catch',
+      description: 'Consider using Result pattern for explicit error handling.',
+      severity: 'warning',
+      example: {
+        good: 'const result = await fetchSafe(url);\nif (!result.ok) return result.error;',
+        bad: 'try {\n  await fetch(url);\n} catch (e) {\n  handleError(e);\n}'
+      }
+    }
+  ];
+}
