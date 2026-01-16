@@ -1156,7 +1156,19 @@ const Builder = () => {
 
   return (
     <TooltipProvider>
-      <div className="h-[100vh] flex overflow-hidden bg-background">
+      {/* NUCLEAR: Main container with inline fallback styles */}
+      <div 
+        className="h-[100vh] flex overflow-hidden bg-background"
+        style={{
+          // NUCLEAR FIX: Inline fallback for production stability
+          height: '100vh',
+          minHeight: '100vh',
+          width: '100%',
+          display: 'flex',
+          overflow: 'hidden',
+          backgroundColor: '#09090b',
+        }}
+      >
         {/* Left Panel - Skill Marketplace */}
         <div
           className={cn(
@@ -1528,10 +1540,18 @@ const Builder = () => {
             />
           )}
 
-          {/* Canvas Area - Explicit height to prevent production collapse */}
+          {/* Canvas Area - NUCLEAR: Explicit inline styles to prevent production collapse */}
           <div
             ref={reactFlowWrapper}
             className="flex-1 min-h-0"
+            style={{
+              // NUCLEAR FIX: Inline fallback styles for production stability
+              minHeight: 'calc(100vh - 48px)',
+              height: '100%',
+              width: '100%',
+              position: 'relative',
+              backgroundColor: '#09090b',
+            }}
             onDragOver={onDragOver}
             onDrop={onDrop}
           >

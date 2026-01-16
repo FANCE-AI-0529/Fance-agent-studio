@@ -2,27 +2,56 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./index.html",
+    "./pages/**/*.{ts,tsx}", 
+    "./components/**/*.{ts,tsx}", 
+    "./app/**/*.{ts,tsx}", 
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
-  // Safelist to protect dynamic classes from being purged in production
+  // NUCLEAR FIX: Aggressive regex-based safelist to prevent any purging issues
   safelist: [
-    // Dynamic color classes used in UserStatsCards, ScenarioCards
+    // Force keep ALL standard Tailwind colors with all shades
+    {
+      pattern: /^(bg|text|border|ring)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|200|300|400|500|600|700|800|900|950)$/,
+      variants: ['hover', 'focus', 'active', 'group-hover', 'dark'],
+    },
+    // Force keep opacity variants
+    {
+      pattern: /^(bg|text|border)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|200|300|400|500|600|700|800|900|950)\/(5|10|15|20|25|30|40|50|60|70|75|80|90|95)$/,
+    },
+    // Custom semantic colors with opacity
     { pattern: /^bg-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
-    { pattern: /^bg-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)\/(10|15|20|30)$/ },
+    { pattern: /^bg-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)\/(5|10|15|20|25|30|40|50|60|70|75|80|90|95)$/ },
     { pattern: /^text-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
     { pattern: /^border-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
-    // Lucide color classes used in TypingIndicator and AgentAvatarAnimated
-    { pattern: /^bg-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
-    { pattern: /^text-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
-    { pattern: /^border-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
-    // Z-index values
-    'z-0', 'z-10', 'z-20', 'z-30', 'z-40', 'z-50', 'z-[100]', 'z-[110]',
+    // Force keep all width/height utilities
+    { pattern: /^(w|h|min-w|min-h|max-w|max-h)-.+/ },
+    // Force keep all spacing utilities
+    { pattern: /^(p|m|px|py|pt|pb|pl|pr|mx|my|mt|mb|ml|mr|gap|space-x|space-y)-.+/ },
+    // Z-index - all common values
+    'z-0', 'z-10', 'z-20', 'z-30', 'z-40', 'z-50', 'z-[100]', 'z-[110]', 'z-[999]', 'z-[9999]',
     // Animation classes
+    'animate-in', 'animate-out', 'fade-in', 'fade-out', 'zoom-in', 'zoom-out', 'slide-in-from-top', 'slide-in-from-bottom',
     'animate-bounce', 'animate-pulse', 'animate-spin', 'animate-flow', 'animate-fade-in', 'animate-scale-in',
-    // Grid columns for ManusMemoryPanel
-    'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6',
+    // Grid columns - all common values
+    'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6', 'grid-cols-7', 'grid-cols-8', 'grid-cols-9', 'grid-cols-10', 'grid-cols-11', 'grid-cols-12',
+    // Flex utilities
+    'flex-1', 'flex-auto', 'flex-none', 'flex-row', 'flex-col', 'flex-wrap', 'flex-nowrap',
     // Glassmorphism
-    'backdrop-blur-sm', 'backdrop-blur-md', 'backdrop-blur-lg', 'backdrop-blur-xl',
+    'backdrop-blur-sm', 'backdrop-blur-md', 'backdrop-blur-lg', 'backdrop-blur-xl', 'backdrop-blur-2xl', 'backdrop-blur-3xl',
+    // Opacity
+    'opacity-0', 'opacity-5', 'opacity-10', 'opacity-20', 'opacity-25', 'opacity-30', 'opacity-40', 'opacity-50', 'opacity-60', 'opacity-70', 'opacity-75', 'opacity-80', 'opacity-90', 'opacity-95', 'opacity-100',
+    // Transform
+    'scale-0', 'scale-50', 'scale-75', 'scale-90', 'scale-95', 'scale-100', 'scale-105', 'scale-110', 'scale-125', 'scale-150',
+    'translate-x-0', 'translate-y-0', '-translate-x-1/2', '-translate-y-1/2',
+    // Display
+    'hidden', 'block', 'inline', 'inline-block', 'flex', 'inline-flex', 'grid', 'inline-grid',
+    // Position
+    'static', 'fixed', 'absolute', 'relative', 'sticky',
+    // Overflow
+    'overflow-auto', 'overflow-hidden', 'overflow-visible', 'overflow-scroll', 'overflow-x-auto', 'overflow-y-auto', 'overflow-x-hidden', 'overflow-y-hidden',
   ],
   theme: {
     container: {
