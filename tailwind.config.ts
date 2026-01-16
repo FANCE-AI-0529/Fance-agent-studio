@@ -11,6 +11,8 @@ export default {
     { pattern: /^bg-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)\/(10|15|20|30)$/ },
     { pattern: /^text-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
     { pattern: /^border-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
+    // Agent role palette classes
+    { pattern: /^(bg|text|border)-role-(architect|engineer|researcher|auditor)-(border|bg|text|highlight)$/ },
     // Lucide color classes used in TypingIndicator and AgentAvatarAnimated
     { pattern: /^bg-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
     { pattern: /^text-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
@@ -18,11 +20,14 @@ export default {
     // Z-index values
     'z-0', 'z-10', 'z-20', 'z-30', 'z-40', 'z-50', 'z-[100]', 'z-[110]',
     // Animation classes
-    'animate-bounce', 'animate-pulse', 'animate-spin', 'animate-flow', 'animate-fade-in', 'animate-scale-in',
+    'animate-bounce', 'animate-pulse', 'animate-spin', 'animate-flow', 'animate-fade-in', 'animate-scale-in', 'animate-pulse-warning',
     // Grid columns for ManusMemoryPanel
     'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6',
     // Glassmorphism
     'backdrop-blur-sm', 'backdrop-blur-md', 'backdrop-blur-lg', 'backdrop-blur-xl',
+    // Smart bubble classes
+    'bubble-architect', 'bubble-engineer', 'bubble-researcher', 'bubble-auditor',
+    'highlight-pill', 'highlight-pill-architect', 'highlight-pill-engineer', 'highlight-pill-researcher', 'highlight-pill-auditor', 'highlight-pill-default',
   ],
   theme: {
     container: {
@@ -43,6 +48,31 @@ export default {
         'port-data': 'hsl(var(--port-data))',
         'port-control': 'hsl(var(--port-control))',
         'port-perception': 'hsl(var(--port-perception))',
+        // Agent role palettes
+        'role-architect': {
+          border: 'hsl(var(--role-architect-border))',
+          bg: 'hsl(var(--role-architect-bg))',
+          text: 'hsl(var(--role-architect-text))',
+          highlight: 'hsl(var(--role-architect-highlight))',
+        },
+        'role-engineer': {
+          border: 'hsl(var(--role-engineer-border))',
+          bg: 'hsl(var(--role-engineer-bg))',
+          text: 'hsl(var(--role-engineer-text))',
+          highlight: 'hsl(var(--role-engineer-highlight))',
+        },
+        'role-researcher': {
+          border: 'hsl(var(--role-researcher-border))',
+          bg: 'hsl(var(--role-researcher-bg))',
+          text: 'hsl(var(--role-researcher-text))',
+          highlight: 'hsl(var(--role-researcher-highlight))',
+        },
+        'role-auditor': {
+          border: 'hsl(var(--role-auditor-border))',
+          bg: 'hsl(var(--role-auditor-bg))',
+          text: 'hsl(var(--role-auditor-text))',
+          highlight: 'hsl(var(--role-auditor-highlight))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -58,6 +58,28 @@
     --port-control: 263 70% 50%;
     --port-perception: 25 95% 53%;
 
+    /* Agent Role Palettes - Light Mode */
+    /* Architect (amber) */
+    --role-architect-border: 38 92% 50% / 0.5;
+    --role-architect-bg: 38 92% 20% / 0.1;
+    --role-architect-text: 38 92% 30%;
+    --role-architect-highlight: 38 92% 50% / 0.2;
+    /* Engineer (cyan) */
+    --role-engineer-border: 187 85% 43% / 0.5;
+    --role-engineer-bg: 187 85% 20% / 0.1;
+    --role-engineer-text: 187 85% 25%;
+    --role-engineer-highlight: 187 85% 43% / 0.2;
+    /* Researcher (violet) */
+    --role-researcher-border: 263 70% 50% / 0.5;
+    --role-researcher-bg: 263 70% 20% / 0.1;
+    --role-researcher-text: 263 70% 35%;
+    --role-researcher-highlight: 263 70% 50% / 0.2;
+    /* Auditor (rose) */
+    --role-auditor-border: 347 77% 50% / 0.5;
+    --role-auditor-bg: 347 77% 20% / 0.1;
+    --role-auditor-text: 347 77% 35%;
+    --role-auditor-highlight: 347 77% 50% / 0.2;
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 10% 4%;
     --sidebar-primary: 239 84% 67%;
@@ -134,6 +156,28 @@
     --port-data: 217 91% 65%;
     --port-control: 263 70% 66%;
     --port-perception: 25 95% 60%;
+
+    /* Agent Role Palettes - Dark Mode */
+    /* Architect (amber) */
+    --role-architect-border: 38 92% 50% / 0.7;
+    --role-architect-bg: 38 92% 15% / 0.3;
+    --role-architect-text: 38 92% 80%;
+    --role-architect-highlight: 38 92% 50% / 0.25;
+    /* Engineer (cyan) */
+    --role-engineer-border: 187 85% 53% / 0.7;
+    --role-engineer-bg: 187 85% 10% / 0.4;
+    --role-engineer-text: 187 85% 85%;
+    --role-engineer-highlight: 187 85% 43% / 0.25;
+    /* Researcher (violet) */
+    --role-researcher-border: 263 70% 66% / 0.7;
+    --role-researcher-bg: 263 70% 15% / 0.3;
+    --role-researcher-text: 263 70% 85%;
+    --role-researcher-highlight: 263 70% 50% / 0.25;
+    /* Auditor (rose) */
+    --role-auditor-border: 347 77% 60% / 0.7;
+    --role-auditor-bg: 347 77% 15% / 0.3;
+    --role-auditor-text: 347 77% 85%;
+    --role-auditor-highlight: 347 77% 50% / 0.25;
 
     --sidebar-background: 240 10% 4%;
     --sidebar-foreground: 0 0% 95%;
@@ -565,6 +609,102 @@
     border-radius: var(--radius);
     box-shadow: 0 0 48px hsl(var(--status-confirm) / 0.3);
   }
+}
+
+/* =====================================================
+   Agent Role Bubble Themes
+   智能体角色气泡主题
+   ===================================================== */
+
+/* Architect - Blueprint style with subtle grid */
+.bubble-architect {
+  position: relative;
+  border-left: 3px solid hsl(var(--role-architect-border));
+  background: linear-gradient(135deg, hsl(var(--role-architect-bg)), transparent);
+}
+.bubble-architect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(hsl(38 92% 50% / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(38 92% 50% / 0.05) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Engineer - Terminal/IDE style */
+.bubble-engineer {
+  border-left: 3px solid hsl(var(--role-engineer-border));
+  background-color: hsl(220 13% 8% / 0.95);
+}
+.dark .bubble-engineer {
+  background-color: hsl(220 13% 6% / 0.98);
+}
+
+/* Researcher - Glassmorphism knowledge style */
+.bubble-researcher {
+  border-left: 3px solid hsl(var(--role-researcher-border));
+  background: hsl(var(--role-researcher-bg));
+  backdrop-filter: blur(8px);
+}
+
+/* Auditor - Warning style with pulse */
+.bubble-auditor {
+  border-left: 3px solid hsl(var(--role-auditor-border));
+  background: hsl(var(--role-auditor-bg));
+}
+
+/* Warning pulse animation for auditor */
+@keyframes pulse-warning {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 hsl(347 77% 50% / 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 16px 4px hsl(347 77% 50% / 0.15);
+  }
+}
+
+.animate-pulse-warning {
+  animation: pulse-warning 2.5s ease-in-out infinite;
+}
+
+/* =====================================================
+   Highlight Pills
+   高亮胶囊样式
+   ===================================================== */
+
+.highlight-pill {
+  display: inline;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.highlight-pill-default {
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+
+.highlight-pill-architect {
+  background-color: hsl(var(--role-architect-highlight));
+  color: hsl(var(--role-architect-text));
+}
+
+.highlight-pill-engineer {
+  background-color: hsl(var(--role-engineer-highlight));
+  color: hsl(var(--role-engineer-text));
+}
+
+.highlight-pill-researcher {
+  background-color: hsl(var(--role-researcher-highlight));
+  color: hsl(var(--role-researcher-text));
+}
+
+.highlight-pill-auditor {
+  background-color: hsl(var(--role-auditor-highlight));
+  color: hsl(var(--role-auditor-text));
 }
 
 /* Animations */
