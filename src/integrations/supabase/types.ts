@@ -3249,6 +3249,70 @@ export type Database = {
         }
         Relationships: []
       }
+      opencode_sessions: {
+        Row: {
+          agent_id: string | null
+          approval_token: string | null
+          approved_at: string | null
+          created_at: string
+          current_mode: string
+          id: string
+          plan_content: string | null
+          session_id: string
+          style_violations: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          approval_token?: string | null
+          approved_at?: string | null
+          created_at?: string
+          current_mode?: string
+          id?: string
+          plan_content?: string | null
+          session_id: string
+          style_violations?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          approval_token?: string | null
+          approved_at?: string | null
+          created_at?: string
+          current_mode?: string
+          id?: string
+          plan_content?: string | null
+          session_id?: string
+          style_violations?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opencode_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opencode_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opencode_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       point_transactions: {
         Row: {
           amount: number
