@@ -261,3 +261,129 @@ export function getStyleRulesConfig(): Array<{
     }
   ];
 }
+
+/**
+ * Refactor code to be compliant with OpenCode style guide
+ * This is a simplified transformation - real implementation would use AST
+ */
+export function refactorToCompliant(code: string): { 
+  refactored: string; 
+  changes: Array<{ from: string; to: string; rule: StyleRule }>;
+} {
+  const changes: Array<{ from: string; to: string; rule: StyleRule }> = [];
+  const lines = code.split('\n');
+  const refactoredLines: string[] = [];
+  
+  let skipNextElse = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const originalLine = line;
+    let processedLine = line;
+    
+    // Skip else blocks after early return transformation
+    if (skipNextElse && /^\s*}\s*else\s*{/.test(line)) {
+      skipNextElse = false;
+      // Skip until we find the closing brace
+      let braceCount = 1;
+      while (braceCount > 0 && i < lines.length - 1) {
+        i++;
+        const nextLine = lines[i];
+        braceCount += (nextLine.match(/{/g) || []).length;
+        braceCount -= (nextLine.match(/}/g) || []).length;
+      }
+      continue;
+    }
+    
+    // Transform: let x = value -> const x = value (simple cases)
+    if (/\blet\s+\w+\s*=/.test(processedLine)) {
+      const newLine = processedLine.replace(/\blet\s+/, 'const ');
+      if (newLine !== processedLine) {
+        changes.push({ from: processedLine.trim(), to: newLine.trim(), rule: 'no-let' });
+        processedLine = newLine;
+      }
+    }
+    
+    // Transform: : any -> : unknown
+    if (/:\s*any\b/.test(processedLine)) {
+      const newLine = processedLine.replace(/:\s*any\b/g, ': unknown');
+      if (newLine !== processedLine) {
+        changes.push({ from: processedLine.trim(), to: newLine.trim(), rule: 'no-any' });
+        processedLine = newLine;
+      }
+    }
+    
+    // Transform: const { prop } = obj -> const prop = obj.prop
+    const destructureMatch = processedLine.match(/const\s*{\s*(\w+)\s*}\s*=\s*(\w+)/);
+    if (destructureMatch) {
+      const newLine = processedLine.replace(
+        /const\s*{\s*(\w+)\s*}\s*=\s*(\w+)/,
+        `const ${destructureMatch[1]} = ${destructureMatch[2]}.${destructureMatch[1]}`
+      );
+      if (newLine !== processedLine) {
+        changes.push({ from: processedLine.trim(), to: newLine.trim(), rule: 'no-destructure' });
+        processedLine = newLine;
+      }
+    }
+    
+    // Transform camelCase variable names to single words (simplified)
+    const varNameMatch = processedLine.match(/\b(const|let|var)\s+([a-z]+)([A-Z]\w*)\s*=/);
+    if (varNameMatch) {
+      const shortName = varNameMatch[2].toLowerCase();
+      const newLine = processedLine.replace(
+        new RegExp(`\\b${varNameMatch[2]}${varNameMatch[3]}\\b`, 'g'),
+        shortName
+      );
+      if (newLine !== processedLine) {
+        changes.push({ from: processedLine.trim(), to: newLine.trim(), rule: 'single-word' });
+        processedLine = newLine;
+      }
+    }
+    
+    refactoredLines.push(processedLine);
+  }
+  
+  return {
+    refactored: refactoredLines.join('\n'),
+    changes
+  };
+}
+
+/**
+ * Get a detailed analysis report
+ */
+export function getDetailedAnalysis(code: string): {
+  checkResult: StyleCheckResult;
+  suggestions: string[];
+  refactorPreview: string;
+} {
+  const checkResult = checkOpenCodeStyle(code);
+  const { refactored, changes } = refactorToCompliant(code);
+  
+  const suggestions: string[] = [];
+  
+  if (checkResult.violations.some(v => v.rule === 'no-let')) {
+    suggestions.push('💡 Replace all `let` with `const`. Use ternary operators for conditional assignments.');
+  }
+  if (checkResult.violations.some(v => v.rule === 'no-else')) {
+    suggestions.push('💡 Use Early Return pattern: `if (!condition) return; // continue with main logic`');
+  }
+  if (checkResult.violations.some(v => v.rule === 'no-any')) {
+    suggestions.push('💡 Define explicit interfaces instead of using `any`. Use `unknown` for truly unknown types.');
+  }
+  if (checkResult.violations.some(v => v.rule === 'no-try-catch')) {
+    suggestions.push('💡 Consider using Result pattern: `type Result<T> = { ok: true; value: T } | { ok: false; error: Error }`');
+  }
+  if (checkResult.violations.some(v => v.rule === 'no-destructure')) {
+    suggestions.push('💡 Use `obj.prop` instead of `const { prop } = obj` to preserve context.');
+  }
+  if (checkResult.violations.some(v => v.rule === 'single-word')) {
+    suggestions.push('💡 Prefer single-word variable names when context is clear (e.g., `user` instead of `currentUser`).');
+  }
+  
+  return {
+    checkResult,
+    suggestions,
+    refactorPreview: refactored
+  };
+}

@@ -31,6 +31,7 @@ import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
 import SharedConversation from "./pages/SharedConversation";
 import ApiHub from "./pages/ApiHub";
+import OpenCodeTestPage from "./pages/OpenCodeTestPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -252,6 +253,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <InspirationDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/opencode-test"
+        element={
+          <ProtectedRoute>
+            <OpenCodeTestPage />
           </ProtectedRoute>
         }
       />
