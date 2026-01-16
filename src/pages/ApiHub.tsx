@@ -77,8 +77,9 @@ export default function ApiHub() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
-  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  // Store newly created key for one-time display
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   
   // API Tester state
   const [testMessage, setTestMessage] = useState("");
@@ -122,36 +123,26 @@ export default function ApiHub() {
 
   const handleCreateKey = async () => {
     if (!selectedAgentId || !newKeyName.trim()) return;
-    await createKey.mutateAsync({ 
+    const result = await createKey.mutateAsync({ 
       agentId: selectedAgentId, 
       name: newKeyName.trim() 
     });
+    // Store the full key for one-time display
+    setNewlyCreatedKey(result.api_key);
     setShowCreateDialog(false);
     setNewKeyName("");
   };
 
-  const handleCopyKey = async (key: string) => {
-    await navigator.clipboard.writeText(key);
-    setCopiedKey(key);
-    toast.success("已复制到剪贴板");
+  const handleCopyNewKey = async () => {
+    if (!newlyCreatedKey) return;
+    await navigator.clipboard.writeText(newlyCreatedKey);
+    setCopiedKey(newlyCreatedKey);
+    toast.success("API 密钥已复制 - 请妥善保存！");
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const toggleKeyVisibility = (keyId: string) => {
-    setVisibleKeys(prev => {
-      const next = new Set(prev);
-      if (next.has(keyId)) {
-        next.delete(keyId);
-      } else {
-        next.add(keyId);
-      }
-      return next;
-    });
-  };
-
-  const maskApiKey = (key: string) => {
-    if (key.length <= 12) return "••••••••••••";
-    return key.substring(0, 8) + "••••••••" + key.substring(key.length - 4);
+  const handleCloseNewKeyDialog = () => {
+    setNewlyCreatedKey(null);
   };
 
   const handleTestApi = async () => {
@@ -417,32 +408,11 @@ print(data["choices"][0]["message"]["content"])`;
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <code className="text-sm text-muted-foreground font-mono">
-                                {visibleKeys.has(key.id) ? key.api_key : maskApiKey(key.api_key)}
+                                {key.api_key_prefix}
                               </code>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => toggleKeyVisibility(key.id)}
-                              >
-                                {visibleKeys.has(key.id) ? (
-                                  <EyeOff className="h-3 w-3" />
-                                ) : (
-                                  <Eye className="h-3 w-3" />
-                                )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => handleCopyKey(key.api_key)}
-                              >
-                                {copiedKey === key.api_key ? (
-                                  <Check className="h-3 w-3 text-status-success" />
-                                ) : (
-                                  <Copy className="h-3 w-3" />
-                                )}
-                              </Button>
+                              <Badge variant="outline" className="text-xs">
+                                已加密
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -541,14 +511,14 @@ print(data["choices"][0]["message"]["content"])`;
                 <TabsContent value="curl">
                   <div className="relative">
                     <pre className="p-4 bg-muted rounded-lg overflow-x-auto text-sm">
-                      <code>{generateCurlExample(apiKeys[0]?.api_key || "YOUR_API_KEY")}</code>
+                      <code>{generateCurlExample("YOUR_API_KEY")}</code>
                     </pre>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(generateCurlExample(apiKeys[0]?.api_key || "YOUR_API_KEY"));
+                        navigator.clipboard.writeText(generateCurlExample("YOUR_API_KEY"));
                         toast.success("已复制代码");
                       }}
                     >
@@ -559,14 +529,14 @@ print(data["choices"][0]["message"]["content"])`;
                 <TabsContent value="js">
                   <div className="relative">
                     <pre className="p-4 bg-muted rounded-lg overflow-x-auto text-sm">
-                      <code>{generateJsExample(apiKeys[0]?.api_key || "YOUR_API_KEY")}</code>
+                      <code>{generateJsExample("YOUR_API_KEY")}</code>
                     </pre>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(generateJsExample(apiKeys[0]?.api_key || "YOUR_API_KEY"));
+                        navigator.clipboard.writeText(generateJsExample("YOUR_API_KEY"));
                         toast.success("已复制代码");
                       }}
                     >
@@ -577,14 +547,14 @@ print(data["choices"][0]["message"]["content"])`;
                 <TabsContent value="python">
                   <div className="relative">
                     <pre className="p-4 bg-muted rounded-lg overflow-x-auto text-sm">
-                      <code>{generatePythonExample(apiKeys[0]?.api_key || "YOUR_API_KEY")}</code>
+                      <code>{generatePythonExample("YOUR_API_KEY")}</code>
                     </pre>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(generatePythonExample(apiKeys[0]?.api_key || "YOUR_API_KEY"));
+                        navigator.clipboard.writeText(generatePythonExample("YOUR_API_KEY"));
                         toast.success("已复制代码");
                       }}
                     >
@@ -636,19 +606,16 @@ print(data["choices"][0]["message"]["content"])`;
             <CardContent className="space-y-4">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label>选择 API 密钥</Label>
-                  <Select value={selectedTestKey || ""} onValueChange={setSelectedTestKey}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择一个 API 密钥" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {apiKeys.filter(k => k.is_active).map((key) => (
-                        <SelectItem key={key.id} value={key.api_key}>
-                          {key.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>输入 API 密钥</Label>
+                  <Input
+                    type="password"
+                    placeholder="粘贴您的 API 密钥..."
+                    value={selectedTestKey || ""}
+                    onChange={(e) => setSelectedTestKey(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    出于安全考虑，API 密钥不会被存储。请粘贴您在创建时保存的密钥。
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>测试消息</Label>

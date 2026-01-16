@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           agent_id: string
           api_key: string
+          api_key_hash: string | null
+          api_key_prefix: string | null
           created_at: string
           expires_at: string | null
           id: string
@@ -32,6 +34,8 @@ export type Database = {
         Insert: {
           agent_id: string
           api_key: string
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -46,6 +50,8 @@ export type Database = {
         Update: {
           agent_id?: string
           api_key?: string
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -5415,6 +5421,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hash_api_key: { Args: { key: string }; Returns: string }
       increment_agent_usage: {
         Args: { target_agent_id: string }
         Returns: undefined
@@ -5507,6 +5514,18 @@ export type Database = {
           node_name: string
           node_type: string
           relation_path: string
+        }[]
+      }
+      validate_api_key: {
+        Args: { provided_key: string }
+        Returns: {
+          agent_id: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          name: string
+          rate_limit: number
+          user_id: string
         }[]
       }
     }

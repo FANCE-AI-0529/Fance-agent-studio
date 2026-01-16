@@ -50,7 +50,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate API key and get agent info
+    // Hash the provided API key for secure comparison
+    const encoder = new TextEncoder();
+    const data = encoder.encode(apiKey);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const apiKeyHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    // Validate API key using hash comparison
     const { data: apiKeyData, error: apiKeyError } = await supabase
       .from("agent_api_keys")
       .select(`
@@ -68,11 +75,11 @@ serve(async (req) => {
           status
         )
       `)
-      .eq("api_key", apiKey)
+      .eq("api_key_hash", apiKeyHash)
       .single();
 
     if (apiKeyError || !apiKeyData) {
-      console.error("Invalid API key:", apiKeyError);
+      console.error("Invalid API key: hash mismatch");
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
