@@ -1,36 +1,50 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
 
 interface FormattedTextProps {
   content: string;
   className?: string;
+  useTerminalStyle?: boolean;
 }
 
 /**
  * Formats message content by converting markdown-style formatting to styled HTML
- * - **text** becomes bold with primary color
- * - `code` becomes inline code blocks
- * - ```code``` becomes code blocks
- * - Preserves newlines and other formatting
+ * Terminal Style Mode: Uses [header], [v], [x], (!) symbols instead of **bold**
+ * Legacy Mode: Supports **text** for bold, `code` for inline code, ```code``` for blocks
  */
-export function FormattedText({ content, className }: FormattedTextProps) {
+export function FormattedText({ content, className, useTerminalStyle = true }: FormattedTextProps) {
   const formatContent = (text: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
     let currentIndex = 0;
     let keyIndex = 0;
 
-    // Match patterns: **bold**, `inline code`, and ```code blocks```
-    const patterns = [
-      { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
-      { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
-      { regex: /`([^`]+)`/g, type: "code" as const },
-    ];
+    // Define patterns based on mode
+    const patterns = useTerminalStyle
+      ? [
+          // Terminal style patterns
+          { regex: /\[v\]/g, type: "success" as const },
+          { regex: /\[x\]/g, type: "failure" as const },
+          { regex: /\(\!\)/g, type: "warning" as const },
+          { regex: /\[\s\]/g, type: "pending" as const },
+          { regex: /\(Ref:\s*[^)]+\)/g, type: "ref" as const },
+          { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
+          { regex: /`([^`]+)`/g, type: "code" as const },
+          { regex: /^\[([^\]]+)\]$/gm, type: "header" as const },
+        ]
+      : [
+          // Legacy markdown patterns (kept for backwards compatibility)
+          { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
+          { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
+          { regex: /`([^`]+)`/g, type: "code" as const },
+        ];
 
     interface Match {
       index: number;
       length: number;
       content: string;
-      type: "bold" | "code" | "codeblock";
+      fullMatch: string;
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header";
     }
 
     // Find all matches
@@ -42,7 +56,8 @@ export function FormattedText({ content, className }: FormattedTextProps) {
         matches.push({
           index: match.index,
           length: match[0].length,
-          content: match[1],
+          content: match[1] || match[0],
+          fullMatch: match[0],
           type,
         });
       }
@@ -73,12 +88,52 @@ export function FormattedText({ content, className }: FormattedTextProps) {
       // Add formatted match
       switch (match.type) {
         case "bold":
+          // Legacy bold - render as primary color text without actual bold
           parts.push(
-            <span
-              key={keyIndex++}
-              className="font-semibold text-primary"
-            >
+            <span key={keyIndex++} className="text-primary">
               {match.content}
+            </span>
+          );
+          break;
+        case "success":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.success}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "failure":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.failure}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "warning":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.warning}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "pending":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.pending}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "ref":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.ref}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "header":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.header}>
+              {match.fullMatch}
             </span>
           );
           break;
@@ -117,9 +172,50 @@ export function FormattedText({ content, className }: FormattedTextProps) {
     return parts;
   };
 
+  // Format box drawing characters in lines
+  const formatWithBoxChars = (text: string): React.ReactNode[] => {
+    const lines = text.split('\n');
+    const result: React.ReactNode[] = [];
+    
+    lines.forEach((line, lineIdx) => {
+      // Check for box drawing characters
+      if (/^[┌├└│─]/.test(line)) {
+        const boxMatch = line.match(/^([┌├└│─]+)\s*(.*)/);
+        if (boxMatch) {
+          result.push(
+            <React.Fragment key={`line-${lineIdx}`}>
+              <span className={TERMINAL_CLASSES.boxChar}>{boxMatch[1]}</span>
+              {formatContent(boxMatch[2] || '')}
+              {lineIdx < lines.length - 1 && '\n'}
+            </React.Fragment>
+          );
+          return;
+        }
+      }
+      
+      // Check for separator
+      if (/^-{3,}$/.test(line.trim())) {
+        result.push(
+          <hr key={`sep-${lineIdx}`} className="border-t border-border my-2" />
+        );
+        return;
+      }
+      
+      // Regular line
+      result.push(
+        <React.Fragment key={`line-${lineIdx}`}>
+          {formatContent(line)}
+          {lineIdx < lines.length - 1 && '\n'}
+        </React.Fragment>
+      );
+    });
+    
+    return result;
+  };
+
   return (
-    <div className={cn("whitespace-pre-wrap", className)}>
-      {formatContent(content)}
+    <div className={cn("whitespace-pre-wrap", useTerminalStyle && "font-mono", className)}>
+      {useTerminalStyle ? formatWithBoxChars(content) : formatContent(content)}
     </div>
   );
 }

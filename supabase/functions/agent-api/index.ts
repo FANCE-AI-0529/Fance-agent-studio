@@ -115,12 +115,17 @@ serve(async (req) => {
       );
     }
 
-    // Build system prompt from agent manifest
+    // Build system prompt from agent manifest with terminal style
     const manifest = agent.manifest as any;
     const systemPrompt = manifest?.system_prompt || `You are ${agent.name}, an AI assistant.`;
     const skills = manifest?.skills?.details || [];
     
-    let enhancedSystemPrompt = systemPrompt;
+    // Terminal style instructions
+    const terminalStyle = `
+响应格式：禁用 ** 加粗和 # 标题。使用 [标题]、---、[v]/[x]/(!)、┌─├─└─│ 结构符号。直接输出结果，无废话。
+`;
+    
+    let enhancedSystemPrompt = systemPrompt + terminalStyle;
     if (skills.length > 0) {
       const skillDescriptions = skills
         .map((s: any) => `- ${s.name}: ${s.description || 'No description'}`)
