@@ -148,10 +148,11 @@ export function ManusMemoryPanel({
             const cells = line.split('|').filter(c => c.trim());
             const isHeader = idx < lines.length - 1 && lines[idx + 1]?.match(/^\|[-|]+\|$/);
             return (
-              <div key={idx} className={cn(
-                "grid gap-1 text-xs",
-                `grid-cols-${Math.min(cells.length, 4)}`
-              )} style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}>
+              <div 
+                key={idx} 
+                className="grid gap-1 text-xs"
+                style={{ gridTemplateColumns: `repeat(${Math.min(cells.length, 6)}, minmax(0, 1fr))` }}
+              >
                 {cells.map((cell, ci) => (
                   <span key={ci} className={cn(
                     "px-2 py-1 border-b border-border truncate",

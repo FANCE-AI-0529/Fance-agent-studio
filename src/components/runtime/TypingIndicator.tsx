@@ -6,11 +6,13 @@ interface TypingIndicatorProps {
   className?: string;
 }
 
+// Static config with explicit bg/text classes to prevent Tailwind purging
 const phaseConfig = {
   planning: {
     icon: Sparkles,
     text: "正在分析意图并选择技能",
     color: "text-blue-500",
+    dotBgColor: "bg-blue-500", // Static bg class for dots
     bgColor: "bg-blue-500/10",
     borderColor: "border-blue-500/20",
   },
@@ -18,6 +20,7 @@ const phaseConfig = {
     icon: Bot,
     text: "正在执行任务",
     color: "text-amber-500",
+    dotBgColor: "bg-amber-500",
     bgColor: "bg-amber-500/10",
     borderColor: "border-amber-500/20",
   },
@@ -25,6 +28,7 @@ const phaseConfig = {
     icon: Bot,
     text: "正在记录执行结果",
     color: "text-green-500",
+    dotBgColor: "bg-green-500",
     bgColor: "bg-green-500/10",
     borderColor: "border-green-500/20",
   },
@@ -32,6 +36,7 @@ const phaseConfig = {
     icon: Sparkles,
     text: "思考中",
     color: "text-purple-500",
+    dotBgColor: "bg-purple-500",
     bgColor: "bg-purple-500/10",
     borderColor: "border-purple-500/20",
   },
@@ -64,21 +69,21 @@ export function TypingIndicator({ phase, className }: TypingIndicatorProps) {
             <span
               className={cn(
                 "w-2 h-2 rounded-full animate-bounce",
-                config.color.replace("text-", "bg-")
+                config.dotBgColor
               )}
               style={{ animationDelay: "0ms" }}
             />
             <span
               className={cn(
                 "w-2 h-2 rounded-full animate-bounce",
-                config.color.replace("text-", "bg-")
+                config.dotBgColor
               )}
               style={{ animationDelay: "150ms" }}
             />
             <span
               className={cn(
                 "w-2 h-2 rounded-full animate-bounce",
-                config.color.replace("text-", "bg-")
+                config.dotBgColor
               )}
               style={{ animationDelay: "300ms" }}
             />

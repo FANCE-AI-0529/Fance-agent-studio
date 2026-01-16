@@ -201,17 +201,29 @@
 }
 
 @layer utilities {
-  /* Glassmorphism */
+  /* Glassmorphism with fallback backgrounds for production consistency */
   .glass {
-    background-color: hsl(var(--card) / 0.7);
+    background-color: hsl(var(--card) / 0.95); /* Fallback for unsupported browsers */
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
+  @supports (backdrop-filter: blur(16px)) {
+    .glass {
+      background-color: hsl(var(--card) / 0.7);
+    }
+  }
+
   .glass-strong {
-    background-color: hsl(var(--card) / 0.85);
+    background-color: hsl(var(--card) / 0.98); /* Fallback for unsupported browsers */
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+  }
+
+  @supports (backdrop-filter: blur(24px)) {
+    .glass-strong {
+      background-color: hsl(var(--card) / 0.85);
+    }
   }
 
   .glass-border {
@@ -306,6 +318,56 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Global scrollbar styles - Production environment consistency */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Dark mode forced scrollbar */
+.dark *::-webkit-scrollbar-thumb {
+  background: hsl(240 4% 26%);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: hsl(240 5% 40%);
+}
+
+/* Z-Index Layer CSS Variables */
+:root {
+  --z-canvas: 0;
+  --z-content: 10;
+  --z-sidebar: 20;
+  --z-header: 30;
+  --z-dropdown: 40;
+  --z-modal: 50;
+  --z-toast: 100;
+  --z-tooltip: 110;
+  --header-height: 0px;
+}
+
+.with-header {
+  --header-height: 56px;
 }
 
 @layer components {

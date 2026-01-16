@@ -1156,7 +1156,7 @@ const Builder = () => {
 
   return (
     <TooltipProvider>
-      <div className="h-full flex overflow-hidden bg-background">
+      <div className="h-[100vh] flex overflow-hidden bg-background">
         {/* Left Panel - Skill Marketplace */}
         <div
           className={cn(
@@ -1528,10 +1528,10 @@ const Builder = () => {
             />
           )}
 
-          {/* Canvas Area */}
+          {/* Canvas Area - Explicit height to prevent production collapse */}
           <div
             ref={reactFlowWrapper}
-            className="flex-1"
+            className="flex-1 min-h-0"
             onDragOver={onDragOver}
             onDrop={onDrop}
           >

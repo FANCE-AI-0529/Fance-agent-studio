@@ -15,4 +15,25 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Use lightningcss for safer CSS minification
+    cssMinify: 'lightningcss',
+    rollupOptions: {
+      output: {
+        // Prevent core styles from being split into async chunks
+        manualChunks: (id) => {
+          // Keep core UI components together
+          if (id.includes('node_modules')) {
+            if (id.includes('@radix-ui') || id.includes('framer-motion')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+          }
+          return undefined;
+        },
+      },
+    },
+  },
 }));

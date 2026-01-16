@@ -111,7 +111,7 @@ function StreamingCanvasInner({
   }, [description, retry]);
 
   return (
-    <div className={cn("relative w-full h-full", className)}>
+    <div className={cn("relative w-full h-full min-h-[400px]", className)}>
       {/* ReactFlow 画布 */}
       <ReactFlow
         nodes={rfNodes}
