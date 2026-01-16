@@ -203,8 +203,8 @@ export function useOpenCode(options: UseOpenCodeOptions = {}): UseOpenCodeReturn
   // Build mode operations
   const writeFile = useCallback(async (path: string, content: string) => {
     if (autoStyleCheck) {
-      const violations = checkOpenCodeStyle(content);
-      setStyleViolations(violations);
+      const result = checkOpenCodeStyle(content);
+      setStyleViolations(result.violations as StyleViolation[]);
     }
     return executeOperation('write', { path, content });
   }, [executeOperation, autoStyleCheck]);
