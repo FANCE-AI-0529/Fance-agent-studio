@@ -34,6 +34,8 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
           { regex: /`([^`]+)`/g, type: "code" as const },
           { regex: /^\[([^\]]+)\]$/gm, type: "header" as const },
+          // 书名号强调 - replaces **bold** for terminal style
+          { regex: /「([^」]+)」/g, type: "emphasis" as const },
         ]
       : [
           // Legacy markdown patterns (kept for backwards compatibility)
@@ -47,7 +49,7 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
       length: number;
       content: string;
       fullMatch: string;
-      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header";
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis";
     }
 
     // Find all matches
@@ -140,6 +142,17 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           parts.push(
             <span key={keyIndex++} className={TERMINAL_CLASSES.header}>
               {match.fullMatch}
+            </span>
+          );
+          break;
+        case "emphasis":
+          // 书名号内容渲染为高亮胶囊
+          const emphasisClass = agentRole 
+            ? ROLE_THEMES[agentRole].highlightClass 
+            : 'highlight-pill-default';
+          parts.push(
+            <span key={keyIndex++} className={cn("highlight-pill", emphasisClass)}>
+              {match.content}
             </span>
           );
           break;
