@@ -12,14 +12,14 @@ const avatarIcons: Record<string, React.ComponentType<{ className?: string }>> =
   help: HelpCircle,
 };
 
-// Color options with HSL values
-const avatarColors: Record<string, { bg: string; text: string; glow: string }> = {
-  blue: { bg: "bg-blue-500/20", text: "text-blue-500", glow: "shadow-blue-500/50" },
-  purple: { bg: "bg-purple-500/20", text: "text-purple-500", glow: "shadow-purple-500/50" },
-  green: { bg: "bg-green-500/20", text: "text-green-500", glow: "shadow-green-500/50" },
-  orange: { bg: "bg-orange-500/20", text: "text-orange-500", glow: "shadow-orange-500/50" },
-  pink: { bg: "bg-pink-500/20", text: "text-pink-500", glow: "shadow-pink-500/50" },
-  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-500", glow: "shadow-cyan-500/50" },
+// Color options with HSL values - using static classes to prevent Tailwind purging
+const avatarColors: Record<string, { bg: string; text: string; glow: string; dotBg: string; borderColor: string }> = {
+  blue: { bg: "bg-blue-500/20", text: "text-blue-500", glow: "shadow-blue-500/50", dotBg: "bg-blue-500", borderColor: "border-blue-500" },
+  purple: { bg: "bg-purple-500/20", text: "text-purple-500", glow: "shadow-purple-500/50", dotBg: "bg-purple-500", borderColor: "border-purple-500" },
+  green: { bg: "bg-green-500/20", text: "text-green-500", glow: "shadow-green-500/50", dotBg: "bg-green-500", borderColor: "border-green-500" },
+  orange: { bg: "bg-orange-500/20", text: "text-orange-500", glow: "shadow-orange-500/50", dotBg: "bg-orange-500", borderColor: "border-orange-500" },
+  pink: { bg: "bg-pink-500/20", text: "text-pink-500", glow: "shadow-pink-500/50", dotBg: "bg-pink-500", borderColor: "border-pink-500" },
+  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-500", glow: "shadow-cyan-500/50", dotBg: "bg-cyan-500", borderColor: "border-cyan-500" },
 };
 
 export type AvatarState = "idle" | "thinking" | "speaking" | "listening" | "happy" | "confused";
@@ -187,7 +187,7 @@ export function AgentAvatarAnimated({
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  className={cn("w-1 h-1 rounded-full", colors.text.replace("text-", "bg-"))}
+                  className={cn("w-1 h-1 rounded-full", colors.dotBg)}
                   animate={{
                     y: [0, -3, 0],
                     opacity: [0.5, 1, 0.5],
@@ -212,7 +212,7 @@ export function AgentAvatarAnimated({
                   key={i}
                   className={cn(
                     "absolute inset-0 rounded-full border-2",
-                    colors.text.replace("text-", "border-")
+                    colors.borderColor
                   )}
                   initial={{ scale: 1, opacity: 0.5 }}
                   animate={{

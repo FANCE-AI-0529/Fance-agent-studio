@@ -4,6 +4,26 @@ export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
+  // Safelist to protect dynamic classes from being purged in production
+  safelist: [
+    // Dynamic color classes used in UserStatsCards, ScenarioCards
+    { pattern: /^bg-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
+    { pattern: /^bg-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)\/(10|15|20|30)$/ },
+    { pattern: /^text-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
+    { pattern: /^border-(primary|cognitive|governance|status-planning|status-confirm|status-executing|status-idle|port-data|port-control|port-perception)$/ },
+    // Lucide color classes used in TypingIndicator and AgentAvatarAnimated
+    { pattern: /^bg-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
+    { pattern: /^text-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
+    { pattern: /^border-(blue|amber|green|purple|red|orange|yellow|cyan|indigo|violet)-(400|500|600)$/ },
+    // Z-index values
+    'z-0', 'z-10', 'z-20', 'z-30', 'z-40', 'z-50', 'z-[100]', 'z-[110]',
+    // Animation classes
+    'animate-bounce', 'animate-pulse', 'animate-spin', 'animate-flow', 'animate-fade-in', 'animate-scale-in',
+    // Grid columns for ManusMemoryPanel
+    'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6',
+    // Glassmorphism
+    'backdrop-blur-sm', 'backdrop-blur-md', 'backdrop-blur-lg', 'backdrop-blur-xl',
+  ],
   theme: {
     container: {
       center: true,
@@ -112,6 +132,17 @@ export default {
           'Courier New',
           'monospace'
         ]
+      },
+      // Standardized Z-Index layer management
+      zIndex: {
+        'canvas': '0',
+        'content': '10',
+        'sidebar': '20',
+        'header': '30',
+        'dropdown': '40',
+        'modal': '50',
+        'toast': '100',
+        'tooltip': '110',
       }
     }
   },

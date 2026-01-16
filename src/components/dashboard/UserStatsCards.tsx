@@ -3,13 +3,26 @@ import { MessageCircle, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 
+// Static color mapping to prevent Tailwind purging in production
+const COLOR_CLASSES = {
+  primary: { bg: 'bg-primary/10', text: 'text-primary' },
+  cognitive: { bg: 'bg-cognitive/10', text: 'text-cognitive' },
+  governance: { bg: 'bg-governance/10', text: 'text-governance' },
+  'status-planning': { bg: 'bg-status-planning/10', text: 'text-status-planning' },
+  'status-confirm': { bg: 'bg-status-confirm/10', text: 'text-status-confirm' },
+  'status-executing': { bg: 'bg-status-executing/10', text: 'text-status-executing' },
+  'status-idle': { bg: 'bg-status-idle/10', text: 'text-status-idle' },
+} as const;
+
+type ColorKey = keyof typeof COLOR_CLASSES;
+
 interface UserStat {
   label: string;
   value: string;
   change?: string;
   trend?: "up" | "down" | "neutral";
   icon: typeof MessageCircle;
-  color: string;
+  color: ColorKey;
   path?: string;
 }
 
@@ -97,8 +110,8 @@ export function UserStatsCards({
           onClick={() => stat.path && navigate(stat.path)}
         >
           <div className="flex items-center justify-between mb-3">
-            <div className={`w-10 h-10 rounded-lg bg-${stat.color}/10 flex items-center justify-center`}>
-              <stat.icon className={`h-5 w-5 text-${stat.color}`} />
+            <div className={`w-10 h-10 rounded-lg ${COLOR_CLASSES[stat.color].bg} flex items-center justify-center`}>
+              <stat.icon className={`h-5 w-5 ${COLOR_CLASSES[stat.color].text}`} />
             </div>
             {stat.trend === "up" && (
               <span className="text-xs text-status-executing font-medium">↑</span>
