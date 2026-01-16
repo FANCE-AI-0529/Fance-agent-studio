@@ -16,8 +16,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Use lightningcss for safer CSS minification
-    cssMinify: 'lightningcss',
     rollupOptions: {
       output: {
         // Prevent core styles from being split into async chunks
