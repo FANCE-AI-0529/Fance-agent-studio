@@ -85,8 +85,9 @@ export function AgentApiPanel({
   const [newKeyName, setNewKeyName] = useState("Default API Key");
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
-  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  // Store newly created key for one-time display
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
 
   const { data: apiKeys = [], isLoading } = useAgentApiKeys(agentId);
   const { data: stats } = useAgentApiStats(agentId);
@@ -101,31 +102,24 @@ export function AgentApiPanel({
 
   const handleCreateKey = async () => {
     if (!agentId) return;
-    await createKey.mutateAsync({
+    const result = await createKey.mutateAsync({
       agentId,
       name: newKeyName,
     });
+    // Store the full key for one-time display
+    setNewlyCreatedKey(result.api_key);
     setShowCreateDialog(false);
     setNewKeyName("Default API Key");
   };
 
-  const handleToggleKeyVisibility = (keyId: string) => {
-    setVisibleKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(keyId)) {
-        next.delete(keyId);
-      } else {
-        next.add(keyId);
-      }
-      return next;
-    });
+  const handleCopyNewKey = async () => {
+    if (!newlyCreatedKey) return;
+    await navigator.clipboard.writeText(newlyCreatedKey);
+    toast.success("API 密钥已复制 - 请妥善保存！");
   };
 
-  const handleCopyKey = async (apiKey: string, keyId: string) => {
-    await navigator.clipboard.writeText(apiKey);
-    setCopiedKey(keyId);
-    toast.success("API 密钥已复制");
-    setTimeout(() => setCopiedKey(null), 2000);
+  const handleCloseNewKeyDialog = () => {
+    setNewlyCreatedKey(null);
   };
 
   const handleToggleActive = async (keyId: string, currentActive: boolean) => {
@@ -142,10 +136,6 @@ export function AgentApiPanel({
     if (selectedKeyId === deleteKeyId) {
       setSelectedKeyId(null);
     }
-  };
-
-  const maskApiKey = (key: string) => {
-    return key.substring(0, 8) + "••••••••••••••••" + key.substring(key.length - 4);
   };
 
   return (
@@ -276,46 +266,19 @@ export function AgentApiPanel({
 
                             <div className="flex items-center gap-2 mb-2">
                               <code className="text-xs bg-muted px-2 py-1 rounded font-mono flex-1 truncate">
-                                {visibleKeys.has(key.id) ? key.api_key : maskApiKey(key.api_key)}
+                                {key.api_key_prefix}
                               </code>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={() => handleToggleKeyVisibility(key.id)}
-                                    >
-                                      {visibleKeys.has(key.id) ? (
-                                        <EyeOff className="h-3.5 w-3.5" />
-                                      ) : (
-                                        <Eye className="h-3.5 w-3.5" />
-                                      )}
-                                    </Button>
+                                    <Badge variant="outline" className="text-[10px] cursor-help">
+                                      <Shield className="h-3 w-3 mr-1" />
+                                      已加密
+                                    </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    {visibleKeys.has(key.id) ? "隐藏" : "显示"}
+                                    API 密钥已安全加密存储，仅在创建时显示一次
                                   </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={() => handleCopyKey(key.api_key, key.id)}
-                                    >
-                                      {copiedKey === key.id ? (
-                                        <Check className="h-3.5 w-3.5 text-green-500" />
-                                      ) : (
-                                        <Copy className="h-3.5 w-3.5" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>复制密钥</TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
@@ -906,6 +869,55 @@ console.log("Response:", result);`}
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Newly Created Key Display - One Time Only */}
+        <Dialog open={!!newlyCreatedKey} onOpenChange={handleCloseNewKeyDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-status-success">
+                <Check className="h-5 w-5" />
+                API 密钥创建成功
+              </DialogTitle>
+              <DialogDescription className="text-status-warning">
+                ⚠️ 请立即复制并妥善保存此密钥！出于安全考虑，密钥仅显示一次，之后将无法再次查看。
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>您的 API 密钥</Label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 p-3 bg-muted rounded-lg font-mono text-sm break-all select-all">
+                    {newlyCreatedKey}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyNewKey}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                <p className="font-medium mb-1">安全提示：</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>密钥已加密存储，无法再次查看完整内容</li>
+                  <li>请勿在公开代码或日志中暴露密钥</li>
+                  <li>如果密钥泄露，请立即删除并创建新密钥</li>
+                </ul>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleCopyNewKey} className="w-full sm:w-auto">
+                <Copy className="h-4 w-4 mr-2" />
+                复制密钥
+              </Button>
+              <Button variant="outline" onClick={handleCloseNewKeyDialog}>
+                我已保存，关闭
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

@@ -8,7 +8,7 @@ interface AgentApiKey {
   agent_id: string;
   user_id: string;
   name: string;
-  api_key: string;
+  api_key_prefix: string;
   is_active: boolean;
   rate_limit: number;
   total_calls: number;
@@ -16,6 +16,15 @@ interface AgentApiKey {
   expires_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Helper to compute SHA-256 hash in browser
+async function hashApiKey(apiKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(apiKey);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 interface AgentApiLog {
@@ -64,6 +73,12 @@ export function useAgentApiKeys(agentId: string | null) {
   });
 }
 
+// Result type for newly created API key (includes the full key shown once)
+interface CreatedApiKeyResult extends Omit<AgentApiKey, 'api_key_prefix'> {
+  api_key: string; // Full key shown only at creation time
+  api_key_prefix: string;
+}
+
 // Hook to create a new API key
 export function useCreateAgentApiKey() {
   const queryClient = useQueryClient();
@@ -80,10 +95,12 @@ export function useCreateAgentApiKey() {
       name?: string;
       rateLimit?: number;
       expiresAt?: string | null;
-    }) => {
+    }): Promise<CreatedApiKeyResult> => {
       if (!user) throw new Error("User not authenticated");
 
       const apiKey = generateApiKey();
+      const apiKeyHash = await hashApiKey(apiKey);
+      const apiKeyPrefix = apiKey.substring(0, 12) + "...";
 
       const { data, error } = await supabase
         .from("agent_api_keys")
@@ -91,7 +108,9 @@ export function useCreateAgentApiKey() {
           agent_id: agentId,
           user_id: user.id,
           name,
-          api_key: apiKey,
+          api_key: apiKey, // Still stored temporarily for backward compatibility during transition
+          api_key_hash: apiKeyHash,
+          api_key_prefix: apiKeyPrefix,
           rate_limit: rateLimit,
           expires_at: expiresAt,
         })
@@ -99,11 +118,16 @@ export function useCreateAgentApiKey() {
         .single();
 
       if (error) throw error;
-      return data as AgentApiKey;
+      
+      // Return with the full API key for one-time display
+      return {
+        ...data,
+        api_key: apiKey, // Include full key in result for display
+      } as CreatedApiKeyResult;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["agent-api-keys", data.agent_id] });
-      toast.success("API 密钥已创建");
+      toast.success("API 密钥已创建 - 请立即复制保存，此密钥仅显示一次！");
     },
     onError: (error) => {
       console.error("Failed to create API key:", error);
