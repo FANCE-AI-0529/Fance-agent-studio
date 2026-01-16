@@ -733,3 +733,207 @@ function createLoopNode(id: string, candidate: LogicNodeCandidate): Node {
     },
   };
 }
+
+// ========== Phase 3: OpenCode 工作流组装 ==========
+
+export type ProgrammingTaskType = 'generation' | 'modification' | 'bugfix' | 'development';
+
+interface OpenCodeWorkflowInput {
+  plan: BuildPlan;
+  programmingContext: {
+    taskType: ProgrammingTaskType;
+    confidence: number;
+    matchReason: string;
+  };
+  mplpPolicy: MPLPPolicy;
+  agentName?: string;
+  includeTestRunner?: boolean;
+}
+
+interface OpenCodeWorkflowOutput {
+  nodes: Node[];
+  edges: Edge[];
+  metadata: {
+    kernelSkillId: string;
+    programmingContext: OpenCodeWorkflowInput['programmingContext'];
+    workflowType: 'opencode-dual-mode';
+  };
+}
+
+/**
+ * 组装 OpenCode 双模式工作流 (Phase 3)
+ */
+export function assembleOpenCodeWorkflow(
+  input: OpenCodeWorkflowInput
+): OpenCodeWorkflowOutput {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  let nodeIndex = 0;
+  
+  const createNodeId = () => `opencode-node-${nodeIndex++}`;
+  
+  // 1. Trigger 节点
+  const triggerId = createNodeId();
+  nodes.push({
+    id: triggerId,
+    type: 'trigger',
+    position: { x: 0, y: 0 },
+    data: {
+      id: triggerId,
+      name: '编程请求',
+      triggerType: 'message',
+      programmingTaskType: input.programmingContext.taskType,
+    },
+  });
+  
+  // 2. PLAN Agent 节点
+  const planId = createNodeId();
+  nodes.push({
+    id: planId,
+    type: 'opencode_plan',
+    position: { x: 0, y: 0 },
+    data: {
+      id: planId,
+      name: 'OpenCode PLAN',
+      mode: 'plan',
+      kernelSkillId: 'core-opencode',
+      description: '代码浏览与修改计划生成 (只读模式)',
+      taskType: input.programmingContext.taskType,
+    },
+  });
+  edges.push({
+    id: `edge-${triggerId}-${planId}`,
+    source: triggerId,
+    target: planId,
+    type: 'animatedFlow',
+    animated: true,
+  });
+  
+  // 3. MPLP 确认节点
+  const confirmId = createNodeId();
+  nodes.push({
+    id: confirmId,
+    type: 'intervention',
+    position: { x: 0, y: 0 },
+    data: {
+      id: confirmId,
+      name: 'MPLP 确认',
+      interventionType: 'approval',
+      description: '确认代码修改计划',
+      mplpPolicy: input.mplpPolicy,
+      requiresApproval: true,
+    },
+  });
+  edges.push({
+    id: `edge-${planId}-${confirmId}`,
+    source: planId,
+    target: confirmId,
+    type: 'animatedFlow',
+    animated: true,
+  });
+  
+  // 4. BUILD Agent 节点
+  const buildId = createNodeId();
+  nodes.push({
+    id: buildId,
+    type: 'opencode_build',
+    position: { x: 0, y: 0 },
+    data: {
+      id: buildId,
+      name: 'OpenCode BUILD',
+      mode: 'build',
+      kernelSkillId: 'core-opencode',
+      description: '执行代码变更 (读写模式)',
+      taskType: input.programmingContext.taskType,
+    },
+  });
+  edges.push({
+    id: `edge-${confirmId}-${buildId}`,
+    source: confirmId,
+    target: buildId,
+    sourceHandle: 'approved',
+    type: 'animatedFlow',
+    animated: true,
+    style: { stroke: 'hsl(var(--success))' },
+  });
+  
+  // 回退到 PLAN 的边
+  edges.push({
+    id: `edge-${confirmId}-${planId}-rejected`,
+    source: confirmId,
+    target: planId,
+    sourceHandle: 'rejected',
+    type: 'animatedFlow',
+    animated: true,
+    style: { stroke: 'hsl(var(--warning))', strokeDasharray: '5,5' },
+  });
+  
+  // 5. 风格检查节点
+  const styleCheckId = createNodeId();
+  nodes.push({
+    id: styleCheckId,
+    type: 'style_check',
+    position: { x: 0, y: 0 },
+    data: {
+      id: styleCheckId,
+      name: '风格检查',
+      description: 'OpenCode 风格规范验证',
+      kernelSkillId: 'core-opencode',
+    },
+  });
+  edges.push({
+    id: `edge-${buildId}-${styleCheckId}`,
+    source: buildId,
+    target: styleCheckId,
+    type: 'animatedFlow',
+    animated: true,
+  });
+  
+  // 风格检查失败回到 BUILD 的边
+  edges.push({
+    id: `edge-${styleCheckId}-${buildId}-violations`,
+    source: styleCheckId,
+    target: buildId,
+    sourceHandle: 'violations_found',
+    type: 'animatedFlow',
+    animated: true,
+    style: { stroke: 'hsl(var(--destructive))', strokeDasharray: '5,5' },
+  });
+  
+  // 6. 可选: 测试运行器节点
+  if (input.includeTestRunner || 
+      input.programmingContext.taskType === 'bugfix' || 
+      input.programmingContext.taskType === 'development') {
+    const testId = createNodeId();
+    nodes.push({
+      id: testId,
+      type: 'test_runner',
+      position: { x: 0, y: 0 },
+      data: {
+        id: testId,
+        name: '测试运行',
+        description: '验证代码正确性',
+        runOnSuccess: true,
+      },
+    });
+    edges.push({
+      id: `edge-${styleCheckId}-${testId}`,
+      source: styleCheckId,
+      target: testId,
+      sourceHandle: 'passed',
+      type: 'animatedFlow',
+      animated: true,
+      style: { stroke: 'hsl(var(--success))' },
+    });
+  }
+  
+  return {
+    nodes,
+    edges,
+    metadata: {
+      kernelSkillId: 'core-opencode',
+      programmingContext: input.programmingContext,
+      workflowType: 'opencode-dual-mode',
+    },
+  };
+}
