@@ -112,6 +112,48 @@ export interface OpenCodePlanFile {
   changes?: string;
 }
 
+// ========== Terminal TUI Types ==========
+
+/**
+ * Terminal command tracking for TUI display
+ */
+export interface TerminalCommand {
+  id: string;
+  command: string;
+  output: string;
+  status: 'running' | 'success' | 'error';
+  timestamp: Date;
+  exitCode?: number;
+  cwd?: string;
+}
+
+/**
+ * File diff for code changes visualization
+ */
+export interface FileDiff {
+  id: string;
+  filePath: string;
+  originalContent: string;
+  modifiedContent: string;
+  language: string;
+  action: 'create' | 'modify' | 'delete';
+  timestamp: Date;
+  accepted?: boolean;
+}
+
+/**
+ * OpenCode runtime state for TUI
+ */
+export interface OpenCodeRuntimeState {
+  isActive: boolean;
+  currentMode: OpenCodeMode;
+  terminalCommands: TerminalCommand[];
+  pendingDiffs: FileDiff[];
+  currentFile?: string;
+  styleCheckPassed: boolean;
+  styleViolationsCount: number;
+}
+
 export interface KernelSkill {
   id: string;
   skillId: string;
