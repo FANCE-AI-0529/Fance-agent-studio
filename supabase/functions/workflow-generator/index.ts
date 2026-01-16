@@ -188,6 +188,133 @@ const LOGIC_PATTERNS = {
   ],
 };
 
+// ========== 编程意图匹配模式 (Phase 3: OpenCode Intent Routing) ==========
+
+const PROGRAMMING_PATTERNS = {
+  codeGeneration: [
+    { pattern: /(?:写|编写|生成|创建).*(?:代码|程序|脚本)/i, confidence: 0.95, reason: '代码生成任务' },
+    { pattern: /(?:实现|开发).*(?:功能|模块|组件|API)/i, confidence: 0.9, reason: '功能开发任务' },
+    { pattern: /coding|programming|implement|develop/i, confidence: 0.85, reason: 'Programming task' },
+    { pattern: /(?:写一个|做一个).*(?:函数|类|接口)/i, confidence: 0.9, reason: '代码实现任务' },
+  ],
+  codeModification: [
+    { pattern: /(?:修改|编辑|更新|改动).*(?:代码|文件|函数)/i, confidence: 0.95, reason: '代码修改任务' },
+    { pattern: /(?:重构|优化|改进).*(?:代码|结构|性能)/i, confidence: 0.9, reason: '代码重构任务' },
+    { pattern: /refactor|optimize|improve.*code/i, confidence: 0.85, reason: 'Code refactoring' },
+    { pattern: /(?:升级|迁移|转换).*(?:代码|框架|版本)/i, confidence: 0.85, reason: '代码迁移任务' },
+  ],
+  bugFix: [
+    { pattern: /(?:修复|解决|处理).*(?:Bug|错误|问题|异常)/i, confidence: 0.95, reason: 'Bug 修复任务' },
+    { pattern: /(?:调试|Debug|排查).*(?:问题|错误)/i, confidence: 0.9, reason: '代码调试任务' },
+    { pattern: /fix.*(?:bug|error|issue)/i, confidence: 0.85, reason: 'Bug fix task' },
+    { pattern: /(?:报错|崩溃|失败).*(?:修|解决)/i, confidence: 0.9, reason: '错误修复任务' },
+  ],
+  appDevelopment: [
+    { pattern: /(?:开发|构建|创建).*(?:App|应用|网站|系统)/i, confidence: 0.9, reason: '应用开发任务' },
+    { pattern: /(?:搭建|部署).*(?:项目|环境|服务)/i, confidence: 0.85, reason: '项目搭建任务' },
+    { pattern: /build.*(?:app|application|website)/i, confidence: 0.85, reason: 'App development' },
+    { pattern: /(?:全栈|前端|后端).*(?:开发|实现)/i, confidence: 0.9, reason: '全栈开发任务' },
+  ],
+};
+
+type ProgrammingTaskType = 'generation' | 'modification' | 'bugfix' | 'development';
+
+interface ProgrammingIntentResult {
+  isProgramming: boolean;
+  taskType: ProgrammingTaskType | null;
+  confidence: number;
+  matchReason: string;
+}
+
+/**
+ * 检测是否为编程类任务 (Phase 3: OpenCode Intent Detection)
+ */
+function detectProgrammingIntent(description: string): ProgrammingIntentResult {
+  let maxConfidence = 0;
+  let taskType: ProgrammingTaskType | null = null;
+  let matchReason = '';
+
+  // 检测代码生成
+  for (const { pattern, confidence, reason } of PROGRAMMING_PATTERNS.codeGeneration) {
+    if (pattern.test(description) && confidence > maxConfidence) {
+      maxConfidence = confidence;
+      taskType = 'generation';
+      matchReason = reason;
+    }
+  }
+
+  // 检测代码修改
+  for (const { pattern, confidence, reason } of PROGRAMMING_PATTERNS.codeModification) {
+    if (pattern.test(description) && confidence > maxConfidence) {
+      maxConfidence = confidence;
+      taskType = 'modification';
+      matchReason = reason;
+    }
+  }
+
+  // 检测 Bug 修复
+  for (const { pattern, confidence, reason } of PROGRAMMING_PATTERNS.bugFix) {
+    if (pattern.test(description) && confidence > maxConfidence) {
+      maxConfidence = confidence;
+      taskType = 'bugfix';
+      matchReason = reason;
+    }
+  }
+
+  // 检测应用开发
+  for (const { pattern, confidence, reason } of PROGRAMMING_PATTERNS.appDevelopment) {
+    if (pattern.test(description) && confidence > maxConfidence) {
+      maxConfidence = confidence;
+      taskType = 'development';
+      matchReason = reason;
+    }
+  }
+
+  return {
+    isProgramming: maxConfidence >= 0.7,
+    taskType,
+    confidence: maxConfidence,
+    matchReason,
+  };
+}
+
+/**
+ * 检测运行时环境配置 (Phase 3: Bun Runtime Detection)
+ */
+function detectRuntimeEnvironment(): {
+  runtime: 'bun' | 'node' | 'deno';
+  version?: string;
+  features: string[];
+} {
+  // Deno 环境检测 (Edge Function)
+  if (typeof Deno !== 'undefined') {
+    return {
+      runtime: 'deno',
+      version: Deno.version?.deno,
+      features: ['edge-function', 'typescript-native'],
+    };
+  }
+  
+  // 默认假设 Node.js（前端会检测 Bun）
+  return {
+    runtime: 'node',
+    features: ['fs-module', 'commonjs'],
+  };
+}
+
+/**
+ * 生成环境准备提示
+ */
+function generateEnvironmentHint(
+  runtime: ReturnType<typeof detectRuntimeEnvironment>,
+  taskType: string | null
+): string | null {
+  if ((taskType === 'development' || taskType === 'generation') && runtime.runtime !== 'bun') {
+    return `💡 提示: OpenCode 推荐使用 Bun 运行时以获得最佳性能。当前环境: ${runtime.runtime}`;
+  }
+  return null;
+}
+
 // ========== 逻辑节点选择函数 ==========
 
 function selectRelevantLogicNodes(description: string): FunctionalAtom[] {
@@ -440,6 +567,88 @@ const AGENT_BLUEPRINTS: AgentBlueprint[] = [
     ],
     exampleScenarios: ['遍历订单列表并发送通知', '对每个客户执行回访', '批量处理待审批项目'],
   },
+  // ========== 新增: OpenCode 编程工作流蓝图 (Phase 3) ==========
+  {
+    id: 'opencode-programming',
+    name: 'OpenCode-Programming',
+    description: 'OpenCode 双模式编程工作流 - 先规划后执行，支持代码生成、修改、重构和调试',
+    category: 'development',
+    structure: {
+      trigger: { type: 'user_message' },
+      slots: [
+        {
+          id: 'plan_agent',
+          name: 'OpenCode PLAN',
+          slotType: 'perception',
+          required: true,
+          description: '代码浏览与修改计划生成 (只读模式)',
+          acceptedAtomTypes: ['NATIVE_SKILL'],
+          position: { rank: 1 },
+        },
+        {
+          id: 'mplp_confirm',
+          name: 'MPLP 确认',
+          slotType: 'decision',
+          required: true,
+          description: '用户确认或 MPLP 策略自动审批',
+          acceptedAtomTypes: ['ROUTER'],
+          position: { rank: 2 },
+        },
+        {
+          id: 'build_agent',
+          name: 'OpenCode BUILD',
+          slotType: 'action',
+          required: true,
+          description: '执行代码变更 (读写模式)',
+          acceptedAtomTypes: ['NATIVE_SKILL'],
+          position: { rank: 3 },
+        },
+        {
+          id: 'style_check',
+          name: '风格检查',
+          slotType: 'perception',
+          required: true,
+          description: 'OpenCode 风格规范验证',
+          acceptedAtomTypes: ['NATIVE_SKILL'],
+          position: { rank: 4 },
+        },
+        {
+          id: 'test_runner',
+          name: '测试运行',
+          slotType: 'action',
+          required: false,
+          description: '运行测试验证代码正确性',
+          acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'],
+          position: { rank: 5 },
+        },
+      ],
+      edges: [
+        { from: 'trigger', to: 'plan_agent' },
+        { from: 'plan_agent', to: 'mplp_confirm' },
+        { from: 'mplp_confirm', to: 'build_agent', condition: 'approved' },
+        { from: 'mplp_confirm', to: 'plan_agent', condition: 'rejected' },
+        { from: 'build_agent', to: 'style_check' },
+        { from: 'style_check', to: 'build_agent', condition: 'violations_found' },
+        { from: 'style_check', to: 'test_runner', condition: 'passed' },
+      ],
+    },
+    matchKeywords: ['写代码', '重构', '开发', '修复', 'Bug', '编程', '实现功能', 'coding', 'programming', 'refactor', 'debug', '代码', '函数', '模块'],
+    matchPatterns: [
+      /(?:写|编写|生成|创建).*(?:代码|程序|脚本)/i,
+      /(?:修改|编辑|更新).*(?:代码|文件)/i,
+      /(?:重构|优化|改进).*(?:代码|结构)/i,
+      /(?:修复|解决).*(?:Bug|错误|问题)/i,
+      /(?:开发|构建).*(?:App|应用|功能)/i,
+      /(?:implement|develop|create).*(?:feature|function|component)/i,
+    ],
+    exampleScenarios: [
+      '帮我写一个用户认证模块',
+      '重构这个函数，使用早返回模式',
+      '修复登录页面的 Bug',
+      '开发一个 React 组件显示用户列表',
+      '写一个 API 接口处理订单',
+    ],
+  },
 ];
 
 // ========== Blueprint Matching Algorithm ==========
@@ -448,7 +657,8 @@ const MATCH_CONFIG = {
   keywordWeight: 1,
   patternWeight: 3,
   scenarioWeight: 2,
-  logicNodeWeight: 4,  // 新增: 逻辑节点匹配加权
+  logicNodeWeight: 4,
+  programmingWeight: 10, // 新增: 编程意图匹配高权重
   highConfidenceThreshold: 5,
   mediumConfidenceThreshold: 2,
 };
@@ -456,6 +666,9 @@ const MATCH_CONFIG = {
 function matchBlueprint(description: string): BlueprintMatchResult | null {
   const descLower = description.toLowerCase();
   const results: BlueprintMatchResult[] = [];
+  
+  // 新增: 优先检测编程意图 (Phase 3)
+  const programmingIntent = detectProgrammingIntent(description);
   
   // 先检测需要的逻辑节点类型
   const detectedLogicNodes = detectLogicNodeTypes(description);
@@ -465,6 +678,12 @@ function matchBlueprint(description: string): BlueprintMatchResult | null {
     const matchedKeywords: string[] = [];
     const matchedPatterns: string[] = [];
     let logicNodeMatched: string | undefined;
+    
+    // 新增: 编程意图强制加分 (Phase 3)
+    if (programmingIntent.isProgramming && blueprint.id === 'opencode-programming') {
+      score += MATCH_CONFIG.programmingWeight; // 高权重强制匹配
+      matchedPatterns.push(`[Programming Intent: ${programmingIntent.taskType}]`);
+    }
     
     // Keyword matching
     for (const keyword of blueprint.matchKeywords) {
@@ -488,7 +707,7 @@ function matchBlueprint(description: string): BlueprintMatchResult | null {
       score += overlap * MATCH_CONFIG.scenarioWeight;
     }
     
-    // 逻辑节点匹配加分 - 新增
+    // 逻辑节点匹配加分
     if (detectedLogicNodes.length > 0) {
       const blueprintAcceptsLogicNode = blueprint.structure.slots.some(slot =>
         slot.acceptedAtomTypes.some(type => 

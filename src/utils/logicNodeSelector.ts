@@ -432,3 +432,123 @@ export function getLogicNodeIcon(type: LogicNodeType): string {
   };
   return icons[type] || 'Box';
 }
+
+// ========== Phase 3: 编程任务专用逻辑节点选择 ==========
+
+export type ProgrammingTaskType = 'generation' | 'modification' | 'bugfix' | 'development';
+
+/**
+ * 编程任务专用逻辑节点选择
+ */
+export function selectProgrammingLogicNodes(
+  description: string,
+  taskType: ProgrammingTaskType
+): LogicNodeCandidate[] {
+  const candidates: LogicNodeCandidate[] = [];
+  
+  // 编程任务始终需要条件判断（成功/失败分支）
+  candidates.push({
+    type: 'condition',
+    name: '执行结果判断',
+    confidence: 0.9,
+    matchReason: '编程任务需要检查执行结果',
+    suggestedConfig: {
+      mode: 'result_check',
+      successCondition: 'result.success === true',
+      failureAction: 'retry_or_rollback',
+    },
+    priority: 1,
+  });
+  
+  // Bug 修复任务可能需要循环尝试
+  if (taskType === 'bugfix') {
+    candidates.push({
+      type: 'loop',
+      name: '修复尝试循环',
+      confidence: 0.75,
+      matchReason: 'Bug 修复可能需要多次尝试',
+      suggestedConfig: {
+        mode: 'retry',
+        maxRetries: 3,
+        exitCondition: 'tests_pass',
+      },
+      priority: 2,
+    });
+  }
+  
+  // 开发任务可能需要并行执行（前后端同时开发）
+  if (taskType === 'development') {
+    // 检查是否涉及多个组件或并行开发
+    if (/(?:前端|后端).*(?:和|与|及).*(?:前端|后端)/i.test(description) ||
+        /(?:同时|并行).*(?:开发|实现)/i.test(description)) {
+      candidates.push({
+        type: 'parallel',
+        name: '并行开发',
+        confidence: 0.7,
+        matchReason: '多模块并行开发',
+        suggestedConfig: {
+          mode: 'fork',
+          branches: ['frontend', 'backend'],
+          waitAll: true,
+        },
+        priority: 3,
+      });
+    }
+  }
+  
+  return candidates;
+}
+
+/**
+ * 检测编程意图
+ */
+export function detectProgrammingIntent(description: string): {
+  isProgramming: boolean;
+  taskType: ProgrammingTaskType | null;
+  confidence: number;
+  matchReason: string;
+} {
+  const programmingPatterns = {
+    generation: [
+      { pattern: /(?:写|编写|生成|创建).*(?:代码|程序|脚本)/i, confidence: 0.95, reason: '代码生成任务' },
+      { pattern: /(?:实现|开发).*(?:功能|模块|组件|API)/i, confidence: 0.9, reason: '功能开发任务' },
+      { pattern: /coding|programming|implement|develop/i, confidence: 0.85, reason: 'Programming task' },
+    ],
+    modification: [
+      { pattern: /(?:修改|编辑|更新|改动).*(?:代码|文件|函数)/i, confidence: 0.95, reason: '代码修改任务' },
+      { pattern: /(?:重构|优化|改进).*(?:代码|结构|性能)/i, confidence: 0.9, reason: '代码重构任务' },
+      { pattern: /refactor|optimize|improve.*code/i, confidence: 0.85, reason: 'Code refactoring' },
+    ],
+    bugfix: [
+      { pattern: /(?:修复|解决|处理).*(?:Bug|错误|问题|异常)/i, confidence: 0.95, reason: 'Bug 修复任务' },
+      { pattern: /(?:调试|Debug|排查).*(?:问题|错误)/i, confidence: 0.9, reason: '代码调试任务' },
+      { pattern: /fix.*(?:bug|error|issue)/i, confidence: 0.85, reason: 'Bug fix task' },
+    ],
+    development: [
+      { pattern: /(?:开发|构建|创建).*(?:App|应用|网站|系统)/i, confidence: 0.9, reason: '应用开发任务' },
+      { pattern: /(?:搭建|部署).*(?:项目|环境|服务)/i, confidence: 0.85, reason: '项目搭建任务' },
+      { pattern: /build.*(?:app|application|website)/i, confidence: 0.85, reason: 'App development' },
+    ],
+  };
+
+  let maxConfidence = 0;
+  let taskType: ProgrammingTaskType | null = null;
+  let matchReason = '';
+
+  for (const [type, patterns] of Object.entries(programmingPatterns)) {
+    for (const { pattern, confidence, reason } of patterns) {
+      if (pattern.test(description) && confidence > maxConfidence) {
+        maxConfidence = confidence;
+        taskType = type as ProgrammingTaskType;
+        matchReason = reason;
+      }
+    }
+  }
+
+  return {
+    isProgramming: maxConfidence >= 0.7,
+    taskType,
+    confidence: maxConfidence,
+    matchReason,
+  };
+}
