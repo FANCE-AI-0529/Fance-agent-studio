@@ -13,6 +13,7 @@ import {
   History,
   Brain,
   RefreshCw,
+  Code2,
 } from "lucide-react";
 import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,8 @@ import { useStudioSyncNotifications } from "@/hooks/useStudioSyncNotifications";
 import { useAgentContextHotReload } from "@/hooks/useAgentContextHotReload";
 import { SystemBubble, SystemMessage } from "@/components/consumer/SystemBubble";
 import { PersonalityRefreshIndicator } from "@/components/consumer/PersonalityRefreshIndicator";
+import { CodingModeLayout } from "./CodingModeLayout";
+import { useOpenCodeRuntime } from "@/hooks/useOpenCodeRuntime";
 import {
   Tooltip,
   TooltipContent,
@@ -109,6 +112,9 @@ export function ConsumerRuntime() {
   
   // Auto memory extraction
   const { extractAndSaveMemories } = useAutoMemoryExtraction(agentId || undefined);
+
+  // OpenCode Runtime state for TUI
+  const openCodeRuntime = useOpenCodeRuntime();
 
   // AI Chat hook
   const { streamChat, isLoading: isAiLoading, error: aiError } = useAgentChat({
@@ -457,6 +463,20 @@ export function ConsumerRuntime() {
                       <TooltipContent>已与 Studio 实时同步 (v{configVersion})</TooltipContent>
                     </Tooltip>
                   )}
+                  {openCodeRuntime.isActive && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          variant="outline" 
+                          className="gap-1 text-xs border-orange-500/30 text-orange-600 dark:text-orange-400"
+                        >
+                          <Code2 className="h-3 w-3" />
+                          OpenCode
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>OpenCode 编程模式已激活</TooltipContent>
+                    </Tooltip>
+                  )}
                 </>
               ) : (
                 <>
@@ -468,6 +488,37 @@ export function ConsumerRuntime() {
 
             {/* Actions */}
             <div className="flex items-center gap-1">
+              {/* Toggle OpenCode Mode (for demo) */}
+              {agentId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={openCodeRuntime.isActive ? "secondary" : "ghost"}
+                      size="icon"
+                      onClick={() => {
+                        if (openCodeRuntime.isActive) {
+                          openCodeRuntime.deactivate();
+                        } else {
+                          openCodeRuntime.activate();
+                          // Add demo terminal command
+                          openCodeRuntime.addTerminalCommand({
+                            command: 'bun run build',
+                            output: '✓ Build completed successfully\n',
+                            status: 'success',
+                          });
+                        }
+                      }}
+                      className="h-9 w-9"
+                    >
+                      <Code2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {openCodeRuntime.isActive ? '退出 OpenCode 模式' : '进入 OpenCode 模式'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
               {/* New conversation */}
               {agentId && (
                 <Tooltip>
@@ -571,7 +622,20 @@ export function ConsumerRuntime() {
           </div>
         </header>
 
-        {/* Messages area */}
+        {/* Messages area - wrapped in CodingModeLayout when OpenCode is active */}
+        <CodingModeLayout
+          mode={openCodeRuntime.mode}
+          isActive={openCodeRuntime.isActive}
+          terminalCommands={openCodeRuntime.terminalCommands}
+          isTerminalStreaming={false}
+          onClearTerminal={openCodeRuntime.clearTerminal}
+          pendingDiffs={openCodeRuntime.pendingDiffs}
+          onAcceptDiff={openCodeRuntime.acceptDiff}
+          onRejectDiff={openCodeRuntime.rejectDiff}
+          currentFile={openCodeRuntime.state.currentFile}
+          styleCheckPassed={openCodeRuntime.state.styleCheckPassed}
+          styleViolationsCount={openCodeRuntime.state.styleViolationsCount}
+        >
         <div className="flex-1 pt-20 pb-32">
           <ScrollArea ref={scrollRef} className="h-full">
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -719,6 +783,7 @@ export function ConsumerRuntime() {
             </div>
           </ScrollArea>
         </div>
+        </CodingModeLayout>
 
         {/* Input area */}
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-8 pb-6">
