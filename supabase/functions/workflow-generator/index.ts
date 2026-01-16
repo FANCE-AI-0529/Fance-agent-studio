@@ -27,7 +27,15 @@ interface GenerateRequest {
 // ========== Blueprint Types (Agent Blueprints) ==========
 
 type SlotType = 'perception' | 'decision' | 'action' | 'hybrid';
-type AtomType = 'NATIVE_SKILL' | 'MCP_TOOL' | 'KNOWLEDGE_BASE' | 'ROUTER';
+type AtomType = 
+  | 'NATIVE_SKILL' 
+  | 'MCP_TOOL' 
+  | 'KNOWLEDGE_BASE' 
+  | 'ROUTER'
+  | 'INTENT_ROUTER'    // 意图路由器
+  | 'CONDITION'        // 条件判断
+  | 'PARALLEL'         // 并发执行
+  | 'LOOP';            // 循环执行
 
 interface BlueprintSlot {
   id: string;
@@ -66,6 +74,7 @@ interface BlueprintMatchResult {
   matchedKeywords: string[];
   matchedPatterns: string[];
   confidence: 'high' | 'medium' | 'low';
+  logicNodeMatched?: string; // 新增: 匹配的逻辑节点类型
 }
 
 interface FunctionalAtom {
@@ -80,6 +89,7 @@ interface FunctionalAtom {
   };
   similarity?: number;
   assetId?: string;
+  isLogicNode?: boolean; // 新增: 标记是否为逻辑节点
 }
 
 interface FilledSlot {
@@ -87,6 +97,147 @@ interface FilledSlot {
   atoms: FunctionalAtom[];
   autoWired: boolean;
   warnings: string[];
+}
+
+// ========== 逻辑节点资产定义 ==========
+
+const LOGIC_NODE_ATOMS: FunctionalAtom[] = [
+  {
+    id: 'logic-intent-router',
+    type: 'INTENT_ROUTER',
+    name: '意图路由器',
+    description: '基于语义或关键词将输入路由到不同分支，支持多意图识别',
+    slot_type: 'decision',
+    io_spec: {
+      input: { properties: { message: { type: 'string' } }, required: ['message'] },
+      output: { properties: { matched_route: { type: 'string' }, confidence: { type: 'number' } }, required: ['matched_route'] },
+    },
+    similarity: 0.9,
+    isLogicNode: true,
+  },
+  {
+    id: 'logic-condition',
+    type: 'CONDITION',
+    name: '条件判断',
+    description: 'IF/ELSE 逻辑分支判断，支持数值、布尔、字符串比较',
+    slot_type: 'decision',
+    io_spec: {
+      input: { properties: { value: { type: 'any' } }, required: ['value'] },
+      output: { properties: { branch: { type: 'string' } }, required: ['branch'] },
+    },
+    similarity: 0.9,
+    isLogicNode: true,
+  },
+  {
+    id: 'logic-parallel',
+    type: 'PARALLEL',
+    name: '并发执行',
+    description: '同时触发多个下游节点，支持多渠道通知和并行处理',
+    slot_type: 'hybrid',
+    io_spec: {
+      input: { properties: { data: { type: 'any' } }, required: [] },
+      output: { properties: { results: { type: 'array' } }, required: ['results'] },
+    },
+    similarity: 0.9,
+    isLogicNode: true,
+  },
+  {
+    id: 'logic-loop',
+    type: 'LOOP',
+    name: '循环执行',
+    description: '遍历集合并对每个元素执行操作，支持批量处理',
+    slot_type: 'hybrid',
+    io_spec: {
+      input: { properties: { items: { type: 'array' } }, required: ['items'] },
+      output: { properties: { results: { type: 'array' } }, required: ['results'] },
+    },
+    similarity: 0.85,
+    isLogicNode: true,
+  },
+];
+
+// ========== 逻辑节点匹配模式 ==========
+
+const LOGIC_PATTERNS = {
+  intentRouter: [
+    { pattern: /根据.*(?:意图|类型).*(?:分类|路由|分流)/i, confidence: 0.95 },
+    { pattern: /(?:识别|判断).*(?:意图|需求|类型)/i, confidence: 0.85 },
+    { pattern: /(?:分流|转发|路由).*(?:到|给).*(?:不同|对应)/i, confidence: 0.85 },
+    { pattern: /(?:多|多个).*(?:意图|分支).*(?:处理|响应)/i, confidence: 0.85 },
+    { pattern: /(?:用户|客户).*(?:询问|咨询).*(?:不同|多种)/i, confidence: 0.8 },
+  ],
+  condition: [
+    { pattern: /如果.*(?:就|则).*(?:否则|不然)/i, confidence: 0.95 },
+    { pattern: /(?:当|如果).*(?:大于|小于|等于|超过|低于)/i, confidence: 0.9 },
+    { pattern: /(?:满足|符合).*条件.*(?:执行|操作)/i, confidence: 0.85 },
+    { pattern: /(?:库存|余额|数量|金额|利润).*(?:大于|小于|超过|低于)/i, confidence: 0.9 },
+    { pattern: /(?:如果|若).*(?:否则|不然)/i, confidence: 0.9 },
+  ],
+  parallel: [
+    { pattern: /同时.*(?:执行|发送|处理|通知)/i, confidence: 0.95 },
+    { pattern: /(?:并行|并发).*(?:处理|执行)/i, confidence: 0.95 },
+    { pattern: /(?:邮件|Slack|微信|钉钉).*(?:和|与|及).*(?:邮件|Slack|微信|钉钉)/i, confidence: 0.9 },
+    { pattern: /(?:一起|同步).*(?:通知|发送)/i, confidence: 0.85 },
+    { pattern: /多渠道.*(?:通知|推送)/i, confidence: 0.9 },
+  ],
+  loop: [
+    { pattern: /(?:循环|遍历|逐一).*(?:处理|执行)/i, confidence: 0.9 },
+    { pattern: /(?:对每个|针对每|每个).*(?:执行|处理)/i, confidence: 0.9 },
+    { pattern: /(?:批量|批次).*(?:处理|发送)/i, confidence: 0.85 },
+    { pattern: /(?:所有|全部).*(?:项目|记录|用户).*(?:处理|发送)/i, confidence: 0.85 },
+  ],
+};
+
+// ========== 逻辑节点选择函数 ==========
+
+function selectRelevantLogicNodes(description: string): FunctionalAtom[] {
+  const selected: FunctionalAtom[] = [];
+  
+  // 检测意图路由器
+  for (const { pattern, confidence } of LOGIC_PATTERNS.intentRouter) {
+    if (pattern.test(description)) {
+      const atom = { ...LOGIC_NODE_ATOMS.find(a => a.type === 'INTENT_ROUTER')! };
+      atom.similarity = confidence;
+      selected.push(atom);
+      break;
+    }
+  }
+  
+  // 检测条件判断
+  for (const { pattern, confidence } of LOGIC_PATTERNS.condition) {
+    if (pattern.test(description)) {
+      const atom = { ...LOGIC_NODE_ATOMS.find(a => a.type === 'CONDITION')! };
+      atom.similarity = confidence;
+      selected.push(atom);
+      break;
+    }
+  }
+  
+  // 检测并发执行
+  for (const { pattern, confidence } of LOGIC_PATTERNS.parallel) {
+    if (pattern.test(description)) {
+      const atom = { ...LOGIC_NODE_ATOMS.find(a => a.type === 'PARALLEL')! };
+      atom.similarity = confidence;
+      selected.push(atom);
+      break;
+    }
+  }
+  
+  // 检测循环执行
+  for (const { pattern, confidence } of LOGIC_PATTERNS.loop) {
+    if (pattern.test(description)) {
+      const atom = { ...LOGIC_NODE_ATOMS.find(a => a.type === 'LOOP')! };
+      atom.similarity = confidence;
+      selected.push(atom);
+      break;
+    }
+  }
+  
+  return selected;
+}
+
+function isLogicNodeType(type: AtomType): boolean {
+  return ['INTENT_ROUTER', 'CONDITION', 'PARALLEL', 'LOOP', 'ROUTER'].includes(type);
 }
 
 // ========== Predefined Agent Blueprints ==========
@@ -101,7 +252,7 @@ const AGENT_BLUEPRINTS: AgentBlueprint[] = [
       trigger: { type: 'user_message' },
       slots: [
         { id: 'knowledge', name: '知识检索', slotType: 'perception', required: true, description: '从知识库检索相关信息', acceptedAtomTypes: ['KNOWLEDGE_BASE'], position: { rank: 1 } },
-        { id: 'analysis', name: 'LLM分析', slotType: 'decision', required: true, description: 'AI分析和决策', acceptedAtomTypes: ['NATIVE_SKILL', 'ROUTER'], position: { rank: 2 } },
+        { id: 'analysis', name: 'LLM分析', slotType: 'decision', required: true, description: 'AI分析和决策', acceptedAtomTypes: ['NATIVE_SKILL', 'ROUTER', 'INTENT_ROUTER'], position: { rank: 2 } },
         { id: 'action', name: '执行操作', slotType: 'action', required: false, description: '执行外部操作', acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'], position: { rank: 3 } },
       ],
       edges: [
@@ -122,7 +273,7 @@ const AGENT_BLUEPRINTS: AgentBlueprint[] = [
     structure: {
       trigger: { type: 'user_message' },
       slots: [
-        { id: 'router', name: '意图路由', slotType: 'decision', required: true, description: '分析意图并路由', acceptedAtomTypes: ['ROUTER', 'NATIVE_SKILL'], position: { rank: 1 } },
+        { id: 'router', name: '意图路由', slotType: 'decision', required: true, description: '分析意图并路由', acceptedAtomTypes: ['ROUTER', 'INTENT_ROUTER', 'CONDITION', 'NATIVE_SKILL'], position: { rank: 1 } },
         { id: 'branch_a', name: '分支A', slotType: 'action', required: true, description: '第一个处理分支', acceptedAtomTypes: ['NATIVE_SKILL', 'MCP_TOOL'], position: { rank: 2 } },
         { id: 'branch_b', name: '分支B', slotType: 'action', required: false, description: '第二个处理分支', acceptedAtomTypes: ['NATIVE_SKILL', 'MCP_TOOL'], position: { rank: 2 } },
       ],
@@ -201,6 +352,94 @@ const AGENT_BLUEPRINTS: AgentBlueprint[] = [
     matchPatterns: [/每(?:天|周|月|小时).*(?:执行|发送|检查|生成)/i, /定时.*(?:任务|执行|发送)/i],
     exampleScenarios: ['每天9点发送销售报告', '每周一汇总数据并通知'],
   },
+  // ========== 新增: 条件分支蓝图 ==========
+  {
+    id: 'conditional-action',
+    name: 'Conditional-Action',
+    description: '基于条件判断执行不同操作的模式',
+    category: 'conditional',
+    structure: {
+      trigger: { type: 'user_message' },
+      slots: [
+        { id: 'perception', name: '数据获取', slotType: 'perception', required: false, description: '获取判断所需数据', acceptedAtomTypes: ['NATIVE_SKILL', 'MCP_TOOL', 'KNOWLEDGE_BASE'], position: { rank: 1 } },
+        { id: 'condition', name: '条件判断', slotType: 'decision', required: true, description: 'IF/ELSE 逻辑判断', acceptedAtomTypes: ['CONDITION', 'ROUTER', 'NATIVE_SKILL'], position: { rank: 2 } },
+        { id: 'true_action', name: '满足条件操作', slotType: 'action', required: true, description: '条件为真时执行', acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'], position: { rank: 3 } },
+        { id: 'false_action', name: '不满足条件操作', slotType: 'action', required: false, description: '条件为假时执行', acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'], position: { rank: 3 } },
+      ],
+      edges: [
+        { from: 'trigger', to: 'perception' },
+        { from: 'perception', to: 'condition' },
+        { from: 'condition', to: 'true_action', condition: 'true' },
+        { from: 'condition', to: 'false_action', condition: 'false' },
+      ],
+    },
+    matchKeywords: ['如果', '否则', '当', '大于', '小于', '超过', '满足', '条件', '低于'],
+    matchPatterns: [
+      /如果.*(?:就|则)/i, 
+      /当.*时.*(?:执行|操作)/i, 
+      /(?:如果|若).*(?:否则|不然)/i,
+      /(?:大于|小于|超过|低于).*(?:就|则)/i,
+      /(?:库存|余额|数量|金额|利润).*(?:大于|小于|超过|低于)/i,
+    ],
+    exampleScenarios: ['如果库存低于100就发送警报', '当销售额超过目标时发送祝贺邮件', '如果利润超过20%就发送邮件'],
+  },
+  // ========== 新增: 并发处理蓝图 ==========
+  {
+    id: 'parallel-processing',
+    name: 'Parallel-Processing',
+    description: '同时执行多个操作的并发模式',
+    category: 'automation',
+    structure: {
+      trigger: { type: 'user_message' },
+      slots: [
+        { id: 'parallel', name: '并发网关', slotType: 'hybrid', required: true, description: '并发分发任务', acceptedAtomTypes: ['PARALLEL', 'ROUTER'], position: { rank: 1 } },
+        { id: 'branch_1', name: '分支1', slotType: 'action', required: true, description: '第一个并发任务', acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'], position: { rank: 2 } },
+        { id: 'branch_2', name: '分支2', slotType: 'action', required: true, description: '第二个并发任务', acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'], position: { rank: 2 } },
+      ],
+      edges: [
+        { from: 'trigger', to: 'parallel' },
+        { from: 'parallel', to: 'branch_1' },
+        { from: 'parallel', to: 'branch_2' },
+      ],
+    },
+    matchKeywords: ['同时', '并行', '并发', '一起', '同步', '多渠道'],
+    matchPatterns: [
+      /同时.*(?:发送|执行|通知)/i, 
+      /(?:并行|并发).*处理/i,
+      /(?:邮件|Slack|微信|钉钉).*(?:和|与|及).*(?:邮件|Slack|微信|钉钉)/i,
+      /多渠道.*(?:通知|推送)/i,
+    ],
+    exampleScenarios: ['同时发送邮件和Slack通知', '并行处理多个数据源', '多渠道通知客户'],
+  },
+  // ========== 新增: 循环处理蓝图 ==========
+  {
+    id: 'loop-processing',
+    name: 'Loop-Processing',
+    description: '循环处理集合中每个元素的模式',
+    category: 'automation',
+    structure: {
+      trigger: { type: 'user_message' },
+      slots: [
+        { id: 'data_source', name: '数据源', slotType: 'perception', required: true, description: '获取待处理的集合数据', acceptedAtomTypes: ['MCP_TOOL', 'KNOWLEDGE_BASE', 'NATIVE_SKILL'], position: { rank: 1 } },
+        { id: 'loop', name: '循环执行', slotType: 'hybrid', required: true, description: '遍历并处理每个元素', acceptedAtomTypes: ['LOOP'], position: { rank: 2 } },
+        { id: 'item_action', name: '单项操作', slotType: 'action', required: true, description: '对每个元素执行的操作', acceptedAtomTypes: ['MCP_TOOL', 'NATIVE_SKILL'], position: { rank: 3 } },
+      ],
+      edges: [
+        { from: 'trigger', to: 'data_source' },
+        { from: 'data_source', to: 'loop' },
+        { from: 'loop', to: 'item_action' },
+        { from: 'item_action', to: 'loop', condition: 'next_item' },
+      ],
+    },
+    matchKeywords: ['循环', '遍历', '每个', '逐一', '批量', '批次'],
+    matchPatterns: [
+      /(?:循环|遍历|逐一).*(?:处理|执行)/i,
+      /(?:对每个|针对每|每个).*(?:执行|处理)/i,
+      /(?:批量|批次).*(?:处理|发送)/i,
+      /(?:所有|全部).*(?:项目|记录|用户|客户).*(?:处理|发送)/i,
+    ],
+    exampleScenarios: ['遍历订单列表并发送通知', '对每个客户执行回访', '批量处理待审批项目'],
+  },
 ];
 
 // ========== Blueprint Matching Algorithm ==========
@@ -209,6 +448,7 @@ const MATCH_CONFIG = {
   keywordWeight: 1,
   patternWeight: 3,
   scenarioWeight: 2,
+  logicNodeWeight: 4,  // 新增: 逻辑节点匹配加权
   highConfidenceThreshold: 5,
   mediumConfidenceThreshold: 2,
 };
@@ -217,10 +457,14 @@ function matchBlueprint(description: string): BlueprintMatchResult | null {
   const descLower = description.toLowerCase();
   const results: BlueprintMatchResult[] = [];
   
+  // 先检测需要的逻辑节点类型
+  const detectedLogicNodes = detectLogicNodeTypes(description);
+  
   for (const blueprint of AGENT_BLUEPRINTS) {
     let score = 0;
     const matchedKeywords: string[] = [];
     const matchedPatterns: string[] = [];
+    let logicNodeMatched: string | undefined;
     
     // Keyword matching
     for (const keyword of blueprint.matchKeywords) {
@@ -244,6 +488,35 @@ function matchBlueprint(description: string): BlueprintMatchResult | null {
       score += overlap * MATCH_CONFIG.scenarioWeight;
     }
     
+    // 逻辑节点匹配加分 - 新增
+    if (detectedLogicNodes.length > 0) {
+      const blueprintAcceptsLogicNode = blueprint.structure.slots.some(slot =>
+        slot.acceptedAtomTypes.some(type => 
+          detectedLogicNodes.includes(type as AtomType)
+        )
+      );
+      
+      if (blueprintAcceptsLogicNode) {
+        score += MATCH_CONFIG.logicNodeWeight;
+        logicNodeMatched = detectedLogicNodes[0];
+        
+        // 特定蓝图与逻辑节点的强匹配
+        if (blueprint.id === 'conditional-action' && detectedLogicNodes.includes('CONDITION')) {
+          score += MATCH_CONFIG.logicNodeWeight; // 双倍加分
+        }
+        if (blueprint.id === 'parallel-processing' && detectedLogicNodes.includes('PARALLEL')) {
+          score += MATCH_CONFIG.logicNodeWeight;
+        }
+        if (blueprint.id === 'loop-processing' && detectedLogicNodes.includes('LOOP')) {
+          score += MATCH_CONFIG.logicNodeWeight;
+        }
+        if ((blueprint.id === 'router-based' || blueprint.id === 'conditional-action') && 
+            detectedLogicNodes.includes('INTENT_ROUTER')) {
+          score += MATCH_CONFIG.logicNodeWeight;
+        }
+      }
+    }
+    
     if (score > 0) {
       results.push({
         blueprint,
@@ -252,6 +525,7 @@ function matchBlueprint(description: string): BlueprintMatchResult | null {
         matchedPatterns,
         confidence: score >= MATCH_CONFIG.highConfidenceThreshold ? 'high' 
           : score >= MATCH_CONFIG.mediumConfidenceThreshold ? 'medium' : 'low',
+        logicNodeMatched,
       });
     }
   }
@@ -261,6 +535,45 @@ function matchBlueprint(description: string): BlueprintMatchResult | null {
   // Sort by score and return best match
   results.sort((a, b) => b.score - a.score);
   return results[0];
+}
+
+// 检测描述中需要的逻辑节点类型
+function detectLogicNodeTypes(description: string): AtomType[] {
+  const types: AtomType[] = [];
+  
+  // 检测意图路由器
+  for (const { pattern } of LOGIC_PATTERNS.intentRouter) {
+    if (pattern.test(description)) {
+      types.push('INTENT_ROUTER');
+      break;
+    }
+  }
+  
+  // 检测条件判断
+  for (const { pattern } of LOGIC_PATTERNS.condition) {
+    if (pattern.test(description)) {
+      types.push('CONDITION');
+      break;
+    }
+  }
+  
+  // 检测并发执行
+  for (const { pattern } of LOGIC_PATTERNS.parallel) {
+    if (pattern.test(description)) {
+      types.push('PARALLEL');
+      break;
+    }
+  }
+  
+  // 检测循环执行
+  for (const { pattern } of LOGIC_PATTERNS.loop) {
+    if (pattern.test(description)) {
+      types.push('LOOP');
+      break;
+    }
+  }
+  
+  return types;
 }
 
 function calculateWordOverlap(text1: string, text2: string): number {
@@ -277,25 +590,47 @@ function calculateWordOverlap(text1: string, text2: string): number {
 
 function fillBlueprintSlots(
   blueprint: AgentBlueprint,
-  atoms: FunctionalAtom[]
+  atoms: FunctionalAtom[],
+  description?: string  // 新增参数
 ): { filledSlots: FilledSlot[]; unfilledSlots: BlueprintSlot[] } {
   const filledSlots: FilledSlot[] = [];
   const unfilledSlots: BlueprintSlot[] = [];
-  let availableAtoms = [...atoms];
+  
+  // 合并逻辑节点到可用资产池
+  const logicAtoms = description ? selectRelevantLogicNodes(description) : [];
+  const allAtoms = [...atoms, ...logicAtoms];
+  let availableAtoms = [...allAtoms];
   
   // Sort slots by rank to fill in order
   const sortedSlots = [...blueprint.structure.slots].sort((a, b) => a.position.rank - b.position.rank);
   
   for (const slot of sortedSlots) {
-    // Find compatible atoms for this slot
-    const candidates = availableAtoms.filter(atom => 
-      atom.slot_type === slot.slotType || 
-      atom.slot_type === 'hybrid' ||
-      slot.acceptedAtomTypes.includes(atom.type)
-    );
+    // Find compatible atoms for this slot - 增强的匹配逻辑
+    const candidates = availableAtoms.filter(atom => {
+      // 1. 槽位类型匹配
+      const slotTypeMatch = atom.slot_type === slot.slotType || atom.slot_type === 'hybrid';
+      
+      // 2. 资产类型匹配
+      const atomTypeMatch = slot.acceptedAtomTypes.includes(atom.type);
+      
+      // 3. 逻辑节点特殊匹配 - ROUTER 槽位可接受任何逻辑节点
+      const isLogicNode = isLogicNodeType(atom.type);
+      const needsLogic = slot.acceptedAtomTypes.includes('ROUTER') || 
+                         slot.acceptedAtomTypes.some(t => isLogicNodeType(t));
+      
+      return slotTypeMatch || atomTypeMatch || (isLogicNode && needsLogic);
+    });
     
-    // Rank by similarity score
-    const ranked = candidates.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+    // Rank by similarity score, 逻辑节点优先
+    const ranked = candidates.sort((a, b) => {
+      // 逻辑节点优先级
+      const aIsLogic = a.isLogicNode ? 1 : 0;
+      const bIsLogic = b.isLogicNode ? 1 : 0;
+      if (aIsLogic !== bIsLogic) return bIsLogic - aIsLogic;
+      
+      // 按相似度排序
+      return (b.similarity || 0) - (a.similarity || 0);
+    });
     
     if (ranked.length > 0) {
       const selected = ranked[0];
@@ -303,7 +638,9 @@ function fillBlueprintSlots(
         slot,
         atoms: [selected],
         autoWired: true,
-        warnings: [],
+        warnings: selected.isLogicNode 
+          ? [`已自动选择逻辑节点: ${selected.name}`] 
+          : [],
       });
       // Remove used atom
       availableAtoms = availableAtoms.filter(a => a.id !== selected.id);
@@ -341,9 +678,14 @@ function generateDSLFromBlueprint(
     const atom = filledSlot.atoms[0];
     if (!atom) continue;
     
+    // 扩展的节点类型映射 - 支持逻辑节点
     const nodeType = atom.type === 'KNOWLEDGE_BASE' ? 'knowledge' 
       : atom.type === 'MCP_TOOL' ? 'mcp_action'
       : atom.type === 'ROUTER' ? 'router'
+      : atom.type === 'INTENT_ROUTER' ? 'intent_router'
+      : atom.type === 'CONDITION' ? 'condition'
+      : atom.type === 'PARALLEL' ? 'parallel'
+      : atom.type === 'LOOP' ? 'loop'
       : 'skill';
     
     const riskLevel = assessNodeRisk(atom.name, []);
@@ -356,7 +698,9 @@ function generateDSLFromBlueprint(
       description: atom.description,
       assetId: atom.assetId || atom.id,
       assetType: atom.type === 'KNOWLEDGE_BASE' ? 'knowledge_base' 
-        : atom.type === 'MCP_TOOL' ? 'mcp_tool' : 'skill',
+        : atom.type === 'MCP_TOOL' ? 'mcp_tool' 
+        : isLogicNodeType(atom.type) ? 'logic_node'
+        : 'skill',
       config: {
         slotId: filledSlot.slot.id,
         slotName: filledSlot.slot.name,
@@ -658,8 +1002,8 @@ serve(async (req) => {
       // Fetch hybrid assets with slot-aware retrieval
       const hybridAssets = await fetchHybridAssetsForBlueprint(supabase, description, userId, selectedBlueprint);
       
-      // Fill slots with matching atoms
-      const { filledSlots, unfilledSlots } = fillBlueprintSlots(selectedBlueprint, hybridAssets);
+      // Fill slots with matching atoms - 传入 description 以支持逻辑节点选择
+      const { filledSlots, unfilledSlots } = fillBlueprintSlots(selectedBlueprint, hybridAssets, description);
       
       // Generate DSL from blueprint structure
       const blueprintDSL = generateDSLFromBlueprint(
@@ -683,6 +1027,17 @@ serve(async (req) => {
       const blueprintWarnings = [...(validatedBlueprintDSL.warnings || [])];
       blueprintWarnings.unshift(`使用蓝图: ${selectedBlueprint.name} (${selectedBlueprint.description})`);
       
+      // 添加逻辑节点匹配信息到警告
+      if (blueprintMatch?.logicNodeMatched) {
+        blueprintWarnings.push(`已匹配逻辑节点类型: ${blueprintMatch.logicNodeMatched}`);
+      }
+      
+      // 添加已填充逻辑节点的警告
+      const logicNodeSlots = filledSlots.filter(fs => fs.atoms[0]?.isLogicNode);
+      if (logicNodeSlots.length > 0) {
+        blueprintWarnings.push(`已自动添加 ${logicNodeSlots.length} 个逻辑节点: ${logicNodeSlots.map(fs => fs.atoms[0].name).join(', ')}`);
+      }
+      
       if (unfilledSlots.length > 0) {
         blueprintWarnings.push(`有 ${unfilledSlots.length} 个槽位未填充: ${unfilledSlots.map(s => s.name).join(', ')}`);
       }
@@ -702,6 +1057,7 @@ serve(async (req) => {
             confidence: blueprintMatch?.confidence || 'selected',
             matchedKeywords: blueprintMatch?.matchedKeywords || [],
             matchedPatterns: blueprintMatch?.matchedPatterns || [],
+            logicNodeMatched: blueprintMatch?.logicNodeMatched,
           },
           filledSlots: filledSlots.map(fs => ({
             slotId: fs.slot.id,
@@ -710,6 +1066,7 @@ serve(async (req) => {
             atomId: fs.atoms[0]?.id,
             atomName: fs.atoms[0]?.name,
             atomType: fs.atoms[0]?.type,
+            isLogicNode: fs.atoms[0]?.isLogicNode || false,
           })),
           unfilledSlots: unfilledSlots.map(s => ({
             id: s.id,
@@ -746,8 +1103,8 @@ serve(async (req) => {
         // Fetch hybrid assets with slot-aware retrieval
         const hybridAssets = await fetchHybridAssetsForBlueprint(supabase, description, userId, selectedBlueprint);
         
-        // Fill slots with matching atoms
-        const { filledSlots, unfilledSlots } = fillBlueprintSlots(selectedBlueprint, hybridAssets);
+        // Fill slots with matching atoms - 传入 description 以支持逻辑节点选择
+        const { filledSlots, unfilledSlots } = fillBlueprintSlots(selectedBlueprint, hybridAssets, description);
         
         // Generate DSL from blueprint structure
         const blueprintDSL = generateDSLFromBlueprint(
