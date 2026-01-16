@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
 
 interface TypewriterFormattedTextProps {
   content: string;
@@ -7,11 +8,13 @@ interface TypewriterFormattedTextProps {
   speed?: number;
   enabled?: boolean;
   onComplete?: () => void;
+  useTerminalStyle?: boolean;
 }
 
 /**
  * Typewriter effect for formatted text content
- * Supports **bold**, `code`, and ```code blocks```
+ * Terminal Style: Uses [v], [x], (!), [header] symbols
+ * Legacy: Supports **bold**, `code`, and ```code blocks```
  */
 export function TypewriterFormattedText({
   content,
@@ -19,6 +22,7 @@ export function TypewriterFormattedText({
   speed = 15,
   enabled = true,
   onComplete,
+  useTerminalStyle = true,
 }: TypewriterFormattedTextProps) {
   const [displayedLength, setDisplayedLength] = useState(enabled ? 0 : content.length);
   const [isComplete, setIsComplete] = useState(!enabled);
@@ -61,8 +65,8 @@ export function TypewriterFormattedText({
   const displayContent = content.slice(0, displayedLength);
 
   return (
-    <div className={cn("whitespace-pre-wrap", className)}>
-      <FormattedContent content={displayContent} />
+    <div className={cn("whitespace-pre-wrap", useTerminalStyle && "font-mono", className)}>
+      <FormattedContent content={displayContent} useTerminalStyle={useTerminalStyle} />
       {enabled && !isComplete && (
         <span className="inline-block w-0.5 h-4 ml-0.5 bg-primary animate-pulse align-middle" />
       )}
@@ -72,25 +76,39 @@ export function TypewriterFormattedText({
 
 interface FormattedContentProps {
   content: string;
+  useTerminalStyle?: boolean;
 }
 
-function FormattedContent({ content }: FormattedContentProps) {
+function FormattedContent({ content, useTerminalStyle = true }: FormattedContentProps) {
   const formatContent = (text: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
     let currentIndex = 0;
     let keyIndex = 0;
 
-    const patterns = [
-      { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
-      { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
-      { regex: /`([^`]+)`/g, type: "code" as const },
-    ];
+    const patterns = useTerminalStyle
+      ? [
+          // Terminal style patterns
+          { regex: /\[v\]/g, type: "success" as const },
+          { regex: /\[x\]/g, type: "failure" as const },
+          { regex: /\(\!\)/g, type: "warning" as const },
+          { regex: /\[\s\]/g, type: "pending" as const },
+          { regex: /\(Ref:\s*[^)]+\)/g, type: "ref" as const },
+          { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
+          { regex: /`([^`]+)`/g, type: "code" as const },
+        ]
+      : [
+          // Legacy patterns
+          { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
+          { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
+          { regex: /`([^`]+)`/g, type: "code" as const },
+        ];
 
     interface Match {
       index: number;
       length: number;
       content: string;
-      type: "bold" | "code" | "codeblock";
+      fullMatch: string;
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref";
     }
 
     const matches: Match[] = [];
@@ -101,7 +119,8 @@ function FormattedContent({ content }: FormattedContentProps) {
         matches.push({
           index: match.index,
           length: match[0].length,
-          content: match[1],
+          content: match[1] || match[0],
+          fullMatch: match[0],
           type,
         });
       }
@@ -128,8 +147,43 @@ function FormattedContent({ content }: FormattedContentProps) {
       switch (match.type) {
         case "bold":
           parts.push(
-            <span key={keyIndex++} className="font-semibold text-primary">
+            <span key={keyIndex++} className="text-primary">
               {match.content}
+            </span>
+          );
+          break;
+        case "success":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.success}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "failure":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.failure}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "warning":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.warning}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "pending":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.pending}>
+              {match.fullMatch}
+            </span>
+          );
+          break;
+        case "ref":
+          parts.push(
+            <span key={keyIndex++} className={TERMINAL_CLASSES.ref}>
+              {match.fullMatch}
             </span>
           );
           break;
@@ -163,6 +217,55 @@ function FormattedContent({ content }: FormattedContentProps) {
 
     return parts;
   };
+
+  // Handle box drawing characters for terminal style
+  if (useTerminalStyle) {
+    const lines = content.split('\n');
+    const result: React.ReactNode[] = [];
+    
+    lines.forEach((line, lineIdx) => {
+      if (/^[┌├└│─]/.test(line)) {
+        const boxMatch = line.match(/^([┌├└│─]+)\s*(.*)/);
+        if (boxMatch) {
+          result.push(
+            <React.Fragment key={`line-${lineIdx}`}>
+              <span className={TERMINAL_CLASSES.boxChar}>{boxMatch[1]}</span>
+              {formatContent(boxMatch[2] || '')}
+              {lineIdx < lines.length - 1 && '\n'}
+            </React.Fragment>
+          );
+          return;
+        }
+      }
+      
+      if (/^-{3,}$/.test(line.trim())) {
+        result.push(
+          <hr key={`sep-${lineIdx}`} className="border-t border-border my-2" />
+        );
+        return;
+      }
+      
+      // Check for header lines [Title]
+      if (/^\[.+\]$/.test(line.trim())) {
+        result.push(
+          <React.Fragment key={`line-${lineIdx}`}>
+            <span className={TERMINAL_CLASSES.header}>{line}</span>
+            {lineIdx < lines.length - 1 && '\n'}
+          </React.Fragment>
+        );
+        return;
+      }
+      
+      result.push(
+        <React.Fragment key={`line-${lineIdx}`}>
+          {formatContent(line)}
+          {lineIdx < lines.length - 1 && '\n'}
+        </React.Fragment>
+      );
+    });
+    
+    return <>{result}</>;
+  }
 
   return <>{formatContent(content)}</>;
 }

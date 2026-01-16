@@ -251,9 +251,14 @@ async function handleToolsCall(
   const startTime = Date.now();
   const manifest = agent.manifest as any;
   const systemPrompt = manifest?.system_prompt || `You are ${agent.name}, an AI assistant.`;
+  
+  // Terminal style instructions
+  const terminalStyle = `
+响应格式：禁用 ** 加粗和 # 标题。使用 [标题]、---、[v]/[x]/(!)、┌─├─└─│ 结构符号。直接输出结果，无废话。
+`;
 
   let userMessage = "";
-  let enhancedSystemPrompt = systemPrompt;
+  let enhancedSystemPrompt = systemPrompt + terminalStyle;
 
   if (params.name === "chat") {
     userMessage = (params.arguments?.message as string) || "";
