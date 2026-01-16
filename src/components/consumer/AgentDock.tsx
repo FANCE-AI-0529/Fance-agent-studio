@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
-import { useRef, useState } from "react";
-import { Plus, Bot, MessageCircle, MoreHorizontal, Trash2, Edit, History } from "lucide-react";
+import { useRef } from "react";
+import { Plus, Bot, MessageCircle, Trash2, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMyAgents, useDeleteAgent } from "@/hooks/useAgents";
 import {
@@ -10,12 +10,13 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { toast } from "sonner";
+import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 
 interface DockItemProps {
   agent?: {
     id: string;
     name: string;
-    avatar?: string;
+    avatar?: AgentAvatar;
     hasActiveSession?: boolean;
   };
   isAddButton?: boolean;
@@ -65,11 +66,10 @@ function DockItem({ agent, isAddButton, mouseX, onClick, onDelete, onEdit }: Doc
         `}>
           {isAddButton ? (
             <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-          ) : agent?.avatar ? (
-            <img 
-              src={agent.avatar} 
-              alt={agent.name}
-              className="w-full h-full object-cover"
+          ) : agent?.avatar?.iconId ? (
+            <AgentAvatarDisplay 
+              avatar={agent.avatar} 
+              size="lg"
             />
           ) : (
             <img 
@@ -204,7 +204,7 @@ export function AgentDock({ onCreateNew }: AgentDockProps) {
                     agent={{
                       id: agent.id,
                       name: agent.name,
-                      avatar: (agent.manifest as any)?.avatar,
+                      avatar: (agent.manifest as any)?.avatar as AgentAvatar | undefined,
                       hasActiveSession: false,
                     }}
                     mouseX={mouseX}
