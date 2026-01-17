@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
 import { type AgentRole, ROLE_THEMES } from "@/constants/agentRoleThemes";
+import { AlertCircle } from "lucide-react";
 
 interface FormattedTextProps {
   content: string;
@@ -12,8 +13,9 @@ interface FormattedTextProps {
 }
 
 /**
- * Formats message content by converting markdown-style formatting to styled HTML
- * Terminal Style Mode: Uses [header], [v], [x], (!) symbols instead of **bold**
+ * Formats message content by converting semantic tags and terminal-style formatting to styled HTML
+ * Supports: <h-entity>, <h-alert>, <h-data>, <h-status> semantic tags
+ * Terminal Style Mode: Uses [header], [v], [x], (!) symbols
  * Legacy Mode: Supports **text** for bold, `code` for inline code, ```code``` for blocks
  */
 export function FormattedText({ content, className, useTerminalStyle = true, agentRole }: FormattedTextProps) {
@@ -25,6 +27,11 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
     // Define patterns based on mode
     const patterns = useTerminalStyle
       ? [
+          // 🆕 Semantic highlighting tags (highest priority)
+          { regex: /<h-entity>([^<]+)<\/h-entity>/g, type: "h-entity" as const },
+          { regex: /<h-alert>([^<]+)<\/h-alert>/g, type: "h-alert" as const },
+          { regex: /<h-data>([^<]+)<\/h-data>/g, type: "h-data" as const },
+          { regex: /<h-status>([^<]+)<\/h-status>/g, type: "h-status" as const },
           // Terminal style patterns
           { regex: /\[v\]/g, type: "success" as const },
           { regex: /\[x\]/g, type: "failure" as const },
@@ -34,8 +41,9 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
           { regex: /`([^`]+)`/g, type: "code" as const },
           { regex: /^\[([^\]]+)\]$/gm, type: "header" as const },
-          // 书名号强调 - replaces **bold** for terminal style
+          // Legacy emphasis (backwards compatibility)
           { regex: /「([^」]+)」/g, type: "emphasis" as const },
+          { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
         ]
       : [
           // Legacy markdown patterns (kept for backwards compatibility)
@@ -49,7 +57,7 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
       length: number;
       content: string;
       fullMatch: string;
-      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis";
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis" | "h-entity" | "h-alert" | "h-data" | "h-status";
     }
 
     // Find all matches
@@ -92,13 +100,53 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
 
       // Add formatted match
       switch (match.type) {
-        case "bold":
-          // Render as highlight pill with role-specific colors
-          const highlightClass = agentRole 
-            ? ROLE_THEMES[agentRole].highlightClass 
-            : 'highlight-pill-default';
+        // 🆕 Semantic highlighting tags
+        case "h-entity":
           parts.push(
-            <span key={keyIndex++} className={cn("highlight-pill", highlightClass)}>
+            <span 
+              key={keyIndex++} 
+              className="inline bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded-md font-medium text-sm border border-indigo-500/20"
+            >
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-alert":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="inline-flex items-center gap-1 bg-rose-500/15 text-rose-300 px-1.5 py-0.5 rounded-md font-semibold text-sm border border-rose-500/20"
+            >
+              <AlertCircle className="h-3 w-3" />
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-data":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="font-mono text-cyan-400 font-bold tracking-wide"
+            >
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-status":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="text-emerald-400 font-medium"
+            >
+              {match.content}
+            </span>
+          );
+          break;
+        // Legacy patterns (backwards compatibility)
+        case "bold":
+        case "emphasis":
+          parts.push(
+            <span key={keyIndex++} className="font-medium text-foreground">
               {match.content}
             </span>
           );
@@ -142,17 +190,6 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           parts.push(
             <span key={keyIndex++} className={TERMINAL_CLASSES.header}>
               {match.fullMatch}
-            </span>
-          );
-          break;
-        case "emphasis":
-          // 书名号内容渲染为高亮胶囊
-          const emphasisClass = agentRole 
-            ? ROLE_THEMES[agentRole].highlightClass 
-            : 'highlight-pill-default';
-          parts.push(
-            <span key={keyIndex++} className={cn("highlight-pill", emphasisClass)}>
-              {match.content}
             </span>
           );
           break;
