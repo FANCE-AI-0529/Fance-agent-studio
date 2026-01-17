@@ -297,7 +297,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       // Step 4: Assemble agent
       await advanceToStep(3);
 
-      // Create manifest
+      // Create manifest with complete knowledge base configuration
       const manifest = {
         name: agentName,
         description: config?.systemPrompt?.substring(0, 100) || description,
@@ -305,7 +305,13 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         model: config?.model || 'gpt-4',
         temperature: config?.temperature || 0.7,
         skills: skills,
-        knowledgeBases: mountedKnowledgeBases,
+        // [关键] 完整的知识库配置，确保 agent-chat 能够识别和检索
+        knowledgeBases: mountedKnowledgeBases.map(kb => ({
+          id: kb.id,
+          name: kb.name,
+          retrievalMode: 'hybrid',
+          isAutoMounted: true,
+        })),
         createdFrom: 'consumer-magic-builder',
         originalDescription: description,
       };
@@ -371,7 +377,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       
       const skillNodes = await Promise.all(skillNodePromises);
       
-      // Create knowledge base nodes (if any)
+      // Create knowledge base nodes (if any) - with proper target_collection for RAG
       const kbNodePromises = mountedKnowledgeBases.map(async (kb, index) => {
         const angle = ((skills.length + index) * 2 * Math.PI) / Math.max(skills.length + mountedKnowledgeBases.length, 1);
         const radius = 220;
@@ -388,6 +394,14 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
             id: kb.id,
             name: kb.name,
             type: 'knowledge_base',
+            // [关键] 确保 agent-chat 能够正确定位知识库进行 RAG 检索
+            target_collection: kb.id,
+            knowledge_base_id: kb.id,
+            config: {
+              retrievalMode: 'hybrid',
+              topK: 5,
+              threshold: 0.65,
+            },
           },
         });
       });

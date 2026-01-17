@@ -84,7 +84,12 @@ serve(async (req) => {
     console.log(`User ${user.id} generating agent config`);
     // ========== END AUTHENTICATION ==========
 
-    const { description, currentConfig, generateFullWorkflow = false } = await req.json();
+    const { 
+      description, 
+      currentConfig, 
+      generateFullWorkflow = false,
+      knowledgeBaseIds = [],  // 已关联的知识库 ID 列表
+    } = await req.json();
 
     if (!description || typeof description !== "string") {
       return new Response(
@@ -97,6 +102,18 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    // 构建知识库上下文注入
+    const knowledgeContext = knowledgeBaseIds.length > 0
+      ? `
+
+## [强制] 已关联的知识库
+用户已上传以下知识库资产，你 **必须** 在 systemPrompt 中声明 Agent 具备知识检索能力：
+${(knowledgeBaseIds as string[]).map((id: string) => `- Collection ID: ${id}`).join('\n')}
+
+生成的 systemPrompt 必须包含类似描述："你可以访问用户的知识库来回答问题，请优先基于知识库内容作答。"
+`
+      : '';
 
     // Manus Protocol instruction - mandatory for all agents
     const MANUS_PROTOCOL_INSTRUCTION = `
@@ -122,7 +139,7 @@ serve(async (req) => {
 
     // Extended prompt for full workflow generation
     const systemPromptForGenerator = generateFullWorkflow 
-      ? `${MANUS_PROTOCOL_INSTRUCTION}
+      ? `${MANUS_PROTOCOL_INSTRUCTION}${knowledgeContext}
 你是一个AI Agent配置和工作流设计专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成完整的配置和工作流设计。
 
 请根据用户描述生成以下配置（使用JSON格式）：
@@ -173,7 +190,7 @@ serve(async (req) => {
 - 研究/分析/论文 -> 研究资料, graph模式
 
 直接返回JSON对象，不要包含其他文字。确保JSON格式正确。`
-      : `${MANUS_PROTOCOL_INSTRUCTION}
+      : `${MANUS_PROTOCOL_INSTRUCTION}${knowledgeContext}
 你是一个AI Agent配置生成专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成配置。
 
 请根据用户描述生成以下配置（使用JSON格式）：

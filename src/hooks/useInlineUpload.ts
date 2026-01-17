@@ -213,10 +213,10 @@ export function useInlineUpload(options: UseInlineUploadOptions = {}): UseInline
       // [步骤四]：读取文件内容
       const fileContent = await readFileContent(file);
       
-      setUploadProgress(70);
+      setUploadProgress(65);
 
-      // [步骤五]：触发RAG索引
-      const { error: ingestError } = await supabase.functions.invoke('rag-ingest', {
+      // [步骤五]：触发RAG索引（非阻塞，后台执行）
+      supabase.functions.invoke('rag-ingest', {
         body: {
           knowledgeBaseId: kbData.id,
           documentId: docData.id,
@@ -225,19 +225,25 @@ export function useInlineUpload(options: UseInlineUploadOptions = {}): UseInline
           chunkSize: 500,
           chunkOverlap: 50,
         },
+      }).catch(err => {
+        console.warn('[useInlineUpload] rag-ingest invoke error:', err);
       });
 
-      if (ingestError) {
-        // [警告]：索引失败不阻断流程，继续标记为可用
+      // [步骤六]：同步轮询等待索引完成
+      const indexingSuccess = await waitForIndexingComplete(
+        supabase, 
+        kbData.id, 
+        (progress) => setUploadProgress(progress)
+      );
+
+      if (!indexingSuccess) {
+        console.warn('[useInlineUpload] Indexing did not complete in time, proceeding in degraded mode');
+        // 更新为 ready 以允许继续使用（降级模式）
+        await supabase
+          .from('knowledge_bases')
+          .update({ index_status: 'ready' })
+          .eq('id', kbData.id);
       }
-
-      setUploadProgress(90);
-
-      // [步骤六]：更新知识库索引状态
-      await supabase
-        .from('knowledge_bases')
-        .update({ index_status: 'ready' })
-        .eq('id', kbData.id);
 
       // [步骤七]：触发自动画像（非阻塞）
       supabase.functions.invoke('kb-auto-profile', {
@@ -326,6 +332,68 @@ function getMimeTypeForFile(file: File): string {
   
   // [回退]：根据扩展名映射
   return mimeMap[extension || ''] || 'text/plain';
+}
+
+/**
+ * 等待知识库索引完成
+ * 
+ * 轮询后端数据库直到索引状态变为 'ready' 或超时。
+ * 
+ * @param {any} supabaseClient - Supabase客户端实例
+ * @param {string} knowledgeBaseId - 知识库ID
+ * @param {function} onProgress - 进度更新回调
+ * @param {number} maxWaitMs - 最大等待时间（默认60秒）
+ * @param {number} pollIntervalMs - 轮询间隔（默认2秒）
+ * @returns {Promise<boolean>} - 索引是否成功完成
+ */
+async function waitForIndexingComplete(
+  supabaseClient: any,
+  knowledgeBaseId: string,
+  onProgress?: (progress: number) => void,
+  maxWaitMs: number = 60000,
+  pollIntervalMs: number = 2000
+): Promise<boolean> {
+  const startTime = Date.now();
+  const baseProgress = 70;
+  const maxProgress = 95;
+  
+  while (Date.now() - startTime < maxWaitMs) {
+    const elapsed = Date.now() - startTime;
+    
+    // 更新进度（70% -> 95% 随时间推进）
+    if (onProgress) {
+      const elapsedRatio = Math.min(elapsed / maxWaitMs, 1);
+      const currentProgress = Math.round(baseProgress + elapsedRatio * (maxProgress - baseProgress));
+      onProgress(currentProgress);
+    }
+    
+    const { data, error } = await supabaseClient
+      .from('knowledge_bases')
+      .select('index_status')
+      .eq('id', knowledgeBaseId)
+      .single();
+    
+    if (error) {
+      console.error('[waitForIndexingComplete] Query error:', error);
+      return false;
+    }
+    
+    if (data?.index_status === 'ready') {
+      console.log('[waitForIndexingComplete] Indexing completed successfully');
+      return true;
+    }
+    
+    if (data?.index_status === 'failed') {
+      console.warn('[waitForIndexingComplete] Indexing failed');
+      return false;
+    }
+    
+    // 等待下一次轮询
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+  }
+  
+  console.warn('[waitForIndexingComplete] Timeout waiting for indexing');
+  return false;
 }
 
 /**
