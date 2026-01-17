@@ -91,15 +91,49 @@ export function RAGTraceEvent({ event, isLast = false }: RAGTraceEventProps) {
           {/* Vector Search Results */}
           {event.type === "rag_vector_search" && (
             <>
+              {/* 显示 Collection ID */}
+              {data.ragCollectionId && (
+                <p className="text-[10px] text-muted-foreground font-mono">
+                  Collection: <span className="text-primary">{data.ragCollectionId.slice(0, 8)}...</span>
+                </p>
+              )}
               {data.ragKnowledgeBaseName && (
                 <p className="text-[10px] text-muted-foreground">
                   Searching <span className="text-foreground font-medium">"{data.ragKnowledgeBaseName}"</span>...
                 </p>
               )}
-              {data.ragChunksCount !== undefined && (
-                <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                  Found {data.ragChunksCount} chunks
-                </Badge>
+              {/* 显示查询预览 */}
+              {data.ragQueryPreview && (
+                <p className="text-[10px] text-muted-foreground truncate">
+                  Query: "{data.ragQueryPreview}"
+                </p>
+              )}
+              {/* 显示匹配结果 */}
+              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                {data.ragActualMatches !== undefined && (
+                  <Badge 
+                    variant={data.ragActualMatches > 0 ? "secondary" : "destructive"}
+                    className="text-[9px] h-4 px-1.5"
+                  >
+                    {data.ragActualMatches} matches
+                  </Badge>
+                )}
+                {data.ragChunksCount !== undefined && data.ragActualMatches === undefined && (
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
+                    Found {data.ragChunksCount} chunks
+                  </Badge>
+                )}
+                {data.ragSearchDuration !== undefined && (
+                  <Badge variant="outline" className="text-[9px] h-4 px-1.5">
+                    {data.ragSearchDuration}ms
+                  </Badge>
+                )}
+              </div>
+              {/* 空结果警告 */}
+              {data.ragActualMatches === 0 && data.ragWarning && (
+                <p className="text-[9px] text-amber-500 mt-1">
+                  ⚠️ {data.ragWarning}
+                </p>
               )}
             </>
           )}

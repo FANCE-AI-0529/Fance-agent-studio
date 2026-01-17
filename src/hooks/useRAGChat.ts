@@ -93,15 +93,25 @@ export function useRAGChat() {
       try {
         // Search each knowledge base
         for (const kbId of options.knowledgeBaseIds) {
+          const searchStartTime = Date.now();
+          
           // Add trace event for vector search start
           traceEvents.push({
             type: "rag_vector_search",
             data: {
               ragKnowledgeBaseId: kbId,
               ragKnowledgeBaseName: knowledgeBaseName,
+              // 🆕 新增调试字段
+              ragCollectionId: kbId,
+              ragQueryPreview: query.slice(0, 50),
+              ragMatchThreshold: 0.5,
+              ragMatchCount: options.topK,
               message: `Searching knowledge base...`,
             },
           });
+
+          console.log(`[useRAGChat] 🔍 Searching Collection: "${kbId}" (${knowledgeBaseName})`);
+          console.log(`[useRAGChat]    Query: "${query.slice(0, 50)}..."`);
 
           const { data, error } = await supabase.functions.invoke<GraphSearchResponse>(
             "graph-search",
@@ -114,13 +124,46 @@ export function useRAGChat() {
               },
             }
           );
+          
+          const searchDuration = Date.now() - searchStartTime;
 
           if (error) {
-            console.error("RAG search error:", error);
+            console.error("[useRAGChat] ❌ Search error:", error);
+            traceEvents.push({
+              type: "rag_source_found",
+              data: {
+                ragCollectionId: kbId,
+                ragActualMatches: 0,
+                ragWarning: `Search failed: ${error.message}`,
+                ragSearchDuration: searchDuration,
+                message: `Search failed for ${knowledgeBaseName}`,
+              },
+            });
             continue;
           }
 
-          if (!data) continue;
+          if (!data) {
+            console.warn(`[useRAGChat] ⚠️ No data returned for KB ${kbId}`);
+            continue;
+          }
+
+          const matchCount = data.vectorResults?.length || 0;
+          console.log(`[useRAGChat]    ➜ Matches: ${matchCount} (${searchDuration}ms)`);
+
+          // 🆕 空结果警告
+          if (matchCount === 0) {
+            console.warn(`[useRAGChat] ⚠️ Collection "${kbId}" returned 0 results`);
+            traceEvents.push({
+              type: "rag_source_found",
+              data: {
+                ragCollectionId: kbId,
+                ragActualMatches: 0,
+                ragSearchDuration: searchDuration,
+                ragWarning: "Collection empty or ID mismatch",
+                message: `No results found in ${knowledgeBaseName}`,
+              },
+            });
+          }
 
           // Map vector results to citations
           const citations: Citation[] = data.vectorResults.map((chunk) => ({
@@ -154,7 +197,10 @@ export function useRAGChat() {
             traceEvents.push({
               type: "rag_source_found",
               data: {
+                ragCollectionId: kbId,
                 ragChunksCount: data.vectorResults.length,
+                ragActualMatches: data.vectorResults.length,
+                ragSearchDuration: searchDuration,
                 message: `Found ${data.vectorResults.length} relevant chunks`,
               },
             });

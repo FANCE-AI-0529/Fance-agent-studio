@@ -73,6 +73,14 @@ export interface TraceEventData {
   ragSourceDocumentName?: string; // Source document name
   ragChunksCount?: number;        // Number of chunks found
   ragNodesCount?: number;         // Number of nodes found
+  // 🆕 RAG 调试增强字段
+  ragCollectionId?: string;       // 实际查询的 Collection ID
+  ragQueryPreview?: string;       // 查询文本预览
+  ragMatchThreshold?: number;     // 使用的匹配阈值
+  ragMatchCount?: number;         // 请求的匹配数量
+  ragActualMatches?: number;      // 实际返回的匹配数
+  ragSearchDuration?: number;     // 检索耗时 (ms)
+  ragWarning?: string;            // 警告信息（如空结果原因）
   // Manus-specific fields
   manusFilePath?: string;           // Memory file path
   manusFileContent?: string;        // Memory file content preview
