@@ -386,7 +386,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <TabsContent value="about" className="space-y-4 m-0">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">关于 Fance OS</CardTitle>
+                  <CardTitle className="text-base">关于 Agent Studio</CardTitle>
                   <CardDescription>版本信息和相关链接</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

@@ -11,7 +11,7 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   zh: {
     // 品牌
-    "brand.name": "Fance OS",
+  "brand.name": "Agent Studio",
     "brand.slogan": "技能驱动，智能无限",
     "brand.description": "Agent Skills 驱动的智能体构建平台",
     
@@ -112,7 +112,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // Brand
-    "brand.name": "Fance OS",
+    "brand.name": "Agent Studio",
     "brand.slogan": "Skill-driven, Intelligence Unlimited",
     "brand.description": "AI agent building platform powered by Agent Skills",
     

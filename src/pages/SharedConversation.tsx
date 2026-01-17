@@ -165,7 +165,7 @@ export default function SharedConversation() {
       <footer className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            由 <span className="font-semibold text-foreground">Fance OS</span> 提供支持
+            由 <span className="font-semibold text-foreground">Agent Studio</span> 提供支持
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" asChild>

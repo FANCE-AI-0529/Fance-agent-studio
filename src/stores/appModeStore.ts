@@ -95,7 +95,7 @@ export const useAppModeStore = create<AppModeState>()(
       clearEjectContext: () => set({ ejectContext: null }),
     }),
     {
-      name: 'fance-app-mode',
+      name: 'agent-studio-mode',
       partialize: (state) => ({ mode: state.mode }),
     }
   )
