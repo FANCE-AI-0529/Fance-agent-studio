@@ -267,6 +267,12 @@ async function fetchFileFromStorage(
 }
 
 /**
+ * 最大可处理文件大小（5MB）
+ * 超过此大小的文件将跳过 AI 解析，使用元数据降级
+ */
+const MAX_PROCESSABLE_SIZE = 5 * 1024 * 1024;
+
+/**
  * 主服务入口
  */
 serve(async (req) => {
@@ -274,6 +280,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // 用于错误恢复的变量
+  let supabase: any = null;
+  let knowledgeBaseId: string | null = null;
+  let documentId: string | null = null;
 
   try {
     // [认证]：验证用户身份
@@ -294,7 +305,7 @@ serve(async (req) => {
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // [用户验证]：获取当前用户
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
@@ -306,7 +317,8 @@ serve(async (req) => {
     }
 
     // [参数解析]：获取文档 ID
-    const { documentId } = await req.json();
+    const requestBody = await req.json();
+    documentId = requestBody.documentId;
     
     if (!documentId) {
       return new Response(
@@ -330,6 +342,40 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Document not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 保存 knowledgeBaseId 用于错误恢复
+    knowledgeBaseId = document.knowledge_base_id;
+
+    // [文件大小检查]：超大文件直接跳过，使用元数据降级
+    const fileSize = document.file_size || 0;
+    if (fileSize > MAX_PROCESSABLE_SIZE) {
+      console.warn(`[rag-ingest] File too large (${fileSize} bytes > ${MAX_PROCESSABLE_SIZE}), skipping indexing`);
+      
+      // 标记为 ready 但添加警告
+      await supabase
+        .from("knowledge_documents")
+        .update({ 
+          status: "skipped",
+          error_message: `文件过大 (${Math.round(fileSize / 1024 / 1024)}MB)，已跳过索引。您仍可使用该知识库，但检索效果可能受限。`,
+        })
+        .eq("id", documentId);
+      
+      await supabase
+        .from("knowledge_bases")
+        .update({ 
+          index_status: "ready",
+        })
+        .eq("id", knowledgeBaseId);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          warning: "file_too_large",
+          message: `文件过大 (${Math.round(fileSize / 1024 / 1024)}MB)，已跳过详细索引`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -496,7 +542,34 @@ serve(async (req) => {
       throw processingError;
     }
   } catch (error) {
-    console.error("[rag-ingest] Error:", error);
+    console.error("[rag-ingest] Fatal error:", error);
+    
+    // [错误恢复]：确保即使崩溃也更新状态为 failed
+    if (supabase && knowledgeBaseId) {
+      try {
+        await supabase
+          .from("knowledge_bases")
+          .update({ 
+            index_status: "failed",
+          })
+          .eq("id", knowledgeBaseId);
+        
+        if (documentId) {
+          await supabase
+            .from("knowledge_documents")
+            .update({ 
+              status: "failed",
+              error_message: error instanceof Error ? error.message : "处理失败",
+            })
+            .eq("id", documentId);
+        }
+        
+        console.log("[rag-ingest] Error recovery: status updated to failed");
+      } catch (recoveryError) {
+        console.error("[rag-ingest] Error recovery failed:", recoveryError);
+      }
+    }
+    
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
