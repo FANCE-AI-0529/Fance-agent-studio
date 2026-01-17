@@ -179,7 +179,11 @@ export function UploadGuideCard({
             ) : isProcessing ? (
               <>
                 <p className="text-sm font-medium text-primary mb-2">
-                  {uploadStatus === 'uploading' ? '正在上传...' : '正在学习文件内容...'}
+                  {uploadStatus === 'uploading' 
+                    ? '正在上传...' 
+                    : uploadProgress < 80 
+                      ? '正在学习文件内容 (AI 向量化中)...'
+                      : '即将完成索引...'}
                 </p>
                 <Progress value={uploadProgress} className="w-full max-w-[200px] h-1.5" />
                 <p className="text-xs text-muted-foreground mt-1.5">
