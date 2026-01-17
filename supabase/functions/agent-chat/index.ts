@@ -423,50 +423,89 @@ async function performRAGQuery(
 ): Promise<string> {
   // [检查]：无知识库配置时直接返回
   if (!knowledgeBases || knowledgeBases.length === 0) {
+    console.log(`[agent-chat][RAG] ⚠️ No knowledge bases configured for this agent`);
     return "";
   }
 
   // [检查]：消息为空时跳过
   if (!userMessage || userMessage.trim().length === 0) {
+    console.log(`[agent-chat][RAG] ⚠️ Empty user message, skipping RAG query`);
     return "";
   }
 
-  console.log(`[agent-chat] Performing RAG query for ${knowledgeBases.length} knowledge bases`);
+  console.log(`[agent-chat][RAG] ═══════════════════════════════════════════`);
+  console.log(`[agent-chat][RAG] Starting search in ${knowledgeBases.length} collection(s)`);
+  console.log(`[agent-chat][RAG] Query: "${userMessage.slice(0, 80)}${userMessage.length > 80 ? '...' : ''}"`);
 
   try {
     // [向量化]：生成查询向量
+    const startTime = Date.now();
     const queryEmbedding = await generateEmbedding(userMessage, apiKey);
     const embeddingString = `[${queryEmbedding.join(",")}]`;
+    console.log(`[agent-chat][RAG] ✓ Embedding generated in ${Date.now() - startTime}ms`);
 
     const contextParts: string[] = [];
+    let totalMatches = 0;
 
     // [遍历]：查询每个知识库
     for (const kb of knowledgeBases) {
+      // 🔍 [关键日志] 打印检索范围
+      console.log(`[agent-chat][RAG] ───────────────────────────────────────────`);
+      console.log(`[agent-chat][RAG] 🔍 Searching Collection: "${kb.id}"`);
+      console.log(`[agent-chat][RAG]    Collection Name: "${kb.name}"`);
+      console.log(`[agent-chat][RAG]    Threshold: 0.65 | Max Results: 5`);
+
+      const searchStart = Date.now();
       const { data: chunks, error } = await supabase.rpc("match_document_chunks", {
         query_embedding: embeddingString,
-        match_threshold: 0.65, // 略低的阈值以获取更多上下文
-        match_count: 3,
+        match_threshold: 0.65,
+        match_count: 5, // 增加到 5 条以提高召回
         p_knowledge_base_id: kb.id,
         p_user_id: userId,
       });
 
+      const searchDuration = Date.now() - searchStart;
+
+      // ⚠️ [错误日志]
       if (error) {
-        console.error(`[agent-chat] RAG query error for KB ${kb.id}:`, error);
+        console.error(`[agent-chat][RAG] ❌ Query Error in KB "${kb.id}": ${error.message}`);
+        console.error(`[agent-chat][RAG]    Error Code: ${error.code}`);
         continue;
+      }
+
+      // ⚠️ [匹配结果统计]
+      const matchCount = chunks?.length || 0;
+      totalMatches += matchCount;
+      console.log(`[agent-chat][RAG]    ➜ Matches: ${matchCount} (${searchDuration}ms)`);
+
+      // ⚠️ [空结果警告]
+      if (matchCount === 0) {
+        console.warn(`[agent-chat][RAG] ⚠️ WARNING: Collection "${kb.id}" returned 0 results`);
+        console.warn(`[agent-chat][RAG]    Possible causes:`);
+        console.warn(`[agent-chat][RAG]    - Collection may be empty (no indexed documents)`);
+        console.warn(`[agent-chat][RAG]    - Collection ID mismatch with database`);
+        console.warn(`[agent-chat][RAG]    - Similarity threshold (0.65) too high for this query`);
+        console.warn(`[agent-chat][RAG]    - User ID filter may be excluding results`);
       }
 
       if (chunks && chunks.length > 0) {
         contextParts.push(`\n## 来自「${kb.name}」的相关内容：`);
         for (const chunk of chunks) {
-          const similarity = (chunk.similarity * 100).toFixed(0);
+          const similarity = (chunk.similarity * 100).toFixed(1);
+          console.log(`[agent-chat][RAG]    📄 Chunk ${chunk.id?.slice(0, 8) || 'unknown'}: ${similarity}% match`);
           contextParts.push(`[相关度 ${similarity}%]\n${chunk.content}`);
         }
       }
     }
 
+    // 📊 [总结日志]
+    console.log(`[agent-chat][RAG] ═══════════════════════════════════════════`);
+    console.log(`[agent-chat][RAG] ✅ Search Complete`);
+    console.log(`[agent-chat][RAG]    Total Matches: ${totalMatches}`);
+    console.log(`[agent-chat][RAG]    Context Parts: ${contextParts.length}`);
+
     // [返回]：构建最终上下文
     if (contextParts.length > 0) {
-      console.log(`[agent-chat] RAG context built: ${contextParts.length} parts`);
       return `
 
 ---
@@ -476,9 +515,15 @@ ${contextParts.join("\n\n")}
 `;
     }
 
+    // 明确记录无结果情况
+    if (totalMatches === 0) {
+      console.warn(`[agent-chat][RAG] ⚠️ No relevant content found across all collections`);
+    }
+
     return "";
   } catch (err) {
-    console.error("[agent-chat] RAG query failed:", err);
+    console.error("[agent-chat][RAG] ❌ RAG Query Failed:", err);
+    console.error("[agent-chat][RAG]    Stack:", (err as Error).stack);
     return "";
   }
 }
