@@ -182,7 +182,7 @@ export default function ConsumerHome() {
             }} transition={{
               delay: 0.2
             }} className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
-                  <span className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent bg-[#131111]">
                     构建你的
                   </span>
                   <br />
