@@ -1,11 +1,27 @@
+/**
+ * @file agent-chat/index.ts
+ * @description 智能体对话服务，负责处理用户消息并返回 AI 响应
+ * @module EdgeFunctions/AgentChat
+ * @author Agent OS Studio Team
+ * @copyright 2025 Agent OS Studio. All rights reserved.
+ * @version 2.0.0 - 集成 RAG 知识库上下文注入
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { generateEmbedding } from "../_shared/embed-with-gateway.ts";
 
+/**
+ * CORS 响应头配置
+ */
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * 智能体技能数据结构
+ */
 interface AgentSkill {
   name: string;
   description?: string;
@@ -13,6 +29,9 @@ interface AgentSkill {
   inputSchema?: Record<string, unknown>;
 }
 
+/**
+ * MCP 动作数据结构
+ */
 interface MCPAction {
   id: string;
   name: string;
@@ -23,14 +42,28 @@ interface MCPAction {
   riskLevel?: string;
 }
 
+/**
+ * 知识库配置
+ */
+interface KnowledgeBaseConfig {
+  id: string;
+  name: string;
+}
+
+/**
+ * 智能体清单数据结构
+ */
 interface AgentManifest {
   name?: string;
   systemPrompt?: string;
   skills?: string[] | AgentSkill[];
   mcpActions?: MCPAction[];
-  knowledgeBases?: Array<{ id: string; name: string }>;
+  knowledgeBases?: KnowledgeBaseConfig[];
 }
 
+/**
+ * 智能体配置数据结构
+ */
 interface AgentConfig {
   name?: string;
   systemPrompt?: string;
@@ -40,7 +73,9 @@ interface AgentConfig {
   manifest?: AgentManifest;
 }
 
-// Tool definition for Function Calling
+/**
+ * 工具定义 (Function Calling)
+ */
 interface ToolDefinition {
   type: 'function';
   function: {
@@ -50,17 +85,24 @@ interface ToolDefinition {
   };
 }
 
-// Multimodal message content types
+/**
+ * 多模态消息内容类型
+ */
 type TextContent = { type: "text"; text: string };
 type ImageContent = { type: "image_url"; image_url: { url: string } };
 type MessageContent = string | (TextContent | ImageContent)[];
 
+/**
+ * 对话消息数据结构
+ */
 interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: MessageContent;
 }
 
-// Available models - all support multimodal
+/**
+ * 可用的 AI 模型列表
+ */
 const validModels = [
   "google/gemini-2.5-flash",
   "google/gemini-2.5-pro",
@@ -75,16 +117,16 @@ const validModels = [
 
 const VALID_MPLP_POLICIES = ['default', 'standard', 'strict'];
 
-// 模型映射函数 - 将无效模型名映射为有效模型
+/**
+ * 模型映射函数 - 将无效模型名映射为有效模型
+ */
 function mapToValidModel(model?: string): string {
   if (!model) return 'google/gemini-2.5-flash';
   
-  // 已经是有效模型
   if (validModels.includes(model)) {
     return model;
   }
   
-  // 映射常见的无效模型名
   const modelLower = model.toLowerCase();
   
   if (modelLower.includes('claude')) {
@@ -104,7 +146,9 @@ function getValidModel(requestedModel?: string): string {
   return mapToValidModel(requestedModel);
 }
 
-// Validate and sanitize agent configuration to prevent injection attacks
+/**
+ * 验证并清理智能体配置
+ */
 function validateAgentConfig(config?: AgentConfig): AgentConfig | undefined {
   if (!config) return undefined;
   
@@ -128,13 +172,14 @@ function validateAgentConfig(config?: AgentConfig): AgentConfig | undefined {
   };
 }
 
-// 🆕 Build tool definitions from agent manifest for Function Calling
+/**
+ * 构建工具定义 (Function Calling)
+ */
 function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
   const tools: ToolDefinition[] = [];
   
   if (!config) return tools;
   
-  // Extract from skills array
   const skills = config.skills || [];
   for (const skill of skills) {
     tools.push({
@@ -151,7 +196,6 @@ function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
     });
   }
   
-  // Extract from manifest.mcpActions
   const manifest = config.manifest;
   if (manifest?.mcpActions && Array.isArray(manifest.mcpActions)) {
     for (const mcp of manifest.mcpActions) {
@@ -170,11 +214,9 @@ function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
     }
   }
   
-  // Extract from manifest.skills (if string array, convert to basic tools)
   if (manifest?.skills && Array.isArray(manifest.skills)) {
     for (const skill of manifest.skills) {
       if (typeof skill === 'string') {
-        // Check if already added from config.skills
         const skillName = skill.toLowerCase().replace(/\s+/g, '_');
         if (!tools.some(t => t.function.name === skillName)) {
           tools.push({
@@ -197,7 +239,9 @@ function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
   return tools;
 }
 
-// Check if message contains multimodal content
+/**
+ * 检查消息是否包含多模态内容
+ */
 function hasMultimodalContent(messages: ChatMessage[]): boolean {
   return messages.some(msg => {
     if (Array.isArray(msg.content)) {
@@ -207,7 +251,9 @@ function hasMultimodalContent(messages: ChatMessage[]): boolean {
   });
 }
 
-// Terminal Style Instructions (injected into all prompts)
+/**
+ * 终端风格指令 (注入到所有提示词)
+ */
 const TERMINAL_STYLE_INSTRUCTIONS = `
 ## 响应格式规范
 
@@ -222,7 +268,9 @@ const TERMINAL_STYLE_INSTRUCTIONS = `
 - 关键实体用「书名号」包裹，例如：「文件名」「金额」「API名称」
 `;
 
-// Role Meta Protocol Instructions
+/**
+ * 角色元协议指令
+ */
 const ROLE_META_INSTRUCTIONS = `
 ## 响应元数据协议
 
@@ -243,7 +291,9 @@ const ROLE_META_INSTRUCTIONS = `
 重要：这个 meta 标签必须是回复的第一行，不要有任何其他内容在它之前。
 `;
 
-// Fance 智能助手专属系统提示词 (平台导航员)
+/**
+ * Fance 智能助手专属系统提示词
+ */
 const fanceGuideSystemPrompt = `你是 Fance 智能助手，Fance OS 平台的官方向导。
 
 ## 你的角色
@@ -291,12 +341,14 @@ ${TERMINAL_STYLE_INSTRUCTIONS}
 ${ROLE_META_INSTRUCTIONS}
 请记住：你的目标是帮助用户快速上手 Fance OS 平台，让他们能够轻松构建自己的智能体。`;
 
+/**
+ * 构建系统提示词
+ */
 function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean): string {
   const agentName = config?.name || "Fance 智能助手";
   const skills = config?.skills || [];
   const mplpPolicy = config?.mplpPolicy || "standard";
   
-  // If no custom config provided, use Fance Guide prompt
   if (!config?.name && !config?.systemPrompt) {
     return fanceGuideSystemPrompt + (isMultimodal ? `
 
@@ -304,14 +356,12 @@ function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean): string
 当用户发送图片时，请仔细观察并提供有价值的分析和建议。` : '');
   }
   
-  // Build skills section
   const skillsSection = skills.length > 0
     ? `\n\n可用技能：\n${skills.map((s, i) => 
         `${i + 1}. ${s.name}${s.description ? ` - ${s.description}` : ''}${s.permissions?.length ? ` (权限: ${s.permissions.join(', ')})` : ''}`
       ).join('\n')}`
     : '';
 
-  // Multimodal instructions
   const multimodalInstructions = isMultimodal ? `
 
 ## 图像分析能力
@@ -324,12 +374,10 @@ function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean): string
 5. 如果是图表/数据，提供数据分析
 6. 如果是设计稿，提供设计反馈` : '';
 
-  // Custom system prompt takes precedence
   if (config?.systemPrompt) {
     return `${config.systemPrompt}${skillsSection}${multimodalInstructions}`;
   }
 
-  // Default Agent system prompt for custom agents
   return `你是 ${agentName}，运行在 Fance OS 平台上的智能助手。
 
 ## 工作原则
@@ -353,13 +401,116 @@ ${ROLE_META_INSTRUCTIONS}
 请根据用户的问题，选择合适的技能来回答。如果用户的请求涉及敏感操作，请先说明所需权限和可能的影响。`;
 }
 
+/**
+ * 🆕 执行 RAG 查询，从知识库检索相关内容
+ * 
+ * 该函数查询智能体配置的知识库，使用向量相似度搜索
+ * 找到与用户问题最相关的文档片段。
+ * 
+ * @param {any} supabase - Supabase 客户端
+ * @param {string} userId - 用户 ID
+ * @param {KnowledgeBaseConfig[]} knowledgeBases - 知识库配置列表
+ * @param {string} userMessage - 用户消息
+ * @param {string} apiKey - Lovable API 密钥
+ * @returns {Promise<string>} 返回格式化的知识库上下文
+ */
+async function performRAGQuery(
+  supabase: any,
+  userId: string,
+  knowledgeBases: KnowledgeBaseConfig[],
+  userMessage: string,
+  apiKey: string
+): Promise<string> {
+  // [检查]：无知识库配置时直接返回
+  if (!knowledgeBases || knowledgeBases.length === 0) {
+    return "";
+  }
+
+  // [检查]：消息为空时跳过
+  if (!userMessage || userMessage.trim().length === 0) {
+    return "";
+  }
+
+  console.log(`[agent-chat] Performing RAG query for ${knowledgeBases.length} knowledge bases`);
+
+  try {
+    // [向量化]：生成查询向量
+    const queryEmbedding = await generateEmbedding(userMessage, apiKey);
+    const embeddingString = `[${queryEmbedding.join(",")}]`;
+
+    const contextParts: string[] = [];
+
+    // [遍历]：查询每个知识库
+    for (const kb of knowledgeBases) {
+      const { data: chunks, error } = await supabase.rpc("match_document_chunks", {
+        query_embedding: embeddingString,
+        match_threshold: 0.65, // 略低的阈值以获取更多上下文
+        match_count: 3,
+        p_knowledge_base_id: kb.id,
+        p_user_id: userId,
+      });
+
+      if (error) {
+        console.error(`[agent-chat] RAG query error for KB ${kb.id}:`, error);
+        continue;
+      }
+
+      if (chunks && chunks.length > 0) {
+        contextParts.push(`\n## 来自「${kb.name}」的相关内容：`);
+        for (const chunk of chunks) {
+          const similarity = (chunk.similarity * 100).toFixed(0);
+          contextParts.push(`[相关度 ${similarity}%]\n${chunk.content}`);
+        }
+      }
+    }
+
+    // [返回]：构建最终上下文
+    if (contextParts.length > 0) {
+      console.log(`[agent-chat] RAG context built: ${contextParts.length} parts`);
+      return `
+
+---
+以下是从知识库检索到的参考资料，请基于这些内容回答用户问题：
+${contextParts.join("\n\n")}
+---
+`;
+    }
+
+    return "";
+  } catch (err) {
+    console.error("[agent-chat] RAG query failed:", err);
+    return "";
+  }
+}
+
+/**
+ * 从消息数组中提取最新的用户消息文本
+ */
+function extractLatestUserMessage(messages: ChatMessage[]): string {
+  const userMessages = messages.filter(m => m.role === "user");
+  if (userMessages.length === 0) return "";
+  
+  const lastMessage = userMessages[userMessages.length - 1];
+  if (typeof lastMessage.content === "string") {
+    return lastMessage.content;
+  }
+  
+  // 多模态消息：提取文本部分
+  const textContent = lastMessage.content.find(c => c.type === "text");
+  return textContent ? (textContent as TextContent).text : "";
+}
+
+/**
+ * 主服务入口
+ */
 serve(async (req) => {
+  // [CORS]：处理预检请求
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // === SECURITY FIX 1: Verify user authentication ===
+    // [认证]：验证用户身份
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       console.error("[agent-chat] No authorization header");
@@ -386,6 +537,7 @@ serve(async (req) => {
 
     console.log(`[agent-chat] Authenticated user: ${user.id}`);
 
+    // [解析]：获取请求体
     const { messages, agentConfig } = await req.json() as {
       messages: ChatMessage[];
       agentConfig?: AgentConfig;
@@ -398,41 +550,64 @@ serve(async (req) => {
       throw new Error("AI 服务未配置");
     }
 
-    // === SECURITY FIX 2: Validate and sanitize agent configuration ===
+    // [验证]：清理智能体配置
     const validatedConfig = validateAgentConfig(agentConfig);
 
-    // Check if this is a multimodal request
+    // [检测]：判断是否为多模态请求
     const isMultimodal = hasMultimodalContent(messages);
-    const systemPrompt = buildSystemPrompt(validatedConfig, isMultimodal);
+    
+    // 🆕 [RAG]：执行知识库查询
+    const knowledgeBases = validatedConfig?.manifest?.knowledgeBases || [];
+    const latestUserMessage = extractLatestUserMessage(messages);
+    
+    let ragContext = "";
+    if (knowledgeBases.length > 0 && latestUserMessage) {
+      console.log(`[agent-chat] RAG enabled with ${knowledgeBases.length} knowledge bases`);
+      ragContext = await performRAGQuery(
+        supabase,
+        user.id,
+        knowledgeBases,
+        latestUserMessage,
+        LOVABLE_API_KEY
+      );
+      console.log(`[agent-chat] RAG context length: ${ragContext.length} chars`);
+    }
+
+    // [构建]：生成系统提示词（含 RAG 上下文）
+    const baseSystemPrompt = buildSystemPrompt(validatedConfig, isMultimodal);
+    const systemPrompt = ragContext 
+      ? `${baseSystemPrompt}${ragContext}`
+      : baseSystemPrompt;
+
     const model = getValidModel(validatedConfig?.model);
 
-    console.log(`[agent-chat] User ${user.id} starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}`);
-    console.log(`[agent-chat] Message count: ${messages?.length || 0}`);
+    console.log(`[agent-chat] User ${user.id} starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}, RAG: ${ragContext.length > 0 ? 'yes' : 'no'}`);
 
-    // Build messages array
+    // [构建]：消息数组
     const apiMessages: ChatMessage[] = [
       { role: "system", content: systemPrompt },
       ...messages,
     ];
 
-    // 🆕 Build tool definitions for Function Calling
+    // [工具]：构建 Function Calling 定义
     const tools = buildToolDefinitions(validatedConfig);
     const hasTools = tools.length > 0;
     
     console.log(`[agent-chat] Tools available: ${tools.length}`, tools.map(t => t.function.name));
 
+    // [请求体]：构建 API 请求
     const requestBody: Record<string, unknown> = {
       model,
       messages: apiMessages,
       stream: true,
     };
     
-    // Only add tools if there are any defined
     if (hasTools) {
       requestBody.tools = tools;
       requestBody.tool_choice = 'auto';
     }
 
+    // [调用]：发送请求到 AI Gateway
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -442,6 +617,7 @@ serve(async (req) => {
       body: JSON.stringify(requestBody),
     });
 
+    // [错误处理]：检查响应状态
     if (!response.ok) {
       const statusCode = response.status;
       console.error(`[agent-chat] AI gateway error: ${statusCode}`);
@@ -468,8 +644,9 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[agent-chat] Streaming response started for user ${user.id} with model: ${model}, multimodal: ${isMultimodal}`);
+    console.log(`[agent-chat] Streaming response started for user ${user.id} with model: ${model}, multimodal: ${isMultimodal}, RAG: ${ragContext.length > 0}`);
     
+    // [返回]：流式响应
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });

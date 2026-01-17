@@ -1,20 +1,60 @@
+/**
+ * @file rag-ingest/index.ts
+ * @description RAG 知识库文档摄入服务，负责文档解析、切片和向量化
+ * @module EdgeFunctions/RAGIngest
+ * @author Agent OS Studio Team
+ * @copyright 2025 Agent OS Studio. All rights reserved.
+ * @version 2.0.0 - 集成真实向量化
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { generateBatchEmbeddings, extractTextWithAI } from "../_shared/embed-with-gateway.ts";
 
-// PDF text extraction utilities
+/**
+ * CORS 响应头配置
+ */
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+/**
+ * 文档切片结果数据结构
+ */
+interface ChunkResult {
+  /** 切片文本内容 */
+  content: string;
+  /** 切片索引序号 */
+  index: number;
+  /** 估算的 Token 数量 */
+  tokenCount: number;
+  /** 切片元数据 */
+  metadata: Record<string, unknown>;
+}
+
+/**
+ * PDF 文本提取 - 正则表达式方法 (降级方案)
+ * 
+ * 使用多种模式匹配从 PDF 二进制数据中提取文本内容。
+ * 作为 AI 解析失败时的降级方案。
+ * 
+ * @param {ArrayBuffer} pdfBuffer - PDF 文件二进制数据
+ * @returns {Promise<string>} 提取的文本内容
+ */
 async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
-  // Simple PDF text extraction - extracts text streams from PDF
   const bytes = new Uint8Array(pdfBuffer);
   const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
   
   const extractedParts: string[] = [];
   
-  // Method 1: Extract text from stream objects (BT...ET blocks)
+  // [方法1]：提取 BT...ET 文本块
   const btEtPattern = /BT\s*([\s\S]*?)\s*ET/g;
   let match;
   while ((match = btEtPattern.exec(text)) !== null) {
     const block = match[1];
-    // Extract text from Tj and TJ operators
+    
+    // 提取 Tj 操作符的文本
     const tjPattern = /\(((?:[^()\\]|\\.)*)\)\s*Tj/g;
     let tjMatch;
     while ((tjMatch = tjPattern.exec(block)) !== null) {
@@ -24,7 +64,7 @@ async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
       }
     }
     
-    // Extract from TJ arrays
+    // 提取 TJ 数组中的文本
     const tjArrayPattern = /\[((?:[^\[\]]*|\[(?:[^\[\]]*|\[[^\[\]]*\])*\])*)\]\s*TJ/gi;
     let tjArrayMatch;
     while ((tjArrayMatch = tjArrayPattern.exec(block)) !== null) {
@@ -40,7 +80,7 @@ async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
     }
   }
 
-  // Method 2: Extract from Unicode streams (common in Chinese PDFs)
+  // [方法2]：提取 Unicode 流 (常见于中文 PDF)
   const unicodePattern = /<([0-9A-Fa-f]+)>\s*Tj/g;
   while ((match = unicodePattern.exec(text)) !== null) {
     const hexString = match[1];
@@ -50,7 +90,7 @@ async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
     }
   }
   
-  // Method 3: Look for plain text patterns (some PDFs have readable text)
+  // [方法3]：查找纯文本模式
   const plainTextPattern = /\/Contents\s*\(([^)]+)\)/g;
   while ((match = plainTextPattern.exec(text)) !== null) {
     const content = match[1];
@@ -59,12 +99,12 @@ async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
     }
   }
   
-  // Join and clean up
+  // [合并]：清理并拼接结果
   let result = extractedParts.join(' ')
     .replace(/\s+/g, ' ')
     .trim();
   
-  // If we got very little text, try alternative extraction
+  // [降级]：如果提取内容过少，尝试备用方法
   if (result.length < 100) {
     const altResult = extractPlainTextFallback(text);
     if (altResult.length > result.length) {
@@ -75,6 +115,9 @@ async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
   return result;
 }
 
+/**
+ * 解码 PDF 转义字符串
+ */
 function decodeEscapedString(str: string): string {
   return str
     .replace(/\\n/g, '\n')
@@ -85,9 +128,12 @@ function decodeEscapedString(str: string): string {
     .replace(/\\(.)/g, '$1');
 }
 
+/**
+ * 解码十六进制字符串 (UTF-16BE)
+ */
 function decodeHexString(hex: string): string {
   let result = '';
-  // Try UTF-16BE first (common for CJK)
+  // 尝试 UTF-16BE 解码 (常见于 CJK)
   if (hex.length % 4 === 0) {
     for (let i = 0; i < hex.length; i += 4) {
       const code = parseInt(hex.substr(i, 4), 16);
@@ -95,12 +141,11 @@ function decodeHexString(hex: string): string {
         result += String.fromCharCode(code);
       }
     }
-    // Check if result looks like valid text
     if (/[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/.test(result) || /[a-zA-Z0-9]/.test(result)) {
       return result;
     }
   }
-  // Fallback to single-byte
+  // 降级到单字节解码
   result = '';
   for (let i = 0; i < hex.length; i += 2) {
     const code = parseInt(hex.substr(i, 2), 16);
@@ -111,14 +156,15 @@ function decodeHexString(hex: string): string {
   return result;
 }
 
+/**
+ * 纯文本提取降级方案
+ */
 function extractPlainTextFallback(text: string): string {
-  // Look for readable ASCII sequences
   const readableChars: string[] = [];
   let currentWord = '';
   
   for (const char of text) {
     const code = char.charCodeAt(0);
-    // Printable ASCII or Chinese characters
     if ((code >= 32 && code <= 126) || (code >= 0x4e00 && code <= 0x9fff)) {
       currentWord += char;
     } else {
@@ -139,23 +185,34 @@ function extractPlainTextFallback(text: string): string {
     .trim();
 }
 
-// Fetch file content from storage
+/**
+ * 从对象存储获取文件内容
+ * 
+ * @param {any} supabase - Supabase 客户端实例
+ * @param {string} userId - 用户 ID
+ * @param {string} knowledgeBaseId - 知识库 ID
+ * @param {string} fileName - 文件名
+ * @param {string} apiKey - Lovable API 密钥 (用于 AI PDF 解析)
+ * @returns 文件内容或错误信息
+ */
 async function fetchFileFromStorage(
   supabase: any,
   userId: string,
   knowledgeBaseId: string,
-  fileName: string
+  fileName: string,
+  apiKey?: string
 ): Promise<{ content: string; success: boolean; error?: string }> {
   try {
     const filePath = `${userId}/${knowledgeBaseId}/${fileName}`;
-    console.log(`Fetching file from storage: ${filePath}`);
+    console.log(`[rag-ingest] Fetching file from storage: ${filePath}`);
     
+    // [下载]：从 Storage 获取文件
     const { data, error } = await supabase.storage
       .from('knowledge-documents')
       .download(filePath);
     
     if (error) {
-      console.error('Storage download error:', error);
+      console.error('[rag-ingest] Storage download error:', error);
       return { content: '', success: false, error: error.message };
     }
     
@@ -165,22 +222,42 @@ async function fetchFileFromStorage(
     
     const fileExtension = fileName.split('.').pop()?.toLowerCase();
     
-    // Handle different file types
+    // [PDF 处理]：优先使用 AI 解析
     if (fileExtension === 'pdf') {
       const buffer = await data.arrayBuffer();
+      
+      // 尝试 AI Gateway 多模态解析
+      if (apiKey) {
+        try {
+          console.log('[rag-ingest] Attempting AI-powered PDF extraction...');
+          const aiExtracted = await extractTextWithAI(buffer, apiKey);
+          if (aiExtracted && aiExtracted.trim().length > 50) {
+            console.log(`[rag-ingest] AI extraction successful: ${aiExtracted.length} chars`);
+            return { content: aiExtracted, success: true };
+          }
+        } catch (aiError) {
+          console.log('[rag-ingest] AI extraction failed, falling back to regex:', aiError);
+        }
+      }
+      
+      // 降级到正则解析
       const extractedText = await extractTextFromPDF(buffer);
-      console.log(`Extracted ${extractedText.length} chars from PDF`);
+      console.log(`[rag-ingest] Regex extraction: ${extractedText.length} chars`);
       return { content: extractedText, success: true };
-    } else if (['txt', 'md', 'json'].includes(fileExtension || '')) {
-      const textContent = await data.text();
-      return { content: textContent, success: true };
-    } else {
-      // Try to read as text
+    } 
+    
+    // [文本文件]：直接读取
+    if (['txt', 'md', 'json'].includes(fileExtension || '')) {
       const textContent = await data.text();
       return { content: textContent, success: true };
     }
+    
+    // [其他格式]：尝试作为文本读取
+    const textContent = await data.text();
+    return { content: textContent, success: true };
+    
   } catch (err) {
-    console.error('Error fetching file from storage:', err);
+    console.error('[rag-ingest] Error fetching file from storage:', err);
     return { 
       content: '', 
       success: false, 
@@ -189,24 +266,17 @@ async function fetchFileFromStorage(
   }
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-interface ChunkResult {
-  content: string;
-  index: number;
-  tokenCount: number;
-  metadata: Record<string, unknown>;
-}
-
+/**
+ * 主服务入口
+ */
 serve(async (req) => {
+  // [CORS]：处理预检请求
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // [认证]：验证用户身份
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -218,15 +288,15 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    // Use anon client for auth check
+    // [客户端]：创建认证和服务客户端
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    
-    // Use service role for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // [用户验证]：获取当前用户
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
       return new Response(
@@ -235,6 +305,7 @@ serve(async (req) => {
       );
     }
 
+    // [参数解析]：获取文档 ID
     const { documentId } = await req.json();
     
     if (!documentId) {
@@ -244,9 +315,9 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Starting ingestion for document: ${documentId}`);
+    console.log(`[rag-ingest] Starting ingestion for document: ${documentId}, user: ${user.id}`);
 
-    // Get document
+    // [查询]：获取文档信息
     const { data: document, error: docError } = await supabase
       .from("knowledge_documents")
       .select("*, knowledge_bases(*)")
@@ -255,14 +326,14 @@ serve(async (req) => {
       .single();
 
     if (docError || !document) {
-      console.error("Document not found:", docError);
+      console.error("[rag-ingest] Document not found:", docError);
       return new Response(
         JSON.stringify({ error: "Document not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Update status to processing
+    // [状态更新]：标记为处理中
     await supabase
       .from("knowledge_documents")
       .update({ status: "processing" })
@@ -273,31 +344,30 @@ serve(async (req) => {
       const chunkSize = knowledgeBase.chunk_size || 512;
       const chunkOverlap = knowledgeBase.chunk_overlap || 50;
 
-      // Get content to chunk - first check database, then try storage
+      // [内容获取]：优先从数据库读取，否则从 Storage 获取
       let content = document.content || "";
       
       if (!content || content.trim().length === 0) {
-        console.log("No content in database, attempting to fetch from storage...");
+        console.log("[rag-ingest] No content in database, fetching from storage...");
         
-        // Try to extract content from storage file
         const storageResult = await fetchFileFromStorage(
           supabase,
           user.id,
           document.knowledge_base_id,
-          document.name
+          document.name,
+          LOVABLE_API_KEY
         );
         
         if (storageResult.success && storageResult.content.trim().length > 0) {
           content = storageResult.content;
-          console.log(`Successfully extracted ${content.length} chars from storage`);
+          console.log(`[rag-ingest] Extracted ${content.length} chars from storage`);
           
-          // Update the document with extracted content
+          // 更新数据库中的内容
           await supabase
             .from("knowledge_documents")
             .update({ content })
             .eq("id", documentId);
         } else {
-          // Still no content - check if it's a "pure image" PDF
           const fileExtension = document.name?.split('.').pop()?.toLowerCase();
           const errorMessage = fileExtension === 'pdf' 
             ? "PDF文档为纯图片格式，无法提取文字内容。请使用包含可选择文字的PDF文档，或手动输入文档内容。"
@@ -321,44 +391,58 @@ serve(async (req) => {
         }
       }
 
-      // Chunk the content
+      // [切片]：将文档分割成小块
       const chunks = chunkText(content, chunkSize, chunkOverlap);
-      console.log(`Created ${chunks.length} chunks`);
+      console.log(`[rag-ingest] Created ${chunks.length} chunks`);
 
-      // Delete existing chunks for this document
+      // [清理]：删除该文档的旧切片
       await supabase
         .from("document_chunks")
         .delete()
         .eq("document_id", documentId);
 
-      // Generate embeddings and store chunks
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      
-      for (const chunk of chunks) {
-        // Generate embedding (using mock for now)
-        const embedding = generateMockEmbedding(chunk.content);
+      // [向量化]：批量生成 Embedding
+      if (!LOVABLE_API_KEY) {
+        throw new Error("LOVABLE_API_KEY not configured - cannot generate embeddings");
+      }
 
-        // Insert chunk with embedding
-        const { error: insertError } = await supabase
-          .from("document_chunks")
-          .insert({
-            document_id: documentId,
-            knowledge_base_id: document.knowledge_base_id,
-            user_id: user.id,
-            content: chunk.content,
-            embedding: `[${embedding.join(",")}]`,
-            chunk_index: chunk.index,
-            token_count: chunk.tokenCount,
-            metadata: chunk.metadata,
-          });
+      // 批量处理以提高效率
+      const BATCH_SIZE = 10;
+      let processedCount = 0;
 
-        if (insertError) {
-          console.error("Error inserting chunk:", insertError);
-          throw insertError;
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batch = chunks.slice(i, i + BATCH_SIZE);
+        const texts = batch.map(c => c.content);
+        
+        console.log(`[rag-ingest] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)}`);
+        
+        // 调用真实 Embedding API
+        const embeddings = await generateBatchEmbeddings(texts, LOVABLE_API_KEY);
+        
+        // 存储切片和向量
+        for (let j = 0; j < batch.length; j++) {
+          const { error: insertError } = await supabase
+            .from("document_chunks")
+            .insert({
+              document_id: documentId,
+              knowledge_base_id: document.knowledge_base_id,
+              user_id: user.id,
+              content: batch[j].content,
+              embedding: `[${embeddings[j].join(",")}]`,
+              chunk_index: batch[j].index,
+              token_count: batch[j].tokenCount,
+              metadata: batch[j].metadata,
+            });
+
+          if (insertError) {
+            console.error("[rag-ingest] Error inserting chunk:", insertError);
+            throw insertError;
+          }
+          processedCount++;
         }
       }
 
-      // Update document status
+      // [完成]：更新文档状态
       await supabase
         .from("knowledge_documents")
         .update({ 
@@ -368,7 +452,7 @@ serve(async (req) => {
         })
         .eq("id", documentId);
 
-      // Update knowledge base status if all documents are indexed
+      // [知识库状态]：检查是否所有文档都已索引
       const { data: pendingDocs } = await supabase
         .from("knowledge_documents")
         .select("id")
@@ -382,20 +466,20 @@ serve(async (req) => {
           .eq("id", document.knowledge_base_id);
       }
 
-      console.log(`Successfully indexed document: ${documentId}`);
+      console.log(`[rag-ingest] Successfully indexed document: ${documentId}, ${processedCount} chunks with real embeddings`);
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           chunksCount: chunks.length,
           documentId,
+          embeddingModel: "text-embedding-3-small",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (processingError) {
-      console.error("Processing error:", processingError);
+      console.error("[rag-ingest] Processing error:", processingError);
       
-      // Update status to failed
       await supabase
         .from("knowledge_documents")
         .update({ 
@@ -412,7 +496,7 @@ serve(async (req) => {
       throw processingError;
     }
   } catch (error) {
-    console.error("Error in rag-ingest:", error);
+    console.error("[rag-ingest] Error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -420,8 +504,20 @@ serve(async (req) => {
   }
 });
 
+/**
+ * 文本切片函数
+ * 
+ * 基于句子边界将长文本分割成适合向量化的小块。
+ * 使用重叠策略确保上下文连续性。
+ * 
+ * @param {string} text - 原始文本内容
+ * @param {number} chunkSize - 每个切片的目标 Token 数量
+ * @param {number} overlap - 切片之间的重叠 Token 数量
+ * @returns {ChunkResult[]} 切片结果数组
+ */
 function chunkText(text: string, chunkSize: number, overlap: number): ChunkResult[] {
   const chunks: ChunkResult[] = [];
+  // 按句子分割 (支持中英文标点)
   const sentences = text.split(/(?<=[.!?。！？])\s+/);
   
   let currentChunk = "";
@@ -432,7 +528,7 @@ function chunkText(text: string, chunkSize: number, overlap: number): ChunkResul
     const sentenceTokens = estimateTokens(sentence);
     
     if (currentTokens + sentenceTokens > chunkSize && currentChunk) {
-      // Save current chunk
+      // 保存当前切片
       chunks.push({
         content: currentChunk.trim(),
         index: chunkIndex,
@@ -441,7 +537,7 @@ function chunkText(text: string, chunkSize: number, overlap: number): ChunkResul
       });
       chunkIndex++;
 
-      // Start new chunk with overlap
+      // 使用重叠开始新切片
       const overlapText = getOverlapText(currentChunk, overlap);
       currentChunk = overlapText + " " + sentence;
       currentTokens = estimateTokens(currentChunk);
@@ -451,7 +547,7 @@ function chunkText(text: string, chunkSize: number, overlap: number): ChunkResul
     }
   }
 
-  // Don't forget the last chunk
+  // 保存最后一个切片
   if (currentChunk.trim()) {
     chunks.push({
       content: currentChunk.trim(),
@@ -464,13 +560,20 @@ function chunkText(text: string, chunkSize: number, overlap: number): ChunkResul
   return chunks;
 }
 
+/**
+ * 估算文本的 Token 数量
+ * 
+ * 使用简单规则估算：中文约 2 字符/token，英文约 4 字符/token
+ */
 function estimateTokens(text: string): number {
-  // Rough estimation: ~4 characters per token for English, ~2 for Chinese
   const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length;
   const otherChars = text.length - chineseChars;
   return Math.ceil(chineseChars / 2 + otherChars / 4);
 }
 
+/**
+ * 获取切片重叠部分的文本
+ */
 function getOverlapText(text: string, targetTokens: number): string {
   const words = text.split(/\s+/);
   let overlapText = "";
@@ -482,27 +585,4 @@ function getOverlapText(text: string, targetTokens: number): string {
   }
   
   return overlapText;
-}
-
-function generateMockEmbedding(text: string): number[] {
-  const embedding = new Array(1536).fill(0);
-  const words = text.toLowerCase().split(/\s+/);
-  
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    for (let j = 0; j < word.length; j++) {
-      const charCode = word.charCodeAt(j);
-      const index = (charCode * (i + 1) * (j + 1)) % 1536;
-      embedding[index] += 0.1 / Math.sqrt(words.length);
-    }
-  }
-  
-  const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-  if (magnitude > 0) {
-    for (let i = 0; i < embedding.length; i++) {
-      embedding[i] /= magnitude;
-    }
-  }
-  
-  return embedding;
 }
