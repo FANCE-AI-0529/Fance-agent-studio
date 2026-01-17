@@ -167,10 +167,35 @@ export async function generateBatchEmbeddings(
 }
 
 /**
+ * 将 ArrayBuffer 转换为 Base64 (内存优化版)
+ * 使用分块处理避免大文件导致内存溢出
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK_SIZE = 32768; // 32KB chunks to avoid stack overflow
+  let result = '';
+  
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.slice(i, i + CHUNK_SIZE);
+    result += String.fromCharCode.apply(null, [...chunk]);
+  }
+  
+  return btoa(result);
+}
+
+/**
+ * 最大允许 AI 解析的文件大小 (3MB)
+ * 超过此大小的文件将直接使用正则解析
+ */
+const MAX_AI_PARSE_SIZE = 3 * 1024 * 1024;
+
+/**
  * 使用 AI Gateway 多模态能力解析 PDF 文档
  * 
  * 将 PDF 文件发送给 Gemini Flash 模型，利用其视觉理解能力
  * 提取文档中的全部文字内容，包括扫描版 PDF。
+ * 
+ * 注意：大文件（>3MB）会跳过 AI 解析以避免内存溢出
  * 
  * @param {ArrayBuffer} pdfBuffer - PDF 文件的二进制数据
  * @param {string} apiKey - Lovable API 密钥
@@ -186,57 +211,75 @@ export async function extractTextWithAI(
   pdfBuffer: ArrayBuffer,
   apiKey: string
 ): Promise<string> {
-  // [编码]：将 PDF 转换为 Base64
-  const bytes = new Uint8Array(pdfBuffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
-
-  console.log(`[embed-with-gateway] Extracting text from PDF (${Math.round(pdfBuffer.byteLength / 1024)}KB)`);
-
-  // [请求]：调用 AI Gateway Chat API (多模态)
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "请提取这个PDF文档的全部文字内容，保持原始结构和段落格式。只输出文档内容，不要添加任何说明、总结或注释。如果是扫描版文档，请识别其中的文字。"
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:application/pdf;base64,${base64}` }
-            }
-          ]
-        }
-      ],
-      max_tokens: 16000,
-      temperature: 0.1, // 低温度提高准确性
-    }),
-  });
-
-  // [错误处理]：检查响应状态
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[embed-with-gateway] PDF extraction API error: ${response.status}`, errorText);
-    throw new Error(`PDF extraction failed: ${response.status}`);
+  const fileSizeKB = Math.round(pdfBuffer.byteLength / 1024);
+  const fileSizeMB = (pdfBuffer.byteLength / (1024 * 1024)).toFixed(2);
+  
+  console.log(`[embed-with-gateway] PDF size: ${fileSizeKB}KB (${fileSizeMB}MB)`);
+  
+  // [大小检查]：超过限制的文件跳过 AI 解析
+  if (pdfBuffer.byteLength > MAX_AI_PARSE_SIZE) {
+    console.log(`[embed-with-gateway] ⚠️ File too large for AI parsing (${fileSizeMB}MB > 3MB limit)`);
+    console.log(`[embed-with-gateway] Skipping AI extraction to avoid memory overflow`);
+    throw new Error(`File too large for AI parsing: ${fileSizeMB}MB exceeds 3MB limit`);
   }
 
-  // [解析]：提取文本内容
-  const data = await response.json();
-  const extractedText = data.choices?.[0]?.message?.content || "";
+  try {
+    // [编码]：将 PDF 转换为 Base64 (内存优化)
+    console.log(`[embed-with-gateway] Encoding PDF to Base64...`);
+    const base64 = arrayBufferToBase64(pdfBuffer);
+    console.log(`[embed-with-gateway] Base64 encoded: ${Math.round(base64.length / 1024)}KB`);
 
-  console.log(`[embed-with-gateway] Extracted ${extractedText.length} chars from PDF`);
+    // [请求]：调用 AI Gateway Chat API (多模态)
+    console.log(`[embed-with-gateway] Calling AI Gateway for PDF extraction...`);
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "请提取这个PDF文档的全部文字内容，保持原始结构和段落格式。只输出文档内容，不要添加任何说明、总结或注释。如果是扫描版文档，请识别其中的文字。"
+              },
+              {
+                type: "image_url",
+                image_url: { url: `data:application/pdf;base64,${base64}` }
+              }
+            ]
+          }
+        ],
+        max_tokens: 16000,
+        temperature: 0.1, // 低温度提高准确性
+      }),
+    });
 
-  return extractedText;
+    // [错误处理]：检查响应状态
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[embed-with-gateway] PDF extraction API error: ${response.status}`, errorText);
+      throw new Error(`PDF extraction failed: ${response.status}`);
+    }
+
+    // [解析]：提取文本内容
+    const data = await response.json();
+    const extractedText = data.choices?.[0]?.message?.content || "";
+
+    console.log(`[embed-with-gateway] ✅ Extracted ${extractedText.length} chars from PDF`);
+
+    return extractedText;
+  } catch (error) {
+    // 显式处理内存相关错误
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('memory') || errorMessage.includes('limit') || errorMessage.includes('heap')) {
+      console.error(`[embed-with-gateway] ❌ Memory error during PDF processing: ${errorMessage}`);
+      throw new Error(`Memory limit exceeded processing PDF (${fileSizeMB}MB)`);
+    }
+    throw error;
+  }
 }
