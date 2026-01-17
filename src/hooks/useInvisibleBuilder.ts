@@ -268,19 +268,57 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
         }
       }
       
-      // Call AI to generate config
-      const { data: configData, error: configError } = await supabase.functions.invoke(
-        'agent-config-generator',
-        {
-          body: { 
-            description,
-            generateFullWorkflow: false,
-            knowledgeBaseIds: mountedKnowledgeBases.map(kb => kb.id),
+      // Call AI to generate config with timeout and retry
+      let configData: any = null;
+      const maxRetries = 2;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[InvisibleBuilder] Calling agent-config-generator (attempt ${attempt}/${maxRetries})`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+          
+          const { data, error } = await supabase.functions.invoke(
+            'agent-config-generator',
+            {
+              body: { 
+                description,
+                generateFullWorkflow: false,
+                knowledgeBaseIds: mountedKnowledgeBases.map(kb => kb.id),
+              }
+            }
+          );
+          
+          clearTimeout(timeoutId);
+          
+          if (error) {
+            console.warn(`[InvisibleBuilder] Attempt ${attempt} failed:`, error.message);
+            if (attempt === maxRetries) {
+              throw new Error(error.message || '生成配置失败');
+            }
+            // 等待后重试
+            await new Promise(r => setTimeout(r, 1500));
+            continue;
+          }
+          
+          configData = data;
+          break; // 成功，退出重试循环
+          
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            console.warn(`[InvisibleBuilder] Request timeout on attempt ${attempt}`);
+            if (attempt === maxRetries) {
+              throw new Error('请求超时，请检查网络连接后重试');
+            }
+            await new Promise(r => setTimeout(r, 1000));
+          } else {
+            throw err;
           }
         }
-      );
-
-      if (configError) throw new Error(configError.message || '生成配置失败');
+      }
+      
+      if (!configData) throw new Error('生成配置失败，请重试');
       if (abortRef.current) throw new Error('已取消');
 
       const config = configData;

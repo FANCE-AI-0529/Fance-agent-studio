@@ -383,9 +383,10 @@ async function waitForIndexingComplete(
       return true;
     }
     
+    // [降级模式]：索引失败时仍允许继续，使用纯对话模式
     if (data?.index_status === 'failed') {
-      console.warn('[waitForIndexingComplete] Indexing failed');
-      return false;
+      console.warn('[waitForIndexingComplete] Indexing failed, allowing degraded mode');
+      return true; // 返回 true 允许继续构建，但知识库可能不可用
     }
     
     // 等待下一次轮询
