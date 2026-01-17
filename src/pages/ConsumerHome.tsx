@@ -80,6 +80,9 @@ export default function ConsumerHome() {
   const handleSubmit = async (value: string) => {
     if (!value.trim()) return;
 
+    // Reset upload state for new build
+    resetUpload();
+    
     setInputValue(value);
     setViewState("building");
 
@@ -114,6 +117,7 @@ export default function ConsumerHome() {
     if (viewState === "complete" || viewState === "building") {
       // Reset and go back to input
       resetBuilder();
+      resetUpload();
       setBuildResult(null);
       setViewState("input");
       setInputValue("");
@@ -151,6 +155,11 @@ export default function ConsumerHome() {
         <UploadGuideCard
           onUpload={handleUpload}
           onSkip={handleSkipKnowledge}
+          onReset={resetUpload}
+          onConfirm={() => {
+            // File already uploaded, trigger the handler with the existing KB
+            handleSkipKnowledge();
+          }}
           uploadProgress={uploadProgress}
           uploadStatus={uploadStatus}
           uploadedFileName={uploadedFileName || undefined}

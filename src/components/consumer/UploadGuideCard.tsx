@@ -12,7 +12,8 @@ import {
   Loader2, 
   CheckCircle2,
   Brain,
-  File
+  File,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import { Progress } from "@/components/ui/progress";
 interface UploadGuideCardProps {
   onUpload: (files: FileList) => Promise<any>;
   onSkip: () => void;
+  onReset?: () => void;
+  onConfirm?: () => void;
   uploadProgress?: number;
   uploadStatus?: 'idle' | 'uploading' | 'indexing' | 'complete' | 'error';
   uploadedFileName?: string;
@@ -30,6 +33,8 @@ interface UploadGuideCardProps {
 export function UploadGuideCard({
   onUpload,
   onSkip,
+  onReset,
+  onConfirm,
   uploadProgress = 0,
   uploadStatus = 'idle',
   uploadedFileName,
@@ -170,11 +175,49 @@ export function UploadGuideCard({
             )}
 
             {isComplete ? (
-              <div className="flex items-center gap-2">
-                <File className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-green-500">
-                  {uploadedFileName || "文件已上传"}
-                </span>
+              <div className="space-y-4">
+                {/* File info */}
+                <div className="flex items-center justify-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <File className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-green-500 truncate max-w-[200px]">
+                    {uploadedFileName || "文件已上传"}
+                  </span>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    onClick={onConfirm} 
+                    size="sm"
+                    className="w-full"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    使用此文件
+                  </Button>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        onReset?.();
+                        fileInputRef.current?.click();
+                      }}
+                      className="flex-1"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                      更换文件
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleSkip}
+                      className="flex-1 text-muted-foreground"
+                    >
+                      跳过
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : isProcessing ? (
               <>
