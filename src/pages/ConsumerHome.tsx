@@ -6,6 +6,7 @@ import { ConsumerHeader } from "@/components/consumer/ConsumerHeader";
 import { HeroInput } from "@/components/consumer/HeroInput";
 import { InspirationCapsules } from "@/components/consumer/InspirationCapsules";
 import { AgentDock } from "@/components/consumer/AgentDock";
+import { AgentGridList } from "@/components/consumer/AgentGridList";
 import { MagicLoader } from "@/components/consumer/MagicLoader";
 import { BuildCompletionCard } from "@/components/consumer/BuildCompletionCard";
 import { ClarificationCard } from "@/components/consumer/ClarificationCard";
@@ -237,12 +238,15 @@ export default function ConsumerHome() {
               {/* Inspiration capsules */}
               <InspirationCapsules onSelect={handleInspirationSelect} />
 
+              {/* Agent Grid List */}
+              <AgentGridList onCreateNew={handleCreateNew} />
+
               {/* Features preview */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="mt-16 flex items-center justify-center gap-8 text-sm text-muted-foreground/60"
+                className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground/60"
               >
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
