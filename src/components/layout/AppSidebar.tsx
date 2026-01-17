@@ -92,11 +92,11 @@ export function AppSidebar() {
           <div className="p-4 border-b border-sidebar-border">
             <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <img src={logoIcon} alt="Fance" className="w-6 h-6" />
+                <img src={logoIcon} alt="Agent Studio" className="w-6 h-6" />
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm text-foreground">Fance OS</div>
+                  <div className="font-semibold text-sm text-foreground">Agent Studio</div>
                   <div className="text-[10px] text-muted-foreground">技能驱动，智能无限！</div>
                 </div>
               )}

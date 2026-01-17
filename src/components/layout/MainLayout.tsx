@@ -48,8 +48,8 @@ function MobileLayout({ children }: { children: ReactNode }) {
       </Sheet>
         
         <div className="flex items-center gap-2">
-          <img src={logoIcon} alt="F" className="w-7 h-7 rounded-lg" />
-          <span className="font-semibold text-sm">Fance OS</span>
+          <img src={logoIcon} alt="Agent Studio" className="w-7 h-7 rounded-lg" />
+          <span className="font-semibold text-sm">Agent Studio</span>
         </div>
         
         <div className="flex items-center gap-1">
