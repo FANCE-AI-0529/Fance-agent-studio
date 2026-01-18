@@ -145,7 +145,10 @@ ${(knowledgeBaseIds as string[]).map((id: string) => `- Collection ID: ${id}`).j
 请根据用户描述生成以下配置（使用JSON格式）：
 
 ## 基础配置
-1. name: Agent的名称（简短、有特色）
+1. name: Agent的名称（必须遵循格式：4-6个汉字的核心功能 + "智能体"后缀）
+   - 命名规范：提取用户需求的核心主题，压缩为4-6个汉字，末尾加"智能体"
+   - 正确示例："旅行规划智能体"、"财务分析智能体"、"代码审查智能体"、"客服接待智能体"
+   - 错误示例："我帮你规划旅行的助手"、"用于财务的AI"（禁止使用口语化长句）
 2. department: 所属部门（如：营销部、技术部、客服部、内容部等）
 3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字。必须包含"你需要维护自己的状态文件"这个概念）
 4. suggestedSkills: 推荐的技能列表（字符串数组，如：["文案写作", "数据分析"]）
@@ -194,7 +197,10 @@ ${(knowledgeBaseIds as string[]).map((id: string) => `- Collection ID: ${id}`).j
 你是一个AI Agent配置生成专家。用户会用自然语言描述他们想要的Agent，你需要分析需求并生成配置。
 
 请根据用户描述生成以下配置（使用JSON格式）：
-1. name: Agent的名称（简短、有特色）
+1. name: Agent的名称（必须遵循格式：4-6个汉字的核心功能 + "智能体"后缀）
+   - 命名规范：提取用户需求的核心主题，压缩为4-6个汉字，末尾加"智能体"
+   - 正确示例："旅行规划智能体"、"财务分析智能体"、"代码审查智能体"、"客服接待智能体"
+   - 错误示例："我帮你规划旅行的助手"、"用于财务的AI"（禁止使用口语化长句）
 2. department: 所属部门（如：营销部、技术部、客服部、内容部等）
 3. systemPrompt: 系统提示词（详细描述Agent的角色、能力和行为准则，100-200字。必须包含"你需要维护自己的状态文件"这个概念）
 4. suggestedSkills: 推荐的技能列表（字符串数组，如：["文案写作", "数据分析"]）
@@ -263,7 +269,7 @@ ${(knowledgeBaseIds as string[]).map((id: string) => `- Collection ID: ${id}`).j
       console.error("Failed to parse AI response:", content);
       // Return a default config based on description
       generatedConfig = {
-        name: "AI助手",
+        name: "通用智能体",
         department: "通用部门",
         systemPrompt: `你是一个${description}。请尽力帮助用户完成相关任务。`,
         suggestedSkills: [],
@@ -278,7 +284,7 @@ ${(knowledgeBaseIds as string[]).map((id: string) => `- Collection ID: ${id}`).j
 
     // Validate and sanitize the response - including MCP and Knowledge Base suggestions
     const validatedConfig: GeneratedConfig = {
-      name: String(generatedConfig.name || "AI助手").slice(0, 50),
+      name: String(generatedConfig.name || "通用智能体").slice(0, 20),
       department: String(generatedConfig.department || "通用部门").slice(0, 30),
       systemPrompt: String(generatedConfig.systemPrompt || "").slice(0, 2000),
       suggestedSkills: Array.isArray(generatedConfig.suggestedSkills) 
