@@ -322,7 +322,10 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       if (abortRef.current) throw new Error('已取消');
 
       const config = configData;
-      const agentName = config?.agentName || extractAgentName(description);
+      // 修复：Edge Function 返回 config.name，不是 config.agentName
+      const rawName = config?.name || extractAgentName(description);
+      // 硬编码规范化：强制 "XX智能体" 格式
+      const agentName = normalizeAgentName(rawName, description);
       const skills = config?.suggestedMCPActions?.map((a: any) => a.name) || [];
       const capabilities = extractCapabilities(description, config);
 
@@ -578,6 +581,82 @@ function extractAgentName(description: string): string {
   // Fallback: use first 10 chars
   const shortDesc = description.substring(0, 10).replace(/[，。！？]/g, '');
   return `${shortDesc}助手`;
+}
+
+/**
+ * 硬编码规范化智能体名称
+ * 强制输出格式：2-6个核心字 + "智能体" 后缀
+ * 支持中英文自适应
+ */
+function normalizeAgentName(rawName: string, description: string): string {
+  // 移除已有的后缀词
+  const suffixes = ['智能体', '助手', 'Agent', 'Bot', '机器人', '专家', '顾问', '分析师', '员工'];
+  let cleanName = (rawName || '').trim();
+  
+  for (const suffix of suffixes) {
+    if (cleanName.endsWith(suffix)) {
+      cleanName = cleanName.slice(0, -suffix.length).trim();
+    }
+  }
+  
+  // 移除口语化前缀（"我想要"、"帮我做"、"创建一个"等）
+  const prefixPatterns = [
+    /^(我想要?|我需要?|帮我|给我|做一?个?|创建一?个?|构建一?个?|生成一?个?)/,
+    /^(我现在正?在?|我正在|现在)/,
+  ];
+  for (const pattern of prefixPatterns) {
+    cleanName = cleanName.replace(pattern, '');
+  }
+  
+  // 提取核心关键词（2-6个字符）
+  let coreName = cleanName.trim();
+  
+  // 如果仍然太长，尝试从 description 中提取关键词
+  if (coreName.length > 6 || coreName.length < 2) {
+    // 匹配常见业务领域词
+    const domainPatterns = [
+      /(旅[行游]|出行|规划)/,
+      /(财务|财报|会计|金融)/,
+      /(营销|推广|文案|广告)/,
+      /(客服|售后|咨询|问答)/,
+      /(代码|编程|开发|技术)/,
+      /(数据|分析|报表|统计)/,
+      /(电商|跨境|选品|运营)/,
+      /(翻译|语言|多语)/,
+      /(设计|创意|美工)/,
+      /(人事|招聘|HR)/,
+      /(法务|合规|法律)/,
+      /(医疗|健康|诊断)/,
+    ];
+    
+    const source = description || rawName;
+    for (const pattern of domainPatterns) {
+      const match = source.match(pattern);
+      if (match) {
+        coreName = match[1];
+        break;
+      }
+    }
+    
+    // 如果还是没匹配到，取 description 前 4 个有效字符
+    if (coreName.length > 6 || coreName.length < 2) {
+      const validChars = (description || rawName)
+        .replace(/[我想要帮给做创建一个正在现在，。！？\s]/g, '')
+        .slice(0, 4);
+      coreName = validChars || '通用';
+    }
+  }
+  
+  // 最终限制核心名称长度
+  if (coreName.length > 6) {
+    coreName = coreName.slice(0, 6);
+  }
+  
+  // 检测是否为纯英文输入，如果是则使用 "Agent" 后缀
+  const isEnglishOnly = /^[a-zA-Z\s]+$/.test(coreName);
+  const suffix = isEnglishOnly ? ' Agent' : '智能体';
+  
+  return `${coreName}${suffix}`;
 }
 
 // Helper: Extract capabilities from description and config
