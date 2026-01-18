@@ -282,9 +282,38 @@ ${(knowledgeBaseIds as string[]).map((id: string) => `- Collection ID: ${id}`).j
       };
     }
 
+    // 硬编码规范化智能体名称
+    function normalizeAgentNameBackend(rawName: string, desc: string): string {
+      const suffixes = ['智能体', '助手', 'Agent', 'Bot', '机器人', '专家', '顾问', '分析师', '员工'];
+      let cleanName = String(rawName || '').trim();
+      
+      for (const suffix of suffixes) {
+        if (cleanName.endsWith(suffix)) {
+          cleanName = cleanName.slice(0, -suffix.length).trim();
+        }
+      }
+      
+      // 移除口语化前缀
+      cleanName = cleanName
+        .replace(/^(我想要?|我需要?|帮我|给我|做一?个?|创建一?个?|构建一?个?|生成一?个?|我现在正?在?|我正在|现在)/, '')
+        .trim();
+      
+      // 限制核心长度 2-6 字
+      if (cleanName.length > 6) {
+        cleanName = cleanName.slice(0, 6);
+      }
+      if (cleanName.length < 2) {
+        // 从 description 提取
+        cleanName = desc.replace(/[我想要帮给做创建一个正在现在，。！？\s]/g, '').slice(0, 4) || '通用';
+      }
+      
+      const isEnglishOnly = /^[a-zA-Z\s]+$/.test(cleanName);
+      return isEnglishOnly ? `${cleanName} Agent` : `${cleanName}智能体`;
+    }
+
     // Validate and sanitize the response - including MCP and Knowledge Base suggestions
     const validatedConfig: GeneratedConfig = {
-      name: String(generatedConfig.name || "通用智能体").slice(0, 20),
+      name: normalizeAgentNameBackend(generatedConfig.name || "", description),
       department: String(generatedConfig.department || "通用部门").slice(0, 30),
       systemPrompt: String(generatedConfig.systemPrompt || "").slice(0, 2000),
       suggestedSkills: Array.isArray(generatedConfig.suggestedSkills) 
