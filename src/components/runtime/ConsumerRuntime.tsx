@@ -14,6 +14,7 @@ import {
   Brain,
   RefreshCw,
   Code2,
+  Globe,
 } from "lucide-react";
 import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ export function ConsumerRuntime() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isPersonalityRefreshing, setIsPersonalityRefreshing] = useState(false);
   const [newPersonalityName, setNewPersonalityName] = useState<string | undefined>();
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true); // 联网开关状态
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -116,11 +118,12 @@ export function ConsumerRuntime() {
   // OpenCode Runtime state for TUI
   const openCodeRuntime = useOpenCodeRuntime();
 
-  // AI Chat hook
+  // AI Chat hook - pass webSearchEnabled
   const { streamChat, isLoading: isAiLoading, error: aiError } = useAgentChat({
     agentConfig: agentConfig ? {
       ...agentConfig,
       agentId: agentId || undefined,
+      webSearchEnabled,
     } : undefined,
   });
 
@@ -789,6 +792,29 @@ export function ConsumerRuntime() {
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-8 pb-6">
           <div className="max-w-3xl mx-auto px-4">
             <div className="relative bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg">
+              {/* Web Search Toggle */}
+              <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={webSearchEnabled ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+                      className={`h-8 w-8 rounded-lg transition-all ${
+                        webSearchEnabled 
+                          ? "bg-primary text-primary-foreground shadow-sm" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Globe className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {webSearchEnabled ? "联网搜索已开启 (点击关闭)" : "联网搜索已关闭 (点击开启)"}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
               <textarea
                 ref={inputRef}
                 value={input}
@@ -798,7 +824,7 @@ export function ConsumerRuntime() {
                 disabled={isLoading || isAiLoading}
                 rows={1}
                 className="
-                  w-full bg-transparent py-4 pl-5 pr-14
+                  w-full bg-transparent py-4 pl-14 pr-14
                   text-foreground placeholder:text-muted-foreground/60
                   focus:outline-none resize-none
                   disabled:opacity-50
@@ -821,7 +847,10 @@ export function ConsumerRuntime() {
             </div>
             
             <p className="text-center text-xs text-muted-foreground/40 mt-2">
-              按 Enter 发送，Shift + Enter 换行
+              按 Enter 发送，Shift + Enter 换行 · 
+              <span className={webSearchEnabled ? "text-primary/60" : "text-muted-foreground/40"}>
+                {webSearchEnabled ? "🌐 联网搜索已开启" : "联网搜索已关闭"}
+              </span>
             </p>
           </div>
         </div>

@@ -73,6 +73,8 @@ interface AgentConfig {
   mplpPolicy?: string;
   /** 智能体唯一标识符 */
   agentId?: string;
+  /** 是否启用联网搜索 */
+  webSearchEnabled?: boolean;
 }
 
 /**
@@ -290,7 +292,11 @@ export function useAgentChat({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ messages, agentConfig }),
+        body: JSON.stringify({ 
+          messages, 
+          agentConfig,
+          webSearchEnabled: agentConfig?.webSearchEnabled ?? true,
+        }),
       });
 
       // [错误处理]：检查响应状态
