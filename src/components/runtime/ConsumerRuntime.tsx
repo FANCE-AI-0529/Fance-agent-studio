@@ -15,7 +15,12 @@ import {
   RefreshCw,
   Code2,
   Globe,
+  Paperclip,
 } from "lucide-react";
+import { FileUploadButton } from "./FileUploadButton";
+import { AttachmentPreview } from "./AttachmentPreview";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { createMultimodalContent } from "@/hooks/useAgentChat";
 import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -90,6 +95,16 @@ export function ConsumerRuntime() {
   const [webSearchEnabled, setWebSearchEnabled] = useState(true); // 联网开关状态
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // File upload hook
+  const {
+    files: attachments,
+    isUploading,
+    addFiles,
+    removeFile,
+    clearFiles,
+    uploadToStorage,
+  } = useFileUpload();
 
   // Get agentId from URL - support both 'agent' and 'agentId' params
   const agentId = searchParams.get('agent') || searchParams.get('agentId');
@@ -290,24 +305,45 @@ export function ConsumerRuntime() {
 
   const handleSubmit = useCallback(async (value?: string) => {
     const messageContent = value?.trim() || input.trim();
-    if (!messageContent || isLoading || isAiLoading) return;
+    if ((!messageContent && attachments.length === 0) || isLoading || isAiLoading) return;
+
+    // Upload attachments first if any
+    let uploadedAttachments: Array<{ type: 'image' | 'document'; url: string; name: string }> = [];
+    if (attachments.length > 0 && user) {
+      for (const attachment of attachments) {
+        const url = await uploadToStorage(attachment, user.id);
+        if (url) {
+          uploadedAttachments.push({
+            type: attachment.type,
+            url,
+            name: attachment.name,
+          });
+        }
+      }
+    }
+
+    // Create multimodal content if there are attachments
+    const finalContent = uploadedAttachments.length > 0
+      ? createMultimodalContent(messageContent, uploadedAttachments)
+      : messageContent;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: messageContent,
+      content: typeof finalContent === 'string' ? finalContent : messageContent,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput("");
+    clearFiles(); // Clear attachments after sending
     setIsLoading(true);
     setStreamingContent("");
 
-    // Save user message to database
+    // Save user message to database (save text content for display)
     await saveMessageToDb({
       role: 'user',
-      content: messageContent,
+      content: typeof finalContent === 'string' ? finalContent : messageContent,
     });
 
     // Build messages for AI with memory context
@@ -320,7 +356,7 @@ export function ConsumerRuntime() {
         role: m.role,
         content: m.content,
       })),
-      { role: 'user' as const, content: messageContent },
+      { role: 'user' as const, content: finalContent },
     ];
 
     let fullResponse = "";
@@ -372,7 +408,7 @@ export function ConsumerRuntime() {
       };
       setMessages(prev => [...prev, errorMessage]);
     }
-  }, [input, isLoading, isAiLoading, messages, agentConfig, memoryContext, streamChat, saveMessageToDb, extractAndSaveMemories]);
+  }, [input, isLoading, isAiLoading, messages, agentConfig, memoryContext, streamChat, saveMessageToDb, extractAndSaveMemories, attachments, user, uploadToStorage, clearFiles]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -792,15 +828,25 @@ export function ConsumerRuntime() {
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-8 pb-6">
           <div className="max-w-3xl mx-auto px-4">
             <div className="relative bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg">
-              {/* Web Search Toggle */}
-              <div className="absolute left-3 top-1/2 -translate-y-1/2">
+              {/* Attachment Preview */}
+              {attachments.length > 0 && (
+                <AttachmentPreview
+                  files={attachments}
+                  onRemove={removeFile}
+                  isUploading={isUploading}
+                />
+              )}
+              
+              {/* Input row with buttons */}
+              <div className="flex items-center gap-1 px-2">
+                {/* Web Search Toggle */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant={webSearchEnabled ? "default" : "ghost"}
                       size="icon"
                       onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-                      className={`h-8 w-8 rounded-lg transition-all ${
+                      className={`h-8 w-8 rounded-lg transition-all flex-shrink-0 ${
                         webSearchEnabled 
                           ? "bg-primary text-primary-foreground shadow-sm" 
                           : "text-muted-foreground hover:text-foreground"
@@ -813,37 +859,44 @@ export function ConsumerRuntime() {
                     {webSearchEnabled ? "联网搜索已开启 (点击关闭)" : "联网搜索已关闭 (点击开启)"}
                   </TooltipContent>
                 </Tooltip>
+
+                {/* File Upload Button */}
+                <FileUploadButton
+                  onFilesSelected={addFiles}
+                  disabled={isLoading || isAiLoading || isUploading}
+                  className="h-8 w-8 flex-shrink-0"
+                />
+              
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="输入你的消息..."
+                  disabled={isLoading || isAiLoading}
+                  rows={1}
+                  className="
+                    flex-1 bg-transparent py-4 px-2
+                    text-foreground placeholder:text-muted-foreground/60
+                    focus:outline-none resize-none
+                    disabled:opacity-50
+                  "
+                  style={{ minHeight: '56px', maxHeight: '200px' }}
+                />
+              
+                <Button
+                  size="icon"
+                  onClick={() => handleSubmit()}
+                  disabled={(!input.trim() && attachments.length === 0) || isLoading || isAiLoading || isUploading}
+                  className="h-10 w-10 rounded-xl flex-shrink-0"
+                >
+                  {isLoading || isAiLoading || isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-              
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="输入你的消息..."
-                disabled={isLoading || isAiLoading}
-                rows={1}
-                className="
-                  w-full bg-transparent py-4 pl-14 pr-14
-                  text-foreground placeholder:text-muted-foreground/60
-                  focus:outline-none resize-none
-                  disabled:opacity-50
-                "
-                style={{ minHeight: '56px', maxHeight: '200px' }}
-              />
-              
-              <Button
-                size="icon"
-                onClick={() => handleSubmit()}
-                disabled={!input.trim() || isLoading || isAiLoading}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-xl"
-              >
-                {isLoading || isAiLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
             </div>
             
             <p className="text-center text-xs text-muted-foreground/40 mt-2">
@@ -851,6 +904,11 @@ export function ConsumerRuntime() {
               <span className={webSearchEnabled ? "text-primary/60" : "text-muted-foreground/40"}>
                 {webSearchEnabled ? "🌐 联网搜索已开启" : "联网搜索已关闭"}
               </span>
+              {attachments.length > 0 && (
+                <span className="text-primary/60 ml-2">
+                  📎 已添加 {attachments.length} 个附件
+                </span>
+              )}
             </p>
           </div>
         </div>
