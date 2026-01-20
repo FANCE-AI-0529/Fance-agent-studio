@@ -557,22 +557,36 @@ const Builder = () => {
     return mapping[category] || [];
   }
 
+  // UUID 格式校验函数
+  const isValidUUID = (str: string | undefined | null): boolean => {
+    if (!str) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   // Extract skill IDs directly from nodes (stable source, doesn't depend on publishedSkills loading)
+  // 关键修复：优先使用 assetId，并严格过滤非 UUID 值（如 "node-0"）
   const rawSkillIds = Array.from(
     new Set(
       nodes
-        .filter((n) => n.type === "skill")
-        .map((n) => (n.data as SkillNodeData).id)
-        .filter(Boolean)
+        .filter((n) => n.type === "skill" || n.type === "generatedSkill")
+        .map((n) => {
+          const data = n.data as SkillNodeData & { assetId?: string };
+          // 优先使用 assetId，其次使用 data.id
+          return data.assetId || data.id;
+        })
+        .filter((id): id is string => isValidUUID(id))
     )
   );
 
   // Get added skills from nodes (for UI display and manifest)
   const addedSkills = nodes
-    .filter((n) => n.type === "skill")
+    .filter((n) => n.type === "skill" || n.type === "generatedSkill")
     .map((n) => {
-      const data = n.data as SkillNodeData;
-      const published = publishedSkills.find((s) => s.id === data.id);
+      const data = n.data as SkillNodeData & { assetId?: string };
+      // 优先使用 assetId 进行匹配
+      const skillId = data.assetId || data.id;
+      const published = publishedSkills.find((s) => s.id === skillId);
       if (published) {
         return {
           id: published.id,
@@ -586,17 +600,23 @@ const Builder = () => {
         };
       }
       // Fallback to node data if publishedSkills not loaded yet
-      return {
-        id: data.id,
-        name: data.name,
-        category: data.category,
-        description: data.description || "",
-        permissions: data.permissions || [],
-        version: "1.0.0",
-        inputs: [],
-        outputs: [],
-      };
-    }) as Skill[];
+      // 但仅在 skillId 是有效 UUID 时返回
+      if (isValidUUID(skillId)) {
+        return {
+          id: skillId,
+          name: data.name,
+          category: data.category,
+          description: data.description || "",
+          permissions: data.permissions || [],
+          version: "1.0.0",
+          inputs: [],
+          outputs: [],
+        };
+      }
+      // 如果不是有效 UUID，返回 null 后过滤掉
+      return null;
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null) as Skill[];
 
   const addedSkillIds = rawSkillIds;
 
