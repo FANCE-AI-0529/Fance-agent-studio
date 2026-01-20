@@ -28,7 +28,6 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
     const patterns = useTerminalStyle
       ? [
           // 🆕 Semantic highlighting tags (highest priority)
-          { regex: /<h-key>([^<]+)<\/h-key>/g, type: "h-key" as const },
           { regex: /<h-entity>([^<]+)<\/h-entity>/g, type: "h-entity" as const },
           { regex: /<h-alert>([^<]+)<\/h-alert>/g, type: "h-alert" as const },
           { regex: /<h-data>([^<]+)<\/h-data>/g, type: "h-data" as const },
@@ -42,7 +41,7 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
           { regex: /`([^`]+)`/g, type: "code" as const },
           { regex: /^\[([^\]]+)\]$/gm, type: "header" as const },
-          // Legacy emphasis (backwards compatibility) - renders as colored highlight
+          // Legacy emphasis (backwards compatibility)
           { regex: /「([^」]+)」/g, type: "emphasis" as const },
           { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
         ]
@@ -58,7 +57,7 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
       length: number;
       content: string;
       fullMatch: string;
-      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis" | "h-key" | "h-entity" | "h-alert" | "h-data" | "h-status";
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis" | "h-entity" | "h-alert" | "h-data" | "h-status";
     }
 
     // Find all matches
@@ -102,16 +101,6 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
       // Add formatted match
       switch (match.type) {
         // 🆕 Semantic highlighting tags
-        case "h-key":
-          parts.push(
-            <span 
-              key={keyIndex++} 
-              className="inline-flex items-center bg-primary/15 text-primary px-1.5 py-0.5 rounded-md font-semibold text-sm border border-primary/25"
-            >
-              {match.content}
-            </span>
-          );
-          break;
         case "h-entity":
           parts.push(
             <span 
@@ -137,7 +126,7 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           parts.push(
             <span 
               key={keyIndex++} 
-              className="font-mono text-cyan-400 font-bold tracking-wide bg-cyan-500/10 px-1 rounded"
+              className="font-mono text-cyan-400 font-bold tracking-wide"
             >
               {match.content}
             </span>
@@ -147,20 +136,17 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           parts.push(
             <span 
               key={keyIndex++} 
-              className="text-emerald-400 font-medium bg-emerald-500/10 px-1 rounded"
+              className="text-emerald-400 font-medium"
             >
               {match.content}
             </span>
           );
           break;
-        // Legacy patterns (backwards compatibility) - render as colored highlight
+        // Legacy patterns (backwards compatibility)
         case "bold":
         case "emphasis":
           parts.push(
-            <span 
-              key={keyIndex++} 
-              className="font-semibold text-primary bg-primary/10 px-1 rounded"
-            >
+            <span key={keyIndex++} className="font-medium text-foreground">
               {match.content}
             </span>
           );
