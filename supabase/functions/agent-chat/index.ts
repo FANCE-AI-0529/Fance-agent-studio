@@ -274,10 +274,12 @@ const TERMINAL_STYLE_INSTRUCTIONS = `
 
 严格遵守以下格式规范：
 - 禁止使用 # 标题语法，改用 [标题]
-- 禁止使用 **双星号** 或「书名号」加粗
+- 禁止使用 **双星号** 加粗（会显示为原始文本）
+- 禁止使用「书名号」加粗
 - 禁止口语化废话，直接输出结果
 
-语义化标签（必须使用）：
+语义化高亮标签（必须使用，替代加粗）：
+- <h-key>关键词</h-key> - 问题项、标签名、关键字段名
 - <h-entity>实体名称</h-entity> - 文件名、人名、专有名词
 - <h-alert>警告内容</h-alert> - 错误、风险、警告
 - <h-data>数值数据</h-data> - 金额、百分比、版本号
@@ -288,6 +290,12 @@ const TERMINAL_STYLE_INSTRUCTIONS = `
 - ┌─ ├─ └─ │ 表示层级结构
 - --- 分隔章节
 - (Ref: 来源) 标注引用
+
+示例（正确格式）：
+好的，请提供以下信息：
+1. <h-key>会议主题</h-key>：会议讨论的主要内容
+2. <h-key>期望时间</h-key>：希望在什么时候举行
+3. <h-key>参会人员</h-key>：需要哪些人参加
 `;
 
 /**
@@ -417,7 +425,7 @@ function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean, webSear
 6. 如果是设计稿，提供设计反馈` : '';
 
   if (config?.systemPrompt) {
-    return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}`;
+    return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}${TERMINAL_STYLE_INSTRUCTIONS}${ROLE_META_INSTRUCTIONS}`;
   }
 
   return `你是 ${agentName}，运行在 Agent Studio 平台上的智能助手。
