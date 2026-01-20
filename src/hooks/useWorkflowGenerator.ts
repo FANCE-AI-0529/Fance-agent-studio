@@ -333,12 +333,38 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
         const isGenerated = nodeData?.isGenerated || nodeType === 'generatedSkill';
         const nodeConfig = nodeData?.config as Record<string, unknown> | undefined;
         
+        // 关键修复：正确区分 canvas node ID 和 asset UUID
+        // - node.id 是画布节点实例 ID（如 "node-0"），仅用于 React Flow 画布
+        // - nodeData.assetId 或 nodeData.id（如果是 UUID）是资源的真实 ID，用于数据库关联
+        const assetId = nodeData?.assetId as string | undefined;
+        const originalDataId = nodeData?.id as string | undefined;
+        
+        // UUID 格式校验函数
+        const isValidUUID = (str: string | undefined): boolean => {
+          if (!str) return false;
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          return uuidRegex.test(str);
+        };
+        
+        // 优先使用 assetId，若无效则尝试 originalDataId，最后才用 node.id（但标记为无效）
+        const resolvedAssetId = isValidUUID(assetId) 
+          ? assetId 
+          : isValidUUID(originalDataId) 
+            ? originalDataId 
+            : undefined;
+        
         return {
           ...node,
           type: nodeType,
           data: {
             ...nodeData,
-            id: node.id,
+            // id 字段：存储资产的真实 UUID，用于数据库关联
+            // 如果没有有效 UUID，保留原值但后续保存时会被过滤
+            id: resolvedAssetId || originalDataId || node.id,
+            // assetId 字段：明确存储资产 UUID，供 Builder 优先读取
+            assetId: resolvedAssetId,
+            // nodeId 字段：存储画布节点实例 ID，仅供 UI 使用
+            nodeId: node.id,
             name: nodeData?.label || nodeData?.name || node.id,
             isGenerated,
             // 为知识库节点添加自动挂载标识

@@ -262,10 +262,29 @@ export function useSaveAgentWithSkills() {
       // [校验]：确保用户已登录
       if (!user) throw new Error("用户未登录");
 
-      // [清洗]：去重并过滤无效的技能ID
-      const cleanSkillIds = Array.from(new Set(skillIds)).filter(
+      // UUID 格式校验函数
+      const isValidUUID = (str: string | undefined | null): boolean => {
+        if (!str) return false;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+      };
+
+      // [清洗]：去重并过滤无效的技能ID，严格校验 UUID 格式
+      const allSkillIds = Array.from(new Set(skillIds)).filter(
         (id) => id && typeof id === "string" && id.trim() !== ""
       );
+      
+      // [关键修复]：严格过滤非 UUID 格式的 ID（如 "node-0"）
+      const cleanSkillIds = allSkillIds.filter(isValidUUID);
+      
+      // [警告]：如果有无效的 skill ID 被过滤，记录到控制台
+      const invalidSkillIds = allSkillIds.filter(id => !isValidUUID(id));
+      if (invalidSkillIds.length > 0) {
+        console.warn(
+          `[useSaveAgentWithSkills] 过滤了 ${invalidSkillIds.length} 个无效的 skill ID:`,
+          invalidSkillIds
+        );
+      }
 
       let agentId = agent.id;
 
