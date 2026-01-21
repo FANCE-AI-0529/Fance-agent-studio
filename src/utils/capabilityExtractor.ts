@@ -147,76 +147,6 @@ function extractCapabilitiesFromMCP(mcpActions: any[]): CapabilityItem[] {
 }
 
 /**
- * 生成智能开场白
- */
-function generateGreeting(agentName: string, role?: string): string {
-  const greetings = [
-    `你好！我是${agentName}`,
-    `欢迎！我是你的${agentName}`,
-    `Hi！我是${agentName}，很高兴为你服务`,
-  ];
-  
-  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-  
-  if (role) {
-    return `${greeting}，${role}。`;
-  }
-  return `${greeting}。`;
-}
-
-/**
- * 生成快速开始建议
- */
-function generateQuickStarts(capabilities: CapabilityItem[], systemPrompt: string): string[] {
-  const quickStarts: string[] = [];
-  
-  // 基于能力生成建议
-  const capabilityLabels = capabilities.map(c => c.label);
-  
-  if (capabilityLabels.includes("数据分析") || capabilityLabels.includes("财务处理")) {
-    quickStarts.push("帮我分析这份数据");
-    quickStarts.push("生成一份分析报告");
-  }
-  
-  if (capabilityLabels.includes("邮件处理")) {
-    quickStarts.push("帮我整理今天的邮件");
-    quickStarts.push("草拟一封回复邮件");
-  }
-  
-  if (capabilityLabels.includes("日程管理")) {
-    quickStarts.push("查看今天的日程安排");
-    quickStarts.push("帮我安排一个会议");
-  }
-  
-  if (capabilityLabels.includes("内容撰写")) {
-    quickStarts.push("帮我写一篇文章");
-    quickStarts.push("润色这段文字");
-  }
-  
-  if (capabilityLabels.includes("代码辅助")) {
-    quickStarts.push("帮我审查这段代码");
-    quickStarts.push("解释这个函数的作用");
-  }
-  
-  if (capabilityLabels.includes("智能搜索")) {
-    quickStarts.push("搜索最新的行业资讯");
-  }
-  
-  if (capabilityLabels.includes("图表可视化")) {
-    quickStarts.push("生成一个趋势图表");
-  }
-  
-  // 如果没有匹配到特定能力，提供通用建议
-  if (quickStarts.length === 0) {
-    quickStarts.push("有什么可以帮助你的吗？");
-    quickStarts.push("告诉我你的需求");
-  }
-  
-  // 最多返回4个建议
-  return quickStarts.slice(0, 4);
-}
-
-/**
  * 从智能体角色描述中提取核心职责
  */
 function extractRoleFromPrompt(systemPrompt: string): string | undefined {
@@ -235,6 +165,205 @@ function extractRoleFromPrompt(systemPrompt: string): string | undefined {
   }
   
   return undefined;
+}
+
+/**
+ * 从 systemPrompt 中提取智能体的角色描述（更详细版本）
+ */
+function extractRoleDescription(systemPrompt: string): string | null {
+  // 匹配常见的角色描述模式 - 提取逗号后的描述部分
+  const patterns = [
+    /你是[^，。\n]{2,}[，,]([^。\n]{5,50})/,
+    /我是[^，。\n]{2,}[，,]([^。\n]{5,50})/,
+    /作为([^，。\n]{5,50})/,
+    /专业的([^，。\n]{5,40})/,
+    /您的([^，。\n]{5,40}助手)/,
+    /一[名个位]([^，。\n]{5,40})/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = systemPrompt.match(pattern);
+    if (match && match[1]) {
+      const desc = match[1].trim();
+      // 过滤掉太短或太长的描述
+      if (desc.length >= 4 && desc.length <= 50) {
+        return desc;
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * 从 systemPrompt 提取智能体的核心职责列表
+ */
+function extractResponsibilities(systemPrompt: string): string[] {
+  const responsibilities: string[] = [];
+  
+  // 匹配列表形式的职责
+  const listPattern = /(?:我可以|我能够?|主要职责|核心能力|我擅长|可以帮助?你?|能够)[:：]?\s*\n?((?:[\s]*[•\-\d\.●○■□]\s*.+\n?)+)/gi;
+  
+  let listMatch;
+  while ((listMatch = listPattern.exec(systemPrompt)) !== null) {
+    if (listMatch[1]) {
+      const items = listMatch[1].split(/\n/).filter(line => line.trim());
+      items.forEach(item => {
+        const cleaned = item.replace(/^[\s•\-\d\.●○■□]+/, '').trim();
+        if (cleaned.length >= 4 && cleaned.length <= 50 && !responsibilities.includes(cleaned)) {
+          responsibilities.push(cleaned);
+        }
+      });
+    }
+  }
+  
+  // 匹配单行职责描述
+  const singlePatterns = [
+    /负责([^，。\n]{4,35})/g,
+    /专注于([^，。\n]{4,35})/g,
+    /擅长([^，。\n]{4,35})/g,
+    /提供([^，。\n]{4,35}(?:服务|支持|帮助|建议|分析|咨询))/g,
+    /帮助[^，。\n]{0,10}([^，。\n]{4,35})/g,
+  ];
+  
+  for (const pattern of singlePatterns) {
+    let match;
+    while ((match = pattern.exec(systemPrompt)) !== null) {
+      const cleaned = match[1].trim();
+      if (cleaned.length >= 4 && cleaned.length <= 50 && !responsibilities.includes(cleaned)) {
+        responsibilities.push(cleaned);
+      }
+    }
+  }
+  
+  // 去重并限制数量
+  return [...new Set(responsibilities)].slice(0, 4);
+}
+
+/**
+ * 根据智能体特性生成个性化欢迎语
+ */
+function generateGreeting(
+  agentName: string, 
+  systemPrompt: string,
+  manifest?: any
+): string {
+  // 1. 优先使用 manifest 中的预设欢迎语
+  if (manifest?.greeting) {
+    return manifest.greeting;
+  }
+  if (manifest?.welcomeMessage) {
+    return manifest.welcomeMessage;
+  }
+  if (manifest?.metadata?.greeting) {
+    return manifest.metadata.greeting;
+  }
+  
+  // 2. 提取角色描述
+  const roleDesc = extractRoleDescription(systemPrompt);
+  const role = extractRoleFromPrompt(systemPrompt);
+  
+  // 3. 提取核心职责
+  const responsibilities = extractResponsibilities(systemPrompt);
+  
+  // 4. 获取部门/领域信息
+  const department = manifest?.metadata?.department || manifest?.department || '';
+  const description = manifest?.metadata?.description || '';
+  
+  // 5. 构建个性化欢迎语
+  let greeting = `你好！我是 ${agentName}`;
+  
+  if (roleDesc) {
+    greeting += `，${roleDesc}`;
+  } else if (role) {
+    greeting += `，${role}`;
+  } else if (department && department !== 'consumer' && department !== 'general') {
+    greeting += `，您的${department}助手`;
+  } else if (description && description.length > 5 && description.length < 60) {
+    greeting += `，${description}`;
+  }
+  
+  greeting += '。';
+  
+  // 6. 添加能力简介（如果有职责）
+  if (responsibilities.length > 0) {
+    greeting += '\n\n我可以帮您：';
+    responsibilities.forEach((resp) => {
+      greeting += `\n• ${resp}`;
+    });
+    greeting += '\n\n有什么我可以为您效劳的吗？';
+  } else {
+    greeting += ' 有什么我可以帮您的吗？';
+  }
+  
+  return greeting;
+}
+
+/**
+ * 生成快速开始建议
+ */
+function generateQuickStarts(
+  capabilities: CapabilityItem[], 
+  systemPrompt: string,
+  responsibilities?: string[]
+): string[] {
+  const quickStarts: string[] = [];
+  
+  // 1. 优先使用从职责提取的建议
+  if (responsibilities && responsibilities.length > 0) {
+    responsibilities.slice(0, 2).forEach(resp => {
+      // 转换职责为问句形式
+      if (resp.length <= 20) {
+        quickStarts.push(`帮我${resp}`);
+      }
+    });
+  }
+  
+  // 2. 基于能力生成建议
+  const capabilityLabels = capabilities.map(c => c.label);
+  
+  if (capabilityLabels.includes("数据分析") || capabilityLabels.includes("财务处理")) {
+    if (!quickStarts.some(q => q.includes('分析'))) {
+      quickStarts.push("帮我分析这份数据");
+    }
+  }
+  
+  if (capabilityLabels.includes("邮件处理")) {
+    quickStarts.push("帮我整理今天的邮件");
+  }
+  
+  if (capabilityLabels.includes("日程管理")) {
+    quickStarts.push("查看今天的日程安排");
+  }
+  
+  if (capabilityLabels.includes("内容撰写")) {
+    quickStarts.push("帮我写一篇文章");
+  }
+  
+  if (capabilityLabels.includes("代码辅助")) {
+    quickStarts.push("帮我审查这段代码");
+  }
+  
+  if (capabilityLabels.includes("客户服务") || capabilityLabels.includes("问答解答")) {
+    quickStarts.push("我有一个问题想咨询");
+  }
+  
+  if (capabilityLabels.includes("智能搜索")) {
+    quickStarts.push("搜索最新的行业资讯");
+  }
+  
+  if (capabilityLabels.includes("图表可视化")) {
+    quickStarts.push("生成一个趋势图表");
+  }
+  
+  // 3. 如果没有匹配到特定能力，提供通用建议
+  if (quickStarts.length === 0) {
+    quickStarts.push("有什么可以帮助你的吗？");
+    quickStarts.push("告诉我你的需求");
+  }
+  
+  // 去重并最多返回4个建议
+  return [...new Set(quickStarts)].slice(0, 4);
 }
 
 /**
@@ -286,14 +415,14 @@ export function extractAgentCapabilities(
   const core = uniqueCapabilities.slice(0, 3);
   const extended = uniqueCapabilities.slice(3, 6);
   
-  // 提取角色描述
-  const role = extractRoleFromPrompt(systemPrompt);
+  // 提取职责列表（用于生成快速开始）
+  const responsibilities = extractResponsibilities(systemPrompt);
   
-  // 生成开场白
-  const greeting = generateGreeting(agentName, role);
+  // 生成个性化欢迎语（传递 manifest 获取更多上下文）
+  const greeting = generateGreeting(agentName, systemPrompt, manifest);
   
-  // 生成快速开始建议
-  const quickStarts = generateQuickStarts(uniqueCapabilities, systemPrompt);
+  // 生成快速开始建议（传递职责信息）
+  const quickStarts = generateQuickStarts(uniqueCapabilities, systemPrompt, responsibilities);
   
   return {
     core,
