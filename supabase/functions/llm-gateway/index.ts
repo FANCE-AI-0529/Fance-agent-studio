@@ -200,7 +200,35 @@ serve(async (req: Request) => {
       provider = data;
     }
 
-    // Priority 4: Fallback to Lovable AI
+    // Priority 4: Global admin default provider
+    if (!provider) {
+      // First, get admin user IDs
+      const { data: adminUsers } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (adminUsers?.length) {
+        const adminUserIds = adminUsers.map((u: any) => u.user_id);
+        
+        // Get the default provider from admin users
+        const { data: adminProvider } = await supabase
+          .from("llm_providers")
+          .select("*")
+          .in("user_id", adminUserIds)
+          .eq("is_default", true)
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
+
+        if (adminProvider) {
+          provider = adminProvider;
+          console.log(`Using global admin provider: ${adminProvider.display_name}`);
+        }
+      }
+    }
+
+    // Priority 5: Fallback to Lovable AI
     if (!provider) {
       provider = {
         provider_type: 'lovable',

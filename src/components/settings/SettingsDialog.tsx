@@ -23,6 +23,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUpdateProfile, useUploadAvatar } from "@/hooks/useProfileUpdate";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { useIsAdmin } from "@/hooks/useAdminInvite";
+import { GlobalModelSettings } from "./GlobalModelSettings";
+import { cn } from "@/lib/utils";
 import {
   Settings,
   User,
@@ -33,6 +36,7 @@ import {
   Camera,
   Loader2,
   ExternalLink,
+  Cpu,
 } from "lucide-react";
 
 interface SettingsDialogProps {
@@ -45,6 +49,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { user, signOut } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { data: isAdmin } = useIsAdmin();
   
   // Profile state
   const [displayName, setDisplayName] = useState("");
@@ -150,7 +155,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-6" : "grid-cols-5")}>
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <User className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">个人资料</span>
@@ -171,6 +176,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <Info className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">关于</span>
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="model-config" className="text-xs sm:text-sm">
+                <Cpu className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">模型配置</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <div className="flex-1 overflow-y-auto mt-4">
@@ -426,6 +437,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Model Config Tab (Admin Only) */}
+            {isAdmin && (
+              <TabsContent value="model-config" className="space-y-4 m-0">
+                <GlobalModelSettings />
+              </TabsContent>
+            )}
           </div>
         </Tabs>
       </DialogContent>
