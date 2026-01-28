@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Plug,
   Server,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,8 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { SkillMode } from "@/components/foundry/SkillModeSwitch";
+import { AgentPlazaSidebar } from "@/components/foundry/AgentPlazaSidebar";
+import { AwesomeLLMAgent } from "@/data/awesomeLLMAgents";
 
 export interface FileItem {
   id: string;
@@ -85,6 +88,10 @@ interface FoundrySidebarProps {
   onOpenVersionHistory: () => void;
   isLoading?: boolean;
   skillMode?: SkillMode;
+  // Agent Plaza props
+  onPlazaAgentSelect?: (agent: AwesomeLLMAgent) => void;
+  selectedPlazaAgentId?: string | null;
+  showPlazaSection?: boolean;
 }
 
 function FileTreeItem({
@@ -176,9 +183,13 @@ export function FoundrySidebar({
   onOpenVersionHistory,
   isLoading,
   skillMode = "native",
+  onPlazaAgentSelect,
+  selectedPlazaAgentId,
+  showPlazaSection = true,
 }: FoundrySidebarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState({
+    plaza: false,
     skills: true,
     files: true,
     templates: false,
@@ -228,6 +239,41 @@ export function FoundrySidebar({
 
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
+          {/* Agent Plaza Section */}
+          {showPlazaSection && onPlazaAgentSelect && (
+            <Collapsible
+              open={sectionsOpen.plaza}
+              onOpenChange={() => toggleSection("plaza")}
+            >
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-secondary/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    {sectionsOpen.plaza ? (
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    <Store className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      智能体广场
+                    </span>
+                  </div>
+                  <Badge variant="default" className="text-[10px] h-5 bg-primary/20 text-primary hover:bg-primary/30">
+                    100+
+                  </Badge>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-1 border rounded-lg overflow-hidden bg-background/50" style={{ height: '300px' }}>
+                  <AgentPlazaSidebar
+                    selectedAgentId={selectedPlazaAgentId || null}
+                    onAgentSelect={onPlazaAgentSelect}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
           {/* My Skills Section */}
           <Collapsible
             open={sectionsOpen.skills}

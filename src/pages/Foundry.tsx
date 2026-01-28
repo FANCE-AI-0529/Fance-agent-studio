@@ -68,6 +68,10 @@ import { useMCPInspect, MCPInspectResult } from "@/hooks/useMCPInspect";
 import { useFeaturedBundles, SkillBundle } from "@/hooks/useSkillBundles";
 import { KnowledgeManager } from "@/components/knowledge/KnowledgeManager";
 import { useBundlesByCategory } from "@/hooks/useBundlesByCategory";
+import { AgentPlazaDetail, AgentPlazaEmpty } from "@/components/foundry/AgentPlazaDetail";
+import { AgentPlazaSidebar } from "@/components/foundry/AgentPlazaSidebar";
+import { AgentPlazaGrid } from "@/components/foundry/AgentPlazaCard";
+import { AwesomeLLMAgent, awesomeLLMAgents, AGENT_CATEGORIES, getAgentsByCategory, searchAgents } from "@/data/awesomeLLMAgents";
 import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
 import {
   useMySkills,
@@ -396,7 +400,7 @@ function ValidationStatusCard({ validation }: { validation: ValidationResult }) 
 }
 
 // C端消费者视图类型
-type ConsumerView = "store" | "bundles" | "myBundles" | "create" | "lowcode" | "creator" | "knowledge";
+type ConsumerView = "store" | "bundles" | "plaza" | "myBundles" | "create" | "lowcode" | "creator" | "knowledge";
 
 const Foundry = () => {
   const navigate = useNavigate();
@@ -406,6 +410,11 @@ const Foundry = () => {
   // 默认使用消费者模式（非开发者模式）
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [consumerView, setConsumerView] = useState<ConsumerView>("store");
+  
+  // Agent Plaza state
+  const [selectedPlazaAgent, setSelectedPlazaAgent] = useState<AwesomeLLMAgent | null>(null);
+  const [plazaSearchTerm, setPlazaSearchTerm] = useState("");
+  const [plazaCategory, setPlazaCategory] = useState<string>("all");
   
   // Fetch bundles for the bundles tab
   const [bundleCategory, setBundleCategory] = useState<BundleCategory>("all");
@@ -828,6 +837,15 @@ const Foundry = () => {
                   能力包
                 </Button>
                 <Button
+                  variant={consumerView === "plaza" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setConsumerView("plaza")}
+                  className="gap-2"
+                >
+                  <Store className="h-4 w-4" />
+                  智能体广场
+                </Button>
+                <Button
                   variant={consumerView === "create" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setConsumerView("create")}
@@ -1088,6 +1106,29 @@ const Foundry = () => {
 
             {consumerView === "knowledge" && (
               <KnowledgeManager />
+            )}
+
+            {consumerView === "plaza" && (
+              <div className="flex h-full">
+                {/* 左侧列表 */}
+                <div className="w-80 border-r border-border flex-shrink-0">
+                  <AgentPlazaSidebar
+                    selectedAgentId={selectedPlazaAgent?.id || null}
+                    onAgentSelect={setSelectedPlazaAgent}
+                  />
+                </div>
+                {/* 右侧详情 */}
+                <div className="flex-1 overflow-hidden">
+                  {selectedPlazaAgent ? (
+                    <AgentPlazaDetail
+                      agent={selectedPlazaAgent}
+                      onClose={() => setSelectedPlazaAgent(null)}
+                    />
+                  ) : (
+                    <AgentPlazaEmpty />
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
