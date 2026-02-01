@@ -1,331 +1,420 @@
 
-# 智能体广场模块实现计划
-
-## 需求概述
-
-在整体左边栏 (Foundry) 的左侧边栏添加一个完整的「智能体广场」模块，展示来自 [awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) 仓库的优质 LLM 应用/智能体模板。
+# Agent OS Studio - 软件质量审查报告与开发修复计划
 
 ---
 
-## 系统架构
+## 审查概述
+
+本审查对 Agent OS Studio 项目进行了全面的功能模块检测、代码质量分析、安全漏洞扫描以及数据库结构审查。项目规模庞大（90+ 数据库表、50+ Edge Functions、100+ Hooks），整体架构设计合理，但存在若干需要修复的问题。
+
+---
+
+## 一、发现的问题分类汇总
+
+| 严重程度 | 数量 | 类别 |
+|----------|------|------|
+| 严重 (Critical) | 3 | 安全漏洞 |
+| 高 (High) | 5 | 功能缺陷、安全风险 |
+| 中 (Medium) | 8 | 代码质量、用户体验 |
+| 低 (Low) | 6 | 性能优化、代码规范 |
+
+---
+
+## 二、严重问题 (Critical)
+
+### 问题 C-1: 用户资料表公开暴露
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                      技能工坊 (Foundry)                          │
-├─────────────────────┬───────────────────────────────────────────┤
-│                     │                                           │
-│  ┌───────────────┐  │                                           │
-│  │ 智能体广场    │  │   主内容区                                │
-│  │ (新增模块)    │  │   - 智能体详情预览                        │
-│  │               │  │   - 一键克隆功能                          │
-│  │ ├─ AI Agents  │  │   - 代码查看                             │
-│  │ │  ├─ Starter │  │                                          │
-│  │ │  ├─ Advanced│  │                                          │
-│  │ │  └─ Voice   │  │                                          │
-│  │ ├─ RAG Apps   │  │                                          │
-│  │ ├─ MCP Agents │  │                                          │
-│  │ └─ LLM Tools  │  │                                          │
-│  └───────────────┘  │                                           │
-│                     │                                           │
-│  ┌───────────────┐  │                                           │
-│  │ 我的技能      │  │                                           │
-│  ├───────────────┤  │                                           │
-│  │ 技能文件      │  │                                           │
-│  ├───────────────┤  │                                           │
-│  │ 模板库        │  │                                           │
-│  └───────────────┘  │                                           │
-└─────────────────────┴───────────────────────────────────────────┘
+位置: profiles 表
+问题: 个人信息（display_name、bio、social_links、notification_preferences）
+      可被匿名用户读取
+风险: 数据泄露、隐私侵犯、社会工程攻击
+```
+
+**修复方案**:
+```sql
+-- 限制匿名用户只能读取公开字段
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
+
+CREATE POLICY "Public profile fields only"
+  ON public.profiles
+  FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL  -- 认证用户可读取所有
+    OR is_verified = true   -- 或仅展示认证创作者
+  );
+```
+
+### 问题 C-2: API Key Hash 暴露给前端
+
+```text
+位置: agent_api_keys 表
+问题: api_key_hash 和 api_key_prefix 列返回给客户端
+风险: 彩虹表攻击、暴力破解
+```
+
+**修复方案**:
+- 创建数据库视图，仅返回安全字段 (id, name, created_at, last_used_at)
+- 永不在查询结果中返回 hash 值
+
+### 问题 C-3: 沙盒代码执行安全隐患
+
+```text
+位置: supabase/functions/sandbox-execute/index.ts
+问题: 使用 AsyncFunction 构造器执行用户代码
+风险: 原型链污染、闭包逃逸、任意代码执行
+```
+
+**修复方案**:
+1. 短期：增加 AST 级代码分析和白名单校验
+2. 中期：使用 Deno 权限系统严格限制
+3. 长期：迁移至 WebAssembly 沙盒或容器化执行
+
+---
+
+## 三、高优先级问题 (High)
+
+### 问题 H-1: React ref 警告 - AchievementShowcase 组件
+
+```text
+位置: src/components/dashboard/AchievementShowcase.tsx
+问题: Function components cannot be given refs
+      TooltipTrigger 尝试传递 ref 给函数组件
+控制台: Warning: Function components cannot be given refs...
+```
+
+**修复方案**:
+```tsx
+// 将 motion.div 包裹在 forwardRef 中
+const AchievementBadge = forwardRef<HTMLDivElement, Props>((props, ref) => (
+  <motion.div ref={ref} {...props} />
+));
+
+// 或使用 asChild 模式
+<TooltipTrigger asChild>
+  <motion.div className="...">
+    {content}
+  </motion.div>
+</TooltipTrigger>
+```
+
+### 问题 H-2: user_activity_log 重复键冲突
+
+```text
+位置: src/hooks/useAchievements.ts (useLogActivity)
+问题: POST 请求返回 409 Conflict
+      "duplicate key value violates unique constraint"
+网络日志: 每次页面加载触发多次 POST 导致冲突
+```
+
+**修复方案**:
+```typescript
+// 使用 upsert 替代 insert
+const logActivity = async () => {
+  if (!user) return;
+  
+  await supabase
+    .from("user_activity_log")
+    .upsert(
+      { user_id: user.id, activity_date: new Date().toISOString().split('T')[0] },
+      { onConflict: 'user_id,activity_date', ignoreDuplicates: true }
+    );
+};
+```
+
+### 问题 H-3: RLS 策略过于宽松
+
+```text
+位置: 多个数据库表
+问题: 使用 USING (true) 或 WITH CHECK (true)
+      允许任意 INSERT/UPDATE/DELETE 操作
+```
+
+**修复方案**:
+- 审查所有 RLS 策略
+- 对写操作添加 `auth.uid() = user_id` 条件
+- 对敏感表移除匿名访问权限
+
+### 问题 H-4: 密码泄露保护未启用
+
+```text
+位置: Supabase Auth 配置
+问题: Leaked password protection is disabled
+风险: 用户可使用已泄露的密码注册
+```
+
+**修复方案**:
+启用 Supabase Auth 的密码泄露检测功能
+
+### 问题 H-5: 数据库函数缺少 search_path
+
+```text
+位置: 多个自定义 SQL 函数
+问题: search_path 参数未设置
+风险: 潜在的 SQL 注入和权限提升攻击
+```
+
+**修复方案**:
+```sql
+ALTER FUNCTION public.my_function() 
+SET search_path = public;
 ```
 
 ---
 
-## 数据结构设计
+## 四、中等优先级问题 (Medium)
 
-### 1. awesome-llm-apps 数据解析
+### 问题 M-1: 智能体广场组件未实现一键克隆
 
-从 README.md 提取的结构化数据：
+```text
+位置: src/components/foundry/AgentPlazaDetail.tsx
+现状: 仅复制 git clone 命令到剪贴板
+预期: 实际将智能体模板导入到用户项目中
+```
 
+**增强方案**:
+1. 解析 GitHub 仓库中的 Python/YAML 配置
+2. 转换为 Agent OS 兼容的 Skill 格式
+3. 创建智能体并自动挂载技能
+
+### 问题 M-2: LLM Gateway 无降级机制
+
+```text
+位置: supabase/functions/llm-gateway/index.ts
+问题: 当配置的 API 供应商不可用时，无自动回退
+```
+
+**增强方案**:
 ```typescript
-interface AwesomeLLMAgent {
-  id: string;                    // 唯一标识 (基于路径)
-  name: string;                  // 显示名称
-  emoji: string;                 // 图标 emoji
-  description?: string;          // 简短描述
-  category: AgentCategory;       // 分类
-  subCategory?: string;          // 子分类
-  githubPath: string;            // GitHub 相对路径
-  tags: string[];                // 标签 (openai, anthropic, local 等)
-  modelProvider?: string;        // 模型供应商
-  hasLocalVersion?: boolean;     // 是否支持本地运行
+// 添加 fallback 链
+const providers = [customProvider, adminProvider, lovableDefault];
+for (const provider of providers) {
+  try {
+    return await callProvider(provider);
+  } catch (e) {
+    console.warn(`Provider ${provider.name} failed, trying next...`);
+  }
 }
-
-type AgentCategory = 
-  | 'starter-agents'      // 🌱 入门级
-  | 'advanced-agents'     // 🚀 高级
-  | 'voice-agents'        // 🗣️ 语音
-  | 'mcp-agents'          // ♾️ MCP
-  | 'rag-tutorials'       // 📀 RAG
-  | 'multi-agent-teams'   // 🤝 多智能体
-  | 'game-agents'         // 🎮 游戏
-  | 'llm-apps';           // 💬 LLM 应用
+throw new Error("All providers failed");
 ```
 
-### 2. 解析后的数据示例
+### 问题 M-3: daily_inspiration 数据为空
 
-```typescript
-const awesomeAgents: AwesomeLLMAgent[] = [
-  {
-    id: "ai-travel-agent",
-    name: "AI Travel Agent",
-    emoji: "🛫",
-    category: "starter-agents",
-    githubPath: "starter_ai_agents/ai_travel_agent/",
-    tags: ["local", "cloud"],
-    hasLocalVersion: true,
-  },
-  {
-    id: "ai-deep-research-agent",
-    name: "AI Deep Research Agent",
-    emoji: "🔍",
-    category: "advanced-agents",
-    githubPath: "advanced_ai_agents/single_agent_apps/ai_deep_research_agent/",
-    tags: ["openai"],
-  },
-  // ... 共 100+ 个智能体
-];
+```text
+网络日志: GET /daily_inspiration 返回空数组 []
+影响: 首页"每日灵感"模块无内容展示
 ```
+
+**修复方案**:
+- 创建定时任务填充每日内容
+- 添加 fallback 静态内容
+
+### 问题 M-4: Edge Function 日志格式不统一
+
+```text
+位置: 多个 Edge Functions
+问题: console.log/error 格式不一致，难以追踪和调试
+```
+
+**修复方案**:
+创建统一的日志工具类
+
+### 问题 M-5: 模型映射硬编码
+
+```text
+位置: src/utils/modelMapping.ts
+问题: UI 模型名到 Gateway 模型的映射写死在代码中
+```
+
+**优化方案**:
+从数据库或配置文件加载映射关系
+
+### 问题 M-6: 终端风格提示词注入
+
+```text
+位置: src/utils/terminalStylePrompt.ts
+问题: 强制注入特定响应格式可能与用户自定义提示词冲突
+```
+
+**优化方案**:
+提供开关让用户选择是否启用终端风格
+
+### 问题 M-7: ConsumerRuntime 会话初始化竞态条件
+
+```text
+位置: src/components/runtime/ConsumerRuntime.tsx
+问题: 多个 useEffect 依赖 isInitialized 状态
+      可能导致消息重复加载或丢失
+```
+
+**修复方案**:
+使用 React Query 的 useMutation 管理会话状态
+
+### 问题 M-8: 缺少错误边界
+
+```text
+位置: 整体应用
+问题: 子组件崩溃可能导致整个应用白屏
+```
+
+**修复方案**:
+在关键路由添加 React Error Boundary
 
 ---
 
-## 实现步骤
+## 五、低优先级问题 (Low)
 
-### 第一步：创建数据解析模块
+### 问题 L-1: 未使用的 getTimeAgo 函数
 
-**新建文件**：`src/data/awesomeLLMAgents.ts`
-
-解析 README 中的智能体列表，生成静态数据（不需要运行时克隆 GitHub）
-
-| 分类 | 数量 | 说明 |
-|------|------|------|
-| Starter AI Agents | 12 | 入门级智能体 |
-| Advanced AI Agents | 20+ | 高级单/多智能体 |
-| Voice AI Agents | 4 | 语音智能体 |
-| MCP AI Agents | 4 | MCP 协议智能体 |
-| RAG Tutorials | 18 | RAG 应用 |
-| Multi-agent Teams | 13 | 多智能体团队 |
-| Game Playing Agents | 3 | 游戏智能体 |
-| LLM Apps | 15+ | Chat with X、Memory 等 |
-
----
-
-### 第二步：创建侧边栏「智能体广场」组件
-
-**新建文件**：`src/components/foundry/AgentPlazaSidebar.tsx`
-
-**功能**：
-1. 分类折叠面板展示智能体列表
-2. 搜索过滤功能
-3. 标签筛选（本地/云端/OpenAI/Anthropic 等）
-4. 点击选中智能体
-
-**UI 结构**：
-```
-┌─────────────────────────────────┐
-│ 🏪 智能体广场          [搜索🔍] │
-├─────────────────────────────────┤
-│ ▼ 🌱 入门级智能体 (12)          │
-│   🛫 AI Travel Agent            │
-│   🎙️ AI Blog to Podcast        │
-│   📊 AI Data Analysis           │
-│   ...                           │
-├─────────────────────────────────┤
-│ ▶ 🚀 高级智能体 (20+)           │
-├─────────────────────────────────┤
-│ ▶ 🗣️ 语音智能体 (4)            │
-├─────────────────────────────────┤
-│ ▶ ♾️ MCP 智能体 (4)             │
-├─────────────────────────────────┤
-│ ▶ 📀 RAG 应用 (18)              │
-├─────────────────────────────────┤
-│ ▶ 🤝 多智能体团队 (13)          │
-└─────────────────────────────────┘
+```text
+位置: src/pages/Index.tsx (276-288行)
+问题: 定义了但未使用的辅助函数
 ```
 
----
+### 问题 L-2: 大量 TODO/FIXME 注释
 
-### 第三步：创建智能体详情面板
-
-**新建文件**：`src/components/foundry/AgentPlazaDetail.tsx`
-
-**功能**：
-1. 显示选中智能体的详细信息
-2. GitHub 源码链接
-3. 一键克隆到本地项目
-4. 代码预览（从 GitHub API 获取 README）
-
-**UI 示例**：
+```text
+位置: 32 个文件中发现 918 处标记
+需要: 整理并完成待办事项
 ```
-┌─────────────────────────────────────────────────────────┐
-│ 🛫 AI Travel Agent (Local & Cloud)                      │
-│                                                         │
-│ 📁 starter_ai_agents/ai_travel_agent/                   │
-│                                                         │
-│ 标签: [Local] [Cloud] [OpenAI]                          │
-│                                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 📄 README.md (从 GitHub 加载)                       │ │
-│ │                                                     │ │
-│ │ # AI Travel Agent                                   │ │
-│ │ An AI-powered travel planning assistant...          │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ [查看源码 🔗]  [克隆到项目 📥]  [在浏览器中打开 🌐]       │
-└─────────────────────────────────────────────────────────┘
+
+### 问题 L-3: 重复的 TooltipProvider 嵌套
+
+```text
+位置: AchievementShowcase, 其他组件
+问题: 在已有 TooltipProvider 的上下文中重复包裹
+```
+
+### 问题 L-4: 文件上传大小限制缺失
+
+```text
+位置: useFileUpload, FileUploadButton
+问题: 未明确限制上传文件大小
+```
+
+### 问题 L-5: 缺少单元测试
+
+```text
+位置: src/tests/
+问题: 测试覆盖率不足，关键业务逻辑缺少测试
+```
+
+### 问题 L-6: community_stats 视图暴露敏感指标
+
+```text
+位置: community_stats 数据库视图
+问题: 日活、总对话数等竞品分析数据对匿名用户可见
 ```
 
 ---
 
-### 第四步：修改 FoundrySidebar 集成智能体广场
+## 六、修复开发计划
 
-**修改文件**：`src/components/foundry/FoundrySidebar.tsx`
+### 第一阶段：安全修复 (优先级: 紧急)
 
-**改动**：
-1. 在「我的技能」section 上方新增「智能体广场」section
-2. 添加 props 传递选中的智能体
-3. 支持展开/收起状态
+| 任务 | 预估工时 | 负责模块 |
+|------|----------|----------|
+| 修复 profiles 表 RLS 策略 | 2h | 数据库 |
+| 隐藏 api_key_hash 字段 | 2h | 数据库 |
+| 启用密码泄露保护 | 0.5h | Auth 配置 |
+| 修复函数 search_path | 1h | 数据库 |
+| 审查并修复宽松 RLS 策略 | 4h | 数据库 |
 
-```typescript
-// 新增 props
-interface FoundrySidebarProps {
-  // ... existing props
-  onAgentSelect?: (agent: AwesomeLLMAgent) => void;
-  selectedAgentId?: string | null;
-}
+### 第二阶段：功能修复 (优先级: 高)
 
-// 新增 section state
-const [sectionsOpen, setSectionsOpen] = useState({
-  plaza: true,      // 新增：智能体广场
-  skills: true,
-  files: true,
-  templates: false,
-  tools: false,
-});
-```
+| 任务 | 预估工时 | 负责模块 |
+|------|----------|----------|
+| 修复 AchievementShowcase ref 警告 | 1h | 前端 |
+| 修复 user_activity_log 重复键冲突 | 1h | Hooks |
+| 添加 LLM Gateway 降级机制 | 3h | Edge Functions |
+| 填充 daily_inspiration 内容 | 2h | 数据库/定时任务 |
 
----
+### 第三阶段：体验优化 (优先级: 中)
 
-### 第五步：创建 GitHub 内容获取 Hook
+| 任务 | 预估工时 | 负责模块 |
+|------|----------|----------|
+| 实现智能体广场一键导入 | 8h | Foundry 模块 |
+| 添加 React Error Boundary | 2h | 全局 |
+| 统一 Edge Function 日志格式 | 3h | Edge Functions |
+| 修复 ConsumerRuntime 竞态条件 | 2h | Runtime |
 
-**新建文件**：`src/hooks/useGitHubContent.ts`
+### 第四阶段：代码质量 (优先级: 低)
 
-**功能**：
-1. 从 GitHub Raw API 获取指定路径的文件内容
-2. 缓存机制避免重复请求
-3. 支持加载 README.md、requirements.txt 等
-
-```typescript
-const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/Shubhamsaboo/awesome-llm-apps/main';
-
-export function useGitHubContent(path: string) {
-  return useQuery({
-    queryKey: ['github-content', path],
-    queryFn: async () => {
-      const res = await fetch(`${GITHUB_RAW_BASE}/${path}`);
-      if (!res.ok) throw new Error('Failed to fetch');
-      return res.text();
-    },
-    staleTime: 1000 * 60 * 60, // 1 小时缓存
-    enabled: !!path,
-  });
-}
-```
+| 任务 | 预估工时 | 负责模块 |
+|------|----------|----------|
+| 清理未使用代码 | 2h | 全局 |
+| 整理 TODO 注释 | 4h | 全局 |
+| 添加单元测试 | 16h | 测试 |
+| 添加文件上传大小限制 | 1h | 文件上传 |
 
 ---
 
-### 第六步：更新 Foundry 页面集成
+## 七、测试用例清单
 
-**修改文件**：`src/pages/Foundry.tsx`
+### 功能测试
 
-**改动**：
-1. 添加智能体广场相关状态
-2. 在消费者模式新增「广场」tab
-3. 在开发者模式的侧边栏显示智能体列表
+1. **认证模块**
+   - [  ] 邮箱注册验证流程
+   - [  ] 登录/登出功能
+   - [  ] 访客模式限制
 
-```typescript
-// 新增状态
-const [selectedPlazaAgent, setSelectedPlazaAgent] = useState<AwesomeLLMAgent | null>(null);
+2. **智能体管理**
+   - [  ] 创建新智能体
+   - [  ] 编辑智能体配置
+   - [  ] 删除智能体
+   - [  ] 部署智能体
 
-// 消费者模式新增 tab
-type ConsumerView = "store" | "bundles" | "plaza" | "myBundles" | "create" | "lowcode" | "creator" | "knowledge";
+3. **对话运行时**
+   - [  ] 流式响应正常渲染
+   - [  ] 多模态消息支持（图片上传）
+   - [  ] 会话持久化
+   - [  ] 长期记忆功能
 
-// 新增 tab 按钮
-<Button
-  variant={consumerView === "plaza" ? "default" : "ghost"}
-  size="sm"
-  onClick={() => setConsumerView("plaza")}
-  className="gap-2"
->
-  <Store className="h-4 w-4" />
-  智能体广场
-</Button>
-```
+4. **技能工坊**
+   - [  ] 技能创建/编辑
+   - [  ] 技能发布
+   - [  ] 技能商店浏览
+   - [  ] 技能安装
 
----
+5. **智能体广场**
+   - [  ] 分类浏览
+   - [  ] 搜索过滤
+   - [  ] GitHub README 加载
+   - [  ] 克隆命令复制
 
-### 第七步（可选）：数据库同步
+### 安全测试
 
-**Edge Function**：`supabase/functions/sync-awesome-agents/index.ts`
+- [  ] 匿名用户访问受保护资源
+- [  ] SQL 注入测试
+- [  ] XSS 攻击测试
+- [  ] CSRF 保护验证
 
-定期从 GitHub 同步数据到 `agent_templates` 表，支持：
-1. 自动更新新增的智能体
-2. 记录使用次数和评分
-3. 支持用户收藏
+### 性能测试
 
----
-
-## 修改文件清单
-
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `src/data/awesomeLLMAgents.ts` | CREATE | 智能体数据定义 |
-| `src/components/foundry/AgentPlazaSidebar.tsx` | CREATE | 广场侧边栏组件 |
-| `src/components/foundry/AgentPlazaDetail.tsx` | CREATE | 智能体详情面板 |
-| `src/components/foundry/AgentPlazaCard.tsx` | CREATE | 智能体卡片组件 |
-| `src/hooks/useGitHubContent.ts` | CREATE | GitHub 内容获取 |
-| `src/components/foundry/FoundrySidebar.tsx` | UPDATE | 集成广场模块 |
-| `src/pages/Foundry.tsx` | UPDATE | 页面状态管理 |
+- [  ] 首页加载时间 < 3s
+- [  ] 智能体响应首字节时间 < 1s
+- [  ] 大量消息历史加载性能
 
 ---
 
-## 智能体分类预览
+## 八、实施建议
 
-| 分类 | 图标 | 数量 | 示例智能体 |
-|------|------|------|------------|
-| Starter AI Agents | 🌱 | 12 | Travel Agent, Music Generator, Data Analysis |
-| Advanced AI Agents | 🚀 | 20+ | Deep Research, Investment, VC Due Diligence |
-| Voice AI Agents | 🗣️ | 4 | Audio Tour, Customer Support Voice |
-| MCP AI Agents | ♾️ | 4 | Browser MCP, GitHub MCP, Notion MCP |
-| RAG Tutorials | 📀 | 18 | Agentic RAG, Corrective RAG, Vision RAG |
-| Multi-agent Teams | 🤝 | 13 | Finance Team, Legal Team, Design Team |
-| Game Agents | 🎮 | 3 | Chess Agent, Tic-Tac-Toe, 3D Pygame |
-| LLM Apps | 💬 | 15+ | Chat with PDF, Gmail, YouTube |
+1. **立即行动**: 安全问题应在 24-48 小时内修复并部署
+2. **迭代修复**: 高优先级问题在下一个 Sprint 完成
+3. **持续改进**: 中低优先级问题纳入技术债务 backlog
+4. **监控告警**: 部署后添加错误监控 (Sentry/LogRocket)
+5. **代码审查**: 建立 PR 审查流程，防止新问题引入
 
 ---
 
-## 预期效果
+## 九、技术债务追踪
 
-1. **侧边栏集成**：在技能工坊左侧新增「智能体广场」折叠区域
-2. **分类浏览**：按类型浏览 100+ 优质 LLM 智能体模板
-3. **搜索过滤**：支持关键词搜索和标签筛选
-4. **详情预览**：点击查看智能体的详细说明和源码
-5. **一键克隆**：将智能体模板复制到自己的项目中
-6. **GitHub 链接**：直接跳转到源码仓库
+建议创建以下 GitHub Issues 追踪修复进度：
 
----
-
-## 技术要点
-
-1. **静态数据解析**：从 README.md 提取结构化数据，编译时生成
-2. **GitHub Raw API**：实时获取智能体的 README 和代码文件
-3. **缓存策略**：React Query 缓存避免重复请求
-4. **懒加载**：详情内容按需加载，优化首屏性能
+1. `[Security] Fix profiles table RLS exposure`
+2. `[Security] Hide API key hashes from frontend`
+3. `[Bug] Fix AchievementShowcase React ref warning`
+4. `[Bug] Fix user_activity_log duplicate key error`
+5. `[Feature] Implement Agent Plaza one-click import`
+6. `[Improvement] Add LLM Gateway fallback mechanism`
+7. `[Test] Add unit tests for core business logic`
