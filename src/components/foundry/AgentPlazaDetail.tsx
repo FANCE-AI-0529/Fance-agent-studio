@@ -3,10 +3,11 @@
  * @description 智能体广场详情面板 - 显示选中智能体的详细信息和操作
  */
 
-import { ExternalLink, Github, Copy, FileText, Loader2, Tag, Cpu } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Github, Copy, FileText, Loader2, Tag, Cpu, Download, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
@@ -17,6 +18,8 @@ import {
   getAgentGitHubUrl,
 } from "@/data/awesomeLLMAgents";
 import { useAgentReadme } from "@/hooks/useGitHubContent";
+import { useCreateSkill } from "@/hooks/useSkills";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AgentPlazaDetailProps {
   agent: AwesomeLLMAgent;
@@ -30,6 +33,9 @@ export function AgentPlazaDetail({
   className,
 }: AgentPlazaDetailProps) {
   const { data: readme, isLoading, error } = useAgentReadme(agent.githubPath);
+  const { user } = useAuth();
+  const createSkill = useCreateSkill();
+  const [isImported, setIsImported] = useState(false);
   
   const category = AGENT_CATEGORIES.find((c) => c.id === agent.category);
   const githubUrl = getAgentGitHubUrl(agent);
@@ -53,6 +59,64 @@ export function AgentPlazaDetail({
       title: "克隆命令已复制",
       description: "在终端中粘贴即可克隆此智能体",
     });
+  };
+
+  const handleImportAsSkill = async () => {
+    if (!user) {
+      toast({ 
+        title: "请先登录", 
+        description: "需要登录后才能导入技能",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    try {
+      // Build skill content from README
+      const readmeContent = readme || `# ${agent.name}\n\n${agent.description || '从 awesome-llm-apps 导入'}`;
+      
+      const skillContent = `---
+name: "${agent.name}"
+version: "1.0.0"
+description: "${agent.description || ''}"
+author: "awesome-llm-apps"
+origin: "github"
+origin_url: "${githubUrl}"
+tags: ${JSON.stringify(agent.tags)}
+model_provider: "${agent.modelProvider || 'openai'}"
+permissions:
+  - internet_access
+---
+
+# ${agent.name}
+
+> 从 [awesome-llm-apps](${githubUrl}) 导入
+
+${readmeContent}
+`;
+
+      await createSkill.mutateAsync({
+        name: agent.name,
+        content: skillContent,
+        description: agent.description || `从 awesome-llm-apps 导入的智能体: ${agent.name}`,
+        category: category?.id || 'general',
+        tags: agent.tags,
+        is_published: false,
+        is_free: true,
+      });
+
+      setIsImported(true);
+      toast({ 
+        title: "导入成功", 
+        description: `「${agent.name}」已添加到我的技能` 
+      });
+    } catch (error: any) {
+      toast({ 
+        title: "导入失败", 
+        description: error.message || "请稍后重试", 
+        variant: "destructive" 
+      });
+    }
   };
 
   return (
@@ -120,13 +184,27 @@ export function AgentPlazaDetail({
 
         {/* 操作按钮 */}
         <div className="flex gap-2 mt-4">
-          <Button onClick={handleOpenGitHub} className="flex-1 gap-2">
-            <Github className="h-4 w-4" />
-            查看源码
+          <Button 
+            onClick={handleImportAsSkill} 
+            className="flex-1 gap-2"
+            disabled={createSkill.isPending || isImported}
+          >
+            {createSkill.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isImported ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isImported ? "已导入" : "导入为技能"}
           </Button>
-          <Button variant="outline" onClick={handleClone} className="flex-1 gap-2">
+          <Button variant="outline" onClick={handleOpenGitHub} className="gap-2">
+            <Github className="h-4 w-4" />
+            源码
+          </Button>
+          <Button variant="outline" onClick={handleClone} className="gap-2">
             <Copy className="h-4 w-4" />
-            复制克隆命令
+            克隆
           </Button>
         </div>
       </div>

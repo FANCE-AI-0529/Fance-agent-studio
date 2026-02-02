@@ -99,6 +99,70 @@ const parsers: Record<string, (response: any) => { content: string; usage?: any 
   }),
 };
 
+// Build headers based on provider type
+function buildHeaders(providerType: string, apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  
+  if (providerType === 'anthropic') {
+    headers["x-api-key"] = apiKey;
+    headers["anthropic-version"] = "2023-06-01";
+  } else {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+  
+  return headers;
+}
+
+// Provider fallback chain function
+async function tryProvidersWithFallback(
+  providers: any[],
+  finalMessages: any[],
+  modelName: string,
+  options: any
+): Promise<{ content: string; usage?: any; provider: any; providerType: string }> {
+  const errors: string[] = [];
+  
+  for (const provider of providers) {
+    try {
+      const apiKey = Deno.env.get(provider.api_key_name);
+      if (!apiKey) {
+        errors.push(`${provider.display_name || provider.provider_type}: API key not configured`);
+        continue;
+      }
+
+      const providerType = provider.provider_type;
+      const formatter = formatters[providerType] || formatters.custom;
+      const requestBody = formatter(finalMessages, modelName, options);
+      const headers = buildHeaders(providerType, apiKey);
+      
+      console.log(`Trying provider: ${provider.display_name || providerType}`);
+      
+      const response = await fetch(provider.api_endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const parser = parsers[providerType] || parsers.custom;
+        return { ...parser(data), provider, providerType };
+      }
+      
+      const errorText = await response.text();
+      errors.push(`${provider.display_name || providerType}: ${response.status} - ${errorText.slice(0, 100)}`);
+      console.warn(`Provider ${provider.display_name || providerType} failed: ${response.status}`);
+    } catch (error: any) {
+      errors.push(`${provider.display_name || provider.provider_type}: ${error.message}`);
+      console.warn(`Provider ${provider.display_name || 'unknown'} error:`, error.message);
+    }
+  }
+  
+  throw new Error(`All providers failed:\n${errors.join('\n')}`);
+}
+
 interface LLMRequest {
   messages: Array<{ role: string; content: string }>;
   provider_id?: string;

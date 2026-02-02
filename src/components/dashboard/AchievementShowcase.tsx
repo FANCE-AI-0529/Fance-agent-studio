@@ -65,13 +65,13 @@ export function AchievementShowcase() {
               const isEarned = !!earned;
               
               return (
-                <Tooltip key={def.type}>
-                  <TooltipTrigger>
+              <Tooltip key={def.type}>
+                  <TooltipTrigger asChild>
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className={`
-                        w-12 h-12 rounded-xl flex items-center justify-center text-2xl
+                        w-12 h-12 rounded-xl flex items-center justify-center text-2xl cursor-pointer
                         ${isEarned 
                           ? "bg-primary/10 border-2 border-primary/30" 
                           : "bg-muted/50 border border-border opacity-50"

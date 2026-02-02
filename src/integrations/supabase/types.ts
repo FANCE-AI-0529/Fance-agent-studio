@@ -138,6 +138,13 @@ export type Database = {
             referencedRelation: "agent_api_keys"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agent_api_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "agent_api_keys_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agent_clones: {
@@ -5298,12 +5305,79 @@ export type Database = {
       }
     }
     Views: {
+      agent_api_keys_safe: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string | null
+          is_active: boolean | null
+          last_used_at: string | null
+          name: string | null
+          rate_limit: number | null
+          total_calls: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string | null
+          rate_limit?: number | null
+          total_calls?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string | null
+          rate_limit?: number | null
+          total_calls?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_api_keys_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_api_keys_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_api_keys_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_stats: {
         Row: {
           daily_active_sessions: number | null
+          public_agents: number | null
+          public_skills: number | null
           total_agents: number | null
           total_conversations: number | null
           total_creators: number | null
+          verified_creators: number | null
         }
         Relationships: []
       }
