@@ -28,6 +28,8 @@ import { GlobalModelSettings } from "./GlobalModelSettings";
 import { MCPServerManager } from "./MCPServerManager";
 import { ModelProviderSettings } from "./ModelProviderSettings";
 import { ChangePasswordForm } from "./ChangePasswordForm";
+import { TwoFactorAuthForm } from "./TwoFactorAuthForm";
+import { DataExportForm } from "./DataExportForm";
 import { cn } from "@/lib/utils";
 import {
   Settings,
@@ -263,6 +265,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Data Export in Profile Tab */}
+              <DataExportForm />
             </TabsContent>
 
             {/* Notifications Tab */}
@@ -371,25 +376,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               {/* Password Change */}
               <ChangePasswordForm />
               
-              {/* Two-Factor Auth - Coming Soon */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">两步验证</CardTitle>
-                  <CardDescription>使用验证器应用增强账户安全性</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-sm text-muted-foreground">
-                        启用两步验证后，登录时需要输入验证码
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm" disabled>
-                      即将推出
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Two-Factor Auth */}
+              <TwoFactorAuthForm />
 
               <Card className="border-destructive/50">
                 <CardHeader>
