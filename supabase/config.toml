@@ -86,3 +86,9 @@ verify_jwt = false
 
 [functions.red-team-agent]
 verify_jwt = false
+
+[functions.mcp-executor]
+verify_jwt = false
+
+[functions.mcp-inspect]
+verify_jwt = false
