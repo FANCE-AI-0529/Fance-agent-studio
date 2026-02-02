@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 
 interface HeroInputProps {
   onSubmit: (value: string) => void;
@@ -91,7 +92,7 @@ export function HeroInput({
             <Sparkles className="h-5 w-5 text-primary/70" />
           </div>
 
-          <textarea
+          <AutoResizeTextarea
             ref={inputRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -100,17 +101,14 @@ export function HeroInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={isLoading}
-            rows={1}
+            minRows={1}
+            maxRows={5}
             className="
               w-full bg-transparent py-5 pl-14 pr-16
               text-foreground text-lg placeholder:text-muted-foreground/60
-              focus:outline-none resize-none
+              focus:outline-none border-none focus-visible:ring-0 focus-visible:ring-offset-0
               disabled:opacity-50 disabled:cursor-not-allowed
             "
-            style={{
-              minHeight: '64px',
-              maxHeight: '200px',
-            }}
           />
 
           {/* Submit button */}
