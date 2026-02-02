@@ -152,6 +152,71 @@ export const mockDataPresets: Record<string, unknown> = {
     confidence: 0.92,
     missingParams: [],
   },
+  
+  // Phase 2: Auxiliary node mock data
+  template: {
+    rendered: "你好，张三！今天是 2024-01-15，天气晴朗。",
+    variables: {
+      user_name: "张三",
+      date: "2024-01-15",
+      weather: "晴朗",
+    },
+    templateId: "greeting-template",
+  },
+  
+  variableAggregator: {
+    aggregated: {
+      branch_1_result: { status: "success", data: [1, 2, 3] },
+      branch_2_result: { status: "success", data: [4, 5, 6] },
+    },
+    mergedData: [1, 2, 3, 4, 5, 6],
+    sourceCount: 2,
+    mode: "merge",
+  },
+  
+  variableAssigner: {
+    assigned: {
+      result: "processed_value",
+      counter: 42,
+      flag: true,
+    },
+    assignmentCount: 3,
+  },
+  
+  docExtractor: {
+    text: "这是从 PDF 文档中提取的文本内容...",
+    pages: [
+      { pageNum: 1, content: "第一页内容" },
+      { pageNum: 2, content: "第二页内容" },
+    ],
+    metadata: {
+      fileName: "report.pdf",
+      pageCount: 10,
+      fileSize: 1024000,
+      format: "pdf",
+    },
+    ocrUsed: false,
+  },
+  
+  iterator: {
+    currentItem: { id: 1, name: "项目A" },
+    currentIndex: 0,
+    totalItems: 5,
+    processedItems: [],
+    isComplete: false,
+    aggregatedResults: [],
+  },
+  
+  loop: {
+    iterationCount: 3,
+    loopState: {
+      counter: 3,
+      accumulator: [1, 2, 3],
+    },
+    lastResult: { status: "continue" },
+    isComplete: false,
+    maxIterations: 10,
+  },
 };
 
 // Get mock data for a specific node type

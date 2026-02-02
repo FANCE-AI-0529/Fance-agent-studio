@@ -25,6 +25,11 @@ import {
   Brain,
   Code2,
   ScanSearch,
+  FileCode2,
+  Variable,
+  Repeat,
+  RefreshCcw,
+  FileOutput,
 } from "lucide-react";
 import { MCPActionsPanel, MCPActionDragItem, InterventionDragItem } from "./MCPActionsPanel";
 import { Input } from "@/components/ui/input";
@@ -140,6 +145,67 @@ const logicNodes = [
     nodeType: "parameterExtractor" as const,
     color: "violet",
   },
+  // Phase 2: Dify-inspired auxiliary nodes
+  {
+    id: "template",
+    name: "模板转换",
+    nameEn: "Template",
+    description: "使用 Jinja2/Handlebars 语法格式化输出",
+    descriptionEn: "Format output using Jinja2/Handlebars syntax",
+    icon: FileCode2,
+    nodeType: "template" as const,
+    color: "emerald",
+  },
+  {
+    id: "variable-aggregator",
+    name: "变量聚合器",
+    nameEn: "Variable Aggregator",
+    description: "合并多个分支的变量为单一输出",
+    descriptionEn: "Merge variables from multiple branches into single output",
+    icon: Layers,
+    nodeType: "variableAggregator" as const,
+    color: "cyan",
+  },
+  {
+    id: "variable-assigner",
+    name: "变量赋值",
+    nameEn: "Variable Assigner",
+    description: "设置或修改工作流变量",
+    descriptionEn: "Set or modify workflow variables",
+    icon: Variable,
+    nodeType: "variableAssigner" as const,
+    color: "pink",
+  },
+  {
+    id: "doc-extractor",
+    name: "文档提取器",
+    nameEn: "Document Extractor",
+    description: "从文件中提取文本内容 (PDF/Word/Excel)",
+    descriptionEn: "Extract text content from files (PDF/Word/Excel)",
+    icon: FileOutput,
+    nodeType: "docExtractor" as const,
+    color: "orange",
+  },
+  {
+    id: "iterator",
+    name: "迭代器",
+    nameEn: "Iterator",
+    description: "对数组逐项执行子工作流",
+    descriptionEn: "Execute sub-workflow for each array item",
+    icon: Repeat,
+    nodeType: "iterator" as const,
+    color: "indigo",
+  },
+  {
+    id: "loop",
+    name: "循环执行",
+    nameEn: "Loop",
+    description: "基于条件重复执行工作流",
+    descriptionEn: "Repeat workflow execution based on condition",
+    icon: RefreshCcw,
+    nodeType: "loop" as const,
+    color: "rose",
+  },
 ];
 
 export interface MCPTool {
@@ -217,7 +283,10 @@ export interface KnowledgeBaseItem {
 // Logic node item for drag
 export interface LogicNodeItem {
   type: 'logic_node';
-  nodeType: 'intentRouter' | 'condition' | 'parallel' | 'llm' | 'httpRequest' | 'code' | 'parameterExtractor';
+  nodeType: 'intentRouter' | 'condition' | 'parallel' 
+    | 'llm' | 'httpRequest' | 'code' | 'parameterExtractor'
+    | 'template' | 'variableAggregator' | 'variableAssigner' 
+    | 'docExtractor' | 'iterator' | 'loop';
   name: string;
   nameEn: string;
   description: string;
