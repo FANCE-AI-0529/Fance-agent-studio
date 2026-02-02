@@ -9,6 +9,7 @@ import {
   Settings,
   Plus,
   Layers,
+  Coins,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DownloadTrendChart } from "./DownloadTrendChart";
 import { EarningsDetailList } from "./EarningsDetailList";
 import { MyBundlesPanel } from "./MyBundlesPanel";
+import { SkillMeteringStats } from "./SkillMeteringStats";
 
 interface CreatorDashboardProps {
   onCreateNew?: () => void;
@@ -125,6 +127,10 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
                   <Layers className="h-4 w-4" />
                   能力包
                 </TabsTrigger>
+                <TabsTrigger value="metering" className="gap-2">
+                  <Coins className="h-4 w-4" />
+                  消耗统计
+                </TabsTrigger>
                 <TabsTrigger value="analytics" className="gap-2">
                   <BarChart3 className="h-4 w-4" />
                   数据分析
@@ -225,6 +231,10 @@ export function CreatorDashboard({ onCreateNew, onEditSkill }: CreatorDashboardP
 
             <TabsContent value="bundles" className="mt-0">
               <MyBundlesPanel />
+            </TabsContent>
+
+            <TabsContent value="metering" className="mt-0">
+              <SkillMeteringStats />
             </TabsContent>
 
             <TabsContent value="analytics" className="mt-0">

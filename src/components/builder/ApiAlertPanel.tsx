@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Bell,
@@ -21,6 +21,7 @@ import {
   Shield,
   Gauge,
   Server,
+  TrendingUp,
 } from "lucide-react";
 import {
   Dialog,
@@ -58,6 +59,7 @@ import {
   useApiAlertLogs,
   useCheckAlerts,
 } from "@/hooks/useApiAlerts";
+import { AlertTrendChart } from "./AlertTrendChart";
 
 interface ApiAlertPanelProps {
   agentId: string | null;
@@ -540,6 +542,11 @@ export function ApiAlertPanel({
 
             <TabsContent value="history" className="flex-1 overflow-hidden mt-0 pt-4">
               <ScrollArea className="h-full">
+                {/* 趋势图 */}
+                <div className="mb-4">
+                  <AlertTrendChart logs={logs} />
+                </div>
+
                 {selectedRuleId ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-4">
@@ -581,7 +588,7 @@ export function ApiAlertPanel({
                                   })}
                                 </span>
                                 {log.notification_sent ? (
-                                  <Badge variant="outline" className="text-[10px] text-green-500">
+                                  <Badge variant="outline" className="text-[10px] text-status-executing">
                                     <Check className="h-2.5 w-2.5 mr-0.5" />
                                     已通知
                                   </Badge>
