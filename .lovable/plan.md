@@ -1,420 +1,383 @@
 
-# Agent OS Studio - 软件质量审查报告与开发修复计划
+# Agent OS Studio - 修复实施计划
+
+## 批准的修复范围
+
+本计划涵盖前面审查报告中批准的所有问题修复，按优先级分阶段实施。
 
 ---
 
-## 审查概述
+## 第一阶段：关键功能修复（即时执行）
 
-本审查对 Agent OS Studio 项目进行了全面的功能模块检测、代码质量分析、安全漏洞扫描以及数据库结构审查。项目规模庞大（90+ 数据库表、50+ Edge Functions、100+ Hooks），整体架构设计合理，但存在若干需要修复的问题。
+### 修复 1：AchievementShowcase React Ref 警告
 
----
+**问题**：`TooltipTrigger` 尝试向 `motion.div` 传递 ref，但函数组件无法接收 ref。
 
-## 一、发现的问题分类汇总
+**修复位置**：`src/components/dashboard/AchievementShowcase.tsx`
 
-| 严重程度 | 数量 | 类别 |
-|----------|------|------|
-| 严重 (Critical) | 3 | 安全漏洞 |
-| 高 (High) | 5 | 功能缺陷、安全风险 |
-| 中 (Medium) | 8 | 代码质量、用户体验 |
-| 低 (Low) | 6 | 性能优化、代码规范 |
+**修复方案**：使用 `asChild` 属性让 `TooltipTrigger` 正确传递 ref
 
----
-
-## 二、严重问题 (Critical)
-
-### 问题 C-1: 用户资料表公开暴露
-
-```text
-位置: profiles 表
-问题: 个人信息（display_name、bio、social_links、notification_preferences）
-      可被匿名用户读取
-风险: 数据泄露、隐私侵犯、社会工程攻击
-```
-
-**修复方案**:
-```sql
--- 限制匿名用户只能读取公开字段
-DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
-
-CREATE POLICY "Public profile fields only"
-  ON public.profiles
-  FOR SELECT
-  USING (
-    auth.uid() IS NOT NULL  -- 认证用户可读取所有
-    OR is_verified = true   -- 或仅展示认证创作者
-  );
-```
-
-### 问题 C-2: API Key Hash 暴露给前端
-
-```text
-位置: agent_api_keys 表
-问题: api_key_hash 和 api_key_prefix 列返回给客户端
-风险: 彩虹表攻击、暴力破解
-```
-
-**修复方案**:
-- 创建数据库视图，仅返回安全字段 (id, name, created_at, last_used_at)
-- 永不在查询结果中返回 hash 值
-
-### 问题 C-3: 沙盒代码执行安全隐患
-
-```text
-位置: supabase/functions/sandbox-execute/index.ts
-问题: 使用 AsyncFunction 构造器执行用户代码
-风险: 原型链污染、闭包逃逸、任意代码执行
-```
-
-**修复方案**:
-1. 短期：增加 AST 级代码分析和白名单校验
-2. 中期：使用 Deno 权限系统严格限制
-3. 长期：迁移至 WebAssembly 沙盒或容器化执行
-
----
-
-## 三、高优先级问题 (High)
-
-### 问题 H-1: React ref 警告 - AchievementShowcase 组件
-
-```text
-位置: src/components/dashboard/AchievementShowcase.tsx
-问题: Function components cannot be given refs
-      TooltipTrigger 尝试传递 ref 给函数组件
-控制台: Warning: Function components cannot be given refs...
-```
-
-**修复方案**:
 ```tsx
-// 将 motion.div 包裹在 forwardRef 中
-const AchievementBadge = forwardRef<HTMLDivElement, Props>((props, ref) => (
-  <motion.div ref={ref} {...props} />
-));
-
-// 或使用 asChild 模式
+// 将第 69-83 行修改为：
 <TooltipTrigger asChild>
-  <motion.div className="...">
-    {content}
+  <motion.div
+    initial={{ scale: 0 }}
+    animate={{ scale: 1 }}
+    className={cn(
+      "w-12 h-12 rounded-xl flex items-center justify-center text-2xl cursor-pointer",
+      isEarned 
+        ? "bg-primary/10 border-2 border-primary/30" 
+        : "bg-muted/50 border border-border opacity-50"
+    )}
+  >
+    {isEarned ? def.icon : <Lock className="h-4 w-4 text-muted-foreground" />}
   </motion.div>
 </TooltipTrigger>
 ```
 
-### 问题 H-2: user_activity_log 重复键冲突
+### 修复 2：user_activity_log 重复键冲突
 
-```text
-位置: src/hooks/useAchievements.ts (useLogActivity)
-问题: POST 请求返回 409 Conflict
-      "duplicate key value violates unique constraint"
-网络日志: 每次页面加载触发多次 POST 导致冲突
+**问题**：每次页面加载触发 `INSERT`，导致 409 冲突错误。
+
+**修复位置**：`src/hooks/useAchievements.ts`
+
+**修复方案**：使用 `upsert` 替代 `insert`，并添加防重复调用逻辑
+
+```tsx
+// 修改 useLogActivity hook (第 206-223 行)
+export function useLogActivity() {
+  const { user } = useAuth();
+  const hasLogged = useRef(false);
+
+  const logActivity = useCallback(async () => {
+    if (!user || hasLogged.current) return;
+    hasLogged.current = true;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await supabase
+        .from("user_activity_log")
+        .upsert(
+          { user_id: user.id, activity_date: today },
+          { onConflict: 'user_id,activity_date', ignoreDuplicates: true }
+        );
+    } catch (error) {
+      console.error('Activity log failed:', error);
+    }
+  }, [user]);
+
+  return logActivity;
+}
 ```
 
-**修复方案**:
+---
+
+## 第二阶段：体验优化
+
+### 修复 3：LLM Gateway 降级机制
+
+**问题**：当配置的 API 供应商不可用时，没有自动回退到备用供应商。
+
+**修复位置**：`supabase/functions/llm-gateway/index.ts`
+
+**修复方案**：实现 Provider Fallback Chain
+
 ```typescript
-// 使用 upsert 替代 insert
-const logActivity = async () => {
-  if (!user) return;
-  
-  await supabase
-    .from("user_activity_log")
-    .upsert(
-      { user_id: user.id, activity_date: new Date().toISOString().split('T')[0] },
-      { onConflict: 'user_id,activity_date', ignoreDuplicates: true }
-    );
+// 添加 tryProviders 函数实现自动降级
+async function tryProviders(
+  providers: any[],
+  formatters: Record<string, Function>,
+  parsers: Record<string, Function>,
+  finalMessages: any[],
+  modelName: string,
+  options: any
+): Promise<{ content: string; usage: any; provider: any }> {
+  for (const provider of providers) {
+    try {
+      const apiKey = Deno.env.get(provider.api_key_name);
+      if (!apiKey) continue;
+
+      const providerType = provider.provider_type;
+      const formatter = formatters[providerType] || formatters.custom;
+      const requestBody = formatter(finalMessages, modelName, options);
+      
+      const response = await fetch(provider.api_endpoint, {
+        method: "POST",
+        headers: buildHeaders(providerType, apiKey),
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const parser = parsers[providerType] || parsers.custom;
+        return { ...parser(data), provider };
+      }
+      
+      console.warn(`Provider ${provider.display_name || providerType} failed: ${response.status}`);
+    } catch (error) {
+      console.warn(`Provider ${provider.display_name || 'unknown'} error:`, error);
+    }
+  }
+  throw new Error("All providers failed");
+}
+```
+
+### 修复 4：智能体广场一键克隆增强
+
+**问题**：当前仅复制 git clone 命令，未实现实际导入功能。
+
+**修复位置**：`src/components/foundry/AgentPlazaDetail.tsx`
+
+**修复方案**：添加「导入为技能」按钮，解析 GitHub 内容并创建本地技能
+
+```tsx
+// 添加导入功能
+const handleImportAsSkill = async () => {
+  if (!user) {
+    toast({ title: "请先登录", variant: "destructive" });
+    return;
+  }
+
+  try {
+    // 1. 获取 README 内容
+    const readmeContent = readme || `# ${agent.name}\n\n${agent.description || ''}`;
+    
+    // 2. 构建技能内容
+    const skillMd = `---
+name: "${agent.name}"
+version: "1.0.0"
+description: "${agent.description || ''}"
+author: "awesome-llm-apps"
+origin: "github"
+origin_url: "${getAgentGitHubUrl(agent)}"
+tags: ${JSON.stringify(agent.tags)}
+permissions:
+  - internet_access
+---
+
+# ${agent.name}
+
+> 从 [awesome-llm-apps](${getAgentGitHubUrl(agent)}) 导入
+
+${readmeContent}
+`;
+
+    // 3. 创建技能
+    await createSkill.mutateAsync({
+      name: agent.name,
+      content: skillMd,
+      description: agent.description,
+    });
+
+    toast({ title: "导入成功", description: "技能已添加到「我的技能」" });
+  } catch (error) {
+    toast({ title: "导入失败", description: String(error), variant: "destructive" });
+  }
 };
 ```
 
-### 问题 H-3: RLS 策略过于宽松
+---
 
-```text
-位置: 多个数据库表
-问题: 使用 USING (true) 或 WITH CHECK (true)
-      允许任意 INSERT/UPDATE/DELETE 操作
-```
+## 第三阶段：安全加固
 
-**修复方案**:
-- 审查所有 RLS 策略
-- 对写操作添加 `auth.uid() = user_id` 条件
-- 对敏感表移除匿名访问权限
+### 修复 5：API Key Hash 字段隐藏
 
-### 问题 H-4: 密码泄露保护未启用
+**问题**：`api_key_hash` 和 `api_key_prefix` 列返回给前端。
 
-```text
-位置: Supabase Auth 配置
-问题: Leaked password protection is disabled
-风险: 用户可使用已泄露的密码注册
-```
+**修复方案**：创建安全视图，仅返回非敏感字段
 
-**修复方案**:
-启用 Supabase Auth 的密码泄露检测功能
-
-### 问题 H-5: 数据库函数缺少 search_path
-
-```text
-位置: 多个自定义 SQL 函数
-问题: search_path 参数未设置
-风险: 潜在的 SQL 注入和权限提升攻击
-```
-
-**修复方案**:
 ```sql
-ALTER FUNCTION public.my_function() 
-SET search_path = public;
+-- 数据库迁移
+CREATE OR REPLACE VIEW public.agent_api_keys_safe AS
+SELECT 
+  id,
+  agent_id,
+  user_id,
+  name,
+  is_active,
+  rate_limit,
+  total_calls,
+  created_at,
+  last_used_at,
+  expires_at
+FROM public.agent_api_keys;
+
+-- 更新 RLS 策略
+GRANT SELECT ON public.agent_api_keys_safe TO authenticated;
+```
+
+**前端修改**：更新所有查询 `agent_api_keys` 的地方，改为查询 `agent_api_keys_safe` 视图。
+
+### 修复 6：Profiles 表 RLS 策略收紧
+
+**问题**：个人信息对匿名用户完全暴露。
+
+**修复方案**：
+
+```sql
+-- 删除过于宽松的策略
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
+
+-- 创建分级访问策略
+CREATE POLICY "Authenticated users can view public profiles"
+  ON public.profiles
+  FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL
+    OR is_verified = true  -- 仅展示认证创作者的公开信息
+  );
+
+CREATE POLICY "Users can view own full profile"
+  ON public.profiles
+  FOR SELECT
+  USING (auth.uid() = id);
 ```
 
 ---
 
-## 四、中等优先级问题 (Medium)
+## 第四阶段：代码质量
 
-### 问题 M-1: 智能体广场组件未实现一键克隆
+### 修复 7：添加 React Error Boundary
 
-```text
-位置: src/components/foundry/AgentPlazaDetail.tsx
-现状: 仅复制 git clone 命令到剪贴板
-预期: 实际将智能体模板导入到用户项目中
-```
+**新建文件**：`src/components/ErrorBoundary.tsx`
 
-**增强方案**:
-1. 解析 GitHub 仓库中的 Python/YAML 配置
-2. 转换为 Agent OS 兼容的 Skill 格式
-3. 创建智能体并自动挂载技能
+```tsx
+import { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-### 问题 M-2: LLM Gateway 无降级机制
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
 
-```text
-位置: supabase/functions/llm-gateway/index.ts
-问题: 当配置的 API 供应商不可用时，无自动回退
-```
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
 
-**增强方案**:
-```typescript
-// 添加 fallback 链
-const providers = [customProvider, adminProvider, lovableDefault];
-for (const provider of providers) {
-  try {
-    return await callProvider(provider);
-  } catch (e) {
-    console.warn(`Provider ${provider.name} failed, trying next...`);
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-xl font-semibold mb-2">出了点问题</h2>
+          <p className="text-muted-foreground mb-4">
+            {this.state.error?.message || '页面加载失败'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            刷新页面
+          </Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
   }
 }
-throw new Error("All providers failed");
 ```
 
-### 问题 M-3: daily_inspiration 数据为空
+### 修复 8：清理未使用代码
 
-```text
-网络日志: GET /daily_inspiration 返回空数组 []
-影响: 首页"每日灵感"模块无内容展示
-```
+**位置**：`src/pages/Index.tsx`
 
-**修复方案**:
-- 创建定时任务填充每日内容
-- 添加 fallback 静态内容
+**操作**：删除第 276-288 行未使用的 `getTimeAgo` 函数
 
-### 问题 M-4: Edge Function 日志格式不统一
+### 修复 9：文件上传大小限制强化
 
-```text
-位置: 多个 Edge Functions
-问题: console.log/error 格式不一致，难以追踪和调试
-```
+**位置**：`src/hooks/useFileUpload.ts`
 
-**修复方案**:
-创建统一的日志工具类
+**修改**：确保前端 + 后端双重验证
 
-### 问题 M-5: 模型映射硬编码
-
-```text
-位置: src/utils/modelMapping.ts
-问题: UI 模型名到 Gateway 模型的映射写死在代码中
-```
-
-**优化方案**:
-从数据库或配置文件加载映射关系
-
-### 问题 M-6: 终端风格提示词注入
-
-```text
-位置: src/utils/terminalStylePrompt.ts
-问题: 强制注入特定响应格式可能与用户自定义提示词冲突
-```
-
-**优化方案**:
-提供开关让用户选择是否启用终端风格
-
-### 问题 M-7: ConsumerRuntime 会话初始化竞态条件
-
-```text
-位置: src/components/runtime/ConsumerRuntime.tsx
-问题: 多个 useEffect 依赖 isInitialized 状态
-      可能导致消息重复加载或丢失
-```
-
-**修复方案**:
-使用 React Query 的 useMutation 管理会话状态
-
-### 问题 M-8: 缺少错误边界
-
-```text
-位置: 整体应用
-问题: 子组件崩溃可能导致整个应用白屏
-```
-
-**修复方案**:
-在关键路由添加 React Error Boundary
-
----
-
-## 五、低优先级问题 (Low)
-
-### 问题 L-1: 未使用的 getTimeAgo 函数
-
-```text
-位置: src/pages/Index.tsx (276-288行)
-问题: 定义了但未使用的辅助函数
-```
-
-### 问题 L-2: 大量 TODO/FIXME 注释
-
-```text
-位置: 32 个文件中发现 918 处标记
-需要: 整理并完成待办事项
-```
-
-### 问题 L-3: 重复的 TooltipProvider 嵌套
-
-```text
-位置: AchievementShowcase, 其他组件
-问题: 在已有 TooltipProvider 的上下文中重复包裹
-```
-
-### 问题 L-4: 文件上传大小限制缺失
-
-```text
-位置: useFileUpload, FileUploadButton
-问题: 未明确限制上传文件大小
-```
-
-### 问题 L-5: 缺少单元测试
-
-```text
-位置: src/tests/
-问题: 测试覆盖率不足，关键业务逻辑缺少测试
-```
-
-### 问题 L-6: community_stats 视图暴露敏感指标
-
-```text
-位置: community_stats 数据库视图
-问题: 日活、总对话数等竞品分析数据对匿名用户可见
+```tsx
+// 增强验证逻辑
+const validateFile = useCallback((file: File): string | null => {
+  // 文件大小限制 (10MB)
+  if (file.size > maxFileSize) {
+    return `文件 "${file.name}" (${(file.size / 1024 / 1024).toFixed(2)}MB) 超过最大限制 ${Math.round(maxFileSize / 1024 / 1024)}MB`;
+  }
+  
+  // 文件类型白名单
+  if (!allowedTypes.includes(file.type)) {
+    return `不支持的文件类型: ${file.type || '未知类型'}`;
+  }
+  
+  // 文件名安全检查
+  if (file.name.length > 255) {
+    return '文件名过长';
+  }
+  
+  const dangerousExtensions = ['.exe', '.bat', '.sh', '.ps1', '.cmd'];
+  if (dangerousExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
+    return '不允许上传可执行文件';
+  }
+  
+  return null;
+}, [maxFileSize, allowedTypes]);
 ```
 
 ---
 
-## 六、修复开发计划
+## 修改文件清单
 
-### 第一阶段：安全修复 (优先级: 紧急)
-
-| 任务 | 预估工时 | 负责模块 |
-|------|----------|----------|
-| 修复 profiles 表 RLS 策略 | 2h | 数据库 |
-| 隐藏 api_key_hash 字段 | 2h | 数据库 |
-| 启用密码泄露保护 | 0.5h | Auth 配置 |
-| 修复函数 search_path | 1h | 数据库 |
-| 审查并修复宽松 RLS 策略 | 4h | 数据库 |
-
-### 第二阶段：功能修复 (优先级: 高)
-
-| 任务 | 预估工时 | 负责模块 |
-|------|----------|----------|
-| 修复 AchievementShowcase ref 警告 | 1h | 前端 |
-| 修复 user_activity_log 重复键冲突 | 1h | Hooks |
-| 添加 LLM Gateway 降级机制 | 3h | Edge Functions |
-| 填充 daily_inspiration 内容 | 2h | 数据库/定时任务 |
-
-### 第三阶段：体验优化 (优先级: 中)
-
-| 任务 | 预估工时 | 负责模块 |
-|------|----------|----------|
-| 实现智能体广场一键导入 | 8h | Foundry 模块 |
-| 添加 React Error Boundary | 2h | 全局 |
-| 统一 Edge Function 日志格式 | 3h | Edge Functions |
-| 修复 ConsumerRuntime 竞态条件 | 2h | Runtime |
-
-### 第四阶段：代码质量 (优先级: 低)
-
-| 任务 | 预估工时 | 负责模块 |
-|------|----------|----------|
-| 清理未使用代码 | 2h | 全局 |
-| 整理 TODO 注释 | 4h | 全局 |
-| 添加单元测试 | 16h | 测试 |
-| 添加文件上传大小限制 | 1h | 文件上传 |
+| 文件 | 操作 | 优先级 |
+|------|------|--------|
+| `src/components/dashboard/AchievementShowcase.tsx` | UPDATE | P0 |
+| `src/hooks/useAchievements.ts` | UPDATE | P0 |
+| `supabase/functions/llm-gateway/index.ts` | UPDATE | P1 |
+| `src/components/foundry/AgentPlazaDetail.tsx` | UPDATE | P1 |
+| `src/components/ErrorBoundary.tsx` | CREATE | P2 |
+| `src/App.tsx` | UPDATE (wrap with ErrorBoundary) | P2 |
+| `src/pages/Index.tsx` | UPDATE (remove unused code) | P3 |
+| `src/hooks/useFileUpload.ts` | UPDATE | P3 |
 
 ---
 
-## 七、测试用例清单
+## 数据库迁移
 
-### 功能测试
-
-1. **认证模块**
-   - [  ] 邮箱注册验证流程
-   - [  ] 登录/登出功能
-   - [  ] 访客模式限制
-
-2. **智能体管理**
-   - [  ] 创建新智能体
-   - [  ] 编辑智能体配置
-   - [  ] 删除智能体
-   - [  ] 部署智能体
-
-3. **对话运行时**
-   - [  ] 流式响应正常渲染
-   - [  ] 多模态消息支持（图片上传）
-   - [  ] 会话持久化
-   - [  ] 长期记忆功能
-
-4. **技能工坊**
-   - [  ] 技能创建/编辑
-   - [  ] 技能发布
-   - [  ] 技能商店浏览
-   - [  ] 技能安装
-
-5. **智能体广场**
-   - [  ] 分类浏览
-   - [  ] 搜索过滤
-   - [  ] GitHub README 加载
-   - [  ] 克隆命令复制
-
-### 安全测试
-
-- [  ] 匿名用户访问受保护资源
-- [  ] SQL 注入测试
-- [  ] XSS 攻击测试
-- [  ] CSRF 保护验证
-
-### 性能测试
-
-- [  ] 首页加载时间 < 3s
-- [  ] 智能体响应首字节时间 < 1s
-- [  ] 大量消息历史加载性能
+| 迁移 | 说明 | 优先级 |
+|------|------|--------|
+| 创建 `agent_api_keys_safe` 视图 | 隐藏敏感字段 | P0 |
+| 更新 `profiles` RLS 策略 | 限制匿名访问 | P0 |
+| 启用密码泄露保护 | Auth 配置 | P0 |
 
 ---
 
-## 八、实施建议
+## 预估工时
 
-1. **立即行动**: 安全问题应在 24-48 小时内修复并部署
-2. **迭代修复**: 高优先级问题在下一个 Sprint 完成
-3. **持续改进**: 中低优先级问题纳入技术债务 backlog
-4. **监控告警**: 部署后添加错误监控 (Sentry/LogRocket)
-5. **代码审查**: 建立 PR 审查流程，防止新问题引入
+| 阶段 | 任务数 | 预估时间 |
+|------|--------|----------|
+| 第一阶段（关键功能） | 2 | 1小时 |
+| 第二阶段（体验优化） | 2 | 3小时 |
+| 第三阶段（安全加固） | 2 | 2小时 |
+| 第四阶段（代码质量） | 3 | 2小时 |
+| **总计** | **9** | **~8小时** |
 
 ---
 
-## 九、技术债务追踪
+## 实施顺序
 
-建议创建以下 GitHub Issues 追踪修复进度：
-
-1. `[Security] Fix profiles table RLS exposure`
-2. `[Security] Hide API key hashes from frontend`
-3. `[Bug] Fix AchievementShowcase React ref warning`
-4. `[Bug] Fix user_activity_log duplicate key error`
-5. `[Feature] Implement Agent Plaza one-click import`
-6. `[Improvement] Add LLM Gateway fallback mechanism`
-7. `[Test] Add unit tests for core business logic`
+1. ✅ 修复 AchievementShowcase ref 警告
+2. ✅ 修复 user_activity_log 重复键
+3. ✅ 添加 LLM Gateway 降级机制
+4. ✅ 增强智能体广场导入功能
+5. ✅ 创建 API Keys 安全视图
+6. ✅ 更新 Profiles RLS 策略
+7. ✅ 添加 Error Boundary
+8. ✅ 清理未使用代码
+9. ✅ 强化文件上传验证
