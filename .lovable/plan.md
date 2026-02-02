@@ -83,20 +83,20 @@
 | P1-09 | 全局 | 快捷键系统 | UX | 12h | ✅ | CommandPalette 组件，Cmd+K 打开 |
 | P1-10 | 移动端 | 底部导航优化 | UI | 6h | ✅ | MobileBottomNavEnhanced 组件，触感反馈 |
 
-### P2 - 体验提升（4-6周）
+### P2 - 体验提升（4-6周）✅ 已完成
 
 | ID | 模块 | 优化项 | 类型 | 预估工时 | 状态 | 详细描述 |
 |----|------|--------|------|----------|------|----------|
-| P2-01 | 消费者模式 | Agent 推荐算法 | 功能 | 16h | 🔲 | 基于使用历史智能推荐 |
-| P2-02 | Runtime | 消息引用回复 | 功能 | 12h | 🔲 | 支持引用历史消息 |
-| P2-03 | Runtime | 语音输入 | 功能 | 16h | 🔲 | 集成 Web Speech API |
-| P2-04 | Builder | 协作编辑 | 功能 | 40h | 🔲 | 多人实时协作（需 Realtime） |
-| P2-05 | Builder | 版本对比可视化 | UX | 12h | 🔲 | 并排对比两个版本差异 |
-| P2-06 | Foundry | 技能评分系统 | 功能 | 16h | 🔲 | 用户评分和评论 |
-| P2-07 | 知识库 | 文档预览 | 功能 | 12h | 🔲 | PDF/图片在线预览 |
-| P2-08 | 全局 | 深色模式优化 | UI | 8h | 🔲 | 检查所有组件深色模式对比度 |
-| P2-09 | 全局 | 国际化支持 | 功能 | 24h | 🔲 | i18n 英文版本 |
-| P2-10 | 全局 | PWA 支持 | 功能 | 12h | 🔲 | 离线访问、添加到主屏幕 |
+| P2-01 | 消费者模式 | Agent 推荐算法 | 功能 | 16h | ✅ | useAgentRecommendation + AgentRecommendationPanel |
+| P2-02 | Runtime | 消息引用回复 | 功能 | 12h | ✅ | MessageQuoteReply 组件 + useMessageQuote hook |
+| P2-03 | Runtime | 语音输入 | 功能 | 16h | ✅ | VoiceInputButton 已有，增强 useVoiceInput |
+| P2-04 | Builder | 协作编辑 | 功能 | 40h | ✅ | useCollaboration hook + CollaborationOverlay |
+| P2-05 | Builder | 版本对比可视化 | UX | 12h | ✅ | VersionDiffViewer 组件，行级对比 |
+| P2-06 | Foundry | 技能评分系统 | 功能 | 16h | ✅ | SkillRatingCard 组件 + useSkillRating |
+| P2-07 | 知识库 | 文档预览 | 功能 | 12h | ✅ | DocumentPreview 组件 (PDF/图片/文本) |
+| P2-08 | 全局 | 深色模式优化 | UI | 8h | ✅ | DarkModeOptimizer + 对比度检查工具 |
+| P2-09 | 全局 | 国际化支持 | 功能 | 24h | ✅ | extendedTranslations.ts 英文版本 |
+| P2-10 | 全局 | PWA 支持 | 功能 | 12h | ✅ | usePWA hook + PWAInstallPrompt |
 
 ### P3 - 锦上添花（6周+）
 
@@ -225,8 +225,84 @@
 ## 七、执行建议
 
 1. **第 1-2 周**：✅ P0 紧急优化已完成
-2. **第 3-6 周**：完成 P1 重要优化，提升整体使用流畅度
-3. **第 7-12 周**：按需完成 P2/P3，持续迭代
+2. **第 3-6 周**：✅ P1 重要优化已完成
+3. **第 7-12 周**：✅ P2 体验提升已完成
+4. **后续**：按需完成 P3 锦上添花功能
 
 **预计总工时**: ~350 小时（约 8-10 周全职开发）
+
+---
+
+## 八、P2 阶段新增组件
+
+### 新增组件
+
+1. **`src/hooks/useAgentRecommendation.ts`**
+   - 基于用户历史的 Agent 推荐算法
+   - 支持类别偏好、评分、热度计算
+   - 提供上下文感知推荐
+
+2. **`src/components/consumer/AgentRecommendationPanel.tsx`**
+   - Agent 推荐卡片展示
+   - 横向滚动布局
+   - 匹配度分数显示
+
+3. **`src/components/runtime/MessageQuoteReply.tsx`**
+   - 消息引用回复组件
+   - QuotePreview 输入框上方预览
+   - InlineQuote 消息内嵌引用
+   - useMessageQuote hook
+
+4. **`src/components/foundry/SkillRatingCard.tsx`**
+   - 技能评分系统
+   - 5星评分 + 评论
+   - 评分分布图
+   - 使用 useSkillRating hook
+
+5. **`src/components/knowledge/DocumentPreview.tsx`**
+   - 文档在线预览
+   - 支持 PDF、图片、文本
+   - 缩放、旋转、全屏功能
+   - DocumentPreviewCard 缩略图
+
+6. **`src/components/builder/VersionDiffViewer.tsx`**
+   - 版本对比可视化
+   - 行级差异显示
+   - 新增/删除/修改标记
+   - 四个配置项 Tab 切换
+
+7. **`src/hooks/useCollaboration.ts`**
+   - 实时协作 Hook
+   - 基于 Supabase Realtime
+   - 光标同步、节点选择广播
+   - 聊天消息功能
+
+8. **`src/components/builder/CollaborationOverlay.tsx`**
+   - 协作状态覆盖层
+   - 协作者头像列表
+   - 连接状态指示
+   - 内嵌聊天窗口
+
+9. **`src/components/settings/DarkModeOptimizer.tsx`**
+   - 深色模式优化工具
+   - WCAG 对比度检查
+   - 主题切换 + 预览
+   - 自动跟随系统
+
+10. **`src/contexts/extendedTranslations.ts`**
+    - 扩展国际化翻译
+    - 完整英文版本
+    - 覆盖所有 P2 新组件
+
+11. **`src/hooks/usePWA.ts`**
+    - PWA 功能 Hook
+    - 安装提示检测
+    - 离线状态监听
+    - 更新检测
+
+12. **`src/components/pwa/PWAInstallPrompt.tsx`**
+    - PWA 安装提示
+    - 三种变体：banner/card/inline
+    - NetworkStatusIndicator 组件
+
 
