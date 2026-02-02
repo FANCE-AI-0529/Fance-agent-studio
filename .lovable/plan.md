@@ -1,329 +1,522 @@
 
-# 质检报告：已开发功能的 UI/UX 缺口分析与增强方案
+# Agent Studio 项目全面审查与改进规划
 
-## 一、审计总结
+## 一、项目现状评估
 
-通过对项目代码库的全面审查，我发现了多个已在后端/逻辑层完成开发但缺乏对应 UI/UX 展示的功能模块。以下是按优先级分类的缺口清单及增强方案。
+### 1.1 项目概览
 
----
+**核心定位**: 智能数字员工平台，支持用户通过可视化界面构建、配置和运行 AI Agent
 
-## 二、高优先级缺口（P0 - 显著影响用户体验）
+**技术栈**:
+- 前端: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+- 状态管理: Zustand + TanStack Query
+- 可视化: @xyflow/react (工作流画布)
+- 后端: Lovable Cloud (Supabase)
+- 边缘函数: 60+ 个 Deno Functions
 
-### 2.1 智能体版本时间旅行（Time Travel）
+**规模指标**:
+- 21 个页面组件
+- 200+ 个 UI 组件
+- 100+ 个自定义 Hooks
+- 100+ 个数据库表
+- 60+ 个 Edge Functions
 
-**现状分析**：
-- `useTimeTravel.ts` 和 `useAgentSnapshots.ts` 已完整实现版本管理功能
-- `useSnapshotDiff.ts` 提供了详细的版本差异对比
-- 数据库表 `agent_snapshots` 和 `snapshot_tags` 已就绪
+### 1.2 已完成的重大功能
 
-**UI 缺口**：
-- 没有专门的时间线可视化组件
-- 缺少日历视图让用户选择历史时间点
-- 无版本 Diff 可视化界面
-
-**增强方案**：
-
-| 新组件 | 功能 |
-|--------|------|
-| `SnapshotTimelinePanel.tsx` | 时间线视图，展示版本历史 |
-| `SnapshotCalendarPicker.tsx` | 日历选择器，按日期导航版本 |
-| `SnapshotDiffViewer.tsx` | 对比两个版本的差异（节点/边/配置）|
-| `SnapshotRestoreDialog.tsx` | 恢复确认对话框，带预览 |
-
-**集成位置**：Builder 页面侧边栏新增 "版本历史" Tab
-
----
-
-### 2.2 安全审计日志可视化
-
-**现状分析**：
-- `useSecurityAudit.ts` 完整记录了登录、权限变更、API 密钥等安全事件
-- 数据存储在 `security_audit_logs` 表
-- 目前仅在 `Auth.tsx` 中被调用记录，无可视化界面
-
-**UI 缺口**：
-- 用户无法查看自己的安全事件历史
-- 管理员无法监控异常登录
-- 缺少安全仪表板
-
-**增强方案**：
-
-| 新组件 | 功能 |
-|--------|------|
-| `SecurityAuditDashboard.tsx` | 安全事件仪表板 |
-| `AuditLogTable.tsx` | 可筛选/搜索的审计日志表格 |
-| `SecurityAlertBadge.tsx` | 异常事件实时提醒 |
-
-**集成位置**：Profile 页面新增 "安全日志" Tab
-
----
-
-### 2.3 LLM 使用统计增强
-
-**现状分析**：
-- `useLLMUsageStats.ts` 提供了丰富的统计数据（按模型、按模块、错误日志等）
-- `LLMUsageStats.tsx` 组件已存在但未在主要页面显示
-
-**UI 缺口**：
-- Dashboard 首页未展示 AI 使用情况
-- 缺少成本趋势图表
-- 用户难以发现该功能
-
-**增强方案**：
-
-| 改动 | 说明 |
-|------|------|
-| 在 `Index.tsx` 首页添加 `LLMUsageStats` 卡片 | 紧凑模式展示关键指标 |
-| 创建 `LLMUsageTrendChart.tsx` | 使用 Recharts 展示 30 天趋势 |
-| 在 Profile 页面添加完整版统计面板 | 详细的模型/模块分解 |
-
----
-
-### 2.4 任务调度器状态可视化
-
-**现状分析**：
-- `useTaskScheduler.ts` 实现了 HRT/SRT/DT 三级优先级任务调度
-- 边缘函数 `task-scheduler` 处理任务队列
-- 完全没有 UI 展示任务执行状态
-
-**UI 缺口**：
-- 用户不知道后台任务在运行
-- 无法查看任务队列状态
-- 缺少任务执行历史
-
-**增强方案**：
-
-| 新组件 | 功能 |
-|--------|------|
-| `TaskSchedulerPanel.tsx` | 显示当前队列中的任务 |
-| `TaskPriorityBadge.tsx` | HRT/SRT/DT 优先级标识 |
-| `BackgroundTaskIndicator.tsx` | 全局状态栏显示后台任务数量 |
-
-**集成位置**：Runtime 页面 DevTools 面板
-
----
-
-## 三、中优先级缺口（P1 - 提升体验）
-
-### 3.1 创作者收益详情面板
-
-**现状分析**：
-- `useCreatorEarnings.ts` 和 `useDownloadTrends.ts` 提供收益和下载数据
-- `CreatorDashboard.tsx` 仅展示汇总统计
-
-**UI 缺口**：
-- 缺少收益明细列表
-- 无下载趋势图表
-- 缺少按技能/Bundle 的收益分解
-
-**增强方案**：
-
-| 新组件 | 功能 |
-|--------|------|
-| `EarningsDetailPanel.tsx` | 收益明细表格 |
-| `DownloadTrendChart.tsx` | 30 天下载趋势图 |
-| `SkillRevenueBreakdown.tsx` | 按技能分解的收益饼图 |
-
-**集成位置**：Foundry 页面创作者仪表板
-
----
-
-### 3.2 任务链执行历史
-
-**现状分析**：
-- `useChainExecutions.ts` 完整记录了任务链执行状态
-- 包含 `step_logs`、`variables_used` 等详细数据
-
-**UI 缺口**：
-- `TaskChainPanel.tsx` 未展示历史执行记录
-- 无法回溯之前的执行结果
-
-**增强方案**：
-
-| 新组件 | 功能 |
-|--------|------|
-| `ChainExecutionHistory.tsx` | 执行历史列表 |
-| `ExecutionStepTimeline.tsx` | 单次执行的步骤时间线 |
-| `StepResultPreview.tsx` | 步骤执行结果预览 |
-
-**集成位置**：Runtime 页面任务链面板
-
----
-
-### 3.3 知识图谱可视化增强
-
-**现状分析**：
-- `useKnowledgeGraph.ts` 支持节点/边管理和图搜索
-- `SemanticGraphPanel.tsx` 已存在但功能有限
-
-**UI 缺口**：
-- 缺少交互式图谱编辑
-- 无法可视化图搜索结果
-- 关系类型不够直观
-
-**增强方案**：
-
-| 改动 | 说明 |
-|------|------|
-| 增强 `SemanticGraphPanel.tsx` | 添加缩放、拖拽、节点高亮 |
-| 创建 `GraphSearchResults.tsx` | 展示搜索命中的子图 |
-| 创建 `RelationshipEditor.tsx` | 编辑节点间关系 |
-
----
-
-### 3.4 意图漂移可视化
-
-**现状分析**：
-- `useIntentDrift.ts` 和 `useCircuitBreaker.ts` 中的意图分析功能完整
-- `IntentDriftIndicator.tsx` 已存在但较为简单
-
-**UI 缺口**：
-- 缺少会话级别的意图变化图表
-- 无历史意图对比视图
-
-**增强方案**：
-
-| 新组件 | 功能 |
-|--------|------|
-| `IntentDriftChart.tsx` | 会话中意图相似度变化折线图 |
-| `IntentComparisonView.tsx` | 对比原始意图 vs 当前意图 |
-
-**集成位置**：Runtime 熔断器面板
-
----
-
-## 四、低优先级缺口（P2 - 锦上添花）
-
-### 4.1 错误自愈日志展示
-
-**现状分析**：
-- `useSelfHealing.ts` 提供完整的自愈逻辑和日志
-
-**UI 缺口**：
-- 自愈过程对用户不可见
-- 无修复历史记录
-
-**增强方案**：创建 `SelfHealingLogPanel.tsx`
-
----
-
-### 4.2 API 告警规则管理
-
-**现状分析**：
-- `useApiAlerts.ts` 支持创建/更新/删除告警规则
-- `ApiAlertPanel.tsx` 已存在但可增强
-
-**UI 缺口**：
-- 告警历史可读性可改进
-- 缺少告警趋势图
-
-**增强方案**：增强 `ApiAlertPanel.tsx`，添加历史趋势
-
----
-
-### 4.3 技能计量使用展示
-
-**现状分析**：
-- `useSkillMetering.ts` 追踪技能调用和 Token 消耗
-
-**UI 缺口**：
-- 用户不知道哪些技能消耗了多少 Token
-
-**增强方案**：在 Foundry 创建 `SkillMeteringStats.tsx`
-
----
-
-## 五、实施计划
-
-### 第一阶段：高优先级（2 周）
-
-| 任务 | 工时 | 文件 |
+| 模块 | 功能 | 状态 |
 |------|------|------|
-| 时间旅行面板 | 12h | SnapshotTimelinePanel, SnapshotDiffViewer, SnapshotCalendarPicker |
-| 安全审计仪表板 | 8h | SecurityAuditDashboard, AuditLogTable |
-| LLM 使用统计增强 | 4h | 更新 Index.tsx, 创建趋势图 |
-| 任务调度器可视化 | 6h | TaskSchedulerPanel, BackgroundTaskIndicator |
-
-### 第二阶段：中优先级（1.5 周）
-
-| 任务 | 工时 | 文件 |
-|------|------|------|
-| 创作者收益详情 | 6h | EarningsDetailPanel, DownloadTrendChart |
-| 任务链执行历史 | 5h | ChainExecutionHistory, ExecutionStepTimeline |
-| 知识图谱增强 | 6h | 增强 SemanticGraphPanel |
-| 意图漂移图表 | 4h | IntentDriftChart |
-
-### 第三阶段：低优先级（0.5 周）
-
-| 任务 | 工时 | 文件 |
-|------|------|------|
-| 自愈日志面板 | 3h | SelfHealingLogPanel |
-| API 告警增强 | 2h | 增强 ApiAlertPanel |
-| 技能计量统计 | 2h | SkillMeteringStats |
+| 工作流引擎 | 13 种 Dify 风格节点（LLM、HTTP、Code、Iterator 等） | ✅ 完成 |
+| 版本管理 | 时间旅行、快照对比、回滚 | ✅ 已有 UI |
+| 安全审计 | 登录/操作日志、异常检测 | ✅ 已集成 Profile |
+| 任务调度 | HRT/SRT/DT 三级优先级 | ✅ 已集成 DevTools |
+| LLM 监控 | 使用统计、成本分析 | ✅ 趋势图已添加 |
+| 创作者经济 | 收益结算、技能计量 | ✅ 已集成 Foundry |
 
 ---
 
-## 六、文件变更清单
+## 二、问题分析与改进机会
 
-### 新建文件
+### 2.1 产品经理视角 - 功能完整性
+
+#### 问题 1: 缺乏统一的 Agent 监控仪表板
+
+**现状**: 分散的监控组件（API 统计、LLM 使用、任务队列），用户需要在多个页面间切换
+
+**影响**: 用户难以一目了然地了解 Agent 的整体健康状况
+
+**改进方案**:
+```text
+创建 AgentMonitoringDashboard 组件
+├── 顶部: 核心 KPI 卡片（活跃会话、成功率、平均响应时间）
+├── 中部: 实时调用图表 + 错误率趋势
+├── 底部: 最近告警列表 + 快速操作入口
+└── 位置: Builder 页面右侧面板新增 "监控" Tab
+```
+
+#### 问题 2: Agent 发布流程不完整
+
+**现状**: 只有"部署"按钮，缺乏发布前检查、灰度发布、版本回滚的完整流程
+
+**改进方案**:
+```text
+创建发布工作流
+├── Step 1: 预发布检查清单（配置完整性、权限验证、安全扫描）
+├── Step 2: 发布预览（模拟运行、A/B 测试配置）
+├── Step 3: 发布确认（版本号、变更日志）
+└── Step 4: 发布后监控（自动回滚阈值设置）
+```
+
+#### 问题 3: 多 Agent 协作能力不足
+
+**现状**: `agent_collaborations` 表已存在，但 UI 仅有基础的协作面板
+
+**改进方案**: 增强协作 UI，支持 Agent 间任务委托、消息传递、状态同步的可视化
+
+---
+
+### 2.2 AI Agent 专家视角 - 核心能力
+
+#### 问题 4: 缺乏 Agent 评估基准
+
+**现状**: `useAgentEvals.ts` 和 `agent_evaluations` 表已就绪，但缺乏系统性的评估 UI
+
+**改进方案**:
+```text
+创建 AgentEvaluationCenter 组件
+├── 预设测试集管理
+├── 自动化评估运行器
+├── 评分维度配置（准确性、安全性、效率、用户满意度）
+├── 历史评估对比
+└── 红队测试集成（已有 red-team-agent 函数）
+```
+
+#### 问题 5: 意图识别调试工具不足
+
+**现状**: `IntentDriftIndicator` 存在但功能简单，`useIntentDrift` 有丰富数据未充分利用
+
+**改进方案**:
+```text
+增强意图分析面板
+├── 意图分类热力图
+├── 实时意图置信度曲线
+├── 意图冲突检测与解决建议
+└── 历史意图模式分析
+```
+
+#### 问题 6: 缺乏 Prompt 工程工作台
+
+**现状**: 系统提示词编辑器功能基础，缺乏 Prompt 版本管理和 A/B 测试
+
+**改进方案**:
+```text
+Prompt Engineering Workbench
+├── Prompt 模板库
+├── 变量占位符管理
+├── 多版本对比测试
+├── 效果评分与自动优化建议
+└── Prompt 注入检测
+```
+
+---
+
+### 2.3 测试工程师视角 - 质量保障
+
+#### 问题 7: 端到端测试覆盖不足
+
+**现状**: 有 Vitest 单元测试配置，但缺乏 E2E 测试和集成测试
+
+**改进方案**:
+```text
+测试体系完善
+├── 添加 Playwright E2E 测试
+│   ├── 关键用户旅程覆盖
+│   ├── 工作流构建器交互测试
+│   └── 对话流程测试
+├── 边缘函数集成测试增强
+│   ├── workflow-llm-call 测试用例扩展
+│   ├── mcp-executor 测试覆盖
+│   └── 错误场景模拟
+└── 视觉回归测试（Chromatic 集成）
+```
+
+#### 问题 8: 错误处理不一致
+
+**现状**: 错误处理分散，部分组件有 try-catch，部分直接抛出
+
+**改进方案**:
+```text
+统一错误处理架构
+├── 创建 useErrorHandler Hook
+├── 错误类型分类（网络错误、业务错误、权限错误）
+├── 错误上报与追踪
+├── 用户友好的错误提示标准化
+└── 错误恢复策略（重试、降级、回退）
+```
+
+#### 问题 9: 加载状态体验不一致
+
+**现状**: 各页面使用不同的加载指示器（Loader2、Skeleton、自定义动画）
+
+**改进方案**:
+```text
+标准化加载体验
+├── 创建 LoadingState 组件库
+│   ├── SkeletonCard
+│   ├── LoadingSpinner
+│   ├── ProgressBar
+│   └── ShimmerEffect
+├── 按场景使用指南
+└── 加载超时处理
+```
+
+---
+
+### 2.4 UI/UX 工程师视角 - 用户体验
+
+#### 问题 10: 移动端体验不完善
+
+**现状**: 有 `MobileBottomNav` 和部分响应式设计，但核心功能（Builder、Runtime）移动端体验差
+
+**改进方案**:
+```text
+移动端优化
+├── Builder 页面
+│   ├── 简化版画布（仅查看模式）
+│   ├── 卡片式节点列表替代画布编辑
+│   └── 快速配置向导
+├── Runtime 页面
+│   ├── 全屏对话模式
+│   ├── 语音输入增强
+│   └── 手势操作支持
+└── Foundry 页面
+    ├── 技能卡片网格优化
+    └── 滑动操作
+```
+
+#### 问题 11: 新手引导覆盖不完整
+
+**现状**: `OnboardingProvider` 有 7 个步骤，但未覆盖所有核心功能
+
+**改进方案**:
+```text
+增强新手引导
+├── 情境化引导（根据用户目标动态调整）
+├── 交互式教程（不只是提示，包含实操）
+├── 成就系统集成（完成引导获得成就）
+├── 视频教程嵌入
+└── 分阶段解锁高级功能
+```
+
+#### 问题 12: 可访问性支持不足
+
+**现状**: 仅在 UI 组件库中有基础 ARIA 标签，自定义组件缺乏
+
+**改进方案**:
+```text
+可访问性增强
+├── 键盘导航完善
+│   ├── 工作流画布键盘操作
+│   ├── 快捷键系统统一
+│   └── Focus 管理
+├── 屏幕阅读器支持
+│   ├── 语义化标签
+│   ├── 动态内容公告
+│   └── 表单标签关联
+├── 颜色对比度检查
+└── 动画减弱模式
+```
+
+#### 问题 13: 主题与个性化不足
+
+**现状**: 仅支持深色/浅色主题切换
+
+**改进方案**:
+```text
+个性化增强
+├── 主题色自定义
+├── 字体大小调节
+├── 布局密度选项（紧凑/标准/宽松）
+├── 仪表板小部件自定义
+└── 工作区偏好保存
+```
+
+---
+
+### 2.5 性能与架构
+
+#### 问题 14: 大型画布性能问题
+
+**现状**: 当节点数量超过 50 时，画布渲染可能变慢
+
+**改进方案**:
+```text
+性能优化
+├── 虚拟化渲染（仅渲染可视区域节点）
+├── 节点渲染缓存
+├── 边计算优化（批量更新）
+├── Web Worker 计算卸载
+└── 懒加载大型节点配置
+```
+
+#### 问题 15: 状态管理碎片化
+
+**现状**: 混用 Zustand (14 个 store)、Context API、localStorage
+
+**改进方案**:
+```text
+状态管理优化
+├── Store 职责边界明确
+├── 跨 Store 通信规范
+├── 持久化策略统一
+├── 状态订阅性能优化
+└── DevTools 集成增强
+```
+
+---
+
+## 三、优先级排序与实施路线图
+
+### Phase 1: 高优先级 (P0) - 核心体验提升
+
+| 任务 | 预估工时 | 影响范围 |
+|------|----------|----------|
+| Agent 监控仪表板 | 16h | Builder |
+| 统一错误处理架构 | 12h | 全局 |
+| 加载状态标准化 | 8h | 全局 |
+| 移动端 Runtime 优化 | 12h | Runtime |
+| Agent 评估中心 | 20h | Builder |
+
+**总计**: ~68 小时
+
+### Phase 2: 中优先级 (P1) - 功能完善
+
+| 任务 | 预估工时 | 影响范围 |
+|------|----------|----------|
+| 发布工作流完善 | 16h | Builder |
+| 意图分析增强 | 12h | Runtime/DevTools |
+| Prompt 工程工作台 | 24h | Builder |
+| 新手引导增强 | 12h | 全局 |
+| 多 Agent 协作 UI | 16h | Runtime |
+
+**总计**: ~80 小时
+
+### Phase 3: 低优先级 (P2) - 体验优化
+
+| 任务 | 预估工时 | 影响范围 |
+|------|----------|----------|
+| 可访问性增强 | 20h | 全局 |
+| 主题个性化 | 12h | 全局 |
+| 画布性能优化 | 16h | Builder |
+| E2E 测试覆盖 | 24h | 全局 |
+| 状态管理重构 | 16h | 全局 |
+
+**总计**: ~88 小时
+
+---
+
+## 四、详细技术方案
+
+### 4.1 Agent 监控仪表板
+
+**新建文件**: `src/components/builder/AgentMonitoringDashboard.tsx`
+
+```text
+组件结构:
+├── useAgentMetrics Hook (聚合多个数据源)
+│   ├── API 调用统计
+│   ├── LLM 使用量
+│   ├── 错误率
+│   └── 响应时间
+├── MetricCard 组件 (可复用的指标卡片)
+├── RealtimeChart 组件 (使用 Recharts)
+├── AlertList 组件 (最近告警)
+└── QuickActions 组件 (快速操作入口)
+
+数据流:
+useAgentMetrics() -> 聚合 useAgentApi + useLLMUsageStats + useApiAlerts
+                  -> 实时更新 (Supabase Realtime)
+                  -> 展示层渲染
+```
+
+### 4.2 统一错误处理
+
+**新建文件**:
+- `src/hooks/useErrorHandler.ts`
+- `src/components/ui/error-display.tsx`
+- `src/lib/errorTypes.ts`
+
+```text
+错误类型定义:
+interface AppError {
+  code: string;
+  type: 'network' | 'business' | 'permission' | 'validation';
+  message: string;
+  userMessage: string;
+  recoverable: boolean;
+  retryAction?: () => Promise<void>;
+}
+
+useErrorHandler Hook:
+├── captureError(error: unknown): AppError
+├── displayError(error: AppError): void
+├── reportError(error: AppError): Promise<void>
+└── recoverFromError(error: AppError): Promise<void>
+```
+
+### 4.3 Agent 评估中心
+
+**新建文件**:
+- `src/components/builder/evaluation/EvaluationCenter.tsx`
+- `src/components/builder/evaluation/TestSetManager.tsx`
+- `src/components/builder/evaluation/EvaluationRunner.tsx`
+- `src/components/builder/evaluation/EvaluationReport.tsx`
+
+```text
+评估维度:
+├── 准确性 (Accuracy) - 回答正确率
+├── 安全性 (Safety) - 拒绝危险请求
+├── 效率 (Efficiency) - 响应时间、Token 使用
+├── 一致性 (Consistency) - 相似问题相似回答
+└── 用户满意度 (Satisfaction) - 反馈评分
+
+测试集类型:
+├── 功能测试 - 验证能力边界
+├── 边界测试 - 极端输入处理
+├── 红队测试 - 安全攻击模拟
+└── 回归测试 - 版本间对比
+```
+
+### 4.4 移动端 Runtime 优化
+
+**修改文件**: `src/pages/Runtime.tsx`
+
+```text
+移动端布局:
+├── 全屏对话模式 (隐藏侧边栏)
+├── 底部输入栏固定
+├── 语音输入大按钮
+├── 消息气泡优化 (更大触摸区域)
+├── 手势操作
+│   ├── 下拉刷新
+│   ├── 左滑删除消息
+│   └── 右滑引用回复
+└── Agent 切换抽屉 (底部弹出)
+
+响应式断点:
+├── < 640px: 纯移动布局
+├── 640-1024px: 平板布局
+└── > 1024px: 桌面布局
+```
+
+---
+
+## 五、文件变更清单
+
+### 新建文件 (26 个)
 
 | 文件路径 | 说明 | 优先级 |
 |----------|------|--------|
-| `src/components/builder/SnapshotTimelinePanel.tsx` | 版本时间线 | P0 |
-| `src/components/builder/SnapshotDiffViewer.tsx` | 版本差异对比 | P0 |
-| `src/components/builder/SnapshotCalendarPicker.tsx` | 日历选择器 | P0 |
-| `src/components/builder/SnapshotRestoreDialog.tsx` | 恢复确认 | P0 |
-| `src/components/profile/SecurityAuditDashboard.tsx` | 安全审计仪表板 | P0 |
-| `src/components/profile/AuditLogTable.tsx` | 审计日志表格 | P0 |
-| `src/components/dashboard/LLMUsageTrendChart.tsx` | LLM 使用趋势 | P0 |
-| `src/components/runtime/TaskSchedulerPanel.tsx` | 任务调度面板 | P0 |
-| `src/components/runtime/BackgroundTaskIndicator.tsx` | 后台任务指示器 | P0 |
-| `src/components/foundry/EarningsDetailPanel.tsx` | 收益详情 | P1 |
-| `src/components/foundry/DownloadTrendChart.tsx` | 下载趋势 | P1 |
-| `src/components/runtime/ChainExecutionHistory.tsx` | 任务链历史 | P1 |
-| `src/components/runtime/ExecutionStepTimeline.tsx` | 步骤时间线 | P1 |
-| `src/components/runtime/IntentDriftChart.tsx` | 意图漂移图 | P1 |
-| `src/components/builder/SelfHealingLogPanel.tsx` | 自愈日志 | P2 |
-| `src/components/foundry/SkillMeteringStats.tsx` | 技能计量 | P2 |
+| `src/components/builder/AgentMonitoringDashboard.tsx` | Agent 监控仪表板 | P0 |
+| `src/hooks/useAgentMetrics.ts` | 聚合指标 Hook | P0 |
+| `src/hooks/useErrorHandler.ts` | 统一错误处理 | P0 |
+| `src/lib/errorTypes.ts` | 错误类型定义 | P0 |
+| `src/components/ui/error-display.tsx` | 错误展示组件 | P0 |
+| `src/components/ui/loading-state.tsx` | 加载状态组件库 | P0 |
+| `src/components/builder/evaluation/EvaluationCenter.tsx` | 评估中心 | P0 |
+| `src/components/builder/evaluation/TestSetManager.tsx` | 测试集管理 | P0 |
+| `src/components/builder/evaluation/EvaluationRunner.tsx` | 评估运行器 | P0 |
+| `src/components/builder/evaluation/EvaluationReport.tsx` | 评估报告 | P0 |
+| `src/components/builder/PublishWorkflow.tsx` | 发布工作流 | P1 |
+| `src/components/builder/PublishChecklist.tsx` | 发布检查清单 | P1 |
+| `src/components/runtime/IntentAnalysisPanel.tsx` | 意图分析面板 | P1 |
+| `src/components/runtime/IntentHeatmap.tsx` | 意图热力图 | P1 |
+| `src/components/builder/PromptWorkbench.tsx` | Prompt 工作台 | P1 |
+| `src/components/builder/PromptTemplates.tsx` | Prompt 模板库 | P1 |
+| `src/components/builder/PromptABTest.tsx` | A/B 测试 | P1 |
+| `src/components/runtime/CollaborationWorkspace.tsx` | 协作工作区 | P1 |
+| `src/components/onboarding/InteractiveTutorial.tsx` | 交互式教程 | P1 |
+| `src/components/onboarding/ContextualGuide.tsx` | 情境化引导 | P1 |
+| `src/components/ui/accessible-focus.tsx` | 焦点管理 | P2 |
+| `src/components/settings/ThemeCustomizer.tsx` | 主题自定义 | P2 |
+| `src/components/settings/LayoutDensity.tsx` | 布局密度 | P2 |
+| `e2e/builder.spec.ts` | Builder E2E 测试 | P2 |
+| `e2e/runtime.spec.ts` | Runtime E2E 测试 | P2 |
+| `e2e/auth.spec.ts` | Auth E2E 测试 | P2 |
 
-### 修改文件
+### 修改文件 (15 个)
 
 | 文件路径 | 改动说明 | 优先级 |
 |----------|----------|--------|
-| `src/pages/Builder.tsx` | 添加版本历史 Tab | P0 |
-| `src/pages/Profile.tsx` | 添加安全日志 Tab | P0 |
-| `src/pages/Index.tsx` | 添加 LLM 使用卡片 | P0 |
-| `src/components/runtime/DevToolsPanel.tsx` | 添加任务调度 Tab | P0 |
-| `src/components/foundry/CreatorDashboard.tsx` | 添加收益详情 | P1 |
-| `src/components/runtime/TaskChainPanel.tsx` | 添加历史记录 | P1 |
-| `src/components/builder/SemanticGraphPanel.tsx` | 增强交互 | P1 |
-| `src/components/runtime/CircuitBreakerPanel.tsx` | 添加意图图表 | P1 |
-| `src/components/builder/ApiAlertPanel.tsx` | 增强历史展示 | P2 |
+| `src/pages/Builder.tsx` | 添加监控 Tab、评估入口 | P0 |
+| `src/pages/Runtime.tsx` | 移动端布局优化 | P0 |
+| `src/components/ErrorBoundary.tsx` | 集成统一错误处理 | P0 |
+| `src/App.tsx` | 全局错误边界增强 | P0 |
+| `src/components/runtime/DevToolsPanel.tsx` | 添加意图分析 Tab | P1 |
+| `src/components/builder/SimplifiedConfigPanel.tsx` | Prompt 工作台入口 | P1 |
+| `src/components/onboarding/OnboardingProvider.tsx` | 情境化引导逻辑 | P1 |
+| `src/pages/Profile.tsx` | 主题自定义入口 | P2 |
+| `src/hooks/useDevToolsState.ts` | 添加新 Tab 配置 | P1 |
+| `src/components/help/HelpCenter.tsx` | 添加交互式教程入口 | P1 |
+| `src/stores/appModeStore.ts` | 用户偏好持久化 | P2 |
+| `src/components/layout/MainLayout.tsx` | 布局密度支持 | P2 |
+| `package.json` | 添加 Playwright 依赖 | P2 |
+| `playwright.config.ts` | E2E 测试配置 | P2 |
+| `vitest.config.ts` | 测试覆盖率配置 | P2 |
 
 ---
 
-## 七、预期效果
+## 六、成功指标
 
-完成所有增强后，用户将获得以下体验提升：
+### 用户体验指标
 
-| 功能领域 | 改进前 | 改进后 |
-|----------|--------|--------|
-| 版本管理 | 无可视化 | 完整时间线 + 日历选择 + Diff 对比 |
-| 安全审计 | 仅后台记录 | 可视化仪表板 + 事件筛选 |
-| AI 使用监控 | 隐藏功能 | 首页展示 + 趋势图 |
-| 任务调度 | 完全透明 | 实时状态 + 历史追溯 |
-| 创作者收益 | 仅汇总数字 | 详细明细 + 趋势分析 |
-| 任务链执行 | 无历史 | 完整执行回溯 |
-| 知识图谱 | 基础展示 | 交互式编辑 |
-| 意图追踪 | 简单指示器 | 完整漂移图表 |
+| 指标 | 当前 | 目标 |
+|------|------|------|
+| 新用户首次创建 Agent 时间 | 未知 | < 5 分钟 |
+| 错误页面跳出率 | 未知 | < 10% |
+| 移动端 DAU 占比 | 未知 | > 20% |
+| 新手引导完成率 | 未知 | > 60% |
+
+### 技术指标
+
+| 指标 | 当前 | 目标 |
+|------|------|------|
+| 单元测试覆盖率 | ~10% | > 50% |
+| E2E 测试覆盖关键流程 | 0 | 100% |
+| 画布 50 节点渲染 FPS | 未知 | > 30 |
+| 首屏加载时间 (LCP) | 未知 | < 2s |
 
 ---
 
-## 八、总工时估算
+## 七、风险与依赖
 
-| 阶段 | 工时 |
-|------|------|
-| P0 高优先级 | ~30h |
-| P1 中优先级 | ~21h |
-| P2 低优先级 | ~7h |
-| **总计** | **~58h** |
+### 风险
+
+| 风险 | 影响 | 缓解措施 |
+|------|------|----------|
+| 移动端重构影响桌面端 | 高 | 渐进式重构，保持桌面端稳定 |
+| 性能优化引入新 Bug | 中 | 充分的回归测试 |
+| 状态管理重构复杂度高 | 中 | 分阶段进行，先统一新代码 |
+
+### 依赖
+
+| 依赖项 | 说明 |
+|--------|------|
+| Playwright | E2E 测试框架 |
+| react-hotkeys-hook | 快捷键管理 |
+| @radix-ui/react-visually-hidden | 可访问性增强 |
+
+---
+
+## 八、总结
+
+本审查报告从产品、AI Agent、测试、UI/UX 四个专业视角对 Agent Studio 进行了全面评估，识别出 15 个主要改进点，并提出了分三阶段实施的详细规划。
+
+**核心改进方向**:
+1. **可观测性增强** - 统一的 Agent 监控仪表板
+2. **质量保障体系** - 评估中心 + E2E 测试
+3. **移动端体验** - Runtime 页面优化
+4. **开发者体验** - 统一错误处理 + 加载状态
+
+**预计总工时**: ~236 小时
+
+**建议执行顺序**: P0 → P1 → P2，每阶段完成后进行用户反馈收集，动态调整后续计划。
