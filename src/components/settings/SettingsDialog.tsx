@@ -26,6 +26,7 @@ import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/
 import { useIsAdmin } from "@/hooks/useAdminInvite";
 import { GlobalModelSettings } from "./GlobalModelSettings";
 import { MCPServerManager } from "./MCPServerManager";
+import { ModelProviderSettings } from "./ModelProviderSettings";
 import { cn } from "@/lib/utils";
 import {
   Settings,
@@ -157,10 +158,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-7" : "grid-cols-6")}>
+          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-8" : "grid-cols-7")}>
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <User className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">个人资料</span>
+              <span className="hidden sm:inline">资料</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="text-xs sm:text-sm">
               <Bell className="h-4 w-4 sm:mr-1" />
@@ -169,6 +170,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <TabsTrigger value="language" className="text-xs sm:text-sm">
               <Globe className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">语言</span>
+            </TabsTrigger>
+            <TabsTrigger value="model-providers" className="text-xs sm:text-sm">
+              <Cpu className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">模型</span>
             </TabsTrigger>
             <TabsTrigger value="mcp-servers" className="text-xs sm:text-sm">
               <Server className="h-4 w-4 sm:mr-1" />
@@ -183,9 +188,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <span className="hidden sm:inline">关于</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="model-config" className="text-xs sm:text-sm">
-                <Cpu className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">模型配置</span>
+              <TabsTrigger value="global-model-config" className="text-xs sm:text-sm">
+                <Settings className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">全局</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -350,6 +355,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </Card>
             </TabsContent>
 
+            {/* Model Providers Tab */}
+            <TabsContent value="model-providers" className="space-y-4 m-0">
+              <ModelProviderSettings />
+            </TabsContent>
+
             {/* MCP Servers Tab */}
             <TabsContent value="mcp-servers" className="space-y-4 m-0">
               <MCPServerManager />
@@ -449,9 +459,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </Card>
             </TabsContent>
 
-            {/* Model Config Tab (Admin Only) */}
+            {/* Global Model Config Tab (Admin Only) */}
             {isAdmin && (
-              <TabsContent value="model-config" className="space-y-4 m-0">
+              <TabsContent value="global-model-config" className="space-y-4 m-0">
                 <GlobalModelSettings />
               </TabsContent>
             )}

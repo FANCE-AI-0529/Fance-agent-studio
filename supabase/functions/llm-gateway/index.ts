@@ -6,6 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Simple XOR decryption for user API keys
+function decryptApiKey(encryptedKey: string): string {
+  const encryptionKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.slice(0, 32) || 'default-encryption-key-32chars!!';
+  const keyBytes = new TextEncoder().encode(encryptionKey);
+  const binaryString = atob(encryptedKey);
+  const encryptedBytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    encryptedBytes[i] = binaryString.charCodeAt(i);
+  }
+  const decrypted = new Uint8Array(encryptedBytes.length);
+  for (let i = 0; i < encryptedBytes.length; i++) {
+    decrypted[i] = encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
+  }
+  return new TextDecoder().decode(decrypted);
+}
+
 // Provider-specific request formatters
 const formatters: Record<string, (messages: any[], model: string, options: any) => any> = {
   openai: (messages, model, options) => ({
@@ -302,10 +318,26 @@ serve(async (req: Request) => {
       };
     }
 
-    // Get API key from secrets
-    const apiKey = Deno.env.get(provider.api_key_name);
+    // Get API key - support encrypted user keys
+    let apiKey: string | undefined;
+    
+    // Priority 1: User's encrypted API key
+    if (provider.api_key_encrypted) {
+      apiKey = decryptApiKey(provider.api_key_encrypted);
+    }
+    
+    // Priority 2: Environment variable (admin configured)
+    if (!apiKey && provider.api_key_name) {
+      apiKey = Deno.env.get(provider.api_key_name);
+    }
+    
+    // Priority 3: Lovable fallback
+    if (!apiKey && provider.provider_type === 'lovable') {
+      apiKey = Deno.env.get('LOVABLE_API_KEY');
+    }
+    
     if (!apiKey) {
-      throw new Error(`API key not configured: ${provider.api_key_name}`);
+      throw new Error(`API key not configured for provider: ${provider.display_name || provider.provider_type}`);
     }
 
     // Prepare final model and options
