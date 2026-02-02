@@ -65,6 +65,8 @@ import { MemoryPanel } from "@/components/runtime/MemoryPanel";
 import { ManusMemoryPanel } from "@/components/runtime/ManusMemoryPanel";
 import { ManusStatusBadge } from "@/components/runtime/ManusStatusIndicator";
 import { ImmersiveHeader } from "@/components/runtime/ImmersiveHeader";
+import { TaskSchedulerPanel } from "@/components/runtime/TaskSchedulerPanel";
+import { ExecutionHistoryContent } from "@/components/runtime/ExecutionHistoryContent";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
 import { useManusKernel } from "@/hooks/useManusKernel";
 import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "@/hooks/useScenarios";
@@ -1510,6 +1512,12 @@ const Runtime = () => {
                       agentId={selectedAgent?.id || null}
                       onUpdateFile={async () => true}
                     />
+                  )}
+                  renderScheduler={() => (
+                    <TaskSchedulerPanel />
+                  )}
+                  renderHistory={() => (
+                    <ExecutionHistoryContent />
                   )}
                   onClose={() => setIsDeveloperMode(false)}
                 />
