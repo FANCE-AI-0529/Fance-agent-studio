@@ -30,7 +30,7 @@ import {
   type DevToolsTab,
 } from "@/hooks/useDevToolsState";
 
-import { Brain, Timer } from "lucide-react";
+import { Brain, Timer, Target } from "lucide-react";
 
 // 内联 Tab 图标映射
 const TAB_ICONS: Record<string, React.ElementType> = {
@@ -43,6 +43,7 @@ const TAB_ICONS: Record<string, React.ElementType> = {
   Search,
   Brain,
   Timer,
+  Target,
   Bug,
 };
 
@@ -57,6 +58,7 @@ interface DevToolsPanelProps {
   renderRAG?: () => React.ReactNode;
   renderManus?: () => React.ReactNode;
   renderScheduler?: () => React.ReactNode;
+  renderIntent?: () => React.ReactNode;
   renderDebug?: () => React.ReactNode;
   
   // 回调
@@ -73,6 +75,7 @@ export function DevToolsPanel({
   renderRAG,
   renderManus,
   renderScheduler,
+  renderIntent,
   renderDebug,
   onClose,
 }: DevToolsPanelProps) {
@@ -125,6 +128,7 @@ export function DevToolsPanel({
       rag: renderRAG,
       manus: renderManus,
       scheduler: renderScheduler,
+      intent: renderIntent,
       debug: renderDebug,
     };
 
