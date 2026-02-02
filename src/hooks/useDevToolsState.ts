@@ -11,6 +11,7 @@ export type DevToolsTab =
   | 'rag'
   | 'manus'
   | 'scheduler'
+  | 'intent'
   | 'debug';
 
 interface DevToolsState {
@@ -77,6 +78,7 @@ export const DEVTOOLS_SHORTCUTS = {
     rag: { key: '7', ctrlKey: true, label: 'Ctrl+7' },
     manus: { key: '8', ctrlKey: true, label: 'Ctrl+8' },
     scheduler: { key: '0', ctrlKey: true, label: 'Ctrl+0' },
+    intent: { key: 'i', ctrlKey: true, label: 'Ctrl+I' },
     debug: { key: '9', ctrlKey: true, label: 'Ctrl+9' },
   },
 } as const;
@@ -92,5 +94,6 @@ export const DEVTOOLS_TABS = [
   { id: 'rag' as const, label: 'RAG', icon: 'Search' },
   { id: 'manus' as const, label: 'Manus', icon: 'Brain' },
   { id: 'scheduler' as const, label: '调度器', icon: 'Timer' },
+  { id: 'intent' as const, label: '意图分析', icon: 'Target' },
   { id: 'debug' as const, label: '调试', icon: 'Bug' },
 ] as const;
