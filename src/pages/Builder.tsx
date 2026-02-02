@@ -82,6 +82,13 @@ import LLMNode from "@/components/builder/nodes/LLMNode";
 import HTTPRequestNode from "@/components/builder/nodes/HTTPRequestNode";
 import CodeNode from "@/components/builder/nodes/CodeNode";
 import ParameterExtractorNode from "@/components/builder/nodes/ParameterExtractorNode";
+// Phase 2: Dify-inspired auxiliary nodes
+import TemplateNode from "@/components/builder/nodes/TemplateNode";
+import VariableAggregatorNode from "@/components/builder/nodes/VariableAggregatorNode";
+import VariableAssignerNode from "@/components/builder/nodes/VariableAssignerNode";
+import DocExtractorNode from "@/components/builder/nodes/DocExtractorNode";
+import IteratorNode from "@/components/builder/nodes/IteratorNode";
+import LoopNode from "@/components/builder/nodes/LoopNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "@/components/builder/edges/ManusLifecycleEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
@@ -154,6 +161,13 @@ const nodeTypes: NodeTypes = {
   httpRequest: HTTPRequestNode,
   code: CodeNode,
   parameterExtractor: ParameterExtractorNode,
+  // Phase 2: Dify-inspired auxiliary nodes
+  template: TemplateNode,
+  variableAggregator: VariableAggregatorNode,
+  variableAssigner: VariableAssignerNode,
+  docExtractor: DocExtractorNode,
+  iterator: IteratorNode,
+  loop: LoopNode,
 };
 
 // Custom edge types - including Manus Lifecycle edge
