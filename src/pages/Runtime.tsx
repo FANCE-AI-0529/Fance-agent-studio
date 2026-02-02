@@ -29,7 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedConfirmCard as ConfirmCard, ConfirmAction, getMCPRiskLevel, getMCPToolPermissions } from "@/components/runtime/EnhancedConfirmCard";
 import { QuickShareButton } from "@/components/runtime/ShareDialog";
@@ -1447,7 +1447,7 @@ const Runtime = () => {
                         disabled={currentPhase !== "idle"}
                       />
                     </TooltipProvider>
-                    <Input
+                    <AutoResizeTextarea
                       placeholder="输入消息，或输入 / 打开快捷命令菜单..."
                       value={input}
                       onChange={(e) => {
@@ -1459,19 +1459,22 @@ const Runtime = () => {
                         }
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && !showQuickCommands) {
+                        if (e.key === "Enter" && !e.shiftKey && !showQuickCommands) {
+                          e.preventDefault();
                           handleSend();
                         } else if (e.key === "Escape") {
                           setShowQuickCommands(false);
                         }
                       }}
-                      className="bg-card"
+                      className="bg-card flex-1"
                       disabled={currentPhase !== "idle"}
+                      maxRows={5}
+                      minRows={1}
                     />
                     <Button 
                       onClick={handleSend} 
                       disabled={(!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle"}
-                      className="gap-2"
+                      className="gap-2 self-end"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
