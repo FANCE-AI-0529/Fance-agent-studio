@@ -40,6 +40,7 @@ import { DailyInspiration } from "@/components/dashboard/DailyInspiration";
 import { TrendingAgents } from "@/components/dashboard/TrendingAgents";
 import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase";
 import { CommunityStats } from "@/components/dashboard/CommunityStats";
+import { WorkflowCapabilitiesCard } from "@/components/dashboard/WorkflowCapabilitiesCard";
 import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 
 const Index = () => {
@@ -107,6 +108,9 @@ const Index = () => {
       <div className="p-6 space-y-8">
         {/* Daily Inspiration - New Section */}
         <DailyInspiration />
+
+        {/* Workflow Capabilities Card - New Section */}
+        <WorkflowCapabilitiesCard />
 
         {/* Quick Start Guide */}
         <QuickStartGuide 
