@@ -27,6 +27,7 @@ import { useIsAdmin } from "@/hooks/useAdminInvite";
 import { GlobalModelSettings } from "./GlobalModelSettings";
 import { MCPServerManager } from "./MCPServerManager";
 import { ModelProviderSettings } from "./ModelProviderSettings";
+import { ChangePasswordForm } from "./ChangePasswordForm";
 import { cn } from "@/lib/utils";
 import {
   Settings,
@@ -367,26 +368,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
             {/* Security Tab */}
             <TabsContent value="security" className="space-y-4 m-0">
+              {/* Password Change */}
+              <ChangePasswordForm />
+              
+              {/* Two-Factor Auth - Coming Soon */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">账户安全</CardTitle>
-                  <CardDescription>管理您的账户安全设置</CardDescription>
+                  <CardTitle className="text-base">两步验证</CardTitle>
+                  <CardDescription>使用验证器应用增强账户安全性</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>修改密码</Label>
-                      <p className="text-sm text-muted-foreground">更新您的登录密码</p>
-                    </div>
-                    <Button variant="outline" size="sm" disabled>
-                      即将推出
-                    </Button>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>两步验证</Label>
-                      <p className="text-sm text-muted-foreground">增强账户安全性</p>
+                      <p className="text-sm text-muted-foreground">
+                        启用两步验证后，登录时需要输入验证码
+                      </p>
                     </div>
                     <Button variant="outline" size="sm" disabled>
                       即将推出

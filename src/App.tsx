@@ -32,6 +32,7 @@ import SharedPrompt from "./pages/SharedPrompt";
 import SharedConversation from "./pages/SharedConversation";
 import ApiHub from "./pages/ApiHub";
 import OpenCodeTestPage from "./pages/OpenCodeTestPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -261,6 +262,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OpenCodeTestPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payment-success"
+        element={
+          <ProtectedRoute>
+            <PaymentSuccess />
           </ProtectedRoute>
         }
       />
