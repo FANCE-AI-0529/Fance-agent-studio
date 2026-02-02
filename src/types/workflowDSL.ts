@@ -19,7 +19,18 @@ export type NodeType =
   | 'intent_router'   // 意图路由器节点
   | 'router'          // 路由别名
   | 'generated_skill' // 生成的技能
-  | 'placeholder';    // 占位符节点
+  | 'placeholder'     // 占位符节点
+  // Phase 1: Dify-inspired core nodes
+  | 'llm'                   // 独立 LLM 调用节点
+  | 'http_request'          // HTTP 请求节点
+  | 'code'                  // 代码执行节点
+  | 'parameter_extractor'   // 参数提取器节点
+  // Phase 2: Auxiliary nodes
+  | 'template'              // 模板转换节点
+  | 'variable_aggregator'   // 变量聚合器
+  | 'variable_assigner'     // 变量赋值器
+  | 'doc_extractor'         // 文档提取器
+  | 'iterator';             // 迭代器节点
 
 export type StageType = 'sequential' | 'parallel' | 'conditional' | 'loop';
 

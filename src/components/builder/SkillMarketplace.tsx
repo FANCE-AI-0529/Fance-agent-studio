@@ -22,6 +22,9 @@ import {
   Route,
   GitMerge,
   Zap,
+  Brain,
+  Code2,
+  ScanSearch,
 } from "lucide-react";
 import { MCPActionsPanel, MCPActionDragItem, InterventionDragItem } from "./MCPActionsPanel";
 import { Input } from "@/components/ui/input";
@@ -95,6 +98,47 @@ const logicNodes = [
     icon: GitMerge,
     nodeType: "parallel" as const,
     color: "purple",
+  },
+  // Phase 1: Dify-inspired core nodes
+  {
+    id: "llm",
+    name: "LLM 调用",
+    nameEn: "LLM Call",
+    description: "独立的大模型调用，支持多模型切换和结构化输出",
+    descriptionEn: "Independent LLM call with model selection and structured output",
+    icon: Brain,
+    nodeType: "llm" as const,
+    color: "blue",
+  },
+  {
+    id: "http-request",
+    name: "HTTP 请求",
+    nameEn: "HTTP Request",
+    description: "调用外部 REST/GraphQL API",
+    descriptionEn: "Call external REST/GraphQL APIs",
+    icon: Globe,
+    nodeType: "httpRequest" as const,
+    color: "teal",
+  },
+  {
+    id: "code",
+    name: "代码执行",
+    nameEn: "Code Executor",
+    description: "执行 JavaScript 代码片段进行数据处理",
+    descriptionEn: "Execute JavaScript code snippets for data processing",
+    icon: Code2,
+    nodeType: "code" as const,
+    color: "amber",
+  },
+  {
+    id: "parameter-extractor",
+    name: "参数提取器",
+    nameEn: "Parameter Extractor",
+    description: "使用 LLM 从文本中提取结构化参数",
+    descriptionEn: "Extract structured parameters from text using LLM",
+    icon: ScanSearch,
+    nodeType: "parameterExtractor" as const,
+    color: "violet",
   },
 ];
 
@@ -173,7 +217,7 @@ export interface KnowledgeBaseItem {
 // Logic node item for drag
 export interface LogicNodeItem {
   type: 'logic_node';
-  nodeType: 'intentRouter' | 'condition' | 'parallel';
+  nodeType: 'intentRouter' | 'condition' | 'parallel' | 'llm' | 'httpRequest' | 'code' | 'parameterExtractor';
   name: string;
   nameEn: string;
   description: string;
