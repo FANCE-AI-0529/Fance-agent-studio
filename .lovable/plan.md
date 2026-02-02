@@ -1,6 +1,21 @@
 # Agent OS Studio 开发路线图 (更新于 2026-02-02)
 
-## 🎉 项目状态：生产就绪 + Dify 架构增强完成
+## 🎉 项目状态：生产就绪 + Dify 架构增强 + 测试文档完成
+
+---
+
+## ✅ Phase 3: 测试与文档 - 已完成
+
+### 测试基础设施 (100% 完成)
+- [x] Vitest 配置和测试环境搭建
+- [x] 测试工具函数 (renderWithProviders, mockNodeData, nodePropsHelper)
+- [x] 节点组件单元测试 (LLMNode, TemplateNode, IteratorNode, LoopNode, DocExtractorNode, VariableAggregatorNode)
+- [x] 工作流集成测试
+- [x] 边缘函数集成测试
+
+### 文档 (100% 完成)
+- [x] 节点使用文档 (docs/WORKFLOW_NODES.md)
+- [x] API 参考文档 (docs/WORKFLOW_API.md)
 
 ---
 
