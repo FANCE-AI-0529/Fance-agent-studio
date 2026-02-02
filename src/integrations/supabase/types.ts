@@ -2820,7 +2820,9 @@ export type Database = {
       llm_providers: {
         Row: {
           api_endpoint: string
+          api_key_encrypted: string | null
           api_key_name: string
+          api_key_preview: string | null
           available_models: Json | null
           created_at: string
           default_model: string | null
@@ -2836,7 +2838,9 @@ export type Database = {
         }
         Insert: {
           api_endpoint: string
+          api_key_encrypted?: string | null
           api_key_name: string
+          api_key_preview?: string | null
           available_models?: Json | null
           created_at?: string
           default_model?: string | null
@@ -2852,7 +2856,9 @@ export type Database = {
         }
         Update: {
           api_endpoint?: string
+          api_key_encrypted?: string | null
           api_key_name?: string
+          api_key_preview?: string | null
           available_models?: Json | null
           created_at?: string
           default_model?: string | null
