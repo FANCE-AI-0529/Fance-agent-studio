@@ -68,20 +68,20 @@
 | P0-05 | 全局 | 页面切换动画 | UX | 8h | ✅ | PageTransition 组件 + Framer Motion 过渡 |
 | P0-06 | 全局 | 错误边界优化 | 稳定性 | 6h | ✅ | 增强 ErrorBoundary，带反馈和复制功能 |
 
-### P1 - 重要优化（2-4周）✅ 部分完成
+### P1 - 重要优化（2-4周）✅ 已完成
 
 | ID | 模块 | 优化项 | 类型 | 预估工时 | 状态 | 详细描述 |
 |----|------|--------|------|----------|------|----------|
 | P1-01 | Runtime | 消息时间戳显示 | UI | 3h | ✅ | MessageTimestamp 组件，悬停显示精确时间 |
 | P1-02 | Runtime | 打字机效果优化 | UX | 6h | ✅ | EnhancedTypewriter 组件，自适应速度 |
-| P1-03 | Builder | 画布性能优化 | 性能 | 16h | 🔲 | 虚拟化渲染，50+ 节点流畅 |
-| P1-04 | Builder | 节点拖拽动画 | UX | 4h | 🔲 | 添加拖拽吸附、对齐辅助线 |
+| P1-03 | Builder | 画布性能优化 | 性能 | 16h | ✅ | 虚拟化渲染 + PerformanceOverlay 监控 |
+| P1-04 | Builder | 节点拖拽动画 | UX | 4h | ✅ | AlignmentGuides 组件，吸附对齐辅助线 |
 | P1-05 | Foundry | 技能搜索优化 | 性能 | 6h | ✅ | useDebouncedSearch Hook，防抖+高亮 |
 | P1-06 | Foundry | 技能卡片重设计 | UI | 8h | 🔲 | 精简信息层级，突出核心指标 |
-| P1-07 | 知识库 | 向量化进度可视化 | UX | 8h | 🔲 | 显示处理阶段和预估时间 |
+| P1-07 | 知识库 | 向量化进度可视化 | UX | 8h | ✅ | VectorizationProgress 组件，阶段+预估时间 |
 | P1-08 | 全局 | 骨架屏标准化 | UX | 8h | ✅ | skeleton-screens.tsx 完整组件库 |
 | P1-09 | 全局 | 快捷键系统 | UX | 12h | ✅ | CommandPalette 组件，Cmd+K 打开 |
-| P1-10 | 移动端 | 底部导航优化 | UI | 6h | 🔲 | 当前页高亮更明显，添加触感反馈 |
+| P1-10 | 移动端 | 底部导航优化 | UI | 6h | ✅ | MobileBottomNavEnhanced 组件，触感反馈 |
 
 ### P2 - 体验提升（4-6周）
 
@@ -173,6 +173,26 @@
    - 全局命令面板
    - Cmd+K / Ctrl+K 快捷键打开
    - 支持导航、操作、主题切换、Agent 快速切换
+
+6. **`src/components/builder/canvas/AlignmentGuides.tsx`**
+   - 节点对齐辅助线
+   - 支持中心、边缘对齐
+   - 自动吸附计算 + useAlignmentSnap hook
+
+7. **`src/components/builder/canvas/PerformanceOverlay.tsx`**
+   - 画布性能监控面板
+   - 显示 FPS、节点数、渲染时间
+   - 虚拟化状态指示
+
+8. **`src/components/knowledge/VectorizationProgress.tsx`**
+   - 向量化处理进度组件
+   - 四阶段可视化：解析→切片→向量化→入库
+   - 预估时间 + 处理速度显示
+
+9. **`src/components/layout/MobileBottomNavEnhanced.tsx`**
+   - 增强移动端底部导航
+   - Framer Motion 动画
+   - 触感反馈支持
 
 ---
 
