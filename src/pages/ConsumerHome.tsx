@@ -12,6 +12,7 @@ import { BuildCompletionCard } from "@/components/consumer/BuildCompletionCard";
 import { ClarificationCard } from "@/components/consumer/ClarificationCard";
 import { UploadGuideCard } from "@/components/consumer/UploadGuideCard";
 import { MiniStudioPreview } from "@/components/consumer/MiniStudioPreview";
+import { PoweredByBadge } from "@/components/consumer/PoweredByBadge";
 import { useInvisibleBuilder, type InvisibleBuildResult } from "@/hooks/useInvisibleBuilder";
 import { useInlineUpload } from "@/hooks/useInlineUpload";
 import { useAppModeStore } from "@/stores/appModeStore";
@@ -236,8 +237,9 @@ export default function ConsumerHome() {
                   <span>知识库集成</span>
                 </div>
               </motion.div>
+              {/* Powered By Badge */}
+              <PoweredByBadge className="mt-8" />
             </motion.div>}
-
           {/* Building View */}
           {viewState === "building" && <motion.div key="building" initial={{
           opacity: 0,

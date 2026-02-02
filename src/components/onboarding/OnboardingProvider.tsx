@@ -36,6 +36,13 @@ const defaultSteps: OnboardingStep[] = [
     position: "bottom",
   },
   {
+    id: "workflow-nodes",
+    title: "强大的工作流节点",
+    description: "使用 LLM 调用、HTTP 请求、代码执行等 13 种节点，构建复杂的自动化流程",
+    target: "[data-onboarding='logic-nodes']",
+    position: "right",
+  },
+  {
     id: "builder",
     title: "创建AI助手",
     description: "点击这里开始创建你的第一个AI助手，可以用对话的方式告诉我你想要什么样的助手",

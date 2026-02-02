@@ -30,8 +30,10 @@ import {
   Repeat,
   RefreshCcw,
   FileOutput,
+  Boxes,
 } from "lucide-react";
 import { MCPActionsPanel, MCPActionDragItem, InterventionDragItem } from "./MCPActionsPanel";
+import { NodeCategoryPanel, type NodeCategory, type NodeCategoryItem } from "./NodeCategoryPanel";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,151 +64,198 @@ const nativeCategories = [
   { id: "document", label: "Document", labelZh: "文档处理", icon: FileText },
 ];
 
-// Origin filter options
+// Origin filter options with node count badge for logic
 const originFilters = [
   { id: "all", label: "All", labelZh: "全部", icon: Sparkles },
   { id: "native", label: "Skills", labelZh: "Skills", icon: Puzzle },
   { id: "mcp", label: "MCP", labelZh: "MCP", icon: Plug },
   { id: "actions", label: "Actions", labelZh: "动作", icon: Zap },
   { id: "knowledge", label: "Knowledge", labelZh: "知识库", icon: BookOpen },
-  { id: "logic", label: "Logic", labelZh: "逻辑", icon: GitBranch },
+  { id: "logic", label: "Nodes", labelZh: "工作流", icon: Boxes, badge: "13" },
 ];
 
-// Logic node definitions
-const logicNodes = [
+// Categorized logic nodes for better organization
+const nodeCategories: NodeCategory[] = [
   {
-    id: "intent-router",
-    name: "意图路由器",
-    nameEn: "Intent Router",
-    description: "基于语义或关键词将输入路由到不同分支",
-    descriptionEn: "Route input to different branches based on semantics or keywords",
-    icon: Route,
-    nodeType: "intentRouter" as const,
-    color: "cyan",
-  },
-  {
-    id: "condition",
-    name: "条件判断",
-    nameEn: "Condition",
-    description: "IF/ELSE 逻辑分支判断",
-    descriptionEn: "IF/ELSE conditional branching",
+    id: "control-flow",
+    name: "控制流",
+    nameEn: "Control Flow",
     icon: GitBranch,
-    nodeType: "condition" as const,
-    color: "yellow",
-  },
-  {
-    id: "parallel",
-    name: "并发执行",
-    nameEn: "Parallel Gateway",
-    description: "同时触发多个下游节点",
-    descriptionEn: "Trigger multiple downstream nodes simultaneously",
-    icon: GitMerge,
-    nodeType: "parallel" as const,
     color: "purple",
+    nodes: [
+      {
+        id: "condition",
+        name: "条件判断",
+        nameEn: "Condition",
+        description: "IF/ELSE 逻辑分支判断",
+        descriptionEn: "IF/ELSE conditional branching",
+        icon: GitBranch,
+        nodeType: "condition",
+        color: "yellow",
+      },
+      {
+        id: "parallel",
+        name: "并发执行",
+        nameEn: "Parallel Gateway",
+        description: "同时触发多个下游节点",
+        descriptionEn: "Trigger multiple downstream nodes simultaneously",
+        icon: GitMerge,
+        nodeType: "parallel",
+        color: "purple",
+      },
+      {
+        id: "iterator",
+        name: "迭代器",
+        nameEn: "Iterator",
+        description: "对数组逐项执行子工作流",
+        descriptionEn: "Execute sub-workflow for each array item",
+        icon: Repeat,
+        nodeType: "iterator",
+        color: "indigo",
+        isNew: true,
+      },
+      {
+        id: "loop",
+        name: "循环执行",
+        nameEn: "Loop",
+        description: "基于条件重复执行工作流",
+        descriptionEn: "Repeat workflow execution based on condition",
+        icon: RefreshCcw,
+        nodeType: "loop",
+        color: "rose",
+        isNew: true,
+      },
+    ],
   },
-  // Phase 1: Dify-inspired core nodes
   {
-    id: "llm",
-    name: "LLM 调用",
-    nameEn: "LLM Call",
-    description: "独立的大模型调用，支持多模型切换和结构化输出",
-    descriptionEn: "Independent LLM call with model selection and structured output",
+    id: "ai-reasoning",
+    name: "AI & 推理",
+    nameEn: "AI & Reasoning",
     icon: Brain,
-    nodeType: "llm" as const,
     color: "blue",
+    nodes: [
+      {
+        id: "llm",
+        name: "LLM 调用",
+        nameEn: "LLM Call",
+        description: "独立的大模型调用，支持多模型切换和结构化输出",
+        descriptionEn: "Independent LLM call with model selection and structured output",
+        icon: Brain,
+        nodeType: "llm",
+        color: "blue",
+        isNew: true,
+      },
+      {
+        id: "parameter-extractor",
+        name: "参数提取器",
+        nameEn: "Parameter Extractor",
+        description: "使用 LLM 从文本中提取结构化参数",
+        descriptionEn: "Extract structured parameters from text using LLM",
+        icon: ScanSearch,
+        nodeType: "parameterExtractor",
+        color: "violet",
+        isNew: true,
+      },
+      {
+        id: "intent-router",
+        name: "意图路由器",
+        nameEn: "Intent Router",
+        description: "基于语义或关键词将输入路由到不同分支",
+        descriptionEn: "Route input to different branches based on semantics or keywords",
+        icon: Route,
+        nodeType: "intentRouter",
+        color: "cyan",
+      },
+    ],
   },
   {
-    id: "http-request",
-    name: "HTTP 请求",
-    nameEn: "HTTP Request",
-    description: "调用外部 REST/GraphQL API",
-    descriptionEn: "Call external REST/GraphQL APIs",
-    icon: Globe,
-    nodeType: "httpRequest" as const,
-    color: "teal",
-  },
-  {
-    id: "code",
-    name: "代码执行",
-    nameEn: "Code Executor",
-    description: "执行 JavaScript 代码片段进行数据处理",
-    descriptionEn: "Execute JavaScript code snippets for data processing",
+    id: "data-processing",
+    name: "数据处理",
+    nameEn: "Data Processing",
     icon: Code2,
-    nodeType: "code" as const,
-    color: "amber",
+    color: "green",
+    nodes: [
+      {
+        id: "template",
+        name: "模板转换",
+        nameEn: "Template",
+        description: "使用 Jinja2/Handlebars 语法格式化输出",
+        descriptionEn: "Format output using Jinja2/Handlebars syntax",
+        icon: FileCode2,
+        nodeType: "template",
+        color: "emerald",
+        isNew: true,
+      },
+      {
+        id: "code",
+        name: "代码执行",
+        nameEn: "Code Executor",
+        description: "执行 JavaScript 代码片段进行数据处理",
+        descriptionEn: "Execute JavaScript code snippets for data processing",
+        icon: Code2,
+        nodeType: "code",
+        color: "amber",
+        isNew: true,
+      },
+      {
+        id: "variable-aggregator",
+        name: "变量聚合器",
+        nameEn: "Variable Aggregator",
+        description: "合并多个分支的变量为单一输出",
+        descriptionEn: "Merge variables from multiple branches into single output",
+        icon: Layers,
+        nodeType: "variableAggregator",
+        color: "cyan",
+        isNew: true,
+      },
+      {
+        id: "variable-assigner",
+        name: "变量赋值",
+        nameEn: "Variable Assigner",
+        description: "设置或修改工作流变量",
+        descriptionEn: "Set or modify workflow variables",
+        icon: Variable,
+        nodeType: "variableAssigner",
+        color: "pink",
+        isNew: true,
+      },
+    ],
   },
   {
-    id: "parameter-extractor",
-    name: "参数提取器",
-    nameEn: "Parameter Extractor",
-    description: "使用 LLM 从文本中提取结构化参数",
-    descriptionEn: "Extract structured parameters from text using LLM",
-    icon: ScanSearch,
-    nodeType: "parameterExtractor" as const,
-    color: "violet",
-  },
-  // Phase 2: Dify-inspired auxiliary nodes
-  {
-    id: "template",
-    name: "模板转换",
-    nameEn: "Template",
-    description: "使用 Jinja2/Handlebars 语法格式化输出",
-    descriptionEn: "Format output using Jinja2/Handlebars syntax",
-    icon: FileCode2,
-    nodeType: "template" as const,
-    color: "emerald",
-  },
-  {
-    id: "variable-aggregator",
-    name: "变量聚合器",
-    nameEn: "Variable Aggregator",
-    description: "合并多个分支的变量为单一输出",
-    descriptionEn: "Merge variables from multiple branches into single output",
-    icon: Layers,
-    nodeType: "variableAggregator" as const,
-    color: "cyan",
-  },
-  {
-    id: "variable-assigner",
-    name: "变量赋值",
-    nameEn: "Variable Assigner",
-    description: "设置或修改工作流变量",
-    descriptionEn: "Set or modify workflow variables",
-    icon: Variable,
-    nodeType: "variableAssigner" as const,
-    color: "pink",
-  },
-  {
-    id: "doc-extractor",
-    name: "文档提取器",
-    nameEn: "Document Extractor",
-    description: "从文件中提取文本内容 (PDF/Word/Excel)",
-    descriptionEn: "Extract text content from files (PDF/Word/Excel)",
-    icon: FileOutput,
-    nodeType: "docExtractor" as const,
-    color: "orange",
-  },
-  {
-    id: "iterator",
-    name: "迭代器",
-    nameEn: "Iterator",
-    description: "对数组逐项执行子工作流",
-    descriptionEn: "Execute sub-workflow for each array item",
-    icon: Repeat,
-    nodeType: "iterator" as const,
-    color: "indigo",
-  },
-  {
-    id: "loop",
-    name: "循环执行",
-    nameEn: "Loop",
-    description: "基于条件重复执行工作流",
-    descriptionEn: "Repeat workflow execution based on condition",
-    icon: RefreshCcw,
-    nodeType: "loop" as const,
-    color: "rose",
+    id: "external-integration",
+    name: "外部集成",
+    nameEn: "External Integration",
+    icon: Globe,
+    color: "teal",
+    nodes: [
+      {
+        id: "http-request",
+        name: "HTTP 请求",
+        nameEn: "HTTP Request",
+        description: "调用外部 REST/GraphQL API",
+        descriptionEn: "Call external REST/GraphQL APIs",
+        icon: Globe,
+        nodeType: "httpRequest",
+        color: "teal",
+        isNew: true,
+      },
+      {
+        id: "doc-extractor",
+        name: "文档提取器",
+        nameEn: "Document Extractor",
+        description: "从文件中提取文本内容 (PDF/Word/Excel)",
+        descriptionEn: "Extract text content from files (PDF/Word/Excel)",
+        icon: FileOutput,
+        nodeType: "docExtractor",
+        color: "orange",
+        isNew: true,
+      },
+    ],
   },
 ];
+
+// Flatten nodes for backward compatibility
+const logicNodes = nodeCategories.flatMap(cat => cat.nodes);
 
 export interface MCPTool {
   name: string;
@@ -412,10 +461,10 @@ export function SkillMarketplace({
     onKnowledgeDragStart?.(kb);
   };
 
-  const handleLogicNodeDragStart = (e: DragEvent<HTMLDivElement>, node: typeof logicNodes[0]) => {
+  const handleLogicNodeDragStart = (e: DragEvent<HTMLDivElement>, node: NodeCategoryItem) => {
     const logicItem: LogicNodeItem = {
       type: 'logic_node',
-      nodeType: node.nodeType,
+      nodeType: node.nodeType as LogicNodeItem['nodeType'],
       name: node.name,
       nameEn: node.nameEn,
       description: node.description,
@@ -505,12 +554,19 @@ export function SkillMarketplace({
                   ? "bg-purple-500 text-white"
                   : filter.id === 'actions'
                   ? "bg-orange-500 text-white"
+                  : filter.id === 'logic'
+                  ? "bg-gradient-to-r from-primary to-cognitive text-white"
                   : "bg-primary text-primary-foreground"
                 : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
             )}
           >
             <filter.icon className="h-3 w-3" />
             {language === 'zh' ? filter.labelZh : filter.label}
+            {'badge' in filter && filter.badge && (
+              <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 ml-0.5 bg-background/20">
+                {filter.badge}
+              </Badge>
+            )}
           </button>
         ))}
       </div>
@@ -572,48 +628,12 @@ export function SkillMarketplace({
             language={language}
           />
         ) : originFilter === 'logic' ? (
-          // Logic Nodes List
-          <div className="space-y-2">
-            {logicNodes.map((node) => {
-              const Icon = node.icon;
-              const colorClasses = {
-                cyan: "border-cyan-500/30 hover:border-cyan-500/50 bg-cyan-500/5",
-                yellow: "border-yellow-500/30 hover:border-yellow-500/50 bg-yellow-500/5",
-                purple: "border-purple-500/30 hover:border-purple-500/50 bg-purple-500/5",
-              };
-              const iconColors = {
-                cyan: "text-cyan-500 bg-cyan-500/20",
-                yellow: "text-yellow-500 bg-yellow-500/20",
-                purple: "text-purple-500 bg-purple-500/20",
-              };
-              return (
-                <div
-                  key={node.id}
-                  draggable
-                  onDragStart={(e) => handleLogicNodeDragStart(e, node)}
-                  className={cn(
-                    "p-3 rounded-lg border transition-all group cursor-grab active:cursor-grabbing",
-                    colorClasses[node.color as keyof typeof colorClasses]
-                  )}
-                >
-                  <div className="flex items-start gap-2">
-                    <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className={cn("w-6 h-6 rounded flex items-center justify-center", iconColors[node.color as keyof typeof iconColors])}>
-                          <Icon className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="font-medium text-sm">{language === 'zh' ? node.name : node.nameEn}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {language === 'zh' ? node.description : node.descriptionEn}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          // Logic Nodes List - Using Categorized Panel
+          <NodeCategoryPanel
+            categories={nodeCategories}
+            language={language as 'zh' | 'en'}
+            onNodeDragStart={handleLogicNodeDragStart}
+          />
         ) : originFilter === 'knowledge' ? (
           // Knowledge Base List
           <>
