@@ -21,11 +21,13 @@ import {
   Trophy,
   Target,
   Gift,
+  FileText,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
 import { PricingPlans } from "@/components/pricing/PricingPlans";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
+import { SecurityAuditDashboard } from "@/components/profile/SecurityAuditDashboard";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,6 +165,10 @@ export default function Profile() {
               <Bell className="h-4 w-4" />
               通知
             </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2">
+              <FileText className="h-4 w-4" />
+              安全日志
+            </TabsTrigger>
           </TabsList>
 
           {/* 账户设置 */}
@@ -277,6 +283,11 @@ export default function Profile() {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          {/* 安全审计日志 */}
+          <TabsContent value="security" className="mt-6">
+            <SecurityAuditDashboard />
           </TabsContent>
         </Tabs>
       </div>

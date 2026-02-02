@@ -10,6 +10,7 @@ export type DevToolsTab =
   | 'history' 
   | 'rag'
   | 'manus'
+  | 'scheduler'
   | 'debug';
 
 interface DevToolsState {
@@ -75,6 +76,7 @@ export const DEVTOOLS_SHORTCUTS = {
     history: { key: '6', ctrlKey: true, label: 'Ctrl+6' },
     rag: { key: '7', ctrlKey: true, label: 'Ctrl+7' },
     manus: { key: '8', ctrlKey: true, label: 'Ctrl+8' },
+    scheduler: { key: '0', ctrlKey: true, label: 'Ctrl+0' },
     debug: { key: '9', ctrlKey: true, label: 'Ctrl+9' },
   },
 } as const;
@@ -89,5 +91,6 @@ export const DEVTOOLS_TABS = [
   { id: 'history' as const, label: '执行历史', icon: 'History' },
   { id: 'rag' as const, label: 'RAG', icon: 'Search' },
   { id: 'manus' as const, label: 'Manus', icon: 'Brain' },
+  { id: 'scheduler' as const, label: '调度器', icon: 'Timer' },
   { id: 'debug' as const, label: '调试', icon: 'Bug' },
 ] as const;
