@@ -12,6 +12,7 @@ import { ModeAwareLayout } from "@/components/layout/ModeAwareLayout";
 import { StudioOnlyRoute } from "@/components/layout/StudioOnlyRoute";
 import { HackerTransition } from "@/components/consumer/HackerTransition";
 import { EjectTransition } from "@/components/consumer/EjectTransition";
+import { CommandPalette } from "@/components/ui/command-palette";
 import { useAppModeStore } from "@/stores/appModeStore";
 import Index from "./pages/Index";
 import Builder from "./pages/Builder";
@@ -297,6 +298,7 @@ const App = () => (
             <BrowserRouter>
               <AuthProvider>
                 <OnboardingProvider>
+                  <CommandPalette />
                   <AppRoutes />
                 </OnboardingProvider>
               </AuthProvider>

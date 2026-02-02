@@ -8,6 +8,7 @@ import { SmartChatBubble } from "./SmartChatBubble";
 import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated";
 import { MCPToolCard, MCPToolCall } from "./MCPToolCard";
 import { CitationCard, Citation } from "./CitationCard";
+import { MessageTimestamp } from "@/components/ui/message-timestamp";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
@@ -349,12 +350,7 @@ export function MessageBubble({
                 {skill}
               </Badge>
             )}
-            <span className="text-[10px] text-muted-foreground/70">
-              {timestamp.toLocaleTimeString("zh-CN", { 
-                hour: "2-digit", 
-                minute: "2-digit" 
-              })}
-            </span>
+            <MessageTimestamp timestamp={timestamp} showRelative={true} size="xs" />
             
             {/* Action buttons - show on hover */}
             <motion.div
