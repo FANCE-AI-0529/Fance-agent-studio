@@ -1,179 +1,405 @@
 
 
-# 智能体图标统一为机器人形象
+# Agent OS Studio 产品完善与上市准备方案
 
 ---
 
-## 问题分析
+## 一、系统现状评估
 
-从截图和代码审查可以看到：
+### 1.1 核心模块完成度
 
-### 当前状态
-1. **竞对追踪智能体** - 使用粉色星星图标 (`sparkles`)
-2. **财务分析智能体** - 使用橙色数据库图标 (`database`)
+| 模块 | 完成度 | 状态 | 备注 |
+|------|--------|------|------|
+| 用户认证 | 95% | ✅ 可用 | 邀请码机制、密码强度验证、CAPTCHA 已实现 |
+| 智能体构建器 | 90% | ✅ 可用 | 可视化画布、对话式创建、模板已实现 |
+| 对话运行时 | 85% | ⚠️ 需完善 | 流式响应、多模态、MCP 工具调用已实现 |
+| 知识库管理 | 80% | ⚠️ 需完善 | 文档上传、向量检索、图谱可视化已实现 |
+| 技能铸造厂 | 85% | ⚠️ 需完善 | 代码编辑器、MCP 配置、技能商店已实现 |
+| 钱包系统 | 75% | ⚠️ 需完善 | Token 钱包、充值流程已实现，支付集成待完善 |
+| 社交功能 | 70% | ⚠️ 需完善 | 排行榜、关注、成就系统已实现 |
+| 设置中心 | 90% | ✅ 可用 | 个人资料、通知、模型配置、MCP 服务器管理 |
 
-### 问题原因
-- `generateRandomAvatar()` 函数（`useInvisibleBuilder.ts` 行 24-69）根据关键词匹配各种功能性图标
-- 图标选项包含 40+ 种不同图标（电路、网络、数据库、星星等）
-- 用户期望智能体始终显示**机器人形象**，而不是功能性图标
+### 1.2 发现的关键问题
+
+```text
+【安全问题】
+1. ⚠️ Supabase 泄露密码保护未启用
+2. ⚠️ 部分安全设置页面功能显示"即将推出"
+3. ⚠️ 两步验证功能未实现
+
+【功能缺失】
+4. ❌ ConsumerRuntime 组件文件缺失（引用了但不存在）
+5. ❌ 支付集成未完成（充值后无法真正完成支付）
+6. ❌ 密码修改功能未实现
+7. ❌ 数据导出功能未实现
+
+【体验问题】
+8. ⚠️ 404 页面使用英文，与中文产品不一致
+9. ⚠️ 部分页面缺少 Loading Skeleton
+10. ⚠️ 错误处理不够友好
+
+【代码质量】
+11. ⚠️ 存在 TODO 注释未处理
+12. ⚠️ 部分函数注释为 Python（Foundry 模板）
+```
 
 ---
 
-## 解决方案
+## 二、优先级分类
 
-### 方案一：默认使用 Bot 图标（推荐）
+### P0 - 上线阻断（必须修复）
 
-修改 `generateRandomAvatar()` 函数，始终使用 `bot` 或机器人类图标作为默认，保留颜色差异化：
+| 问题 | 风险等级 | 修复时间 |
+|------|----------|----------|
+| ConsumerRuntime 缺失 | 🔴 高 | 4h |
+| 泄露密码保护未启用 | 🔴 高 | 0.5h |
+| 支付流程完善 | 🔴 高 | 6h |
+| 邮箱验证流程 | 🔴 高 | 2h |
 
+### P1 - 核心体验（上线前应修复）
+
+| 问题 | 影响范围 | 修复时间 |
+|------|----------|----------|
+| 密码修改功能 | 安全设置 | 3h |
+| 两步验证基础框架 | 安全设置 | 4h |
+| 404 页面中文化 | 全站 | 0.5h |
+| 数据导出功能 | 用户数据 | 4h |
+| 错误边界完善 | 全站稳定性 | 2h |
+
+### P2 - 体验优化（上线后迭代）
+
+| 问题 | 优先级 | 修复时间 |
+|------|--------|----------|
+| Loading 状态统一 | 低 | 2h |
+| TODO 注释清理 | 低 | 1h |
+| 国际化完善 | 低 | 8h |
+
+---
+
+## 三、详细修复方案
+
+### 阶段一：关键阻断修复 (P0)
+
+#### 3.1.1 创建 ConsumerRuntime 组件
+
+**问题**: `Runtime.tsx` 引用了 `ConsumerRuntime` 但文件不存在
+
+**解决方案**: 创建消费者模式专用运行时组件
+
+**文件**: `src/components/runtime/ConsumerRuntime.tsx`
+
+**核心功能**:
+- 简化版对话界面（无开发者工具）
+- 沉浸式全屏体验
+- 智能体快速切换
+- 移动端适配
+
+**代码结构**:
 ```typescript
-function generateRandomAvatar(description: string): AgentAvatar {
-  // 始终使用 bot 图标，只根据描述选择颜色
-  const colorKeywordMap: Record<string, string> = {
-    'message-square|客服|对话|咨询': 'green',
-    'database|数据|分析|统计': 'blue',
-    'code|编程|开发': 'cyan',
-    'wallet|金融|财务': 'amber',
-    // ... 其他关键词到颜色的映射
-  };
+// 简化版运行时，无 DevTools
+export function ConsumerRuntime() {
+  // 使用现有 hooks
+  const { sendMessage, isStreaming, messages } = useAgentChat();
+  const { data: agents } = useDeployedAgents();
   
-  // 匹配颜色
-  let matchedColorId = 'primary';
-  for (const [keywords, colorId] of Object.entries(colorKeywordMap)) {
-    if (keywords.split('|').some(k => description.includes(k))) {
-      matchedColorId = colorId;
-      break;
-    }
-  }
-  
-  // 始终返回 bot 图标
-  return { iconId: 'bot', colorId: matchedColorId };
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      {/* 顶部：智能体选择器 */}
+      <ImmersiveHeader />
+      
+      {/* 消息列表 */}
+      <ScrollArea className="flex-1">
+        {/* 消息渲染 */}
+      </ScrollArea>
+      
+      {/* 底部输入框 */}
+      <ChatInput />
+    </div>
+  );
 }
 ```
 
-### 方案二：创建专属机器人图标集
+#### 3.1.2 启用泄露密码保护
 
-如果需要更丰富的机器人形象，可以：
+**问题**: Supabase Linter 警告密码泄露保护未启用
 
-1. 使用 Lucide 中所有机器人相关图标：
-   - `Bot` - 标准机器人
-   - `ScanFace` - 人脸识别机器人
-   - `Cpu` - CPU 核心
-   - `CircuitBoard` - 电路板
+**解决方案**: 通过 Supabase Dashboard 启用
 
-2. 或使用 DiceBear API 生成机器人头像（已有代码支持）
+**操作步骤**:
+1. 在 Supabase 控制台 → Authentication → Settings
+2. 启用 "Leaked Password Protection"
+3. 选择保护级别（建议 "Strict"）
+
+#### 3.1.3 完善支付流程
+
+**问题**: 充值功能调用 `wallet-topup` 但未集成真实支付
+
+**解决方案**: 完善 Stripe 支付集成
+
+**修改文件**:
+- `supabase/functions/wallet-topup/index.ts` - 集成 Stripe Checkout
+- `src/components/wallet/TopupDialog.tsx` - 处理支付回调
+- `src/pages/PaymentSuccess.tsx` - 新增支付成功页面
+
+**支付流程**:
+```text
+用户选择套餐 → 创建 Stripe Checkout Session → 跳转 Stripe
+→ 支付成功回调 → 更新钱包余额 → 显示成功页面
+```
+
+#### 3.1.4 完善邮箱验证流程
+
+**问题**: 注册后邮箱验证流程不完整
+
+**解决方案**:
+- 添加邮箱验证等待页面
+- 处理验证链接回调
+- 显示验证成功/失败状态
 
 ---
 
-## 文件变更清单
+### 阶段二：核心体验完善 (P1)
 
-### 修改文件
+#### 3.2.1 密码修改功能
 
-| 文件路径 | 改动说明 |
-|----------|----------|
-| `src/hooks/useInvisibleBuilder.ts` | 修改 `generateRandomAvatar()` 默认使用 `bot` 图标 |
-| `src/pages/Index.tsx` | 读取 `agent.manifest.avatar` 并使用 `AgentAvatarDisplay` 组件 |
-| `src/components/consumer/AgentGridList.tsx` | 移除 DiceBear 回退，统一使用 Bot 图标 |
-| `src/utils/agentAssembler.ts` | 确保组装时默认使用 `bot` 图标 |
+**文件**: `src/components/settings/ChangePasswordForm.tsx`
+
+**功能**:
+- 输入当前密码验证
+- 新密码强度检查
+- 确认密码匹配
+- 成功后自动登出
+
+**集成位置**: `SettingsDialog.tsx` 安全设置 Tab
+
+#### 3.2.2 两步验证基础框架
+
+**功能范围**:
+- TOTP 验证器支持（Google Authenticator）
+- 备用恢复码生成
+- 登录时二次验证
+
+**依赖**: Supabase MFA API
+
+#### 3.2.3 404 页面中文化
+
+**文件**: `src/pages/NotFound.tsx`
+
+**修改内容**:
+```tsx
+// 修改前
+<p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
+<a href="/" className="text-primary underline">Return to Home</a>
+
+// 修改后
+<p className="mb-4 text-xl text-muted-foreground">抱歉，页面不存在</p>
+<Button asChild><a href="/">返回首页</a></Button>
+```
+
+#### 3.2.4 数据导出功能
+
+**功能**:
+- 导出用户智能体配置（JSON）
+- 导出对话历史（Markdown/JSON）
+- 导出知识库文档
+
+**位置**: 个人设置 → 数据管理
 
 ---
 
-## 详细修改
+### 阶段三：功能完善清单
 
-### 1. `useInvisibleBuilder.ts` - 统一使用 Bot 图标
+#### 3.3.1 认证模块
 
-```typescript
-// 修改 generateRandomAvatar 函数
-function generateRandomAvatar(description: string): AgentAvatar {
-  // 颜色关键词映射（保留颜色差异化以区分功能）
-  const colorKeywordMap: Record<string, string[]> = {
-    'green': ['客服', '服务', '对话', '聊天', '咨询', '问答'],
-    'blue': ['数据', '分析', '统计', '报表', 'BI'],
-    'cyan': ['代码', '编程', '开发', '程序', '技术'],
-    'amber': ['金融', '财务', '财报', '会计', '银行'],
-    'rose': ['医疗', '健康', '诊断', '医生'],
-    'orange': ['教育', '学习', '培训', '课程'],
-    'indigo': ['法律', '合规', '法务', '合同'],
-    'purple': ['设计', '创意', '美工'],
-    'teal': ['翻译', '语言', '多语'],
-    'pink': ['电商', '购物', '商品'],
-  };
-  
-  // 匹配颜色
-  let matchedColorId = 'primary';
-  for (const [colorId, keywords] of Object.entries(colorKeywordMap)) {
-    if (keywords.some(keyword => description.includes(keyword))) {
-      matchedColorId = colorId;
-      break;
-    }
-  }
-  
-  // 始终使用 bot 图标，通过颜色区分功能
-  return { iconId: 'bot', colorId: matchedColorId };
-}
-```
+| 功能 | 状态 | 需要做的 |
+|------|------|----------|
+| 邮箱登录 | ✅ 完成 | - |
+| 邮箱注册 | ✅ 完成 | - |
+| 密码重置 | ✅ 完成 | - |
+| 密码修改 | ❌ 待实现 | 创建表单组件 |
+| 两步验证 | ❌ 待实现 | 集成 TOTP |
+| 账号删除 | ❌ 待实现 | 数据清理流程 |
+| 登录日志 | ✅ 完成 | security_audit_logs |
 
-### 2. `Index.tsx` - 使用 AgentAvatarDisplay 组件
+#### 3.3.2 智能体模块
 
-```typescript
-// 行 173-180 修改
-import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+| 功能 | 状态 | 需要做的 |
+|------|------|----------|
+| 对话式创建 | ✅ 完成 | - |
+| 模板创建 | ✅ 完成 | - |
+| 技能配置 | ✅ 完成 | - |
+| 知识库挂载 | ✅ 完成 | - |
+| MCP 工具 | ✅ 完成 | - |
+| 部署发布 | ✅ 完成 | - |
+| 版本管理 | ⚠️ 部分 | 添加快照恢复 UI |
+| API 访问 | ✅ 完成 | - |
+| 使用统计 | ✅ 完成 | - |
 
-// 在卡片渲染中
-const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
+#### 3.3.3 对话运行时
 
-<div className="w-12 h-12 rounded-xl overflow-hidden">
-  <AgentAvatarDisplay 
-    avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
-    size="lg" 
-  />
-</div>
-```
+| 功能 | 状态 | 需要做的 |
+|------|------|----------|
+| 流式响应 | ✅ 完成 | - |
+| 多模态输入 | ✅ 完成 | - |
+| 文件上传 | ✅ 完成 | - |
+| 语音输入 | ✅ 完成 | - |
+| 对话历史 | ✅ 完成 | - |
+| 分享功能 | ✅ 完成 | - |
+| 记忆管理 | ✅ 完成 | - |
+| 消费者模式 | ❌ 待实现 | ConsumerRuntime |
 
-### 3. `AgentGridList.tsx` - 移除 DiceBear 回退
+#### 3.3.4 知识库模块
 
-```typescript
-// 行 86-96 修改
-<div className="relative w-12 h-12 rounded-xl overflow-hidden">
-  <AgentAvatarDisplay 
-    avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
-    size="lg" 
-  />
-  {/* Hover overlay */}
-  ...
-</div>
-```
+| 功能 | 状态 | 需要做的 |
+|------|------|----------|
+| 创建知识库 | ✅ 完成 | - |
+| 文档上传 | ✅ 完成 | - |
+| 分片处理 | ✅ 完成 | - |
+| 向量检索 | ✅ 完成 | - |
+| 图谱可视化 | ✅ 完成 | - |
+| 删除知识库 | ⚠️ 部分 | 添加确认弹窗 |
+| 批量导入 | ❌ 待实现 | ZIP 解压导入 |
 
-### 4. `agentAssembler.ts` - 默认 bot 图标
+#### 3.3.5 钱包与支付
 
-```typescript
-// 行 487 和 566
-avatar: { iconId: 'bot', colorId: 'primary' },
-```
+| 功能 | 状态 | 需要做的 |
+|------|------|----------|
+| 余额显示 | ✅ 完成 | - |
+| 交易记录 | ✅ 完成 | - |
+| 充值界面 | ✅ 完成 | - |
+| Stripe 集成 | ❌ 待实现 | 完成支付流程 |
+| 技能消费 | ✅ 完成 | - |
+| 创作者收益 | ✅ 完成 | - |
 
----
+#### 3.3.6 社交与社区
 
-## 预期效果
-
-修改后：
-- 所有新生成的智能体将使用 `Bot` 机器人图标
-- 通过不同颜色区分功能类别：
-  - 🟢 绿色 - 客服对话类
-  - 🔵 蓝色 - 数据分析类
-  - 🟡 琥珀色 - 金融财务类
-  - 🔴 玫红色 - 医疗健康类
-  - 等等...
-- 编辑器和消费者视图使用统一的头像显示组件
+| 功能 | 状态 | 需要做的 |
+|------|------|----------|
+| 排行榜 | ✅ 完成 | - |
+| 关注系统 | ✅ 完成 | - |
+| 成就系统 | ✅ 完成 | - |
+| 挑战活动 | ✅ 完成 | - |
+| 邀请系统 | ✅ 完成 | - |
 
 ---
 
-## 工时估算
+## 四、技术债务清理
 
-| 任务 | 工时 |
+### 4.1 代码清理任务
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 清理 TODO | `Foundry.tsx` | Python 模板中的 TODO |
+| 清理 TODO | `LowCodeConfigurator.tsx` | Python 模板中的 TODO |
+| 移除调试代码 | 全局 | 确认无遗留 console.log |
+| 类型完善 | 多处 `as any` | 添加正确类型定义 |
+
+### 4.2 测试覆盖
+
+**现有测试文件**:
+- `memoryTests.ts` - 记忆系统测试
+- `metaBuilderTests.ts` - 构建器测试
+- `safetyTests.ts` - 安全测试
+- `stressTests.ts` - 压力测试
+- `syncTests.ts` - 同步测试
+
+**需要补充**:
+- 认证流程端到端测试
+- 支付流程测试
+- 知识库上传测试
+- 对话流程测试
+
+---
+
+## 五、上线前检查清单
+
+### 5.1 安全检查
+
+- [ ] 启用 Supabase 泄露密码保护
+- [ ] 确认所有 RLS 策略正确
+- [ ] API Key 加密存储验证
+- [ ] 敏感数据不在前端暴露
+- [ ] CORS 配置正确
+- [ ] Rate Limiting 配置
+
+### 5.2 功能检查
+
+- [ ] 注册流程完整
+- [ ] 登录流程完整
+- [ ] 密码重置流程完整
+- [ ] 智能体创建流程完整
+- [ ] 对话功能正常
+- [ ] 文件上传功能正常
+- [ ] 知识库功能正常
+- [ ] 支付流程完整（如启用）
+
+### 5.3 性能检查
+
+- [ ] 页面首屏加载 < 3s
+- [ ] API 响应 < 500ms
+- [ ] 流式响应无明显延迟
+- [ ] 大文件上传进度显示
+
+### 5.4 兼容性检查
+
+- [ ] Chrome 最新版本
+- [ ] Safari 最新版本
+- [ ] Firefox 最新版本
+- [ ] 移动端 Safari
+- [ ] 移动端 Chrome
+
+---
+
+## 六、实施计划
+
+### 第一周：P0 修复
+
+| 天 | 任务 | 工时 |
+|----|------|------|
+| Day 1 | ConsumerRuntime 组件开发 | 4h |
+| Day 1 | 启用泄露密码保护 | 0.5h |
+| Day 2 | Stripe 支付集成 | 6h |
+| Day 3 | 支付回调处理 + 成功页面 | 3h |
+| Day 3 | 邮箱验证流程完善 | 2h |
+
+### 第二周：P1 完善
+
+| 天 | 任务 | 工时 |
+|----|------|------|
+| Day 4 | 密码修改功能 | 3h |
+| Day 4 | 404 页面中文化 | 0.5h |
+| Day 5 | 数据导出功能 | 4h |
+| Day 5 | 错误边界完善 | 2h |
+| Day 6 | 两步验证基础框架 | 4h |
+
+### 第三周：测试与优化
+
+| 天 | 任务 | 工时 |
+|----|------|------|
+| Day 7 | 端到端测试 | 4h |
+| Day 8 | Bug 修复 | 4h |
+| Day 8 | 性能优化 | 3h |
+| Day 9 | 文档完善 | 3h |
+| Day 10 | 最终检查 + 上线准备 | 2h |
+
+---
+
+## 七、预估总工时
+
+| 类别 | 工时 |
 |------|------|
-| 修改 generateRandomAvatar | 0.5h |
-| 更新 Index.tsx 卡片渲染 | 0.5h |
-| 更新 AgentGridList.tsx | 0.5h |
-| 更新 agentAssembler.ts | 0.5h |
-| 测试验证 | 0.5h |
-| **总计** | **~2.5h** |
+| P0 阻断修复 | 15.5h |
+| P1 核心体验 | 13.5h |
+| 测试与优化 | 16h |
+| **总计** | **~45h** |
+
+---
+
+## 八、风险与缓解
+
+| 风险 | 概率 | 影响 | 缓解措施 |
+|------|------|------|----------|
+| Stripe 集成复杂度超预期 | 中 | 高 | 先完成基础流程，高级功能迭代 |
+| 两步验证实现复杂 | 中 | 中 | 先做基础框架，完整功能后续迭代 |
+| 测试覆盖不足 | 低 | 中 | 优先核心流程测试 |
 
