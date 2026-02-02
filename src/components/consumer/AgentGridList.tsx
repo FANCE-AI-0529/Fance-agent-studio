@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { Bot, MessageCircle, Plus, Sparkles } from "lucide-react";
+import { MessageCircle, Plus, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMyAgents } from "@/hooks/useAgents";
-import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 import { cn } from "@/lib/utils";
 
 interface AgentGridListProps {
@@ -24,11 +24,6 @@ export function AgentGridList({ onCreateNew, className }: AgentGridListProps) {
     } else {
       navigate('/builder');
     }
-  };
-
-  const getAvatarUrl = (name: string) => {
-    const seed = name.charCodeAt(0) + (name.charCodeAt(1) || 0);
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}&backgroundColor=1a1a2e`;
   };
 
   if (isLoading) {
@@ -84,16 +79,11 @@ export function AgentGridList({ onCreateNew, className }: AgentGridListProps) {
               )}
             >
               {/* Avatar */}
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-muted/30">
-                {avatar?.iconId ? (
-                  <AgentAvatarDisplay avatar={avatar} size="lg" />
-                ) : (
-                  <img
-                    src={getAvatarUrl(agent.name)}
-                    alt={agent.name}
-                    className="w-full h-full object-cover"
-                  />
-                )}
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden">
+                <AgentAvatarDisplay 
+                  avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
+                  size="lg" 
+                />
                 
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
