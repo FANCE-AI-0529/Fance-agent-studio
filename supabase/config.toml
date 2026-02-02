@@ -92,3 +92,12 @@ verify_jwt = false
 
 [functions.mcp-inspect]
 verify_jwt = false
+
+[functions.workflow-llm-call]
+verify_jwt = false
+
+[functions.workflow-http-request]
+verify_jwt = false
+
+[functions.workflow-code-executor]
+verify_jwt = false

@@ -99,6 +99,59 @@ export const mockDataPresets: Record<string, unknown> = {
       count: 2,
     },
   },
+  
+  // Phase 1: Dify-inspired node mock data
+  llm: {
+    text: "根据分析，用户的需求是查询天气信息。建议使用天气 API 获取实时数据。",
+    structuredOutput: {
+      intent: "weather_query",
+      entities: {
+        location: "上海",
+        time: "明天",
+      },
+    },
+    metadata: {
+      model: "google/gemini-2.5-flash",
+      tokens_used: { prompt: 120, completion: 85 },
+      finish_reason: "stop",
+    },
+  },
+  
+  httpRequest: {
+    success: true,
+    statusCode: 200,
+    body: {
+      data: { temp: 25.5, humidity: 65, city: "Shanghai" },
+      message: "success",
+    },
+    headers: {
+      "content-type": "application/json",
+      "x-request-id": "req_abc123",
+    },
+    error: null,
+  },
+  
+  code: {
+    success: true,
+    result: {
+      processed: true,
+      count: 42,
+      items: ["item1", "item2", "item3"],
+    },
+    logs: ["Processing started...", "Found 42 items", "Processing complete"],
+    executionTime: 15,
+  },
+  
+  parameterExtractor: {
+    extractedParams: {
+      name: "张三",
+      date: "2024-01-15",
+      location: "上海",
+      amount: 1000,
+    },
+    confidence: 0.92,
+    missingParams: [],
+  },
 };
 
 // Get mock data for a specific node type

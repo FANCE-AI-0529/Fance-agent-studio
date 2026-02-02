@@ -77,6 +77,11 @@ import InterventionNode, { InterventionNodeData } from "@/components/builder/nod
 import ManusKernelNode from "@/components/builder/nodes/ManusKernelNode";
 import GeneratedSkillNode from "@/components/builder/nodes/GeneratedSkillNode";
 import PlaceholderNode from "@/components/builder/nodes/PlaceholderNode";
+// Phase 1: Dify-inspired core nodes
+import LLMNode from "@/components/builder/nodes/LLMNode";
+import HTTPRequestNode from "@/components/builder/nodes/HTTPRequestNode";
+import CodeNode from "@/components/builder/nodes/CodeNode";
+import ParameterExtractorNode from "@/components/builder/nodes/ParameterExtractorNode";
 import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
 import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "@/components/builder/edges/ManusLifecycleEdge";
 import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
@@ -129,7 +134,7 @@ import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKno
 import { useAppModeStore } from "@/stores/appModeStore";
 import { NodeTypes, EdgeTypes } from "@xyflow/react";
 
-// Custom node types - including Manus Kernel and Generated Skills
+// Custom node types - including Manus Kernel, Generated Skills, and Dify-inspired nodes
 const nodeTypes: NodeTypes = {
   skill: SkillNode,
   agent: AgentNode,
@@ -144,6 +149,11 @@ const nodeTypes: NodeTypes = {
   manus: ManusKernelNode,
   generatedSkill: GeneratedSkillNode,
   placeholder: PlaceholderNode,
+  // Phase 1: Dify-inspired core nodes
+  llm: LLMNode,
+  httpRequest: HTTPRequestNode,
+  code: CodeNode,
+  parameterExtractor: ParameterExtractorNode,
 };
 
 // Custom edge types - including Manus Lifecycle edge
