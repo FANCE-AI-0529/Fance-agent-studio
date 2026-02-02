@@ -190,7 +190,8 @@ async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
     """
     query = inputs.get("query", "")
     
-    # TODO: 实现实际逻辑
+    # 在此处实现你的业务逻辑
+    # 示例：调用 API、处理数据、执行计算等
     response = f"处理结果: {query}"
     
     return {

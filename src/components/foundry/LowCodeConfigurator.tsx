@@ -227,7 +227,8 @@ async def handle(inputs: Dict[str, Any]) -> Dict[str, Any]:
     """
 ${inputParams}
     
-    # TODO: 实现具体逻辑
+    # 在此处实现你的业务逻辑
+    # 示例：调用外部 API、处理数据、AI 推理等
     result = "处理完成"
     
     return ${outputReturn}
