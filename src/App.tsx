@@ -269,30 +269,34 @@ function AppRoutes() {
   );
 }
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
 const App = () => (
-  <ThemeProvider 
-    attribute="class" 
-    defaultTheme="light" 
-    enableSystem
-    storageKey="theme"
-    disableTransitionOnChange
-  >
-    <LanguageProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <OnboardingProvider>
-                <AppRoutes />
-              </OnboardingProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </LanguageProvider>
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="light" 
+      enableSystem
+      storageKey="theme"
+      disableTransitionOnChange
+    >
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <OnboardingProvider>
+                  <AppRoutes />
+                </OnboardingProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;

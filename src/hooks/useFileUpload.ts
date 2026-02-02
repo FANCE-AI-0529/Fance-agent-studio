@@ -51,12 +51,27 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
   }, []);
 
   const validateFile = useCallback((file: File): string | null => {
+    // File size limit
     if (file.size > maxFileSize) {
-      return `文件 "${file.name}" 超过最大限制 ${Math.round(maxFileSize / 1024 / 1024)}MB`;
+      return `文件 "${file.name}" (${(file.size / 1024 / 1024).toFixed(2)}MB) 超过最大限制 ${Math.round(maxFileSize / 1024 / 1024)}MB`;
     }
+    
+    // File type whitelist
     if (!allowedTypes.includes(file.type)) {
-      return `不支持的文件类型: ${file.type}`;
+      return `不支持的文件类型: ${file.type || '未知类型'}`;
     }
+    
+    // Filename length check
+    if (file.name.length > 255) {
+      return '文件名过长';
+    }
+    
+    // Dangerous file extension check
+    const dangerousExtensions = ['.exe', '.bat', '.sh', '.ps1', '.cmd', '.vbs', '.jar'];
+    if (dangerousExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      return '不允许上传可执行文件';
+    }
+    
     return null;
   }, [maxFileSize, allowedTypes]);
 

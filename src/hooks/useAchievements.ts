@@ -205,17 +205,23 @@ export function getNextAchievement(
 // Hook to log user activity
 export function useLogActivity() {
   const { user } = useAuth();
+  const hasLoggedRef = { current: false };
 
   const logActivity = async () => {
-    if (!user) return;
+    if (!user || hasLoggedRef.current) return;
+    hasLoggedRef.current = true;
     
     try {
-      // Use insert without .select().single() to avoid ON CONFLICT issues
+      const today = new Date().toISOString().split('T')[0];
       await supabase
         .from("user_activity_log")
-        .insert({ user_id: user.id });
-    } catch {
-      // Ignore duplicate key errors (already logged today)
+        .upsert(
+          { user_id: user.id, activity_date: today },
+          { onConflict: 'user_id,activity_date', ignoreDuplicates: true }
+        );
+    } catch (error) {
+      console.error('Activity log failed:', error);
+      hasLoggedRef.current = false; // Allow retry on error
     }
   };
 
