@@ -296,6 +296,14 @@
     background-clip: text;
   }
 
+  /* Brand gradient for hero text - unified across Studio and Consumer */
+  .text-gradient-brand {
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--cognitive)), hsl(263 70% 66%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* Glow effects */
   .glow-primary {
     box-shadow: 0 0 24px hsl(var(--primary) / 0.4);

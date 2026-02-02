@@ -1,25 +1,90 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Smile, HelpCircle, Sparkles, Zap, Heart } from "lucide-react";
+import { 
+  Bot, Smile, HelpCircle, Sparkles, Zap, Heart,
+  // Tech-focused icons (synced with AgentAvatarPicker)
+  CircuitBoard, Network, Terminal, Binary, Satellite, Radar,
+  Atom, AudioWaveform, ScanFace, Workflow, Fingerprint, Eye,
+  Layers, Server, Webhook, Cable, Brain, Cpu, Database, Code,
+  MessageSquare, Globe, Shield, FileText, Search, Settings,
+  Users, Briefcase, Building2, GraduationCap, HeartPulse, Scale,
+  Landmark, Car, Plane, ShoppingCart, Wallet, Calculator,
+  Lightbulb, Microscope, Palette, Music, Camera, Home, Leaf,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Avatar icon options (matching AgentAvatarPicker)
+// Avatar icon options (synced with AgentAvatarPicker for consistency)
 const avatarIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  // Tech icons
+  circuit: CircuitBoard,
+  network: Network,
+  terminal: Terminal,
+  binary: Binary,
+  satellite: Satellite,
+  radar: Radar,
+  atom: Atom,
+  waveform: AudioWaveform,
+  "scan-face": ScanFace,
+  workflow: Workflow,
+  fingerprint: Fingerprint,
+  eye: Eye,
+  layers: Layers,
+  server: Server,
+  webhook: Webhook,
+  cable: Cable,
+  // Core AI icons
   bot: Bot,
+  brain: Brain,
+  cpu: Cpu,
   sparkles: Sparkles,
   zap: Zap,
+  // General icons
+  shield: Shield,
+  globe: Globe,
+  "file-text": FileText,
+  database: Database,
+  code: Code,
+  "message-square": MessageSquare,
+  search: Search,
+  settings: Settings,
+  users: Users,
+  briefcase: Briefcase,
+  building2: Building2,
+  "graduation-cap": GraduationCap,
+  "heart-pulse": HeartPulse,
+  scale: Scale,
+  landmark: Landmark,
+  car: Car,
+  plane: Plane,
+  "shopping-cart": ShoppingCart,
+  wallet: Wallet,
+  calculator: Calculator,
+  lightbulb: Lightbulb,
+  microscope: Microscope,
+  palette: Palette,
+  music: Music,
+  camera: Camera,
+  home: Home,
+  leaf: Leaf,
+  // Legacy fallbacks
   heart: Heart,
   smile: Smile,
   help: HelpCircle,
 };
 
-// Color options with HSL values - using static classes to prevent Tailwind purging
+// Color options using semantic design tokens - matching AgentAvatarPicker colors
 const avatarColors: Record<string, { bg: string; text: string; glow: string; dotBg: string; borderColor: string }> = {
+  primary: { bg: "bg-primary/20", text: "text-primary", glow: "shadow-primary/50", dotBg: "bg-primary", borderColor: "border-primary" },
   blue: { bg: "bg-blue-500/20", text: "text-blue-500", glow: "shadow-blue-500/50", dotBg: "bg-blue-500", borderColor: "border-blue-500" },
-  purple: { bg: "bg-purple-500/20", text: "text-purple-500", glow: "shadow-purple-500/50", dotBg: "bg-purple-500", borderColor: "border-purple-500" },
-  green: { bg: "bg-green-500/20", text: "text-green-500", glow: "shadow-green-500/50", dotBg: "bg-green-500", borderColor: "border-green-500" },
-  orange: { bg: "bg-orange-500/20", text: "text-orange-500", glow: "shadow-orange-500/50", dotBg: "bg-orange-500", borderColor: "border-orange-500" },
+  green: { bg: "bg-emerald-500/20", text: "text-emerald-500", glow: "shadow-emerald-500/50", dotBg: "bg-emerald-500", borderColor: "border-emerald-500" },
+  purple: { bg: "bg-violet-500/20", text: "text-violet-500", glow: "shadow-violet-500/50", dotBg: "bg-violet-500", borderColor: "border-violet-500" },
   pink: { bg: "bg-pink-500/20", text: "text-pink-500", glow: "shadow-pink-500/50", dotBg: "bg-pink-500", borderColor: "border-pink-500" },
+  orange: { bg: "bg-orange-500/20", text: "text-orange-500", glow: "shadow-orange-500/50", dotBg: "bg-orange-500", borderColor: "border-orange-500" },
   cyan: { bg: "bg-cyan-500/20", text: "text-cyan-500", glow: "shadow-cyan-500/50", dotBg: "bg-cyan-500", borderColor: "border-cyan-500" },
+  rose: { bg: "bg-rose-500/20", text: "text-rose-500", glow: "shadow-rose-500/50", dotBg: "bg-rose-500", borderColor: "border-rose-500" },
+  amber: { bg: "bg-amber-500/20", text: "text-amber-500", glow: "shadow-amber-500/50", dotBg: "bg-amber-500", borderColor: "border-amber-500" },
+  indigo: { bg: "bg-indigo-500/20", text: "text-indigo-500", glow: "shadow-indigo-500/50", dotBg: "bg-indigo-500", borderColor: "border-indigo-500" },
+  teal: { bg: "bg-teal-500/20", text: "text-teal-500", glow: "shadow-teal-500/50", dotBg: "bg-teal-500", borderColor: "border-teal-500" },
+  fuchsia: { bg: "bg-fuchsia-500/20", text: "text-fuchsia-500", glow: "shadow-fuchsia-500/50", dotBg: "bg-fuchsia-500", borderColor: "border-fuchsia-500" },
 };
 
 export type AvatarState = "idle" | "thinking" | "speaking" | "listening" | "happy" | "confused";
