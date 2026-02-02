@@ -2948,6 +2948,80 @@ export type Database = {
           },
         ]
       }
+      mcp_execution_logs: {
+        Row: {
+          agent_id: string | null
+          arguments: Json | null
+          created_at: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          result: Json | null
+          server_id: string | null
+          status: string | null
+          tokens_used: number | null
+          tool_name: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          arguments?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          result?: Json | null
+          server_id?: string | null
+          status?: string | null
+          tokens_used?: number | null
+          tool_name: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          arguments?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          result?: Json | null
+          server_id?: string | null
+          status?: string | null
+          tokens_used?: number | null
+          tool_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_execution_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_execution_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "public_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_execution_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "trending_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_execution_logs_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "user_mcp_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_archives: {
         Row: {
           agent_id: string | null
@@ -4974,6 +5048,66 @@ export type Database = {
           follower_id?: string
           following_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      user_mcp_servers: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          env_vars: Json | null
+          id: string
+          inspection_result: Json | null
+          is_active: boolean | null
+          last_inspected_at: string | null
+          name: string
+          runtime: string | null
+          scope: string | null
+          transport_args: string[] | null
+          transport_command: string | null
+          transport_type: string
+          transport_url: string | null
+          updated_at: string | null
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          env_vars?: Json | null
+          id?: string
+          inspection_result?: Json | null
+          is_active?: boolean | null
+          last_inspected_at?: string | null
+          name: string
+          runtime?: string | null
+          scope?: string | null
+          transport_args?: string[] | null
+          transport_command?: string | null
+          transport_type: string
+          transport_url?: string | null
+          updated_at?: string | null
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          env_vars?: Json | null
+          id?: string
+          inspection_result?: Json | null
+          is_active?: boolean | null
+          last_inspected_at?: string | null
+          name?: string
+          runtime?: string | null
+          scope?: string | null
+          transport_args?: string[] | null
+          transport_command?: string | null
+          transport_type?: string
+          transport_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+          version?: string | null
         }
         Relationships: []
       }

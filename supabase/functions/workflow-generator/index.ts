@@ -188,6 +188,53 @@ const LOGIC_PATTERNS = {
   ],
 };
 
+// ========== MCP 工具动作语义匹配映射 ==========
+
+const ACTION_VERB_MAPPING: Record<string, string[]> = {
+  // 邮件类
+  'send_email': ['发送', '邮件', 'email', 'send', '通知', '发邮件', '发信'],
+  'email': ['邮件', 'email', 'mail', '邮箱', '发信'],
+  
+  // 数据库类
+  'query_database': ['查询', '数据库', 'database', 'query', 'SQL', '检索', '搜索'],
+  'query': ['查询', 'query', '搜索', 'search', '检索'],
+  'insert': ['插入', 'insert', '添加', '新增', 'create'],
+  'update': ['更新', 'update', '修改', 'modify', '编辑'],
+  'delete': ['删除', 'delete', '移除', 'remove'],
+  
+  // 代码执行类
+  'execute_code': ['执行', '代码', 'code', 'run', 'script', '运行', '脚本'],
+  'execute': ['执行', 'execute', 'run', '运行'],
+  
+  // 网络请求类
+  'fetch_url': ['获取', '网页', 'fetch', 'url', 'http', '抓取', '爬取'],
+  'fetch': ['获取', 'fetch', 'get', '下载'],
+  'http': ['请求', 'http', 'api', '接口'],
+  
+  // 文件操作类
+  'file_operation': ['文件', '读取', '写入', 'file', 'read', 'write'],
+  'read_file': ['读取', '文件', 'read', 'file', '读文件'],
+  'write_file': ['写入', '文件', 'write', 'file', '写文件', '保存'],
+  
+  // 浏览器类
+  'browser': ['浏览器', 'browser', 'navigate', '导航', '页面', 'playwright'],
+  'screenshot': ['截图', 'screenshot', '截屏', '快照'],
+  'click': ['点击', 'click', '按钮'],
+  
+  // Git 类
+  'git': ['git', 'github', '仓库', '提交', 'commit', 'push', 'pull'],
+  'commit': ['提交', 'commit', '推送'],
+  'clone': ['克隆', 'clone', '复制'],
+  
+  // Slack/通讯类
+  'slack': ['slack', '消息', 'message', '通知'],
+  'notify': ['通知', 'notify', '提醒', 'alert'],
+  
+  // 分析类
+  'analyze': ['分析', 'analyze', '评估', 'assess'],
+  'summarize': ['总结', '摘要', 'summarize', 'summary'],
+};
+
 // ========== 编程意图匹配模式 (Phase 3: OpenCode Intent Routing) ==========
 
 const PROGRAMMING_PATTERNS = {
@@ -1832,6 +1879,13 @@ async function generateWorkflowDSL(
       extractedParams,
     },
   };
+
+  // 应用提取的参数到触发器
+  if (analysis.triggerType === 'schedule' && extractedParams.cronExpression) {
+    dsl.trigger.config = { cronExpression: extractedParams.cronExpression };
+  } else if (analysis.triggerType === 'webhook' && extractedParams.webhookUrl) {
+    dsl.trigger.config = { webhookUrl: extractedParams.webhookUrl };
+  }
 
   // 应用提取的参数到触发器
   if (analysis.triggerType === 'schedule' && extractedParams.cronExpression) {

@@ -329,11 +329,12 @@ async function syncMCPTools(
     descriptionsEnhanced: 0,
   };
 
+  // 1. 从 skills 表同步 origin='mcp' 的工具
   let query = supabase.from('skills').select('*').eq('author_id', userId).eq('origin', 'mcp');
   if (assetId) query = query.eq('id', assetId);
 
   const { data: mcpSkills, error } = await query;
-  if (error) { result.errors.push(`Failed to fetch MCP tools: ${error.message}`); return result; }
+  if (error) { result.errors.push(`Failed to fetch MCP tools from skills: ${error.message}`); }
 
   for (const mcp of (mcpSkills || []) as Record<string, unknown>[]) {
     try {
@@ -396,7 +397,158 @@ async function syncMCPTools(
       result.errors.push(`Error processing MCP ${mcp.name}: ${msg}`); 
     }
   }
+
+  // 2. 从 user_mcp_servers 表同步用户配置的 MCP 服务器工具
+  const { data: mcpServers, error: serversError } = await supabase
+    .from('user_mcp_servers')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_active', true);
+
+  if (serversError) {
+    result.errors.push(`Failed to fetch MCP servers: ${serversError.message}`);
+  }
+
+  for (const server of (mcpServers || []) as Record<string, unknown>[]) {
+    try {
+      // 从 inspection_result 中提取工具列表
+      const inspectionResult = server.inspection_result as {
+        tools?: Array<{
+          name: string;
+          description?: string;
+          inputSchema?: Record<string, unknown>;
+        }>;
+      } | null;
+
+      if (!inspectionResult?.tools || inspectionResult.tools.length === 0) {
+        continue;
+      }
+
+      for (const tool of inspectionResult.tools) {
+        const assetId = `${server.id}::${tool.name}`;
+        const description = tool.description || `MCP Tool: ${tool.name}`;
+
+        let embedding: number[] | null = null;
+        if (generateEmbeddingsFlag) {
+          const textForEmbedding = `${tool.name} ${description} ${server.name}`;
+          embedding = await generateEmbedding(textForEmbedding);
+          if (embedding) result.embeddingsGenerated++;
+        }
+
+        const mcpCapabilities = extractCapabilitiesFromToolSchema(tool);
+        const mcpSlotType = inferSlotType('mcp_tool', tool.name, description, mcpCapabilities);
+        const mcpIoSpec = {
+          input: {
+            type: 'object',
+            properties: tool.inputSchema?.properties || {},
+          },
+          output: {
+            type: 'object',
+            properties: {},
+          },
+        };
+        const riskLevel = assessToolRisk(tool.name, description);
+
+        const indexEntry = {
+          asset_type: 'mcp_tool',
+          asset_id: assetId,
+          name: tool.name,
+          description: description,
+          category: 'mcp',
+          capabilities: mcpCapabilities,
+          input_schema: tool.inputSchema || {},
+          output_schema: {},
+          risk_level: riskLevel,
+          metadata: {
+            mcpServerId: server.id,
+            mcpServerName: server.name,
+            transportType: server.transport_type,
+            transportUrl: server.transport_url,
+          },
+          embedding: embedding ? JSON.stringify(embedding) : null,
+          is_active: true,
+          user_id: userId,
+          slot_type: mcpSlotType,
+          io_spec: mcpIoSpec,
+          tags: extractToolTags(tool.name, description),
+        };
+
+        const { error: upsertError } = await supabase.from('asset_semantic_index').upsert(
+          indexEntry,
+          { onConflict: 'asset_type,asset_id,user_id' }
+        );
+
+        if (upsertError) {
+          result.errors.push(`Failed to sync MCP tool ${tool.name}: ${upsertError.message}`);
+        } else {
+          result.synced++;
+          result.assets.push({ id: assetId, name: tool.name, type: 'mcp_tool' });
+        }
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown';
+      result.errors.push(`Error processing MCP server ${server.name}: ${msg}`);
+    }
+  }
+
   return result;
+}
+
+// 从工具 schema 提取能力标签
+function extractCapabilitiesFromToolSchema(tool: { name: string; description?: string; inputSchema?: Record<string, unknown> }): string[] {
+  const capabilities: string[] = [];
+  const text = `${tool.name} ${tool.description || ''}`.toLowerCase();
+
+  const capabilityPatterns: Record<string, RegExp> = {
+    '查询': /query|search|find|get|fetch|retrieve|list/i,
+    '发送': /send|post|publish|emit|notify|email|message/i,
+    '生成': /generate|create|produce|make|build/i,
+    '分析': /analyze|parse|evaluate|assess/i,
+    '存储': /save|store|persist|write|upload/i,
+    '删除': /delete|remove|erase|drop/i,
+    '更新': /update|modify|change|alter|edit/i,
+    '执行': /execute|run|invoke|call/i,
+    '浏览器': /navigate|click|screenshot|browser|playwright/i,
+    '数据库': /sql|database|query|insert|table/i,
+    '文件': /file|read|write|directory|path/i,
+  };
+
+  for (const [capability, pattern] of Object.entries(capabilityPatterns)) {
+    if (pattern.test(text)) {
+      capabilities.push(capability);
+    }
+  }
+
+  return capabilities.length > 0 ? capabilities : ['通用'];
+}
+
+// 评估工具风险等级
+function assessToolRisk(name: string, description: string): 'low' | 'medium' | 'high' {
+  const text = `${name} ${description}`.toLowerCase();
+
+  if (/delete|remove|drop|destroy|payment|transfer|execute|admin/i.test(text)) {
+    return 'high';
+  }
+  if (/update|modify|send|post|write|create|insert/i.test(text)) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+// 提取工具操作标签
+function extractToolTags(name: string, description: string): string[] {
+  const tags: string[] = [];
+  const text = `${name} ${description}`.toLowerCase();
+
+  if (/read|get|fetch|query|search|list/i.test(text)) tags.push('read');
+  if (/write|create|insert|update|delete/i.test(text)) tags.push('write');
+  if (/send|post|publish|notify|email/i.test(text)) tags.push('send');
+  if (/execute|run|invoke/i.test(text)) tags.push('execute');
+  if (/browser|navigate|click/i.test(text)) tags.push('browser');
+  if (/database|sql/i.test(text)) tags.push('database');
+  if (/file|directory/i.test(text)) tags.push('filesystem');
+
+  return tags;
 }
 
 // ========== 知识库意图映射 (Knowledge Intent Map) ==========
