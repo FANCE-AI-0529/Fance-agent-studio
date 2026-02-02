@@ -652,7 +652,7 @@ function extractAgentName(description: string): string {
 
 /**
  * 硬编码规范化智能体名称
- * 强制输出格式：2-6个核心字 + "智能体" 后缀
+ * 输出格式：核心名称智能体 · 功能标签
  * 支持中英文自适应
  */
 function normalizeAgentName(rawName: string, description: string): string {
@@ -722,8 +722,47 @@ function normalizeAgentName(rawName: string, description: string): string {
   // 检测是否为纯英文输入，如果是则使用 "Agent" 后缀
   const isEnglishOnly = /^[a-zA-Z\s]+$/.test(coreName);
   const suffix = isEnglishOnly ? ' Agent' : '智能体';
+  const baseName = `${coreName}${suffix}`;
   
-  return `${coreName}${suffix}`;
+  // 新增：提取功能标签
+  const featureTag = extractFeatureTag(description);
+  
+  // 格式：核心名称智能体 · 功能标签（限制总长度20字符）
+  if (featureTag && baseName.length + featureTag.length + 3 <= 20) {
+    return `${baseName} · ${featureTag}`;
+  }
+  
+  return baseName;
+}
+
+/**
+ * 从描述中提取功能标签
+ */
+function extractFeatureTag(description: string): string | null {
+  if (!description) return null;
+  
+  const tagPatterns = [
+    { pattern: /规划|定制|安排|行程/, tag: '智能规划' },
+    { pattern: /分析|洞察|解读|报表/, tag: '数据洞察' },
+    { pattern: /多语|翻译|双语|语言/, tag: '多语言' },
+    { pattern: /自动化|批量|效率|自动/, tag: '自动化' },
+    { pattern: /创作|写作|文案|内容/, tag: '内容创作' },
+    { pattern: /问答|对话|客服|咨询/, tag: '智能问答' },
+    { pattern: /代码|编程|开发|调试/, tag: '代码生成' },
+    { pattern: /搜索|检索|查询|调研/, tag: '信息检索' },
+    { pattern: /设计|创意|美工|UI/, tag: '创意设计' },
+    { pattern: /财务|会计|财报|金融/, tag: '财务分析' },
+    { pattern: /医疗|健康|诊断|医学/, tag: '医疗咨询' },
+    { pattern: /法律|合规|法务|合同/, tag: '法律咨询' },
+  ];
+  
+  for (const { pattern, tag } of tagPatterns) {
+    if (pattern.test(description)) {
+      return tag;
+    }
+  }
+  
+  return null;
 }
 
 // Helper: Extract capabilities from description and config

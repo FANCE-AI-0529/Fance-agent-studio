@@ -183,16 +183,11 @@ export default function ConsumerHome() {
             }} transition={{
               delay: 0.2
             }} className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
-                  <span className="from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent bg-[role-engineer-border] bg-cognitive">
+                  <span className="text-foreground">
                     构建你的
                   </span>
                   <br />
-                  <span 
-                    className="bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage: 'linear-gradient(to right, #3b82f6, #8b5cf6, #a855f7)'
-                    }}
-                  >
+                  <span className="text-gradient-brand">
                     智能数字员工
                   </span>
                 </motion.h1>
