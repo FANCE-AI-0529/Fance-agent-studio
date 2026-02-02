@@ -590,6 +590,81 @@ function extractLatestUserMessage(messages: ChatMessage[]): string {
 }
 
 /**
+ * 🆕 执行 MCP 工具调用
+ * 当 LLM 返回 tool_calls 时，识别 mcp_ 前缀的调用并执行
+ */
+interface ToolCall {
+  id: string;
+  type: string;
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+interface MCPToolResult {
+  toolCallId: string;
+  result: unknown;
+  error?: string;
+}
+
+async function executeMCPToolCalls(
+  supabase: any,
+  userId: string,
+  toolCalls: ToolCall[]
+): Promise<MCPToolResult[]> {
+  const mcpCalls = toolCalls.filter(tc => tc.function.name.startsWith('mcp_'));
+  
+  if (mcpCalls.length === 0) {
+    return [];
+  }
+  
+  console.log(`[agent-chat][MCP] Executing ${mcpCalls.length} MCP tool calls`);
+  
+  const results: MCPToolResult[] = [];
+  
+  for (const call of mcpCalls) {
+    try {
+      const toolArgs = JSON.parse(call.function.arguments || '{}');
+      
+      console.log(`[agent-chat][MCP] Invoking tool: ${call.function.name}`, toolArgs);
+      
+      const { data, error } = await supabase.functions.invoke('mcp-executor', {
+        body: {
+          userId,
+          toolName: call.function.name,
+          toolArguments: toolArgs,
+        },
+      });
+      
+      if (error) {
+        console.error(`[agent-chat][MCP] Tool ${call.function.name} failed:`, error);
+        results.push({
+          toolCallId: call.id,
+          result: null,
+          error: error.message || 'MCP 工具执行失败',
+        });
+      } else {
+        console.log(`[agent-chat][MCP] Tool ${call.function.name} succeeded:`, data);
+        results.push({
+          toolCallId: call.id,
+          result: data?.result || data,
+        });
+      }
+    } catch (err) {
+      console.error(`[agent-chat][MCP] Tool ${call.function.name} error:`, err);
+      results.push({
+        toolCallId: call.id,
+        result: null,
+        error: err instanceof Error ? err.message : '工具执行异常',
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
  * 主服务入口
  */
 serve(async (req) => {
@@ -684,8 +759,9 @@ serve(async (req) => {
     // [工具]：构建 Function Calling 定义
     const tools = buildToolDefinitions(validatedConfig);
     const hasTools = tools.length > 0;
+    const hasMCPTools = tools.some(t => t.function.name.startsWith('mcp_'));
     
-    console.log(`[agent-chat] Tools available: ${tools.length}`, tools.map(t => t.function.name));
+    console.log(`[agent-chat] Tools available: ${tools.length}, MCP tools: ${hasMCPTools}`, tools.map(t => t.function.name));
 
     // [请求体]：构建 API 请求
     const requestBody: Record<string, unknown> = {
@@ -699,7 +775,85 @@ serve(async (req) => {
       requestBody.tool_choice = 'auto';
     }
 
-    // [调用]：发送请求到 AI Gateway
+    // 🆕 [MCP 工具调用检测]：如果有 MCP 工具，先做非流式请求检测 tool_calls
+    if (hasMCPTools) {
+      console.log(`[agent-chat][MCP] Checking for tool calls with non-streaming request first`);
+      
+      const checkResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...requestBody, stream: false }),
+      });
+      
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        const toolCalls = checkData.choices?.[0]?.message?.tool_calls;
+        
+        if (toolCalls && toolCalls.length > 0) {
+          const mcpCalls = toolCalls.filter((tc: ToolCall) => tc.function.name.startsWith('mcp_'));
+          
+          if (mcpCalls.length > 0) {
+            console.log(`[agent-chat][MCP] Found ${mcpCalls.length} MCP tool calls, executing...`);
+            
+            // 执行 MCP 工具
+            const toolResults = await executeMCPToolCalls(supabase, user.id, toolCalls);
+            
+            // 构建包含工具结果的消息
+            const messagesWithToolResults: ChatMessage[] = [
+              ...apiMessages,
+              { 
+                role: "assistant", 
+                content: checkData.choices[0].message.content || "",
+              } as ChatMessage,
+            ];
+            
+            // 注入工具结果 (使用 function role for compatibility)
+            for (const tr of toolResults) {
+              messagesWithToolResults.push({
+                role: "assistant",
+                content: tr.error 
+                  ? `工具执行失败: ${tr.error}` 
+                  : `工具执行结果: ${JSON.stringify(tr.result)}`,
+              } as ChatMessage);
+            }
+            
+            // 继续对话获取最终响应（流式）
+            console.log(`[agent-chat][MCP] Getting final response with tool results`);
+            
+            const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model,
+                messages: messagesWithToolResults,
+                stream: true,
+              }),
+            });
+            
+            if (!finalResponse.ok) {
+              console.error(`[agent-chat][MCP] Final response failed:`, finalResponse.status);
+              throw new Error('AI 服务响应失败');
+            }
+            
+            console.log(`[agent-chat][MCP] Streaming final response with tool results`);
+            return new Response(finalResponse.body, {
+              headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+            });
+          }
+        }
+      }
+      
+      // 如果没有 tool_calls 或者检测失败，继续正常流程
+      console.log(`[agent-chat][MCP] No MCP tool calls detected, proceeding with normal flow`);
+    }
+
+    // [调用]：发送请求到 AI Gateway（标准流式响应）
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
