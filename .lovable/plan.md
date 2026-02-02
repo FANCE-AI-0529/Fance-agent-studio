@@ -1,429 +1,540 @@
 
 
-# 阶段二/三实施计划：MCP 运行时执行集成 + 前端管理面板
+# 多 LLM 供应商支持 - 统一模型基座架构改造
 
 ---
 
-## 实施概述
+## 问题分析
 
-本计划将完成 MCP 优化的阶段二和阶段三，核心目标：
+### 当前架构的核心问题
 
-1. **agent-chat 集成 MCP 执行**：当 LLM 返回 `tool_calls` 时，自动识别 `mcp_` 前缀的调用并执行
-2. **MCPServerManager 管理面板**：允许用户配置和管理自己的 MCP Server
-3. **生成器 MCP 预选功能**：在 AI 生成器的高级选项中添加 MCP 工具预选
+通过深入代码审查，发现以下问题导致用户无法灵活使用自己的 API Key 作为模型基座：
 
----
-
-## 第一部分：agent-chat 集成 MCP 执行
-
-### 当前问题
-
-`agent-chat/index.ts` 目前的流程：
-1. 构建 `buildToolDefinitions()` 将 MCP 工具转为 Function Calling 定义 ✅
-2. 将工具定义发送给 LLM ✅
-3. 返回流式响应，但**没有处理 tool_calls** ❌
-
-当 LLM 返回 `tool_calls` 时，需要：
-- 识别 `mcp_` 前缀的调用
-- 调用 `mcp-executor` 边缘函数执行
-- 将执行结果注入上下文继续对话
-
-### 解决方案
-
-需要修改为**非流式模式**处理工具调用，然后再切换回流式模式：
+### 问题 1：边缘函数硬编码 Lovable AI
 
 ```text
-用户消息 → LLM (支持工具)
-              ↓
-         检测 tool_calls?
-              ↓ Yes
-         调用 mcp-executor
-              ↓
-         注入工具结果到消息
-              ↓
-         再次调用 LLM (获取最终回复)
-              ↓
-         返回流式响应
+位置: supabase/functions/agent-chat/index.ts (行 782, 826, 857)
+现状: 直接调用 "https://ai.gateway.lovable.dev/v1/chat/completions"
+      使用硬编码的 LOVABLE_API_KEY
+
+问题: 
+  1. 完全绕过了 llm-gateway 的供应商解析逻辑
+  2. 用户配置的 OpenAI/Anthropic/Google 供应商无法生效
+  3. 管理员设置的全局默认供应商被忽略
 ```
 
-### 修改内容
+### 问题 2：llm-gateway 未被实际使用
+
+```text
+位置: supabase/functions/llm-gateway/index.ts
+现状: 已实现完整的供应商优先级解析和多供应商 Fallback
+      - Priority 1: 指定 provider_id
+      - Priority 2: Agent + Module 配置
+      - Priority 3: 用户默认供应商
+      - Priority 4: 管理员全局供应商
+      - Priority 5: Lovable AI 兜底
+
+问题: 
+  1. agent-chat 等核心函数未调用此网关
+  2. 流式响应未被正确处理
+  3. 前端 hooks 未实际使用
+```
+
+### 问题 3：其他边缘函数同样硬编码
+
+```text
+受影响函数:
+  - supabase/functions/streaming-generator/index.ts
+  - supabase/functions/workflow-generator/index.ts
+  - supabase/functions/agent-config-generator/index.ts
+  - supabase/functions/task-executor/index.ts
+  - supabase/functions/rag-query/index.ts
+  - supabase/functions/rag-ingest/index.ts
+  - 以及 10+ 其他函数
+
+所有这些函数都直接使用 LOVABLE_API_KEY 调用 Lovable AI Gateway
+```
+
+### 问题 4：设置入口仅限管理员
+
+```text
+位置: src/components/settings/SettingsDialog.tsx (行 186-190)
+现状: "模型配置" Tab 仅对 isAdmin 用户显示
+
+问题: 
+  1. 普通用户无法配置自己的 API 供应商
+  2. 权限模型不清晰（谁能配置什么）
+```
+
+---
+
+## 技术架构设计
+
+### 目标架构
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    前端应用                                   │
+├─────────────────────────────────────────────────────────────┤
+│  SettingsDialog                                             │
+│    └── ModelProviderSettings (新增，所有用户可用)             │
+│          ├── 我的供应商列表                                  │
+│          ├── 添加/编辑供应商 (支持 API Key 加密存储)          │
+│          └── 设置默认供应商                                  │
+│                                                             │
+│  GlobalModelSettings (管理员专用)                            │
+│          └── 全局默认供应商配置                              │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    llm-gateway (统一入口)                    │
+├─────────────────────────────────────────────────────────────┤
+│  供应商解析优先级:                                           │
+│    1. 请求指定的 provider_id                                │
+│    2. Agent + Module 级配置                                 │
+│    3. 用户个人默认供应商                                     │
+│    4. 管理员全局默认供应商                                   │
+│    5. Lovable AI Gateway (最终兜底)                         │
+│                                                             │
+│  功能:                                                       │
+│    - 多供应商格式适配 (OpenAI/Anthropic/Google/Azure)        │
+│    - 流式响应透传                                           │
+│    - 失败自动 Fallback                                       │
+│    - 用量统计 & 日志                                         │
+└─────────────────────────────────────────────────────────────┘
+                            │
+         ┌──────────────────┼──────────────────┐
+         ▼                  ▼                  ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  OpenAI     │    │  Anthropic  │    │  Google AI  │
+│  (用户Key)   │    │  (用户Key)   │    │  (用户Key)   │
+└─────────────┘    └─────────────┘    └─────────────┘
+         │                  │                  │
+         └──────────────────┼──────────────────┘
+                            ▼
+                    ┌─────────────┐
+                    │ Lovable AI  │
+                    │  (兜底)      │
+                    └─────────────┘
+```
+
+---
+
+## 详细开发任务
+
+### 阶段一：边缘函数统一调用 llm-gateway (P0)
+
+#### 任务 1.1：增强 llm-gateway 支持流式响应
+
+**文件**: `supabase/functions/llm-gateway/index.ts`
+
+**改动内容**:
+- 当 `stream: true` 时，直接透传供应商的流式响应
+- 添加更完善的错误处理和 Fallback 逻辑
+- 支持内部调用（无需 auth header，使用 service role）
+
+**核心代码逻辑**:
+```typescript
+// 流式响应处理
+if (options.stream) {
+  const response = await fetch(provider.api_endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(requestBody),
+  });
+  
+  if (!response.ok) {
+    // 触发 Fallback 到下一个供应商
+    throw new Error(`Provider ${provider.name} failed: ${response.status}`);
+  }
+  
+  return new Response(response.body, {
+    headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+  });
+}
+```
+
+#### 任务 1.2：agent-chat 改用 llm-gateway
 
 **文件**: `supabase/functions/agent-chat/index.ts`
 
-**新增函数**: `executeMCPToolCalls()`
+**改动内容**:
+- 移除直接调用 Lovable AI Gateway 的代码
+- 改为调用 `llm-gateway` 边缘函数
+- 传递 `agent_id` 和 `module_type` 以支持细粒度配置
 
-功能说明：
-- 接收 LLM 返回的 `tool_calls` 数组
-- 筛选 `mcp_` 前缀的调用
-- 调用 `mcp-executor` 执行
-- 返回工具执行结果
+**改动位置**: 行 782-864 (所有 fetch 调用)
 
-**主流程修改**:
-
-1. 首次请求使用**非流式**模式（检测是否有工具调用）
-2. 如果有 MCP 工具调用，执行工具并注入结果
-3. 继续对话获取最终回复，使用**流式**模式返回
-
-**关键代码逻辑**:
-
+**核心代码逻辑**:
 ```typescript
-// 1. 首次请求（非流式，检测工具调用）
-const firstResponse = await fetch(AI_GATEWAY_URL, {
-  body: JSON.stringify({ ...requestBody, stream: false }),
-});
-const firstData = await firstResponse.json();
+// 替换硬编码调用
+// 旧: fetch("https://ai.gateway.lovable.dev/v1/chat/completions", ...)
+// 新: 调用 llm-gateway
 
-// 2. 检查是否有工具调用
-const toolCalls = firstData.choices?.[0]?.message?.tool_calls;
-if (toolCalls && toolCalls.length > 0) {
-  const mcpCalls = toolCalls.filter(c => c.function.name.startsWith('mcp_'));
-  
-  if (mcpCalls.length > 0) {
-    // 3. 执行 MCP 工具
-    const toolResults = await Promise.all(mcpCalls.map(async (call) => {
-      const { data } = await supabase.functions.invoke('mcp-executor', {
-        body: {
-          userId: user.id,
-          toolName: call.function.name,
-          toolArguments: JSON.parse(call.function.arguments || '{}'),
-        },
-      });
-      return { id: call.id, result: data };
-    }));
-    
-    // 4. 注入工具结果，继续对话
-    const updatedMessages = [
-      ...apiMessages,
-      { role: 'assistant', content: null, tool_calls: toolCalls },
-      ...toolResults.map(tr => ({
-        role: 'tool',
-        tool_call_id: tr.id,
-        content: JSON.stringify(tr.result),
-      })),
-    ];
-    
-    // 5. 最终请求（流式）
-    const finalResponse = await fetch(AI_GATEWAY_URL, {
-      body: JSON.stringify({ ...requestBody, messages: updatedMessages, stream: true }),
-    });
-    return new Response(finalResponse.body, { headers: streamHeaders });
-  }
-}
-
-// 6. 无工具调用，直接返回首次响应的流式版本
-const streamResponse = await fetch(AI_GATEWAY_URL, { ...requestBody, stream: true });
-return new Response(streamResponse.body, { headers: streamHeaders });
-```
-
----
-
-## 第二部分：MCPServerManager 管理面板
-
-### 功能设计
-
-创建 `src/components/settings/MCPServerManager.tsx`：
-
-1. **服务器列表**：展示用户配置的所有 MCP Server
-2. **添加服务器**：支持 HTTP/SSE/stdio 三种传输方式
-3. **探测能力**：一键获取服务器的工具列表
-4. **编辑/删除**：管理现有配置
-5. **使用统计**：显示调用次数和最后使用时间
-
-### UI 设计
-
-```text
-┌────────────────────────────────────────────────────────┐
-│  我的 MCP 服务器                          [+ 添加服务器] │
-├────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ 🌐 OpenAI Tools Server                            │  │
-│  │ HTTP · https://mcp.example.com/v1                 │  │
-│  │ 工具: 5 个 · 最后使用: 2分钟前                     │  │
-│  │                            [探测] [编辑] [删除]   │  │
-│  └──────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ 📧 Email Server                                   │  │
-│  │ SSE · https://email-mcp.example.com/sse           │  │
-│  │ 工具: 3 个 · 未使用                               │  │
-│  │                            [探测] [编辑] [删除]   │  │
-│  └──────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ 💻 本地代码执行器                                 │  │
-│  │ stdio · npx mcp-code-executor                     │  │
-│  │ ⚠️ 需要本地运行环境                               │  │
-│  │                            [探测] [编辑] [删除]   │  │
-│  └──────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
-```
-
-### 添加服务器对话框
-
-支持字段：
-- 名称（必填）
-- 传输类型（HTTP/SSE/stdio）
-- URL 或命令（根据类型）
-- 参数（可选）
-- 环境变量（可选）
-- 描述（可选）
-
-### 组件结构
-
-```typescript
-// MCPServerManager.tsx 主要结构
-
-interface MCPServerManagerProps {
-  onServerChange?: () => void;  // 服务器变更回调
-}
-
-// 主组件
-export function MCPServerManager({ onServerChange }: MCPServerManagerProps) {
-  // 获取用户的 MCP 服务器列表
-  const { data: servers, isLoading, refetch } = useQuery({
-    queryKey: ['user-mcp-servers', userId],
-    queryFn: () => supabase.from('user_mcp_servers').select('*').eq('user_id', userId),
-  });
-
-  // 添加服务器
-  const addServer = useMutation({...});
-  
-  // 更新服务器
-  const updateServer = useMutation({...});
-  
-  // 删除服务器
-  const deleteServer = useMutation({...});
-  
-  // 探测服务器能力
-  const inspectServer = async (serverId: string) => {
-    await supabase.functions.invoke('mcp-inspect', { body: { serverId } });
-    refetch();
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between">
-          <CardTitle>我的 MCP 服务器</CardTitle>
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus /> 添加服务器
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* 服务器列表 */}
-        {servers?.map(server => (
-          <MCPServerCard 
-            key={server.id} 
-            server={server}
-            onInspect={() => inspectServer(server.id)}
-            onEdit={() => handleEdit(server)}
-            onDelete={() => deleteServer.mutate(server.id)}
-          />
-        ))}
-      </CardContent>
-      
-      {/* 添加/编辑对话框 */}
-      <AddMCPServerDialog ... />
-    </Card>
-  );
-}
-```
-
-### 集成到设置页面
-
-修改 `src/components/settings/SettingsDialog.tsx`：
-- 添加新的 Tab: "MCP 服务器"
-- 导入并渲染 `MCPServerManager`
-
----
-
-## 第三部分：生成器 MCP 预选功能
-
-### 功能设计
-
-在 `EnhancedAIGenerator.tsx` 的高级选项中添加：
-
-1. **MCP 工具预选下拉框**：列出用户可用的 MCP 工具
-2. **选中的工具优先匹配**：生成时优先使用选中的工具
-3. **传递给 workflow-generator**：通过参数传递预选信息
-
-### UI 修改
-
-在高级选项区域添加：
-
-```text
-┌────────────────────────────────────────────┐
-│ 高级选项                                   │
-├────────────────────────────────────────────┤
-│ 治理策略 (MPLP): [默认模式 ▼]              │
-│                                            │
-│ 最大节点数: ───●─── 10                     │
-│                                            │
-│ [✓] 包含知识库检索                         │
-│ [✓] 自动应用治理策略                        │
-│                                            │
-│ 🆕 指定 MCP 工具:                          │
-│ ┌──────────────────────────────────────┐   │
-│ │ [✓] send_email (Email Server)        │   │
-│ │ [ ] query_database (DB Server)       │   │
-│ │ [✓] fetch_url (HTTP Tools)           │   │
-│ │ [ ] execute_code (Code Runner)       │   │
-│ └──────────────────────────────────────┘   │
-└────────────────────────────────────────────┘
-```
-
-### 代码修改
-
-**文件**: `src/components/builder/EnhancedAIGenerator.tsx`
-
-1. 添加状态：`selectedMCPTools: string[]`
-2. 获取可用 MCP 工具列表
-3. 渲染多选列表
-4. 将选择传递给 `generate()` 函数
-
-```typescript
-// 新增状态
-const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
-
-// 获取用户的 MCP 工具
-const { data: mcpTools } = useQuery({
-  queryKey: ['user-mcp-tools', userId],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('asset_semantic_index')
-      .select('asset_id, name, description, metadata')
-      .eq('user_id', userId)
-      .eq('asset_type', 'mcp_tool')
-      .eq('is_active', true);
-    return data || [];
+const { data: llmResponse, error: llmError } = await supabase.functions.invoke('llm-gateway', {
+  body: {
+    messages: apiMessages,
+    agent_id: agentId,
+    module_type: 'agent_chat',
+    model: requestedModel,
+    stream: true,
+    tools: hasTools ? tools : undefined,
   },
 });
 
-// 传递给生成器
-const result = await generate(desc, {
-  mplpPolicy,
-  includeKnowledge,
-  maxNodes,
-  autoApplyPolicies,
-  enableBuildPlan: true,
-  preferredMCPTools: selectedMCPTools,  // 新增
-});
+// 对于流式响应，直接返回
+if (stream) {
+  // 使用 supabase.functions 的流式调用方式
+  const response = await fetch(`${supabaseUrl}/functions/v1/llm-gateway`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseServiceKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: apiMessages,
+      agent_id: agentId,
+      module_type: 'agent_chat',
+      stream: true,
+    }),
+  });
+  return new Response(response.body, { headers: streamHeaders });
+}
 ```
 
-### workflow-generator 修改
+#### 任务 1.3：其他边缘函数统一改造
 
-**文件**: `supabase/functions/workflow-generator/index.ts`
+**受影响函数列表**:
+| 函数名 | 模块类型 | 优先级 |
+|--------|----------|--------|
+| `streaming-generator` | `skill_generation` | P0 |
+| `workflow-generator` | `workflow_generation` | P0 |
+| `agent-config-generator` | `config_generation` | P1 |
+| `task-executor` | `task_execution` | P1 |
+| `rag-query` | `rag_query` | P1 |
+| `entity-extraction` | `entity_extraction` | P1 |
+| `drift-detection` | `drift_detection` | P2 |
+| `task-delegation` | `task_delegation` | P2 |
 
-接收 `preferredMCPTools` 参数，在资产匹配时给这些工具加分：
-
+**统一改造模式**:
 ```typescript
-// 在 fetchHybridAssetsForBlueprint 中
-if (options.preferredMCPTools?.includes(tool.asset_id)) {
-  tool.similarity = (tool.similarity || 0) + 0.5;  // 提升优先级
+// 创建可复用的 LLM 调用工具函数
+// supabase/functions/_shared/llm-client.ts
+
+export async function callLLM(options: {
+  supabase: SupabaseClient;
+  messages: Array<{ role: string; content: string }>;
+  userId?: string;
+  agentId?: string;
+  moduleType: string;
+  model?: string;
+  stream?: boolean;
+  temperature?: number;
+  maxTokens?: number;
+}) {
+  const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/llm-gateway`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: options.messages,
+      user_id: options.userId,
+      agent_id: options.agentId,
+      module_type: options.moduleType,
+      model: options.model,
+      stream: options.stream ?? false,
+      temperature: options.temperature,
+      max_tokens: options.maxTokens,
+    }),
+  });
+  
+  return response;
 }
+```
+
+---
+
+### 阶段二：用户级供应商管理 (P0)
+
+#### 任务 2.1：创建用户供应商设置组件
+
+**新建文件**: `src/components/settings/ModelProviderSettings.tsx`
+
+**功能**:
+- 列表展示用户配置的 LLM 供应商
+- 添加供应商（选择模板 + 输入 API Key）
+- 编辑/删除供应商
+- 设置用户默认供应商
+- API Key 安全显示（仅显示前后几位）
+
+**UI 设计**:
+```text
+┌────────────────────────────────────────────────────────────┐
+│  模型供应商                                   [+ 添加供应商] │
+├────────────────────────────────────────────────────────────┤
+│  当前默认供应商                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 🟢 使用个人配置: OpenAI GPT-5                         │  │
+│  │    或                                                 │  │
+│  │ 🔵 使用全局默认 (管理员配置)                          │  │
+│  │    或                                                 │  │
+│  │ ⚪ 使用 Lovable AI (免费额度)                         │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                            │
+│  我的供应商                                                 │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ ⭐ OpenAI                                   [默认]     │  │
+│  │ API Key: sk-...7f3d                                   │  │
+│  │ 模型: gpt-5-2025-08-07                               │  │
+│  │                              [测试] [编辑] [删除]     │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │   Anthropic                                           │  │
+│  │ API Key: sk-ant-...8e2a                               │  │
+│  │ 模型: claude-sonnet-4-5                              │  │
+│  │                              [测试] [编辑] [删除]     │  │
+│  └──────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────┘
+```
+
+#### 任务 2.2：API Key 安全存储机制
+
+**新建文件**: `supabase/functions/manage-api-keys/index.ts`
+
+**功能**:
+- 加密存储用户 API Key
+- 验证 API Key 有效性
+- 安全地将 Key 传递给 llm-gateway
+
+**数据库变更**:
+```sql
+-- 添加 api_key_encrypted 字段到 llm_providers 表
+ALTER TABLE public.llm_providers 
+ADD COLUMN IF NOT EXISTS api_key_encrypted TEXT;
+
+-- 添加 api_key_preview 字段 (如 "sk-...7f3d")
+ALTER TABLE public.llm_providers 
+ADD COLUMN IF NOT EXISTS api_key_preview TEXT;
+
+-- 创建 API Key 加密函数
+CREATE OR REPLACE FUNCTION encrypt_api_key(key TEXT) 
+RETURNS TEXT AS $$
+BEGIN
+  -- 使用 pgcrypto 加密
+  RETURN encode(encrypt(key::bytea, current_setting('app.encryption_key')::bytea, 'aes'), 'base64');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### 任务 2.3：集成到设置页面
+
+**文件**: `src/components/settings/SettingsDialog.tsx`
+
+**改动内容**:
+- 添加新的 Tab "模型" 对所有用户可见
+- 保留 "模型配置" Tab 仅管理员可见（用于全局配置）
+- 调整 Tab 布局
+
+**改动位置**: 行 159-191 (TabsList 区域)
+
+---
+
+### 阶段三：llm-gateway 增强 (P1)
+
+#### 任务 3.1：用户 API Key 解密与使用
+
+**文件**: `supabase/functions/llm-gateway/index.ts`
+
+**改动内容**:
+- 从 `llm_providers` 表读取 `api_key_encrypted`
+- 在运行时解密并使用
+- 支持从 Supabase Secrets 和用户加密存储两种方式
+
+**核心逻辑**:
+```typescript
+// 获取 API Key 的优先级
+async function getAPIKey(provider: LLMProvider): Promise<string> {
+  // 1. 如果有加密存储的用户 Key，解密使用
+  if (provider.api_key_encrypted) {
+    return await decryptAPIKey(provider.api_key_encrypted);
+  }
+  
+  // 2. 尝试从 Supabase Secrets 获取 (管理员配置)
+  const secretKey = Deno.env.get(provider.api_key_name);
+  if (secretKey) {
+    return secretKey;
+  }
+  
+  // 3. 如果是 Lovable 供应商，使用默认 Key
+  if (provider.provider_type === 'lovable') {
+    return Deno.env.get('LOVABLE_API_KEY')!;
+  }
+  
+  throw new Error(`API key not found for provider: ${provider.name}`);
+}
+```
+
+#### 任务 3.2：完善 Fallback 链
+
+**文件**: `supabase/functions/llm-gateway/index.ts`
+
+**改动内容**:
+- 当首选供应商失败时，自动切换到下一优先级
+- 记录 Fallback 事件
+- 支持配置 Fallback 策略
+
+**核心逻辑**:
+```typescript
+async function callWithFallback(
+  providers: LLMProvider[],
+  request: LLMRequest
+): Promise<Response> {
+  const errors: string[] = [];
+  
+  for (const provider of providers) {
+    try {
+      const response = await callProvider(provider, request);
+      if (response.ok) {
+        return response;
+      }
+      errors.push(`${provider.name}: ${response.status}`);
+    } catch (error) {
+      errors.push(`${provider.name}: ${error.message}`);
+    }
+  }
+  
+  // 所有供应商都失败
+  throw new Error(`All providers failed: ${errors.join(', ')}`);
+}
+```
+
+---
+
+### 阶段四：模块级配置 (P2)
+
+#### 任务 4.1：模块配置 UI
+
+**新建文件**: `src/components/settings/ModuleModelConfig.tsx`
+
+**功能**:
+- 为不同模块配置不同的模型
+- 如：对话用 GPT-5，技能生成用 Gemini Pro
+- 支持 Agent 级别的细粒度配置
+
+**UI 设计**:
+```text
+┌────────────────────────────────────────────────────────────┐
+│  模块模型配置                                               │
+├────────────────────────────────────────────────────────────┤
+│  对话模块:        [OpenAI GPT-5 ▼]                          │
+│  技能生成:        [Gemini 2.5 Pro ▼]                        │
+│  意图检测:        [GPT-5 Mini ▼]                            │
+│  实体抽取:        [使用默认 ▼]                              │
+│  ...                                                        │
+└────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 文件变更清单
 
-| 文件 | 操作 | 说明 |
+### 新建文件
+| 文件路径 | 说明 |
+|----------|------|
+| `src/components/settings/ModelProviderSettings.tsx` | 用户供应商管理面板 |
+| `src/components/settings/ModuleModelConfig.tsx` | 模块级配置 UI |
+| `supabase/functions/_shared/llm-client.ts` | LLM 调用共享工具 |
+| `supabase/functions/manage-api-keys/index.ts` | API Key 管理函数 |
+
+### 修改文件
+| 文件路径 | 改动说明 |
+|----------|----------|
+| `supabase/functions/llm-gateway/index.ts` | 增强流式响应、API Key 解密 |
+| `supabase/functions/agent-chat/index.ts` | 改用 llm-gateway |
+| `supabase/functions/streaming-generator/index.ts` | 改用 llm-gateway |
+| `supabase/functions/workflow-generator/index.ts` | 改用 llm-gateway |
+| `supabase/functions/agent-config-generator/index.ts` | 改用 llm-gateway |
+| `supabase/functions/task-executor/index.ts` | 改用 llm-gateway |
+| `supabase/functions/rag-query/index.ts` | 改用 llm-gateway |
+| `src/components/settings/SettingsDialog.tsx` | 添加模型设置 Tab |
+| `src/hooks/useLLMProviders.ts` | 支持 API Key 加密存储 |
+
+### 数据库变更
+| 表名 | 操作 | 说明 |
 |------|------|------|
-| `supabase/functions/agent-chat/index.ts` | UPDATE | 添加 MCP 工具调用执行逻辑 |
-| `src/components/settings/MCPServerManager.tsx` | CREATE | MCP 服务器管理面板 |
-| `src/components/settings/SettingsDialog.tsx` | UPDATE | 添加 MCP 服务器 Tab |
-| `src/components/builder/EnhancedAIGenerator.tsx` | UPDATE | 添加 MCP 预选功能 |
-| `supabase/functions/workflow-generator/index.ts` | UPDATE | 支持 preferredMCPTools 参数 |
+| `llm_providers` | ALTER | 添加 `api_key_encrypted`, `api_key_preview` 字段 |
+| `llm_usage_logs` | CREATE | 记录 LLM 使用量和费用 |
 
 ---
 
-## 边缘函数部署
+## 实施优先级与工时估算
 
-需要重新部署以下函数：
-- `agent-chat` - 集成 MCP 执行
-- `workflow-generator` - 支持预选参数
-
----
-
-## 技术细节
-
-### MCP 工具调用流程
-
-```text
-用户发送消息
-     │
-     ▼
-┌─────────────────────┐
-│   agent-chat        │
-│   (非流式首次请求)    │
-└─────────────────────┘
-     │
-     ▼
-┌─────────────────────┐
-│  LLM 返回 tool_calls │
-│  包含 mcp_xxx 调用   │
-└─────────────────────┘
-     │
-     ▼
-┌─────────────────────┐
-│   mcp-executor      │
-│   执行工具调用       │
-└─────────────────────┘
-     │
-     ▼
-┌─────────────────────┐
-│   注入执行结果       │
-│   继续对话           │
-└─────────────────────┘
-     │
-     ▼
-┌─────────────────────┐
-│   流式返回最终回复    │
-└─────────────────────┘
-```
-
-### 错误处理
-
-1. **MCP 服务器不可达**：返回降级消息，告知用户工具暂时不可用
-2. **执行超时**：30秒超时，返回超时错误
-3. **认证失败**：返回 401 错误
-
-### 安全考虑
-
-1. **用户隔离**：只能访问自己配置的 MCP 服务器
-2. **RLS 策略**：`user_mcp_servers` 表已配置 RLS
-3. **执行日志**：所有调用记录到 `mcp_execution_logs`
+| 阶段 | 任务 | 优先级 | 工时 |
+|------|------|--------|------|
+| 一 | llm-gateway 流式支持增强 | P0 | 3h |
+| 一 | agent-chat 改用 llm-gateway | P0 | 2h |
+| 一 | 其他函数统一改造 (6个核心) | P0 | 4h |
+| 一 | 共享 LLM 客户端工具 | P0 | 1h |
+| 二 | ModelProviderSettings 组件 | P0 | 4h |
+| 二 | API Key 加密存储机制 | P0 | 3h |
+| 二 | SettingsDialog 集成 | P0 | 1h |
+| 三 | API Key 解密 & 使用 | P1 | 2h |
+| 三 | Fallback 链完善 | P1 | 2h |
+| 四 | 模块级配置 UI | P2 | 3h |
+| **总计** | | | **~25h** |
 
 ---
 
-## 预估工时
-
-| 任务 | 工时 |
-|------|------|
-| agent-chat MCP 执行集成 | 3h |
-| MCPServerManager 组件 | 4h |
-| SettingsDialog 集成 | 1h |
-| EnhancedAIGenerator MCP 预选 | 2h |
-| workflow-generator 更新 | 1h |
-| 测试与调试 | 2h |
-| **总计** | **~13h** |
-
----
-
-## 验收标准
+## 验收测试用例
 
 ### 功能测试
 
-- [ ] 配置 HTTP 类型 MCP Server
-- [ ] 探测服务器工具列表
-- [ ] AI 对话中触发 MCP 工具调用
-- [ ] 工具执行结果正确返回
-- [ ] 生成器中预选 MCP 工具
-- [ ] 预选工具优先出现在生成结果中
+- [ ] 用户可以在设置中添加 OpenAI API Key
+- [ ] 用户可以将个人供应商设为默认
+- [ ] AI 对话使用用户配置的供应商
+- [ ] API Key 不会在前端明文显示
+- [ ] 供应商失败时自动 Fallback
+- [ ] 管理员全局配置对所有用户生效
 
 ### 边界测试
 
-- [ ] 无 MCP 服务器时的降级处理
-- [ ] 服务器不可达时的错误提示
-- [ ] 并发工具调用处理
-- [ ] 执行超时处理
+- [ ] 无效 API Key 的错误提示
+- [ ] 供应商 API 超时处理
+- [ ] 用户配置与管理员配置的优先级
+- [ ] 多供应商并发 Fallback
+
+---
+
+## 技术说明
+
+### 支持的供应商
+
+| 供应商 | API 格式 | 认证方式 | 流式支持 |
+|--------|----------|----------|----------|
+| OpenAI | OpenAI Chat Completions | Bearer Token | 是 |
+| Anthropic | Messages API | x-api-key Header | 是 |
+| Google AI | Gemini API | Bearer Token | 是 |
+| Azure OpenAI | OpenAI 兼容 | Bearer Token | 是 |
+| 自定义 | OpenAI 兼容 | Bearer Token | 是 |
+| Lovable AI | OpenAI 兼容 | Bearer Token | 是 |
+
+### API Key 安全
+
+1. **加密存储**: 使用 AES-256 加密存储在数据库
+2. **传输安全**: 仅在 Edge Function 内部解密使用
+3. **前端展示**: 仅显示前后几位字符
+4. **RLS 保护**: 用户只能访问自己的 Key
+
+### 优先级解析规则
+
+```text
+1. 请求明确指定 provider_id → 使用该供应商
+2. Agent + Module 有配置 → 使用配置的供应商
+3. 用户有默认供应商 → 使用用户默认
+4. 管理员有全局默认 → 使用全局默认
+5. 以上都没有 → 使用 Lovable AI Gateway
+```
 
