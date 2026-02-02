@@ -190,7 +190,7 @@ export default function ConsumerHome() {
                   <span 
                     className="bg-clip-text text-transparent"
                     style={{
-                      backgroundImage: 'linear-gradient(to right, hsl(220 90% 60%), hsl(265 85% 65%), hsl(280 80% 60%))'
+                      backgroundImage: 'linear-gradient(to right, #3b82f6, #8b5cf6, #a855f7)'
                     }}
                   >
                     智能数字员工
