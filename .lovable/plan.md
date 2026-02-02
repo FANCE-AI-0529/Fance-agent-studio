@@ -68,19 +68,19 @@
 | P0-05 | 全局 | 页面切换动画 | UX | 8h | ✅ | PageTransition 组件 + Framer Motion 过渡 |
 | P0-06 | 全局 | 错误边界优化 | 稳定性 | 6h | ✅ | 增强 ErrorBoundary，带反馈和复制功能 |
 
-### P1 - 重要优化（2-4周）
+### P1 - 重要优化（2-4周）✅ 部分完成
 
 | ID | 模块 | 优化项 | 类型 | 预估工时 | 状态 | 详细描述 |
 |----|------|--------|------|----------|------|----------|
-| P1-01 | Runtime | 消息时间戳显示 | UI | 3h | 🔲 | 悬停显示精确时间，分组显示日期 |
-| P1-02 | Runtime | 打字机效果优化 | UX | 6h | 🔲 | 流式输出更平滑，支持代码块高亮 |
+| P1-01 | Runtime | 消息时间戳显示 | UI | 3h | ✅ | MessageTimestamp 组件，悬停显示精确时间 |
+| P1-02 | Runtime | 打字机效果优化 | UX | 6h | ✅ | EnhancedTypewriter 组件，自适应速度 |
 | P1-03 | Builder | 画布性能优化 | 性能 | 16h | 🔲 | 虚拟化渲染，50+ 节点流畅 |
 | P1-04 | Builder | 节点拖拽动画 | UX | 4h | 🔲 | 添加拖拽吸附、对齐辅助线 |
-| P1-05 | Foundry | 技能搜索优化 | 性能 | 6h | 🔲 | 防抖搜索，即时高亮匹配 |
+| P1-05 | Foundry | 技能搜索优化 | 性能 | 6h | ✅ | useDebouncedSearch Hook，防抖+高亮 |
 | P1-06 | Foundry | 技能卡片重设计 | UI | 8h | 🔲 | 精简信息层级，突出核心指标 |
 | P1-07 | 知识库 | 向量化进度可视化 | UX | 8h | 🔲 | 显示处理阶段和预估时间 |
-| P1-08 | 全局 | 骨架屏标准化 | UX | 8h | 🔲 | 统一使用 loading-state 组件 |
-| P1-09 | 全局 | 快捷键系统 | UX | 12h | 🔲 | 全局快捷键，Cmd+K 命令面板 |
+| P1-08 | 全局 | 骨架屏标准化 | UX | 8h | ✅ | skeleton-screens.tsx 完整组件库 |
+| P1-09 | 全局 | 快捷键系统 | UX | 12h | ✅ | CommandPalette 组件，Cmd+K 打开 |
 | P1-10 | 移动端 | 底部导航优化 | UI | 6h | 🔲 | 当前页高亮更明显，添加触感反馈 |
 
 ### P2 - 体验提升（4-6周）
@@ -142,6 +142,37 @@
    - 友好的错误展示页面
    - 支持复制错误详情
    - 支持反馈问题功能
+
+---
+
+## 五、P1 阶段新增组件
+
+### 新增组件
+
+1. **`src/components/ui/message-timestamp.tsx`**
+   - 消息时间戳组件
+   - 悬停显示精确时间
+   - 支持日期分组分隔线 (DateDivider)
+
+2. **`src/components/ui/enhanced-typewriter.tsx`**
+   - 增强打字机效果
+   - 自适应速度（代码块加速）
+   - requestAnimationFrame 平滑渲染
+
+3. **`src/hooks/useDebouncedSearch.ts`**
+   - 防抖搜索 Hook
+   - 支持多字段搜索
+   - 提供高亮匹配工具函数
+
+4. **`src/components/ui/skeleton-screens.tsx`**
+   - 标准化骨架屏组件库
+   - 包含：MessageBubble、AgentCard、SkillCard、Canvas 等
+   - 页面级骨架：RuntimePage、FoundryPage、BuilderPage
+
+5. **`src/components/ui/command-palette.tsx`**
+   - 全局命令面板
+   - Cmd+K / Ctrl+K 快捷键打开
+   - 支持导航、操作、主题切换、Agent 快速切换
 
 ---
 
