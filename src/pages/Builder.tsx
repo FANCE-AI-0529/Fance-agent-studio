@@ -42,6 +42,8 @@ import {
   Variable,
   Bug,
   FlaskConical,
+  Activity,
+  Target,
   ArrowLeft,
   MessageCircle,
 } from "lucide-react";
@@ -63,6 +65,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
 import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
@@ -118,6 +121,8 @@ import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
 import { GenerationVerificationPanel } from "@/components/builder/verification";
+import { AgentMonitoringDashboard } from "@/components/builder/AgentMonitoringDashboard";
+import { EvaluationCenter } from "@/components/builder/evaluation/EvaluationCenter";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
 import { useAgentBuildReplay } from "@/hooks/useAgentBuildReplay";
 import { BuildReplayOverlay } from "@/components/builder/BuildReplayOverlay";
@@ -225,6 +230,8 @@ const Builder = () => {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showVerificationPanel, setShowVerificationPanel] = useState(false);
+  const [showMonitoringPanel, setShowMonitoringPanel] = useState(false);
+  const [showEvaluationPanel, setShowEvaluationPanel] = useState(false);
   
   // Inspiration auto-generation state
   const [inspirationDescription, setInspirationDescription] = useState<string | null>(null);
@@ -1497,6 +1504,36 @@ const Builder = () => {
                     </TooltipTrigger>
                     <TooltipContent>API 统计</TooltipContent>
                   </Tooltip>
+
+                  {/* Monitoring Dashboard */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={showMonitoringPanel ? "default" : "ghost"}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowMonitoringPanel(true)}
+                      >
+                        <Activity className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>监控仪表板</TooltipContent>
+                  </Tooltip>
+
+                  {/* Evaluation Center */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={showEvaluationPanel ? "default" : "ghost"}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowEvaluationPanel(true)}
+                      >
+                        <Target className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>评估中心</TooltipContent>
+                  </Tooltip>
                 </>
               )}
 
@@ -2029,6 +2066,37 @@ const Builder = () => {
               </DialogDescription>
             </DialogHeader>
             <GenerationVerificationPanel />
+          </DialogContent>
+        </Dialog>
+
+        {/* Monitoring Dashboard Dialog */}
+        <Dialog open={showMonitoringPanel} onOpenChange={setShowMonitoringPanel}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Agent 监控仪表板</DialogTitle>
+              <DialogDescription>
+                实时监控 Agent 运行状态、调用统计和健康指标
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[65vh]">
+              <AgentMonitoringDashboard agentId={currentAgentId} />
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        {/* Evaluation Center Dialog */}
+        <Dialog open={showEvaluationPanel} onOpenChange={setShowEvaluationPanel}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden p-0">
+            <EvaluationCenter 
+              agentId={currentAgentId || ''}
+              agentConfig={{
+                name: agentConfig.name,
+                systemPrompt: agentConfig.systemPrompt,
+                department: agentConfig.department,
+                model: agentConfig.model,
+              }}
+              onClose={() => setShowEvaluationPanel(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>

@@ -105,6 +105,7 @@ export function TestSetManager({ agentId, agentConfig, onGenerateTests }: TestSe
       expectedBehavior: newTestCase.expectedBehavior || '',
       requiredPatterns: newTestCase.requiredPatterns || [],
       forbiddenPatterns: newTestCase.forbiddenPatterns || [],
+      riskLevel: 'medium',
     };
     
     setTestCases(prev => [...prev, testCase]);
