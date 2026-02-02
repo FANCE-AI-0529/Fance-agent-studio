@@ -22,50 +22,31 @@ import {
 // Avatar Generation Helper
 // =====================================================
 function generateRandomAvatar(description: string): AgentAvatar {
-  // Keyword to icon mapping for semantic matching
-  const iconKeywordMap: Record<string, string[]> = {
-    'message-square': ['客服', '服务', '对话', '聊天', '咨询', '问答'],
-    'database': ['数据', '分析', '统计', '报表', 'BI'],
-    'code': ['代码', '编程', '开发', '程序', '技术', 'API'],
-    'wallet': ['金融', '财务', '财报', '会计', '银行', '投资'],
-    'heart-pulse': ['医疗', '健康', '诊断', '医生', '病'],
-    'graduation-cap': ['教育', '学习', '培训', '老师', '课程', '知识'],
-    'scale': ['法律', '合规', '法务', '合同', '律师'],
-    'briefcase': ['人事', 'HR', '招聘', '员工'],
-    'shopping-cart': ['电商', '购物', '选品', '商品', '店铺'],
-    'plane': ['旅行', '旅游', '出行', '规划', '行程', '酒店'],
-    'globe': ['翻译', '语言', '多语', '国际'],
-    'palette': ['设计', '创意', '美工', 'UI'],
-    'file-text': ['文档', '写作', '文案', '内容', '总结'],
-    'search': ['搜索', '检索', '查询', '调研'],
-    'calculator': ['计算', '测算', '预测'],
-    'lightbulb': ['创意', '策划', '方案', '点子'],
-    'microscope': ['科研', '研究', '实验'],
-    'building2': ['企业', '公司', '组织', '管理'],
-    'users': ['团队', '协作', '社群', '社区'],
-    'zap': ['自动化', '效率', '快速', '智能'],
+  // 颜色关键词映射 - 始终使用 bot 图标，通过颜色区分功能类别
+  const colorKeywordMap: Record<string, string[]> = {
+    'green': ['客服', '服务', '对话', '聊天', '咨询', '问答', '沟通'],
+    'blue': ['数据', '分析', '统计', '报表', 'BI', '洞察'],
+    'cyan': ['代码', '编程', '开发', '程序', '技术', 'API', '工程'],
+    'amber': ['金融', '财务', '财报', '会计', '银行', '投资', '理财'],
+    'rose': ['医疗', '健康', '诊断', '医生', '病', '养生'],
+    'orange': ['教育', '学习', '培训', '老师', '课程', '知识', '考试'],
+    'indigo': ['法律', '合规', '法务', '合同', '律师', '政策'],
+    'purple': ['设计', '创意', '美工', 'UI', '视觉', '品牌'],
+    'teal': ['翻译', '语言', '多语', '国际', '外语'],
+    'pink': ['电商', '购物', '选品', '商品', '店铺', '运营'],
   };
   
-  // Find matching icon based on description keywords
-  let matchedIconId = 'sparkles'; // Default icon
-  for (const [iconId, keywords] of Object.entries(iconKeywordMap)) {
+  // 匹配颜色
+  let matchedColorId = 'primary';
+  for (const [colorId, keywords] of Object.entries(colorKeywordMap)) {
     if (keywords.some(keyword => description.includes(keyword))) {
-      matchedIconId = iconId;
+      matchedColorId = colorId;
       break;
     }
   }
   
-  // Validate icon exists
-  const iconExists = agentAvatarIcons.some(i => i.id === matchedIconId);
-  if (!iconExists) {
-    matchedIconId = 'sparkles';
-  }
-  
-  // Pick a random color (excluding primary for more variety)
-  const colorOptions = agentAvatarColors.filter(c => c.id !== 'primary');
-  const randomColor = colorOptions[Math.floor(Math.random() * colorOptions.length)];
-  
-  return { iconId: matchedIconId, colorId: randomColor.id };
+  // 始终使用 bot 图标，通过颜色区分功能
+  return { iconId: 'bot', colorId: matchedColorId };
 }
 
 export interface InvisibleBuildResult {

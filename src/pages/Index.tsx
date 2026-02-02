@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Bot, 
   Play, 
   ArrowRight, 
   Loader2,
@@ -41,6 +40,7 @@ import { DailyInspiration } from "@/components/dashboard/DailyInspiration";
 import { TrendingAgents } from "@/components/dashboard/TrendingAgents";
 import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase";
 import { CommunityStats } from "@/components/dashboard/CommunityStats";
+import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -163,71 +163,78 @@ const Index = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {myAgents.slice(0, 3).map((agent, index) => (
-                  <motion.div
-                    key={agent.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <div className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
-                      <Link
-                        to={agent.status === 'deployed' ? '/runtime' : `/builder/${agent.id}`}
-                        className="flex items-center gap-4 flex-1 min-w-0"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Bot className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                              {agent.name}
-                            </h3>
-                            <Badge 
-                              variant={agent.status === 'deployed' ? 'default' : 'secondary'}
-                              className="text-[10px]"
-                            >
-                              {agent.status === 'deployed' ? '已部署' : '草稿'}
-                            </Badge>
+                {myAgents.slice(0, 3).map((agent, index) => {
+                  const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
+                  
+                  return (
+                    <motion.div
+                      key={agent.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <div className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
+                        <Link
+                          to={agent.status === 'deployed' ? '/runtime' : `/builder/${agent.id}`}
+                          className="flex items-center gap-4 flex-1 min-w-0"
+                        >
+                          <div className="w-12 h-12 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
+                            <AgentAvatarDisplay 
+                              avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
+                              size="lg" 
+                            />
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            {agent.department || '通用助手'}
-                          </p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                      </Link>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/builder/${agent.id}`)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            编辑
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => {
-                              setAgentToDelete(agent);
-                              setShowDeleteConfirm(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </motion.div>
-                ))}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium truncate group-hover:text-primary transition-colors">
+                                {agent.name}
+                              </h3>
+                              <Badge 
+                                variant={agent.status === 'deployed' ? 'default' : 'secondary'}
+                                className="text-[10px]"
+                              >
+                                {agent.status === 'deployed' ? '已部署' : '草稿'}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {agent.department || '通用助手'}
+                            </p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/builder/${agent.id}`)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              编辑
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => {
+                                setAgentToDelete(agent);
+                                setShowDeleteConfirm(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              删除
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </motion.div>
+                  );
+                })}
                 {myAgents.length > 3 && (
                   <Link
                     to="/builder"
