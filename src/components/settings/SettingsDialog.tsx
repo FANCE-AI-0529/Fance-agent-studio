@@ -25,6 +25,7 @@ import { useUpdateProfile, useUploadAvatar } from "@/hooks/useProfileUpdate";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { useIsAdmin } from "@/hooks/useAdminInvite";
 import { GlobalModelSettings } from "./GlobalModelSettings";
+import { MCPServerManager } from "./MCPServerManager";
 import { cn } from "@/lib/utils";
 import {
   Settings,
@@ -37,6 +38,7 @@ import {
   Loader2,
   ExternalLink,
   Cpu,
+  Server,
 } from "lucide-react";
 
 interface SettingsDialogProps {
@@ -155,7 +157,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-6" : "grid-cols-5")}>
+          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-7" : "grid-cols-6")}>
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <User className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">个人资料</span>
@@ -167,6 +169,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <TabsTrigger value="language" className="text-xs sm:text-sm">
               <Globe className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">语言</span>
+            </TabsTrigger>
+            <TabsTrigger value="mcp-servers" className="text-xs sm:text-sm">
+              <Server className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">MCP</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="text-xs sm:text-sm">
               <Shield className="h-4 w-4 sm:mr-1" />
@@ -342,6 +348,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* MCP Servers Tab */}
+            <TabsContent value="mcp-servers" className="space-y-4 m-0">
+              <MCPServerManager />
             </TabsContent>
 
             {/* Security Tab */}

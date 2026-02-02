@@ -22,6 +22,7 @@ interface GenerateRequest {
   skipKnowledge?: boolean; // User chose to skip KB mounting
   useBlueprintMode?: boolean; // Enable blueprint-driven generation
   selectedBlueprintId?: string; // User-selected blueprint ID
+  preferredMCPTools?: string[]; // 🆕 User-selected MCP tools to prioritize
 }
 
 // ========== Blueprint Types (Agent Blueprints) ==========

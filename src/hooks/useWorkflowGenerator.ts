@@ -35,6 +35,7 @@ export interface GenerateOptions {
   maxNodes?: number;
   autoApplyPolicies?: boolean;
   enableBuildPlan?: boolean; // 启用构建计划可视化
+  preferredMCPTools?: string[]; // 🆕 用户预选的 MCP 工具
 }
 
 export interface RiskAssessment {
@@ -188,6 +189,7 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
           mplpPolicy,
           includeKnowledge,
           maxNodes,
+          preferredMCPTools: options?.preferredMCPTools,
         },
       });
       
@@ -212,6 +214,7 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
               includeKnowledge,
               maxNodes,
               skipKnowledge: true, // 跳过知识库挂载
+              preferredMCPTools: options?.preferredMCPTools,
             },
           });
           

@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
   X,
@@ -18,6 +19,7 @@ import {
   AlertTriangle,
   SkipForward,
   FileCheck,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +41,8 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useWorkflowGenerator } from "@/hooks/useWorkflowGenerator";
 import { WorkflowPreview } from "./WorkflowPreview";
 import { BuildPlanViewer } from "./BuildPlanViewer";
@@ -101,6 +105,9 @@ export function EnhancedAIGenerator({
   const [includeKnowledge, setIncludeKnowledge] = useState(true);
   const [maxNodes, setMaxNodes] = useState(10);
   const [autoApplyPolicies, setAutoApplyPolicies] = useState(true);
+  
+  // MCP 工具预选
+  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
 
   // 验证阶段状态
   const [validationPhase, setValidationPhase] = useState<ValidationPhase>('idle');
@@ -113,6 +120,26 @@ export function EnhancedAIGenerator({
   
   // 生成的技能列表 (用于自愈) - 使用简化类型
   const [generatedSkills, setGeneratedSkills] = useState<SimpleSkill[]>();
+  
+  // 获取用户信息
+  const { user } = useAuth();
+  
+  // 获取用户可用的 MCP 工具
+  const { data: mcpTools } = useQuery({
+    queryKey: ["user-mcp-tools", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("asset_semantic_index")
+        .select("asset_id, name, description, metadata")
+        .eq("user_id", user.id)
+        .eq("asset_type", "mcp_tool")
+        .eq("is_active", true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
 
 
   // Auto-generation tracking
@@ -229,6 +256,7 @@ export function EnhancedAIGenerator({
         maxNodes,
         autoApplyPolicies,
         enableBuildPlan: true,
+        preferredMCPTools: selectedMCPTools.length > 0 ? selectedMCPTools : undefined,
       });
 
       if (!result) {
@@ -596,6 +624,42 @@ export function EnhancedAIGenerator({
                       />
                     </div>
                   </div>
+                  
+                  {/* MCP 工具预选 */}
+                  {mcpTools && mcpTools.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm flex items-center gap-1.5">
+                        <Wrench className="h-3.5 w-3.5" />
+                        指定 MCP 工具
+                      </Label>
+                      <div className="border border-border rounded-md p-2 max-h-[120px] overflow-y-auto space-y-1">
+                        {mcpTools.map((tool) => (
+                          <label
+                            key={tool.asset_id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 cursor-pointer text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedMCPTools.includes(tool.asset_id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedMCPTools([...selectedMCPTools, tool.asset_id]);
+                                } else {
+                                  setSelectedMCPTools(selectedMCPTools.filter(id => id !== tool.asset_id));
+                                }
+                              }}
+                              disabled={isProcessing}
+                              className="rounded border-border"
+                            />
+                            <span className="flex-1 truncate">{tool.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        选中的工具将在生成时优先匹配
+                      </p>
+                    </div>
+                  )}
                 </CollapsibleContent>
               </Collapsible>
 
