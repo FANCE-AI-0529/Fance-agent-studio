@@ -187,7 +187,12 @@ export default function ConsumerHome() {
                     构建你的
                   </span>
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-primary to-foreground/70 bg-clip-text text-transparent">
+                  <span 
+                    className="bg-clip-text text-transparent"
+                    style={{
+                      backgroundImage: 'linear-gradient(to right, hsl(220 90% 60%), hsl(265 85% 65%), hsl(280 80% 60%))'
+                    }}
+                  >
                     智能数字员工
                   </span>
                 </motion.h1>
