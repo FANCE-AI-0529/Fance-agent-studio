@@ -77,7 +77,7 @@
 | P1-03 | Builder | 画布性能优化 | 性能 | 16h | ✅ | 虚拟化渲染 + PerformanceOverlay 监控 |
 | P1-04 | Builder | 节点拖拽动画 | UX | 4h | ✅ | AlignmentGuides 组件，吸附对齐辅助线 |
 | P1-05 | Foundry | 技能搜索优化 | 性能 | 6h | ✅ | useDebouncedSearch Hook，防抖+高亮 |
-| P1-06 | Foundry | 技能卡片重设计 | UI | 8h | 🔲 | 精简信息层级，突出核心指标 |
+| P1-06 | Foundry | 技能卡片重设计 | UI | 8h | ✅ | 精简信息层级，突出核心指标 |
 | P1-07 | 知识库 | 向量化进度可视化 | UX | 8h | ✅ | VectorizationProgress 组件，阶段+预估时间 |
 | P1-08 | 全局 | 骨架屏标准化 | UX | 8h | ✅ | skeleton-screens.tsx 完整组件库 |
 | P1-09 | 全局 | 快捷键系统 | UX | 12h | ✅ | CommandPalette 组件，Cmd+K 打开 |
