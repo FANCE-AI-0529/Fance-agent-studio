@@ -219,10 +219,9 @@ export function GlobalModelSettings() {
           ) : (
             <Alert>
               <Info className="h-4 w-4" />
-              <AlertTitle>使用默认 Lovable AI</AlertTitle>
+              <AlertTitle>使用默认 AI 服务</AlertTitle>
               <AlertDescription>
-                当前使用 Lovable AI Gateway (Gemini 2.5 Flash) 作为默认模型。
-                添加并设置一个供应商为默认即可切换。
+                尚未配置默认模型供应商。请添加一个供应商（如 OpenAI、Anthropic）并设为默认。
               </AlertDescription>
             </Alert>
           )}

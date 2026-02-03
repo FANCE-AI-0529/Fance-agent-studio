@@ -2,7 +2,12 @@
  * @file _shared/llm-client.ts
  * @description 统一 LLM 调用客户端，通过 llm-gateway 路由请求到用户配置的供应商
  * @module EdgeFunctions/Shared/LLMClient
+ * @author Agent Studio Team
+ * @copyright 2025 Agent Studio. All rights reserved.
+ * @version 2.0.0 - 开源版本，移除平台特定依赖
  */
+
+import { AI_CONFIG, getAIHeaders, isAIConfigured } from "./config.ts";
 
 /**
  * LLM 请求参数
@@ -40,15 +45,10 @@ export interface LLMResponse {
 }
 
 /**
- * Lovable AI Gateway 的 fallback 端点
- */
-const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-/**
  * 通过 llm-gateway 调用 LLM
  * 
  * 该函数是所有边缘函数调用 LLM 的统一入口点。
- * 它会自动路由到用户配置的供应商，如果不可用则 fallback 到 Lovable AI。
+ * 它会自动路由到用户配置的供应商，如果不可用则 fallback 到默认 AI 服务。
  * 
  * @param options LLM 请求参数
  * @returns 如果 stream=true 返回 Response，否则返回 LLMResponse
@@ -91,8 +91,8 @@ export async function callLLM(options: LLMRequestOptions): Promise<Response | LL
       const errorText = await response.text();
       console.error(`[llm-client] Gateway error: ${response.status}`, errorText);
       
-      // 尝试 fallback 到 Lovable AI
-      return await callLovableFallback(options);
+      // 尝试 fallback 到默认 AI 服务
+      return await callDirectAI(options);
     }
     
     const data = await response.json();
@@ -100,27 +100,30 @@ export async function callLLM(options: LLMRequestOptions): Promise<Response | LL
   } catch (error) {
     console.error('[llm-client] Gateway call failed, trying fallback:', error);
     
-    // Fallback 到 Lovable AI
-    return await callLovableFallback(options);
+    // Fallback 到默认 AI 服务
+    return await callDirectAI(options);
   }
 }
 
 /**
- * 直接调用 Lovable AI Gateway (fallback)
+ * 直接调用 AI Gateway (fallback)
+ * 
+ * 当 llm-gateway 不可用时，直接调用配置的 AI 服务。
  */
-async function callLovableFallback(options: LLMRequestOptions): Promise<Response | LLMResponse> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  
-  if (!LOVABLE_API_KEY) {
-    throw new Error('LOVABLE_API_KEY not configured - cannot fallback');
+async function callDirectAI(options: LLMRequestOptions): Promise<Response | LLMResponse> {
+  if (!isAIConfigured()) {
+    return {
+      success: false,
+      error: 'AI service not configured. Please set AI_API_KEY and AI_GATEWAY_URL environment variables.',
+    };
   }
   
   const requestBody: Record<string, unknown> = {
-    model: options.model || 'google/gemini-2.5-flash',
+    model: options.model || AI_CONFIG.DEFAULT_MODEL,
     messages: options.messages,
     stream: options.stream ?? false,
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.maxTokens ?? 4096,
+    temperature: options.temperature ?? AI_CONFIG.DEFAULT_TEMPERATURE,
+    max_tokens: options.maxTokens ?? AI_CONFIG.DEFAULT_MAX_TOKENS,
   };
   
   if (options.tools && options.tools.length > 0) {
@@ -128,12 +131,9 @@ async function callLovableFallback(options: LLMRequestOptions): Promise<Response
     requestBody.tool_choice = options.toolChoice ?? 'auto';
   }
   
-  const response = await fetch(LOVABLE_AI_GATEWAY, {
+  const response = await fetch(AI_CONFIG.GATEWAY_URL, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: getAIHeaders(),
     body: JSON.stringify(requestBody),
   });
   
@@ -146,7 +146,7 @@ async function callLovableFallback(options: LLMRequestOptions): Promise<Response
     const errorText = await response.text();
     return {
       success: false,
-      error: `Lovable AI error: ${response.status} - ${errorText.slice(0, 200)}`,
+      error: `AI service error: ${response.status} - ${errorText.slice(0, 200)}`,
     };
   }
   
@@ -160,7 +160,7 @@ async function callLovableFallback(options: LLMRequestOptions): Promise<Response
     toolCalls,
     usage: data.usage,
     model: data.model,
-    provider: 'lovable',
+    provider: 'direct',
   };
 }
 

@@ -10,7 +10,6 @@ export const MPLP_NETWORK_MAPPINGS: Record<string, string[]> = {
   'network:openai': ['api.openai.com', '*.openai.azure.com'],
   'network:anthropic': ['api.anthropic.com'],
   'network:google': ['generativelanguage.googleapis.com', '*.googleapis.com'],
-  'network:lovable': ['ai.gateway.lovable.dev'],
   
   // 云服务
   'network:aws': ['*.amazonaws.com', '*.aws.amazon.com'],
