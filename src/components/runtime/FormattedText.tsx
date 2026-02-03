@@ -32,6 +32,11 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
           { regex: /<h-alert>([^<]+)<\/h-alert>/g, type: "h-alert" as const },
           { regex: /<h-data>([^<]+)<\/h-data>/g, type: "h-data" as const },
           { regex: /<h-status>([^<]+)<\/h-status>/g, type: "h-status" as const },
+          // 🆕 Extended semantic tags (OPT-01)
+          { regex: /<h-link>([^<]+)<\/h-link>/g, type: "h-link" as const },
+          { regex: /<h-code>([^<]+)<\/h-code>/g, type: "h-code" as const },
+          { regex: /<h-quote(?:\s+ref="([^"]*)")?>([^<]+)<\/h-quote>/g, type: "h-quote" as const },
+          { regex: /<h-action>([^<]+)<\/h-action>/g, type: "h-action" as const },
           // Terminal style patterns
           { regex: /\[v\]/g, type: "success" as const },
           { regex: /\[x\]/g, type: "failure" as const },
@@ -57,7 +62,8 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
       length: number;
       content: string;
       fullMatch: string;
-      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis" | "h-entity" | "h-alert" | "h-data" | "h-status";
+      refSource?: string;
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis" | "h-entity" | "h-alert" | "h-data" | "h-status" | "h-link" | "h-code" | "h-quote" | "h-action";
     }
 
     // Find all matches
@@ -69,8 +75,9 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
         matches.push({
           index: match.index,
           length: match[0].length,
-          content: match[1] || match[0],
+          content: type === 'h-quote' ? match[2] || match[1] : (match[1] || match[0]),
           fullMatch: match[0],
+          refSource: type === 'h-quote' ? match[1] : undefined,
           type,
         });
       }
@@ -137,6 +144,51 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
             <span 
               key={keyIndex++} 
               className="text-emerald-400 font-medium"
+            >
+              {match.content}
+            </span>
+          );
+          break;
+        // 🆕 Extended semantic tags (OPT-01)
+        case "h-link":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="text-blue-400 underline underline-offset-2 cursor-pointer hover:text-blue-300 transition-colors"
+            >
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-code":
+          parts.push(
+            <code
+              key={keyIndex++}
+              className="px-1.5 py-0.5 rounded bg-muted text-cyan-400 font-mono text-xs border border-cyan-500/20"
+            >
+              {match.content}
+            </code>
+          );
+          break;
+        case "h-quote":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="inline italic text-muted-foreground border-l-2 border-primary/40 pl-2"
+              title={match.refSource ? `来源: ${match.refSource}` : undefined}
+            >
+              "{match.content}"
+              {match.refSource && (
+                <sup className="text-[9px] text-primary ml-0.5">[{match.refSource.slice(-8)}]</sup>
+              )}
+            </span>
+          );
+          break;
+        case "h-action":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="inline-flex items-center gap-1 bg-primary/15 text-primary px-2 py-0.5 rounded-full text-xs font-medium border border-primary/25 cursor-pointer hover:bg-primary/25 transition-colors"
             >
               {match.content}
             </span>
