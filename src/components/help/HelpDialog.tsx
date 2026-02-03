@@ -155,10 +155,10 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 p-4"
-              onClick={() => window.open("https://docs.lovable.dev", "_blank")}
+              onClick={() => window.open("https://github.com/agent-studio/agent-studio", "_blank")}
             >
               <Video className="h-5 w-5 text-primary" />
-              <span className="text-sm">视频教程</span>
+              <span className="text-sm">文档教程</span>
             </Button>
           </div>
 
@@ -225,7 +225,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => window.open("https://docs.lovable.dev", "_blank")}
+                onClick={() => window.open("https://github.com/agent-studio/agent-studio", "_blank")}
               >
                 <ExternalLink className="h-4 w-4" />
                 查看完整文档

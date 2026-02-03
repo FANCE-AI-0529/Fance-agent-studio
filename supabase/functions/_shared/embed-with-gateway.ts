@@ -1,21 +1,13 @@
 /**
  * @file embed-with-gateway.ts
- * @description 共享向量嵌入模块，通过 Lovable AI Gateway 生成真实 Embedding
+ * @description 共享向量嵌入模块，通过配置的 Embedding API 生成向量
  * @module EdgeFunctions/Shared/Embedding
- * @author Agent OS Studio Team
- * @copyright 2025 Agent OS Studio. All rights reserved.
- * @version 1.0.0
+ * @author Agent Studio Team
+ * @copyright 2025 Agent Studio. All rights reserved.
+ * @version 2.0.0 - 开源版本，支持自定义 Embedding 端点
  */
 
-/**
- * AI Gateway 端点地址
- */
-const EMBEDDING_ENDPOINT = "https://ai.gateway.lovable.dev/v1/embeddings";
-
-/**
- * 默认 Embedding 模型
- */
-const DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
+import { EMBEDDING_CONFIG, AI_CONFIG, getEmbeddingHeaders, getAIHeaders, isEmbeddingConfigured } from "./config.ts";
 
 /**
  * Embedding 响应数据结构
@@ -35,38 +27,46 @@ interface EmbeddingResponse {
 /**
  * 生成单个文本的向量嵌入
  * 
- * 调用 Lovable AI Gateway 的 Embedding API 将文本转换为向量表示，
- * 返回 1536 维的浮点数数组。
+ * 调用配置的 Embedding API 将文本转换为向量表示，
+ * 返回指定维度的浮点数数组。
  * 
  * @param {string} text - 待向量化的文本内容
- * @param {string} apiKey - Lovable API 密钥
- * @param {string} [model] - 可选的模型名称，默认使用 text-embedding-3-small
- * @returns {Promise<number[]>} 返回向量数组 (1536 维)
+ * @param {string} [apiKey] - API 密钥 (可选，默认使用环境变量)
+ * @param {string} [model] - 可选的模型名称
+ * @returns {Promise<number[]>} 返回向量数组
  * @throws {Error} 当 API 调用失败时抛出错误
  * 
  * @example
- * const embedding = await generateEmbedding("你好世界", LOVABLE_API_KEY);
- * console.log(embedding.length); // 1536
+ * const embedding = await generateEmbedding("你好世界");
+ * console.log(embedding.length); // 1536 (取决于模型)
  */
 export async function generateEmbedding(
   text: string,
-  apiKey: string,
-  model: string = DEFAULT_EMBEDDING_MODEL
+  apiKey?: string,
+  model?: string
 ): Promise<number[]> {
   // [校验]：确保文本非空
   if (!text || text.trim().length === 0) {
     throw new Error("Embedding text cannot be empty");
   }
 
-  // [请求]：调用 AI Gateway Embedding API
-  const response = await fetch(EMBEDDING_ENDPOINT, {
+  const effectiveApiKey = apiKey || EMBEDDING_CONFIG.API_KEY;
+  const effectiveModel = model || EMBEDDING_CONFIG.DEFAULT_MODEL;
+  const effectiveEndpoint = EMBEDDING_CONFIG.ENDPOINT;
+
+  if (!effectiveApiKey) {
+    throw new Error("Embedding API key not configured. Set AI_EMBEDDING_KEY or AI_API_KEY environment variable.");
+  }
+
+  // [请求]：调用 Embedding API
+  const response = await fetch(effectiveEndpoint, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${effectiveApiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model,
+      model: effectiveModel,
       input: text.trim(),
     }),
   });
@@ -97,23 +97,19 @@ export async function generateEmbedding(
  * 适用于文档切片后的批量向量化场景。
  * 
  * @param {string[]} texts - 待向量化的文本数组
- * @param {string} apiKey - Lovable API 密钥
- * @param {string} [model] - 可选的模型名称，默认使用 text-embedding-3-small
+ * @param {string} [apiKey] - API 密钥 (可选，默认使用环境变量)
+ * @param {string} [model] - 可选的模型名称
  * @returns {Promise<number[][]>} 返回向量数组的数组，顺序与输入一致
  * @throws {Error} 当 API 调用失败或响应格式错误时抛出
  * 
  * @example
- * const embeddings = await generateBatchEmbeddings(
- *   ["段落一内容", "段落二内容", "段落三内容"],
- *   LOVABLE_API_KEY
- * );
+ * const embeddings = await generateBatchEmbeddings(["段落一", "段落二", "段落三"]);
  * console.log(embeddings.length); // 3
- * console.log(embeddings[0].length); // 1536
  */
 export async function generateBatchEmbeddings(
   texts: string[],
-  apiKey: string,
-  model: string = DEFAULT_EMBEDDING_MODEL
+  apiKey?: string,
+  model?: string
 ): Promise<number[][]> {
   // [校验]：确保数组非空
   if (!texts || texts.length === 0) {
@@ -127,17 +123,25 @@ export async function generateBatchEmbeddings(
     throw new Error("All texts are empty after trimming");
   }
 
+  const effectiveApiKey = apiKey || EMBEDDING_CONFIG.API_KEY;
+  const effectiveModel = model || EMBEDDING_CONFIG.DEFAULT_MODEL;
+  const effectiveEndpoint = EMBEDDING_CONFIG.ENDPOINT;
+
+  if (!effectiveApiKey) {
+    throw new Error("Embedding API key not configured. Set AI_EMBEDDING_KEY or AI_API_KEY environment variable.");
+  }
+
   console.log(`[embed-with-gateway] Batch embedding ${cleanedTexts.length} texts`);
 
-  // [请求]：调用 AI Gateway Embedding API (批量模式)
-  const response = await fetch(EMBEDDING_ENDPOINT, {
+  // [请求]：调用 Embedding API (批量模式)
+  const response = await fetch(effectiveEndpoint, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${effectiveApiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model,
+      model: effectiveModel,
       input: cleanedTexts,
     }),
   });
@@ -190,26 +194,21 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 const MAX_AI_PARSE_SIZE = 3 * 1024 * 1024;
 
 /**
- * 使用 AI Gateway 多模态能力解析 PDF 文档
+ * 使用 AI 多模态能力解析 PDF 文档
  * 
- * 将 PDF 文件发送给 Gemini Flash 模型，利用其视觉理解能力
+ * 将 PDF 文件发送给多模态 AI 模型，利用其视觉理解能力
  * 提取文档中的全部文字内容，包括扫描版 PDF。
  * 
  * 注意：大文件（>3MB）会跳过 AI 解析以避免内存溢出
  * 
  * @param {ArrayBuffer} pdfBuffer - PDF 文件的二进制数据
- * @param {string} apiKey - Lovable API 密钥
+ * @param {string} [apiKey] - API 密钥 (可选)
  * @returns {Promise<string>} 返回提取的文本内容
  * @throws {Error} 当 PDF 解析失败时抛出错误
- * 
- * @example
- * const pdfData = await file.arrayBuffer();
- * const text = await extractTextWithAI(pdfData, LOVABLE_API_KEY);
- * console.log(text);
  */
 export async function extractTextWithAI(
   pdfBuffer: ArrayBuffer,
-  apiKey: string
+  apiKey?: string
 ): Promise<string> {
   const fileSizeKB = Math.round(pdfBuffer.byteLength / 1024);
   const fileSizeMB = (pdfBuffer.byteLength / (1024 * 1024)).toFixed(2);
@@ -223,22 +222,28 @@ export async function extractTextWithAI(
     throw new Error(`File too large for AI parsing: ${fileSizeMB}MB exceeds 3MB limit`);
   }
 
+  const effectiveApiKey = apiKey || AI_CONFIG.API_KEY;
+  
+  if (!effectiveApiKey) {
+    throw new Error("AI API key not configured for PDF extraction");
+  }
+
   try {
     // [编码]：将 PDF 转换为 Base64 (内存优化)
     console.log(`[embed-with-gateway] Encoding PDF to Base64...`);
     const base64 = arrayBufferToBase64(pdfBuffer);
     console.log(`[embed-with-gateway] Base64 encoded: ${Math.round(base64.length / 1024)}KB`);
 
-    // [请求]：调用 AI Gateway Chat API (多模态)
-    console.log(`[embed-with-gateway] Calling AI Gateway for PDF extraction...`);
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // [请求]：调用 AI Chat API (多模态)
+    console.log(`[embed-with-gateway] Calling AI for PDF extraction...`);
+    const response = await fetch(AI_CONFIG.GATEWAY_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${effectiveApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: AI_CONFIG.DEFAULT_MODEL,
         messages: [
           {
             role: "user",
