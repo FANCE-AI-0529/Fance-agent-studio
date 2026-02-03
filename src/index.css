@@ -135,9 +135,9 @@
     --destructive: 0 63% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Border #27272a */
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    /* Border - enhanced contrast for dark mode */
+    --border: 240 4% 22%;
+    --input: 240 4% 22%;
     --ring: 239 84% 67%;
 
     /* Status colors for dark mode */

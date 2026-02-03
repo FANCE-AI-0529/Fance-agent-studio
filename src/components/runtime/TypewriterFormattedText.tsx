@@ -53,6 +53,20 @@ export function TypewriterFormattedText({
     }
 
     const timer = setTimeout(() => {
+      // Check if we're inside a code block - if so, skip to end of it
+      const remaining = content.slice(displayedLength);
+      const codeBlockStart = remaining.match(/^```/);
+      
+      if (codeBlockStart) {
+        // Find the end of the code block and render it all at once
+        const endMatch = remaining.slice(3).indexOf('```');
+        if (endMatch !== -1) {
+          // Skip to after the closing ```
+          setDisplayedLength((prev) => prev + endMatch + 6);
+          return;
+        }
+      }
+      
       // Speed up for spaces and common characters
       const nextChar = content[displayedLength];
       const increment = nextChar === " " || nextChar === "\n" ? 3 : 1;
