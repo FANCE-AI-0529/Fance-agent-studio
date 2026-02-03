@@ -119,7 +119,7 @@ export function SimplifiedConfigPanel({
   }
 
   return (
-    <div className="w-80 border-l border-border flex flex-col bg-card/50">
+    <div className="w-full md:w-80 fixed md:relative inset-x-0 bottom-0 md:inset-auto max-h-[70vh] md:max-h-none border-t md:border-t-0 md:border-l border-border flex flex-col bg-card/95 md:bg-card/50 z-40 md:z-auto">
       {/* Header */}
       <div className="h-14 px-4 flex items-center justify-between border-b border-border bg-card/80">
         <div className="flex items-center gap-2">

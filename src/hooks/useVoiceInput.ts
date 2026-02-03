@@ -59,12 +59,20 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
   };
 
+  // Check if running in secure context (HTTPS or localhost)
+  const isSecureContext = typeof window !== "undefined" && (
+    window.isSecureContext || 
+    window.location.protocol === "https:" || 
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  );
+
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
-  // Check if Web Speech API is supported
-  const isSupported = getSpeechRecognition() !== null;
+  // Check if Web Speech API is supported AND we're in a secure context
+  const isSupported = getSpeechRecognition() !== null && isSecureContext;
 
   useEffect(() => {
     const SpeechRecognitionCtor = getSpeechRecognition();
