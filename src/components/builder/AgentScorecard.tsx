@@ -13,17 +13,24 @@ import {
   RotateCcw,
   FileCheck,
   X,
-  History
+  History,
+  Wrench,
+  Loader2,
+  Stethoscope,
+  ArrowUp,
+  CircleDot
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { EvaluationResult, AgentScore, TestRunResult, SpeedGrade, TestCategory } from '@/types/agentEvals';
 import RedTeamResultsPanel from './RedTeamResultsPanel';
 import EvalHistoryPanel from './EvalHistoryPanel';
+import type { DiagnosisResult, AutoFixProgress } from '@/hooks/useEvalDiagnosis';
 
 interface AgentScorecardProps {
   evaluationResult: EvaluationResult;
@@ -32,6 +39,12 @@ interface AgentScorecardProps {
   onRerun?: () => void;
   showHistory?: boolean;
   onSelectHistoryEval?: (result: EvaluationResult) => void;
+  // Diagnosis & auto-fix props
+  diagnosisResult?: DiagnosisResult | null;
+  isDiagnosing?: boolean;
+  autoFixProgress?: AutoFixProgress;
+  onAutoFix?: () => void;
+  onDiagnose?: () => void;
   className?: string;
 }
 
@@ -284,6 +297,151 @@ const getSecurityStatus = (score: number): 'success' | 'warning' | 'error' => {
   return score === 100 ? 'success' : 'error';
 };
 
+// Diagnosis Panel Component
+interface DiagnosisPanelProps {
+  diagnosis: DiagnosisResult;
+  autoFixProgress?: AutoFixProgress;
+  onAutoFix?: () => void;
+  isDiagnosing?: boolean;
+}
+
+const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({
+  diagnosis,
+  autoFixProgress,
+  onAutoFix,
+  isDiagnosing,
+}) => {
+  const areaIcons: Record<string, React.ElementType> = {
+    security: Shield,
+    logic: Brain,
+    quality: MessageSquare,
+    unknown: AlertTriangle,
+  };
+
+  const areaColors: Record<string, string> = {
+    security: 'text-red-400 bg-red-500/10 border-red-500/20',
+    logic: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+    quality: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    unknown: 'text-muted-foreground bg-muted/50 border-border',
+  };
+
+  const isAutoFixing = autoFixProgress && autoFixProgress.phase !== 'idle' && autoFixProgress.phase !== 'complete' && autoFixProgress.phase !== 'escalated';
+
+  const phaseLabels: Record<string, string> = {
+    diagnosing: '诊断中',
+    patching: '修补提示词',
+    regenerating: '重新生成',
+    revalidating: '重新验证',
+    retesting: '重新质检',
+    complete: '修复完成',
+    escalated: '需人工介入',
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-3"
+    >
+      {/* Summary */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+        <Stethoscope className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">AI 诊断结果</p>
+          <p className="text-xs text-muted-foreground mt-1">{diagnosis.summary}</p>
+        </div>
+      </div>
+
+      {/* Critical Issues */}
+      {diagnosis.criticalIssues.length > 0 && (
+        <div className="space-y-2">
+          {diagnosis.criticalIssues.map((issue, idx) => {
+            const Icon = areaIcons[issue.area] || AlertTriangle;
+            const colors = areaColors[issue.area] || areaColors.unknown;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className={cn('p-3 rounded-lg border text-sm', colors)}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="font-medium">{issue.issue}</span>
+                  {issue.estimatedImprovement > 0 && (
+                    <Badge variant="outline" className="text-[10px] ml-auto gap-0.5 shrink-0">
+                      <ArrowUp className="h-2.5 w-2.5" />
+                      +{issue.estimatedImprovement}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs opacity-80 pl-5">{issue.fix}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Estimated improvement */}
+      {diagnosis.estimatedImprovement.overall > 0 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+          <ArrowUp className="h-3 w-3 text-green-500" />
+          预估提升: 综合 +{diagnosis.estimatedImprovement.overall}
+          {diagnosis.estimatedImprovement.security > 0 && ` | 安全 +${diagnosis.estimatedImprovement.security}`}
+          {diagnosis.estimatedImprovement.quality > 0 && ` | 质量 +${diagnosis.estimatedImprovement.quality}`}
+        </div>
+      )}
+
+      {/* Auto-fix progress */}
+      {isAutoFixing && autoFixProgress && (
+        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            <span className="text-sm font-medium text-primary">
+              {phaseLabels[autoFixProgress.phase] || autoFixProgress.phase}
+            </span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {autoFixProgress.attempt}/{autoFixProgress.maxAttempts}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">{autoFixProgress.message}</p>
+          <Progress value={(autoFixProgress.attempt / autoFixProgress.maxAttempts) * 100} className="h-1" />
+        </div>
+      )}
+
+      {/* Auto-fix complete */}
+      {autoFixProgress?.phase === 'complete' && (
+        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4" />
+          {autoFixProgress.message}
+        </div>
+      )}
+
+      {/* Escalated */}
+      {autoFixProgress?.phase === 'escalated' && (
+        <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4" />
+          {autoFixProgress.message}
+        </div>
+      )}
+
+      {/* Auto-fix button */}
+      {diagnosis.autoFixable && onAutoFix && !isAutoFixing && autoFixProgress?.phase !== 'complete' && (
+        <Button
+          onClick={onAutoFix}
+          className="w-full gap-2"
+          variant="default"
+          size="sm"
+        >
+          <Wrench className="h-4 w-4" />
+          🔧 AI 自动修复
+        </Button>
+      )}
+    </motion.div>
+  );
+};
+
 // Main AgentScorecard Component
 const AgentScorecard: React.FC<AgentScorecardProps> = ({
   evaluationResult,
@@ -292,6 +450,11 @@ const AgentScorecard: React.FC<AgentScorecardProps> = ({
   onRerun,
   showHistory = false,
   onSelectHistoryEval,
+  diagnosisResult,
+  isDiagnosing,
+  autoFixProgress,
+  onAutoFix,
+  onDiagnose,
   className,
 }) => {
   const { score, testRuns, redTeamResults, passed, duration } = evaluationResult;
@@ -418,6 +581,29 @@ const AgentScorecard: React.FC<AgentScorecardProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Diagnosis Panel - shown when eval failed */}
+        {!passed && (diagnosisResult || isDiagnosing) && (
+          <DiagnosisPanel
+            diagnosis={diagnosisResult || { summary: '正在分析...', criticalIssues: [], promptPatches: [], estimatedImprovement: { security: 0, logic: 0, quality: 0, overall: 0 }, autoFixable: false }}
+            autoFixProgress={autoFixProgress}
+            onAutoFix={onAutoFix}
+            isDiagnosing={isDiagnosing}
+          />
+        )}
+
+        {/* Diagnose button when no diagnosis yet and failed */}
+        {!passed && !diagnosisResult && !isDiagnosing && onDiagnose && (
+          <Button
+            onClick={onDiagnose}
+            variant="outline"
+            className="w-full gap-2"
+            size="sm"
+          >
+            <Stethoscope className="h-4 w-4" />
+            AI 智能诊断
+          </Button>
+        )}
 
         {/* Final Verdict */}
         <motion.div
