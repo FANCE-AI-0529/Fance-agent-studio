@@ -10,7 +10,8 @@ export type TaskType =
   | "content_filter"
   | "memory_update"
   | "log_archive"
-  | "model_inference";
+  | "model_inference"
+  | "agent_self_wake";
 
 export interface SchedulerTask {
   id?: string;
@@ -135,5 +136,23 @@ export function createLogArchiveTask(sessionId: string, logs: unknown[]): Schedu
     priority: "dt",
     task_type: "log_archive",
     payload: { session_id: sessionId, logs },
+  };
+}
+
+// Helper to create agent self-wake task (DT)
+export function createSelfWakeTask(
+  agentId: string,
+  pendingTasks: string[],
+  claudeMdPath?: string
+): SchedulerTask {
+  return {
+    priority: "dt",
+    task_type: "agent_self_wake",
+    payload: {
+      agent_id: agentId,
+      pending_tasks: pendingTasks,
+      claude_md_path: claudeMdPath,
+      wake_reason: "pending_tasks_detected",
+    },
   };
 }

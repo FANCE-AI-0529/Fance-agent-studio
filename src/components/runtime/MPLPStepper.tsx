@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Brain, Shield, Zap, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type MPLPPhase = "idle" | "planning" | "confirm" | "executing" | "trace";
+export type MPLPPhase = "idle" | "planning" | "confirm" | "ipc_intercept" | "executing" | "trace";
 
 interface MPLPStepperProps {
   currentPhase: MPLPPhase;
@@ -13,6 +13,7 @@ const phases: { key: MPLPPhase; label: string; icon: typeof Clock }[] = [
   { key: "idle", label: "Idle", icon: Clock },
   { key: "planning", label: "Planning", icon: Brain },
   { key: "confirm", label: "Confirm", icon: Shield },
+  { key: "ipc_intercept", label: "IPC Guard", icon: Shield },
   { key: "executing", label: "Executing", icon: Zap },
   { key: "trace", label: "Trace", icon: GitBranch },
 ];
@@ -32,6 +33,11 @@ const phaseColors: Record<MPLPPhase, { bg: string; text: string; glow: string }>
     bg: "bg-status-confirm", 
     text: "text-status-confirm",
     glow: "shadow-[0_0_12px_hsl(var(--status-confirm)/0.5)]"
+  },
+  ipc_intercept: {
+    bg: "bg-destructive",
+    text: "text-destructive",
+    glow: "shadow-[0_0_12px_hsl(var(--destructive)/0.5)]"
   },
   executing: { 
     bg: "bg-status-executing", 
