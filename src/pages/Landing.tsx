@@ -5,6 +5,9 @@ import { GlassNavbar } from "@/components/landing/GlassNavbar";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { BentoFeatures } from "@/components/landing/BentoFeatures";
 import { DetailedFeatures } from "@/components/landing/DetailedFeatures";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { FAQSection } from "@/components/landing/FAQSection";
 import { InviteModal } from "@/components/landing/InviteModal";
 import { Footer } from "@/components/landing/Footer";
 
@@ -31,6 +34,15 @@ export default function Landing() {
 
       {/* Detailed features */}
       <DetailedFeatures />
+
+      {/* Pricing */}
+      <PricingSection onBookDemo={() => setShowInvite(true)} />
+
+      {/* Testimonials */}
+      <TestimonialsSection />
+
+      {/* FAQ */}
+      <FAQSection />
 
       {/* CTA banner */}
       <section className="relative py-20 sm:py-32 px-4 sm:px-6">
