@@ -9,6 +9,7 @@ import type {
   SkillState,
   SkillInjectionResult,
 } from '@/types/nanoclawSkills';
+import { customizeManager } from '@/services/customizeManager';
 
 // ── Client-side operation mutex ────────────────────────────────
 const activeOperations = new Map<string, Promise<unknown>>();
@@ -49,10 +50,51 @@ export class SkillInjector {
     skillIds?: string[]
   ): Promise<SkillInjectionResult> {
     return withContainerMutex(containerId, async () => {
+      // ── Auto preflight: customize session mutex ──
+      customizeManager.assertNoActiveSession(containerId);
+
       const skills = skillIds
         ? skillIds.map(id => CORE_SKILL_MAP[id]).filter(Boolean)
         : CORE_SKILL_PROMPTS;
 
+      // ── Auto preflight: dependency/version/conflict checks ──
+      const idsToCheck = skills.map(s => s.id);
+      const preflight = await this.preflightCheck(containerId, idsToCheck, nanoclawEndpoint, authToken);
+      if (!preflight.ok) {
+        // Filter out "Already installed" — those are soft warnings, skip them silently
+        const hardIssues = preflight.issues.filter(i => !i.issue.startsWith('Already installed'));
+        if (hardIssues.length > 0) {
+          return {
+            success: false,
+            injected: [],
+            failed: hardIssues.map(i => ({ skillId: i.skillId, error: i.issue })),
+          };
+        }
+        // Remove already-installed skills from injection list
+        const installedSkillIds = new Set(
+          preflight.issues.filter(i => i.issue.startsWith('Already installed')).map(i => i.skillId)
+        );
+        const filteredSkills = skills.filter(s => !installedSkillIds.has(s.id));
+        if (filteredSkills.length === 0) {
+          return { success: true, injected: [], failed: [] };
+        }
+        // Replace skills with filtered list
+        return this._doInject(containerId, filteredSkills, nanoclawEndpoint, authToken);
+      }
+
+      return this._doInject(containerId, skills, nanoclawEndpoint, authToken);
+    });
+  }
+
+  /**
+   * 内部注入执行（预检通过后调用）
+   */
+  private async _doInject(
+    containerId: string,
+    skills: CoreSkillPrompt[],
+    nanoclawEndpoint: string,
+    authToken: string
+  ): Promise<SkillInjectionResult> {
       const injected: string[] = [];
       const failed: Array<{ skillId: string; error: string }> = [];
 
@@ -77,7 +119,60 @@ export class SkillInjector {
       }
 
       return { success: failed.length === 0, injected, failed, state };
-    });
+  }
+
+  /**
+   * 读取容器内文件哈希并与 state.yaml 记录对比，检测漂移
+   */
+  async detectDrift(
+    containerId: string,
+    nanoclawEndpoint: string,
+    authToken: string
+  ): Promise<{
+    hasDrift: boolean;
+    driftFiles: Array<{ skill: string; file: string; expected: string; actual: string }>;
+  }> {
+    const driftFiles: Array<{ skill: string; file: string; expected: string; actual: string }> = [];
+
+    let state: SkillState;
+    try {
+      state = await this.syncSkillState(containerId, nanoclawEndpoint, authToken);
+    } catch {
+      return { hasDrift: false, driftFiles: [] };
+    }
+
+    for (const applied of state.applied_skills) {
+      if (!applied.file_hashes) continue;
+      for (const [filePath, expectedHash] of Object.entries(applied.file_hashes)) {
+        try {
+          // Ask container to compute current hash
+          const { data } = await supabase.functions.invoke('nanoclaw-gateway', {
+            body: {
+              action: 'execute',
+              nanoclawEndpoint,
+              authToken,
+              request: {
+                containerId,
+                command: `sha256sum "${filePath}" 2>/dev/null | cut -d' ' -f1`,
+              },
+            },
+          });
+          const actualHash = (data?.output || '').trim();
+          if (actualHash && actualHash !== expectedHash) {
+            driftFiles.push({
+              skill: applied.name,
+              file: filePath,
+              expected: expectedHash,
+              actual: actualHash,
+            });
+          }
+        } catch {
+          // Can't check this file — skip
+        }
+      }
+    }
+
+    return { hasDrift: driftFiles.length > 0, driftFiles };
   }
 
   /**
