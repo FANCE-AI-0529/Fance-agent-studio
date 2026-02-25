@@ -133,14 +133,14 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
                   <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#febc2e]" />
                   <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                <span className="text-[10px] sm:text-xs font-mono text-[#71717a] ml-2">hive-terminal</span>
+                <span className="text-[10px] sm:text-xs font-mono text-[#71717a] ml-2">fance-terminal</span>
               </div>
               {/* Terminal content */}
               <div className="p-3 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed text-left overflow-x-auto">
                 <p>
                   <span className="text-[#22d3ee]">➜</span>{" "}
                   <span className="text-[#a1a1aa]">~</span>{" "}
-                  <span className="text-white">hive deploy --type "Audit Agent"</span>
+                  <span className="text-white">fance deploy --type "Audit Agent"</span>
                 </p>
                 <p className="text-[#71717a] mt-1">&gt; Initializing NanoClaw isolated container...</p>
                 <p className="text-[#71717a]">&gt; Injecting FANCE.AI Cognitive Core...</p>

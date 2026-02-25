@@ -336,7 +336,7 @@ export function DataExportForm() {
 function generateMarkdown(data: Record<string, any>): string {
   const lines: string[] = [];
   
-  lines.push("# HIVE 数据导出");
+  lines.push("# FANCE 数据导出");
   lines.push("");
   lines.push(`导出时间: ${format(new Date(data.exportedAt), "yyyy年MM月dd日 HH:mm:ss", { locale: zhCN })}`);
   lines.push(`用户: ${data.email}`);
