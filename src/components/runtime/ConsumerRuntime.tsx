@@ -479,9 +479,7 @@ export function ConsumerRuntime() {
             <div className="flex items-center gap-2">
               {agentConfig ? (
                 <>
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
+                  <img src={logoIcon} alt="Agent Studio" className="w-7 h-7 rounded-lg object-cover" />
                   <span className="font-semibold text-sm">{agentConfig.name}</span>
                   {memoryContext && (
                     <Tooltip>

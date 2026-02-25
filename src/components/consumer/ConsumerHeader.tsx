@@ -31,7 +31,7 @@ export function ConsumerHeader() {
           onClick={() => navigate('/')}
         >
           <div className="relative">
-            <img src={logoIcon} alt="Agent Studio" className="w-9 h-9 rounded-xl" />
+            <img src={logoIcon} alt="Agent Studio" className="w-9 h-9 rounded-xl object-cover" />
             <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
           </div>
           <div className="flex flex-col">
