@@ -11,7 +11,6 @@ interface GlassNavbarProps {
 const navItems = [
   { title: "平台架构", href: "#features" },
   { title: "MPLP 协议", href: "#features" },
-  { title: "技术文档", href: "#features" },
 ];
 
 export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
@@ -57,7 +56,7 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
       className={cn(
         "fixed top-0 inset-x-0 z-50 transition-all duration-300",
         scrolled
-          ? "backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#22d3ee]/10 shadow-[0_0_30px_rgba(34,211,238,0.05)]"
+          ? "backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#22d3ee]/15 shadow-[0_1px_15px_rgba(34,211,238,0.08)]"
           : "bg-transparent"
       )}
     >
@@ -89,6 +88,15 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
                   </a>
                 </li>
               ))}
+              <li>
+                <a
+                  href="#features"
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-mono text-[#a1a1aa] border border-white/10 rounded-lg hover:border-[#22d3ee]/30 hover:text-[#22d3ee] transition-all md:w-auto"
+                >
+                  开发者文档
+                </a>
+              </li>
               <li>
                 <button
                   onClick={() => { onLogin(); setMobileOpen(false); }}

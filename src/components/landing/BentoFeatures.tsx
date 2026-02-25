@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-motion";
 import { useRef, MouseEvent as ReactMouseEvent } from "react";
 
 /* ── Spotlight hover card ── */
@@ -14,6 +14,7 @@ function SpotlightCard({
   const mouseY = useMotionValue(0);
   const x = useSpring(mouseX, { stiffness: 200, damping: 30 });
   const y = useSpring(mouseY, { stiffness: 200, damping: 30 });
+  const bg = useMotionTemplate`radial-gradient(400px circle at ${x}px ${y}px, rgba(34,211,238,0.06), transparent 60%)`;
 
   function handleMouse(e: ReactMouseEvent) {
     const rect = ref.current?.getBoundingClientRect();
@@ -26,13 +27,11 @@ function SpotlightCard({
     <div
       ref={ref}
       onMouseMove={handleMouse}
-      className={`relative group overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a]/70 backdrop-blur-xl transition-colors hover:border-[#22d3ee]/30 ${className}`}
+      className={`relative group overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a]/70 backdrop-blur-xl transition-colors hover:border-[#22d3ee]/50 ${className}`}
     >
       <motion.div
         className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          background: `radial-gradient(400px circle at ${x.get()}px ${y.get()}px, rgba(34,211,238,0.06), transparent 60%)`,
-        }}
+        style={{ background: bg }}
       />
       {children}
     </div>
