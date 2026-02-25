@@ -15,6 +15,7 @@ import { EjectTransition } from "@/components/consumer/EjectTransition";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { useAppModeStore } from "@/stores/appModeStore";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import Builder from "./pages/Builder";
 import Foundry from "./pages/Foundry";
 import Runtime from "./pages/Runtime";
@@ -56,7 +57,7 @@ function AppRoutes() {
     }
 
     if (!user && !isGuestMode) {
-      return <Navigate to="/auth" replace />;
+      return <Navigate to="/landing" replace />;
     }
 
     return <>{children}</>;
@@ -110,6 +111,8 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public landing page */}
+      <Route path="/landing" element={<Landing />} />
       <Route
         path="/auth"
         element={
