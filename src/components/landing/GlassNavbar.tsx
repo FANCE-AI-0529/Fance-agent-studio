@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
-import logoFull from "@/assets/logo-full.png";
+import { SwarmLogo } from "@/components/landing/SwarmLogo";
 
 interface GlassNavbarProps {
   onBookDemo: () => void;
@@ -42,12 +42,15 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
           >
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <img src={logoFull} alt="Agent OS" className="h-8 sm:h-9 rounded-lg object-cover" />
+              <SwarmLogo size={40} />
+              <span className="text-base sm:text-lg font-bold text-white tracking-tight">
+                AgentOS
+              </span>
             </div>
 
             {/* Nav links - hidden on mobile */}
             <div className="hidden md:flex items-center gap-8">
-              {["平台架构", "MPLP 协议", "技术文档"].map((item) => (
+              {["平台架构", "MPLP 协议", "开发者文档"].map((item) => (
                 <a
                   key={item}
                   href="#features"
@@ -98,7 +101,7 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
             className="fixed top-[60px] inset-x-0 z-40 sm:hidden px-4 pt-2"
           >
             <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/95 backdrop-blur-2xl p-5 space-y-4">
-              {["平台架构", "MPLP 协议", "技术文档"].map((item) => (
+              {["平台架构", "MPLP 协议", "开发者文档"].map((item) => (
                 <a
                   key={item}
                   href="#features"
