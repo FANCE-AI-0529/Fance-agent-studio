@@ -1,73 +1,90 @@
 
 
-# FormattedText 精细化渲染优化计划
+# FormattedText 精细化渲染优化 — 实施计划
 
-## 问题分析
+## 变更概述
 
-从截图中识别到以下视觉问题：
-
-### 问题 1：TypewriterFormattedText 缺失语义标签支持（严重）
-`TypewriterFormattedText.tsx` 的 `FormattedContent` 组件**完全缺失**所有语义标签的解析：
-- 没有 `<h-entity>`、`<h-alert>`、`<h-data>`、`<h-status>` 核心标签
-- 没有 `<h-link>`、`<h-code>`、`<h-quote>`、`<h-action>` 扩展标签
-- 没有 `**bold**` 到胶囊的自动转换
-- 这意味着**流式回复期间所有语义高亮都是失效的**，只在流式结束变为历史消息后才生效
-
-### 问题 2：树形结构排版粗糙
-- `├─` / `└─` 箱线符与内容之间缺乏适当间距
-- 箱线符颜色 `text-border` 太暗淡，与内容对比度不足
-- 树形子项缺少左侧缩进，层级不明显
-
-### 问题 3：编号标题缺乏视觉层级
-- `1. 初步医疗信息` 这类编号段落标题被当作普通 `<h-entity>` 胶囊渲染
-- 应该作为独立的段落标题行，具有更强视觉权重
-
-### 问题 4：`*` 星号列表未处理
-- LLM 输出的 `* 内容` 格式被原样显示为文本 `*`
-- 应转换为圆点符号并增加缩进
-
-### 问题 5：段落间距不足
-- 各树形结构段落之间缺少视觉分隔
-- 内容密度过高，阅读疲劳
+两个文件的全面优化，解决流式渲染语义标签缺失、树形结构排版粗糙、列表符号未处理、段落间距不足四大问题。
 
 ---
 
-## 修复方案
+## 修改 1：TypewriterFormattedText.tsx（完整重写 FormattedContent）
 
-### 修改 1：TypewriterFormattedText 补全语义标签（关键修复）
+**核心问题**：流式渲染期间所有语义高亮完全失效
 
-**文件**：`src/components/runtime/TypewriterFormattedText.tsx`
+**变更内容**：
 
-在 `FormattedContent` 的 `patterns` 数组中补入全部 8 个语义标签模式（与 FormattedText 保持一致）：
-- `<h-entity>`, `<h-alert>`, `<h-data>`, `<h-status>`
-- `<h-link>`, `<h-code>`, `<h-quote>`, `<h-action>`
-- `**bold**` 自动转为胶囊
+1. 新增 `import { AlertCircle } from "lucide-react"`
 
-在 `switch` 语句中补入对应的渲染分支，样式与 `FormattedText.tsx` 完全一致。
+2. `FormattedContent` 的 `patterns` 数组从 8 个模式扩展为 18 个，补入全部语义标签：
+   - `<h-entity>`, `<h-alert>`, `<h-data>`, `<h-status>` 核心标签
+   - `<h-link>`, `<h-code>`, `<h-quote>`, `<h-action>` 扩展标签
+   - `^\[([^\]]+)\]$` header 匹配
+   - `\*\*(.+?)\*\*` bold 自动转胶囊
 
-同时导入 `AlertCircle` 图标用于 `h-alert` 渲染。
+3. `Match` 接口的 `type` 联合类型扩展，新增 `refSource` 字段
 
-### 修改 2：FormattedText 树形结构精细化
+4. `switch` 语句补入 12 个渲染分支，样式与 FormattedText.tsx 完全一致：
+   - `h-entity` → indigo 胶囊
+   - `h-alert` → rose 胶囊 + AlertCircle 图标
+   - `h-data` → cyan 等宽粗体
+   - `h-status` → emerald 中粗
+   - `h-link` → blue 下划线
+   - `h-code` → cyan 代码框
+   - `h-quote` → 斜体 + 左边框
+   - `h-action` → primary 圆角标签
+   - `bold/emphasis` → indigo 胶囊（与 h-entity 同风格）
+   - `header` → TERMINAL_CLASSES.header
 
-**文件**：`src/components/runtime/FormattedText.tsx`
+5. 行级渲染优化（terminal style 分支）：
+   - 空行 → `<div className="h-2" />` 段间距
+   - 箱线符 → `text-muted-foreground/60 mr-1.5`（提升对比度 + 间距）
+   - 分隔线 → `my-3`（增加间距）
+   - 编号标题 `^\d+\.\s+` → 左侧色条段落标题
+   - 列表符号 `^[*-]\s+` → 圆点 `●` + 缩进
 
-- 箱线符渲染增加右侧间距：`mr-1.5`
-- 箱线符颜色升级：`text-border` → `text-muted-foreground/60`
-- 树形行增加左缩进 `pl-2` 营造层级感
-- 空行前后增加 `my-1` 间距
+---
 
-### 修改 3：新增列表符号模式
+## 修改 2：FormattedText.tsx（formatWithBoxChars 优化）
 
-**文件**：`src/components/runtime/FormattedText.tsx` 和 `TypewriterFormattedText.tsx`
+**变更内容**（仅 `formatWithBoxChars` 函数，约 40 行替换为 60 行）：
 
-在 `formatWithBoxChars` / 行级处理中新增：
-- `^\d+\.\s+` 编号行 → 渲染为带左侧色条的段落标题
-- `^\*\s+` 星号列表 → 转为 `•` 圆点 + 缩进
-- `^-\s+` 短横列表 → 转为 `•` 圆点 + 缩进
+1. 箱线符颜色：`TERMINAL_CLASSES.boxChar` → `"text-muted-foreground/60 mr-1.5"`
+2. 分隔线间距：`my-2` → `my-3`
+3. 新增空行检测：`/^\s*$/` → `<div className="h-2" />`
+4. 新增编号标题：`/^\d+\.\s+/` → 带 `border-l-2 border-primary/40` 的段落标题
+5. 新增列表符号：`/^[*-]\s+/` → 圆点 `●` + `pl-4` 缩进
 
-### 修改 4：段落间距优化
+---
 
-在行级渲染中，检测空行（`/^\s*$/`）并渲染为 `<div className="h-2" />` 增加段间距。
+## 技术细节
+
+### 编号标题渲染结构
+```text
+<div class="flex items-start gap-2 mt-2 mb-1 border-l-2 border-primary/40 pl-2">
+  <span class="text-primary font-bold text-sm">1.</span>
+  <span class="text-primary font-medium text-sm">{内容}</span>
+</div>
+```
+
+### 列表符号渲染结构
+```text
+<div class="flex items-start gap-2 pl-4">
+  <span class="text-muted-foreground mt-1.5 text-[6px]">●</span>
+  <span>{内容}</span>
+</div>
+```
+
+### 行级处理优先级（从上到下）
+```text
+1. 空行         → 段间距 spacer
+2. 箱线符行     → 树形结构渲染
+3. 分隔线 ---   → <hr>
+4. [Header]     → 标题高亮
+5. 编号 1.      → 段落标题
+6. 列表 * / -   → 圆点列表
+7. 普通行       → formatContent 内联解析
+```
 
 ---
 
@@ -75,8 +92,8 @@
 
 | 文件 | 变更说明 |
 |------|---------|
-| `src/components/runtime/TypewriterFormattedText.tsx` | 补全 8 个语义标签 + bold 转胶囊 + 导入 AlertCircle |
-| `src/components/runtime/FormattedText.tsx` | 树形结构间距/颜色优化 + 列表符号处理 + 段落间距 |
+| `src/components/runtime/TypewriterFormattedText.tsx` | 补全全部 8+2 语义标签 + bold 转胶囊 + 导入 AlertCircle + 行级列表/编号/空行处理 |
+| `src/components/runtime/FormattedText.tsx` | formatWithBoxChars 优化：箱线符颜色间距 + 编号标题 + 列表符号 + 段落间距 |
 
 共 2 个文件修改。
 
