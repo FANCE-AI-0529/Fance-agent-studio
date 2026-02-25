@@ -39,7 +39,7 @@ serve(async (req) => {
     }
     // ========== END AUTHENTICATION ==========
 
-    const { description, category, difficulty } = await req.json();
+    const { description, category, difficulty, format } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -57,6 +57,8 @@ serve(async (req) => {
 
     console.log(`Generating skill template for: ${description}`);
 
+    const isNativeFormat = format === 'nanoclaw_native';
+
     // Use tool calling for guaranteed structured output
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -71,7 +73,27 @@ serve(async (req) => {
             role: "system",
             content: `你是一个专业的 Agent 技能模板生成器。根据用户描述生成完整、规范的技能模板。
 
-## Skill.md YAML Frontmatter 必须包含以下字段：
+${isNativeFormat ? `## NanoClaw 原生格式
+
+Skill.md 使用以下 YAML frontmatter 格式：
+---
+name: "skill-name"
+description: "技能描述"
+allowed-tools: Bash(tool1,tool2), Read, Write
+---
+
+然后是 Markdown 文档，包含：Quick start → Core workflow → Commands → Examples
+
+allowed-tools 可选值：
+- Bash(*) — 通用 Shell 访问
+- Bash(tool1,tool2,...) — 限定特定命令
+- Read — 文件读取
+- Write — 文件写入
+- Bash(agent-browser:*) — 浏览器自动化
+- Bash(curl,jq) — HTTP 请求
+
+` : `## Skill.md YAML Frontmatter 必须包含以下字段：`}
+
 
 1. **name** (必填): 技能名称，kebab-case 格式，如 "web-search"
 2. **version** (必填): 语义化版本号，如 "1.0.0"
@@ -166,6 +188,10 @@ ${difficulty ? `难度：${difficulty}` : ''}
                   description: {
                     type: "string",
                     description: "技能描述（中文，简明扼要）"
+                  },
+                  allowedTools: {
+                    type: "string",
+                    description: "NanoClaw 原生格式的 allowed-tools 声明，如 'Bash(curl,jq), Read'。仅在 NanoClaw 原生格式时需要。"
                   },
                   skillMd: {
                     type: "string",

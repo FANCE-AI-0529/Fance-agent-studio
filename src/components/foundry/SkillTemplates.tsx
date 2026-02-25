@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createElement } from "react";
 import {
   Database,
   Globe,
@@ -27,6 +28,14 @@ import {
   BarChart3,
   GitBranch,
   Webhook,
+  Monitor,
+  FolderOpen,
+  Terminal,
+  Brain,
+  ListTodo,
+  ScanSearch,
+  Plug,
+  HeartPulse,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +61,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CORE_SKILL_PROMPTS } from "@/constants/coreSkillPrompts";
 
 export interface SkillTemplate {
   id: string;
@@ -63,10 +73,40 @@ export interface SkillTemplate {
   content: string;
   handlerCode: string;
   configYaml: string;
+  isNative?: boolean;
 }
+
+// NanoClaw 原生核心技能图标映射
+const nativeSkillIcons: Record<string, React.ReactNode> = {
+  'nc-agent-browser': createElement(Monitor, { className: "h-4 w-4" }),
+  'nc-file-manager': createElement(FolderOpen, { className: "h-4 w-4" }),
+  'nc-shell-executor': createElement(Terminal, { className: "h-4 w-4" }),
+  'nc-memory-manager': createElement(Brain, { className: "h-4 w-4" }),
+  'nc-task-planner': createElement(ListTodo, { className: "h-4 w-4" }),
+  'nc-code-reviewer': createElement(ScanSearch, { className: "h-4 w-4" }),
+  'nc-api-connector': createElement(Plug, { className: "h-4 w-4" }),
+  'nc-self-healer': createElement(HeartPulse, { className: "h-4 w-4" }),
+};
+
+// 将核心技能提示词转换为 SkillTemplate 格式
+const coreSkillTemplates: SkillTemplate[] = CORE_SKILL_PROMPTS.map(skill => ({
+  id: skill.id,
+  name: skill.name,
+  description: skill.description,
+  category: skill.category,
+  icon: nativeSkillIcons[skill.id] || createElement(Zap, { className: "h-4 w-4" }),
+  difficulty: skill.difficulty,
+  content: skill.skillMd,
+  handlerCode: skill.handlerPy,
+  configYaml: skill.configYaml,
+  isNative: true,
+}));
 
 // 真实可用的技能模板库
 export const skillTemplates: SkillTemplate[] = [
+  // 核心自主能力（NanoClaw 原生格式）
+  ...coreSkillTemplates,
+  // 标准技能模板
   {
     id: "web-search",
     name: "网页搜索",
@@ -3700,6 +3740,7 @@ export function SkillTemplatesDialog({
   };
 
   const categoryColors: Record<string, string> = {
+    "核心自主": "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
     "信息检索": "bg-sky-500/15 text-sky-400 border-sky-500/30",
     "数据操作": "bg-violet-500/15 text-violet-400 border-violet-500/30",
     "NLP": "bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30",
@@ -3774,6 +3815,11 @@ export function SkillTemplatesDialog({
                             <h3 className="font-semibold text-sm text-foreground truncate">
                               {template.name}
                             </h3>
+                            {(template as any).isNative && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                                NanoClaw
+                              </span>
+                            )}
                           </div>
                           
                           {/* Prominent difficulty badge */}

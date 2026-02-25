@@ -14,6 +14,8 @@ export interface SkillMdStructure {
   steps: string[];
   constraints: string[];
   examples: SkillExample[];
+  allowedTools: string[];
+  format: 'studio' | 'nanoclaw_native';
 }
 
 export interface SkillInput {
@@ -100,7 +102,24 @@ export class SkillGenerator {
       steps: [],
       constraints: [],
       examples: [],
+      allowedTools: [],
+      format: 'studio',
     };
+
+    // Detect NanoClaw native format (allowed-tools in frontmatter)
+    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (frontmatterMatch) {
+      const frontmatter = frontmatterMatch[1];
+      const allowedToolsMatch = frontmatter.match(/allowed-tools:\s*(.+)/);
+      if (allowedToolsMatch) {
+        structure.allowedTools = allowedToolsMatch[1].split(',').map(t => t.trim());
+        structure.format = 'nanoclaw_native';
+      }
+      const nameMatch = frontmatter.match(/name:\s*(.+)/);
+      if (nameMatch) structure.name = nameMatch[1].trim();
+      const descMatch = frontmatter.match(/description:\s*(.+)/);
+      if (descMatch) structure.description = descMatch[1].trim();
+    }
 
     const lines = content.split('\n');
     let currentSection = '';
@@ -200,6 +219,24 @@ export class SkillGenerator {
     }
 
     return md;
+  }
+
+  /**
+   * 生成 NanoClaw 原生格式 SKILL.md
+   */
+  generateNativeSkillMd(opts: {
+    name: string;
+    description: string;
+    allowedTools: string;
+    body: string;
+  }): string {
+    return `---
+name: ${opts.name}
+description: ${opts.description}
+allowed-tools: ${opts.allowedTools}
+---
+
+${opts.body}`;
   }
 
   /**
