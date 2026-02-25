@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ParticleField } from "@/components/landing/ParticleField";
 import { GlassNavbar } from "@/components/landing/GlassNavbar";
 import { HeroSection } from "@/components/landing/HeroSection";
+import { WaitingListForm } from "@/components/landing/WaitingListForm";
 import { BentoFeatures } from "@/components/landing/BentoFeatures";
 import { DetailedFeatures } from "@/components/landing/DetailedFeatures";
 import { PricingSection } from "@/components/landing/PricingSection";
@@ -27,7 +28,7 @@ export default function Landing() {
       />
 
       {/* Hero */}
-      <HeroSection onBookDemo={() => setShowInvite(true)} />
+      <HeroSection />
 
       {/* Bento features */}
       <BentoFeatures />
@@ -64,17 +65,7 @@ export default function Landing() {
             <p className="text-sm sm:text-base text-[#a1a1aa] mb-6 sm:mb-8 max-w-xl mx-auto px-2">
               申请内测资格，成为首批使用 FANCE 构建数字员工网络的先行者。
             </p>
-            <button
-              onClick={() => setShowInvite(true)}
-              className="group relative inline-flex items-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl text-sm sm:text-base font-semibold text-white overflow-hidden transition-transform hover:scale-[1.03] active:scale-[0.98]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#22d3ee] to-[#818cf8]" />
-              <div
-                className="absolute -inset-1 rounded-xl opacity-40 group-hover:opacity-70 blur-xl transition-opacity"
-                style={{ background: "linear-gradient(135deg, #22d3ee, #818cf8)" }}
-              />
-              <span className="relative z-10">申请早期访问</span>
-            </button>
+            <WaitingListForm source="bottom_cta" />
           </div>
         </div>
       </section>
