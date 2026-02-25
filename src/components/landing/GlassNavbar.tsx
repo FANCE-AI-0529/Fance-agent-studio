@@ -27,7 +27,7 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
     <div className="flex items-center justify-between py-5 md:block">
       <a href="#" className="flex items-center gap-2">
         <img src={logoFull} alt="FANCE" className="h-8 sm:h-9 rounded-lg object-cover" />
-        <span className="text-white font-bold text-xl tracking-[0.3em] uppercase" style={{ fontFamily: "'Orbitron', 'Rajdhani', 'Share Tech Mono', monospace" }}>FANCE</span>
+        <span className="text-white font-bold text-xl tracking-[0.3em] uppercase" style={{ fontFamily: "'Orbitron', 'Rajdhani', 'Share Tech Mono', monospace" }}>FANCE AI</span>
       </a>
       <div className="md:hidden">
         <button
