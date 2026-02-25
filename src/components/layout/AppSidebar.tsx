@@ -91,10 +91,10 @@ export function AppSidebar() {
           {/* Logo & Brand */}
           <div className="p-4 border-b border-sidebar-border">
             <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
-              <img src={logoIcon} alt="Agent Studio" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+              <img src={logoIcon} alt="HIVE" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               {!collapsed && (
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm text-foreground">Agent Studio</div>
+                  <div className="font-semibold text-sm text-foreground">HIVE</div>
                   <div className="text-[10px] text-muted-foreground">技能驱动，智能无限！</div>
                 </div>
               )}

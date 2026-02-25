@@ -91,7 +91,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
       await acceptInvitationOnSignup(invitationId, newUser.id);
     }
     setLoading(false);
-    toast({ title: "注册成功", description: "欢迎加入 Agent OS！" });
+    toast({ title: "注册成功", description: "欢迎加入 HIVE！" });
     onClose();
     navigate("/");
   };
@@ -153,7 +153,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
                       </div>
                     </div>
                     <p className="text-sm text-[#71717a] mb-6 ml-[52px]">
-                      请输入您的内测邀请码以访问 Agent OS 控制台。
+                      请输入您的内测邀请码以访问 HIVE 控制台。
                     </p>
 
                     <div className="space-y-4">
@@ -227,7 +227,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-white">
-                          {isLoginMode ? "登录 Agent OS" : "创建您的账户"}
+                          {isLoginMode ? "登录 HIVE" : "创建您的账户"}
                         </h2>
                         <p className="text-xs text-[#71717a]">
                           {isLoginMode ? "使用已有账户登录" : "一步完成注册，立即进入控制台"}

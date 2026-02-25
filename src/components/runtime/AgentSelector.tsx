@@ -18,10 +18,10 @@ interface AgentSelectorProps {
   isLoading?: boolean;
 }
 
-// Default demo agent - Agent Studio 智能助手 (平台向导)
+// Default demo agent - HIVE 智能助手 (平台向导)
 const defaultAgent = {
-  id: "agent-studio-guide",
-  name: "Agent Studio 助手",
+  id: "hive-guide",
+  name: "HIVE 助手",
   department: "平台向导",
   model: "gemini-2.5-flash",
   status: "deployed",

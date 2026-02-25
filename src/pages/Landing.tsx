@@ -62,7 +62,7 @@ export default function Landing() {
               了吗？
             </h2>
             <p className="text-sm sm:text-base text-[#a1a1aa] mb-6 sm:mb-8 max-w-xl mx-auto px-2">
-              申请内测资格，成为首批使用 Agent OS 构建数字员工网络的先行者。
+              申请内测资格，成为首批使用 HIVE 构建数字员工网络的先行者。
             </p>
             <button
               onClick={() => setShowInvite(true)}

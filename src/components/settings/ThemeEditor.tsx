@@ -241,7 +241,7 @@ function ThemePreview({ colors }: { colors: ThemeColors }) {
               style={{ backgroundColor: `hsl(${hslToString(colors.primary)})` }}
             />
             <div>
-              <div className="text-sm font-medium">Agent Studio</div>
+              <div className="text-sm font-medium">HIVE</div>
               <div 
                 className="text-xs"
                 style={{ color: `hsl(${hslToString(colors.muted)})` }}
@@ -385,7 +385,7 @@ export function ThemeEditor() {
           </div>
           <div>
             <h2 className="text-lg font-semibold">主题编辑器</h2>
-            <p className="text-sm text-muted-foreground">自定义你的 Agent Studio 外观</p>
+            <p className="text-sm text-muted-foreground">自定义你的 HIVE 外观</p>
           </div>
         </div>
         
