@@ -2,7 +2,7 @@ import { useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-function Particles({ count = 1500 }) {
+function Particles({ count = 800 }) {
   const mesh = useRef<THREE.Points>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const { viewport } = useThree();
@@ -142,7 +142,7 @@ export function ParticleField() {
         dpr={[1, 1.5]}
       >
         <ambientLight intensity={0.1} />
-        <Particles count={1200} />
+        <Particles count={typeof window !== 'undefined' && window.innerWidth < 640 ? 400 : 1000} />
         <NeuralGrid />
       </Canvas>
       {/* Vignette overlay */}
