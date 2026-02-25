@@ -13,6 +13,14 @@ export interface CoreSkillPrompt {
   skillMd: string;
   handlerPy: string;
   configYaml: string;
+  /** Minimum NanoClaw skills system version required */
+  minSystemVersion?: string;
+  /** Minimum NanoClaw core version required */
+  minCoreVersion?: string;
+  /** Skill IDs this skill depends on (must be installed first) */
+  dependsOn?: string[];
+  /** Skill IDs that conflict with this skill */
+  conflictsWith?: string[];
 }
 
 // ─────────────────────────────────────────────

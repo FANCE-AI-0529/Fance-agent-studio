@@ -7,15 +7,40 @@ import { supabase } from '@/integrations/supabase/client';
 import { CORE_SKILL_PROMPTS, CORE_SKILL_MAP, type CoreSkillPrompt } from '@/constants/coreSkillPrompts';
 import type {
   SkillState,
-  SkillInjectionRequest,
   SkillInjectionResult,
-  NanoClawSkillManifest,
-  NANOCLAW_PATHS,
 } from '@/types/nanoclawSkills';
+
+// ── Client-side operation mutex ────────────────────────────────
+const activeOperations = new Map<string, Promise<unknown>>();
+
+function withContainerMutex<T>(
+  containerId: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  const existing = activeOperations.get(containerId);
+  const chained = (existing ?? Promise.resolve()).then(operation, operation);
+  activeOperations.set(containerId, chained);
+  chained.finally(() => {
+    if (activeOperations.get(containerId) === chained) {
+      activeOperations.delete(containerId);
+    }
+  });
+  return chained;
+}
+
+// ── Semver comparison utility ──────────────────────────────────
+function semverSatisfies(current: string, required: string): boolean {
+  const parse = (v: string) => v.split('.').map(Number);
+  const [cMajor = 0, cMinor = 0, cPatch = 0] = parse(current);
+  const [rMajor = 0, rMinor = 0, rPatch = 0] = parse(required);
+  if (cMajor !== rMajor) return cMajor > rMajor;
+  if (cMinor !== rMinor) return cMinor > rMinor;
+  return cPatch >= rPatch;
+}
 
 export class SkillInjector {
   /**
-   * 批量注入核心技能到 NanoClaw 容器
+   * 批量注入核心技能到 NanoClaw 容器（带互斥锁）
    */
   async injectCoreSkills(
     containerId: string,
@@ -23,34 +48,36 @@ export class SkillInjector {
     authToken: string,
     skillIds?: string[]
   ): Promise<SkillInjectionResult> {
-    const skills = skillIds
-      ? skillIds.map(id => CORE_SKILL_MAP[id]).filter(Boolean)
-      : CORE_SKILL_PROMPTS;
+    return withContainerMutex(containerId, async () => {
+      const skills = skillIds
+        ? skillIds.map(id => CORE_SKILL_MAP[id]).filter(Boolean)
+        : CORE_SKILL_PROMPTS;
 
-    const injected: string[] = [];
-    const failed: Array<{ skillId: string; error: string }> = [];
+      const injected: string[] = [];
+      const failed: Array<{ skillId: string; error: string }> = [];
 
-    for (const skill of skills) {
-      try {
-        await this.injectSingleSkill(containerId, skill, nanoclawEndpoint, authToken);
-        injected.push(skill.id);
-      } catch (err) {
-        failed.push({
-          skillId: skill.id,
-          error: err instanceof Error ? err.message : 'Unknown error',
-        });
+      for (const skill of skills) {
+        try {
+          await this.injectSingleSkill(containerId, skill, nanoclawEndpoint, authToken);
+          injected.push(skill.id);
+        } catch (err) {
+          failed.push({
+            skillId: skill.id,
+            error: err instanceof Error ? err.message : 'Unknown error',
+          });
+        }
       }
-    }
 
-    // Sync state after injection
-    let state: SkillState | undefined;
-    if (injected.length > 0) {
-      try {
-        state = await this.syncSkillState(containerId, nanoclawEndpoint, authToken);
-      } catch { /* best effort */ }
-    }
+      // Sync state after injection
+      let state: SkillState | undefined;
+      if (injected.length > 0) {
+        try {
+          state = await this.syncSkillState(containerId, nanoclawEndpoint, authToken);
+        } catch { /* best effort */ }
+      }
 
-    return { success: failed.length === 0, injected, failed, state };
+      return { success: failed.length === 0, injected, failed, state };
+    });
   }
 
   /**
@@ -100,7 +127,7 @@ export class SkillInjector {
   }
 
   /**
-   * 注入前预检 — 检查依赖和冲突
+   * 完整预检 — 检查依赖、冲突、版本兼容性
    */
   async preflightCheck(
     containerId: string,
@@ -132,8 +159,53 @@ export class SkillInjector {
       }
 
       const cleanName = skill.id.replace('nc-', '');
+
+      // 1. Already-installed check
       if (appliedNames.has(cleanName)) {
         issues.push({ skillId: id, issue: `Already installed: ${cleanName}` });
+        continue;
+      }
+
+      // 2. System version check (min_system_version)
+      if (skill.minSystemVersion) {
+        if (!semverSatisfies(currentState.skills_system_version, skill.minSystemVersion)) {
+          issues.push({
+            skillId: id,
+            issue: `Requires system version >= ${skill.minSystemVersion}, current: ${currentState.skills_system_version}`,
+          });
+        }
+      }
+
+      // 3. Core version check (min_core_version)
+      if (skill.minCoreVersion) {
+        if (!semverSatisfies(currentState.core_version, skill.minCoreVersion)) {
+          issues.push({
+            skillId: id,
+            issue: `Requires core version >= ${skill.minCoreVersion}, current: ${currentState.core_version}`,
+          });
+        }
+      }
+
+      // 4. Dependency check (depends_on)
+      if (skill.dependsOn && skill.dependsOn.length > 0) {
+        const missingDeps = skill.dependsOn.filter(dep => !appliedNames.has(dep));
+        if (missingDeps.length > 0) {
+          issues.push({
+            skillId: id,
+            issue: `Missing dependencies: ${missingDeps.join(', ')}`,
+          });
+        }
+      }
+
+      // 5. Conflict check (conflicts_with)
+      if (skill.conflictsWith && skill.conflictsWith.length > 0) {
+        const conflicts = skill.conflictsWith.filter(c => appliedNames.has(c));
+        if (conflicts.length > 0) {
+          issues.push({
+            skillId: id,
+            issue: `Conflicts with installed skills: ${conflicts.join(', ')}`,
+          });
+        }
       }
     }
 
