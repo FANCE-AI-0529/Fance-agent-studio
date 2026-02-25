@@ -1,28 +1,51 @@
 
 
-## 诊断结果
+# Plan: Replace All Logos with New Uploaded Image
 
-Landing 页面 (`/landing`) **实际上是可以正常访问的**。我已通过浏览器导航到该页面并截图确认 — Hero 区域、导航栏、终端预览全部正常渲染。
+## Overview
 
-### 问题根因
+Replace the current logo assets (`logo-icon.png`, `logo-full.png`, `favicon.png`) with the user's uploaded image (the holographic hexagonal core — `image-44.png`) across the entire system.
 
-您当前在 `/auth` 页面，可能是通过以下路径到达的：
+## Asset Preparation
 
-1. 直接访问根路径 `/` → `ProtectedRoute` 检测到未登录 → 重定向到 `/landing`（这条路径正常）
-2. 但如果您**直接手动输入 `/auth`** 或点击了导航栏的 "Login" 按钮，就会进入 `/auth` 页面而非 landing 页面
+1. **Copy the uploaded image** to two asset locations:
+   - `src/assets/logo-icon.png` — overwrite existing (used in React component imports)
+   - `src/assets/logo-full.png` — overwrite existing (used in Auth page, Landing navbar)
+   - `public/favicon.png` — overwrite existing (browser tab favicon)
 
-`/auth` 和 `/landing` 是两个独立路由。Landing 页面没有问题，您只需要：
+All three will use the same source: `user-uploads://image-44.png`
 
-- 在浏览器地址栏中手动导航到 `/landing`
-- 或者访问根路径 `/`，未登录状态下会自动重定向到 `/landing`
+## Files Requiring Updates
 
-### 当前路由逻辑确认
+The image imports remain the same (`@/assets/logo-icon.png`, `@/assets/logo-full.png`), so the core change is the asset files themselves. However, some components need sizing/styling adjustments to ensure the new logo (which is square with a dark background and glowing center) fits seamlessly:
 
-| 访问路径 | 未登录时行为 | 已登录时行为 |
-|---------|------------|------------|
-| `/` | 重定向到 `/landing` | 显示主应用 |
-| `/landing` | 正常显示 Landing 页 | 正常显示 Landing 页 |
-| `/auth` | 显示登录/注册表单 | 重定向到 `/` |
+### Component Adjustments (6 files)
 
-**不需要任何代码修改。** 页面功能完整，路由逻辑正确。如果您在用户端预览中看不到 landing 页面，可能是因为您当前 URL 指向的是 `/auth` 而非 `/landing`。
+| File | Current Style | Adjustment |
+|------|--------------|------------|
+| `src/components/layout/AppSidebar.tsx` | `w-6 h-6` icon in `w-9 h-9` container with `bg-primary/10` | Change to `w-9 h-9 rounded-lg` directly, remove wrapper background (image has its own dark bg) |
+| `src/components/consumer/ConsumerHeader.tsx` | `w-9 h-9 rounded-xl` with overlay ring | Keep size, ensure `object-cover` for clean fit |
+| `src/components/runtime/ConsumerRuntime.tsx` | `w-7 h-7 rounded-lg`, alt text says "Fance OS" | Fix alt text to "Agent Studio", adjust sizing |
+| `src/components/layout/MainLayout.tsx` | `w-7 h-7 rounded-lg` | Keep, add `object-cover` |
+| `src/components/landing/GlassNavbar.tsx` | Uses `logo-full.png` with `brightness-0 invert` filter | Remove the `brightness-0 invert` filter (new logo is already bright on dark), adjust height |
+| `src/pages/Auth.tsx` | Uses `logo-full.png` at `h-16`, alt says "FANCE.AI" | Fix alt text, remove any filters, adjust size to `h-14 w-14 rounded-xl` for square logo |
+
+### HTML Meta (1 file)
+
+| File | Change |
+|------|--------|
+| `index.html` | No code change needed — `favicon.png` path stays the same, just the file content changes |
+
+## Technical Details
+
+- The new logo is a square image with a dark/black background and a glowing cyan-purple hexagonal core
+- Since it has a dark background, it integrates naturally with the dark theme without needing `brightness-0 invert` or `bg-primary/10` wrappers
+- All `rounded-lg` / `rounded-xl` classes will create a subtle border-radius crop on the square image
+- The `object-cover` class ensures proper scaling without distortion
+- No new imports are needed since the filenames remain the same
+
+## Execution Order
+
+1. Copy `image-44.png` → `src/assets/logo-icon.png`, `src/assets/logo-full.png`, `public/favicon.png` (3 copies, parallel)
+2. Update all 6 component files in parallel to adjust styling
 
