@@ -1,65 +1,82 @@
 
 
-# ConsumerRuntime 消息渲染管线修复计划
+# FormattedText 精细化渲染优化计划
 
-## 问题根因
+## 问题分析
 
-从浏览器截图和代码审查中发现：**ConsumerRuntime 组件根本没有使用 FormattedText 或任何格式化组件来渲染消息**。
+从截图中识别到以下视觉问题：
 
-`src/components/runtime/ConsumerRuntime.tsx` 第 770-772 行：
-```tsx
-<p className="whitespace-pre-wrap text-sm leading-relaxed">
-  {message.content}
-</p>
-```
+### 问题 1：TypewriterFormattedText 缺失语义标签支持（严重）
+`TypewriterFormattedText.tsx` 的 `FormattedContent` 组件**完全缺失**所有语义标签的解析：
+- 没有 `<h-entity>`、`<h-alert>`、`<h-data>`、`<h-status>` 核心标签
+- 没有 `<h-link>`、`<h-code>`、`<h-quote>`、`<h-action>` 扩展标签
+- 没有 `**bold**` 到胶囊的自动转换
+- 这意味着**流式回复期间所有语义高亮都是失效的**，只在流式结束变为历史消息后才生效
 
-所有消息（历史 + 实时）都用原始 `<p>` 标签直接输出 `message.content`，导致：
-1. `**bold**` 以原始双星号文字显示
-2. `<meta role="..." />` 标签以原始文字显示（未被 `parseAgentMeta` 剥离）
-3. `<h-entity>...</h-entity>` 语义标签以原始文字显示（未被 FormattedText 渲染为彩色高亮）
+### 问题 2：树形结构排版粗糙
+- `├─` / `└─` 箱线符与内容之间缺乏适当间距
+- 箱线符颜色 `text-border` 太暗淡，与内容对比度不足
+- 树形子项缺少左侧缩进，层级不明显
 
-同样，流式内容（第 796-798 行）也是原始文字渲染：
-```tsx
-<p className="whitespace-pre-wrap text-sm leading-relaxed">
-  {streamingContent}
-</p>
-```
+### 问题 3：编号标题缺乏视觉层级
+- `1. 初步医疗信息` 这类编号段落标题被当作普通 `<h-entity>` 胶囊渲染
+- 应该作为独立的段落标题行，具有更强视觉权重
 
-系统已有 `FormattedText`、`SmartChatBubble`、`parseAgentMeta` 等完整的渲染管线，但 ConsumerRuntime **完全绕过**了这些组件。
+### 问题 4：`*` 星号列表未处理
+- LLM 输出的 `* 内容` 格式被原样显示为文本 `*`
+- 应转换为圆点符号并增加缩进
+
+### 问题 5：段落间距不足
+- 各树形结构段落之间缺少视觉分隔
+- 内容密度过高，阅读疲劳
 
 ---
 
 ## 修复方案
 
-### 修改文件：`src/components/runtime/ConsumerRuntime.tsx`
+### 修改 1：TypewriterFormattedText 补全语义标签（关键修复）
 
-#### 变更 1：导入 FormattedText 和 parseAgentMeta
+**文件**：`src/components/runtime/TypewriterFormattedText.tsx`
 
-在文件顶部新增导入：
-- `FormattedText` from `./FormattedText`
-- `parseAgentMeta` from `@/constants/agentRoleThemes`
+在 `FormattedContent` 的 `patterns` 数组中补入全部 8 个语义标签模式（与 FormattedText 保持一致）：
+- `<h-entity>`, `<h-alert>`, `<h-data>`, `<h-status>`
+- `<h-link>`, `<h-code>`, `<h-quote>`, `<h-action>`
+- `**bold**` 自动转为胶囊
 
-#### 变更 2：修复历史消息渲染（第 770-772 行）
+在 `switch` 语句中补入对应的渲染分支，样式与 `FormattedText.tsx` 完全一致。
 
-将原始 `<p>{message.content}</p>` 替换为：
+同时导入 `AlertCircle` 图标用于 `h-alert` 渲染。
 
-对于 assistant 消息：
-1. 调用 `parseAgentMeta(message.content)` 剥离 `<meta>` 标签
-2. 使用 `<FormattedText content={cleanContent} />` 渲染，自动处理 `<h-entity>`、`**bold**` 等格式
+### 修改 2：FormattedText 树形结构精细化
 
-对于 user 消息：保留原始文本渲染（用户消息无需格式化）。
+**文件**：`src/components/runtime/FormattedText.tsx`
 
-#### 变更 3：修复流式内容渲染（第 796-798 行）
+- 箱线符渲染增加右侧间距：`mr-1.5`
+- 箱线符颜色升级：`text-border` → `text-muted-foreground/60`
+- 树形行增加左缩进 `pl-2` 营造层级感
+- 空行前后增加 `my-1` 间距
 
-将 `{streamingContent}` 替换为 `<FormattedText content={cleanContent} />`，其中 cleanContent 经过 `parseAgentMeta` 处理。
+### 修改 3：新增列表符号模式
+
+**文件**：`src/components/runtime/FormattedText.tsx` 和 `TypewriterFormattedText.tsx`
+
+在 `formatWithBoxChars` / 行级处理中新增：
+- `^\d+\.\s+` 编号行 → 渲染为带左侧色条的段落标题
+- `^\*\s+` 星号列表 → 转为 `•` 圆点 + 缩进
+- `^-\s+` 短横列表 → 转为 `•` 圆点 + 缩进
+
+### 修改 4：段落间距优化
+
+在行级渲染中，检测空行（`/^\s*$/`）并渲染为 `<div className="h-2" />` 增加段间距。
 
 ---
 
 ## 文件变更清单
 
-| 文件 | 变更类型 | 说明 |
-|------|---------|------|
-| `src/components/runtime/ConsumerRuntime.tsx` | 修改 | 导入 FormattedText + parseAgentMeta；替换历史消息和流式内容的原始渲染为格式化渲染 |
+| 文件 | 变更说明 |
+|------|---------|
+| `src/components/runtime/TypewriterFormattedText.tsx` | 补全 8 个语义标签 + bold 转胶囊 + 导入 AlertCircle |
+| `src/components/runtime/FormattedText.tsx` | 树形结构间距/颜色优化 + 列表符号处理 + 段落间距 |
 
-只需修改 1 个文件，约 15 行代码变更。
+共 2 个文件修改。
 
