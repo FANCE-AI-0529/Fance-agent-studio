@@ -1,83 +1,48 @@
 
 
-# Plan: Landing Page Visual Polish and Interaction Enhancement
+# Plan: Global Rename HIVE → FANCE
 
-## Analysis
+## Scope
 
-After reviewing all landing components, the current implementation already covers most of the requirements. Here are the specific gaps to address:
+Replace all instances of "HIVE" (as brand name) with "FANCE" across the entire project. This includes UI text, meta tags, comments, alt attributes, CLI commands in terminal demos, and i18n strings. Internal code identifiers like `archive`, `log_archive` etc. are NOT related to the brand and will not be touched.
 
-### What Already Exists (No Changes Needed)
-- 3D particle background with parallax (ParticleField.tsx) -- fully implemented
-- Staggered fade-in entry animations (framer-motion, duration 0.8s) -- implemented
-- Spotlight hover effect on Bento cards (BentoFeatures.tsx) -- implemented
-- Gradient text clip on headings -- implemented
-- Glass navbar with backdrop-blur -- implemented
+## Files to Modify (21 files)
 
-### What Needs Enhancement
+| # | File | Changes |
+|---|------|---------|
+| 1 | `index.html` | Title, meta description, og/twitter tags: HIVE → FANCE |
+| 2 | `src/components/landing/GlassNavbar.tsx` | Logo alt text + brand text span |
+| 3 | `src/components/landing/HeroSection.tsx` | `hive-terminal` → `fance-terminal`, `hive deploy` → `fance deploy` |
+| 4 | `src/components/landing/Footer.tsx` | "HIVE" heading + "HIVE Studio" → "FANCE Studio" |
+| 5 | `src/components/landing/InviteModal.tsx` | "欢迎加入 HIVE" → "欢迎加入 FANCE", "访问 HIVE 控制台" → "访问 FANCE 控制台", "登录 HIVE" → "登录 FANCE" |
+| 6 | `src/components/landing/TestimonialsSection.tsx` | "HIVE 让我们..." → "FANCE 让我们...", "用 HIVE" → "用 FANCE" |
+| 7 | `src/pages/Landing.tsx` | "使用 HIVE 构建" → "使用 FANCE 构建" |
+| 8 | `src/pages/SharedConversation.tsx` | "HIVE" → "FANCE" |
+| 9 | `src/components/layout/MainLayout.tsx` | Logo alt + brand text |
+| 10 | `src/components/layout/AppSidebar.tsx` | Logo alt + sidebar brand name |
+| 11 | `src/components/consumer/ConsumerHeader.tsx` | Logo alt + brand text |
+| 12 | `src/components/onboarding/OnboardingProvider.tsx` | "欢迎来到 HIVE" → "欢迎来到 FANCE" |
+| 13 | `src/components/settings/ThemeEditor.tsx` | "HIVE" label + "你的 HIVE 外观" |
+| 14 | `src/components/settings/DataExportForm.tsx` | "HIVE 数据导出" → "FANCE 数据导出" |
+| 15 | `src/components/runtime/AgentSelector.tsx` | `hive-guide` → `fance-guide`, "HIVE 助手" → "FANCE 助手", comment |
+| 16 | `src/components/runtime/SystemPromptEditor.tsx` | "HIVE 平台" → "FANCE 平台" |
+| 17 | `src/components/foundry/MCPSourceFilter.tsx` | "HIVE" label → "FANCE" |
+| 18 | `src/components/pwa/PWAInstallPrompt.tsx` | "安装 HIVE" → "安装 FANCE", "HIVE 已添加" → "FANCE 已添加" |
+| 19 | `src/contexts/LanguageContext.tsx` | All brand.name, brand.description, skill.origin.native references |
+| 20 | `src/contexts/extendedTranslations.ts` | PWA strings + brand.name values |
+| 21 | `src/utils/terminalStylePrompt.ts` | Comment header |
 
-## Changes
+## What Will NOT Change
 
-### 1. GlassNavbar.tsx -- Add "开发者文档" Button + Glowing Border
+- `src/integrations/supabase/types.ts` (auto-generated, never edit)
+- Database table/column names (e.g. `memory_archives`)
+- Internal code identifiers unrelated to brand (e.g. `ArchivesSummary`, `log_archive`)
+- "Powered by FANCE.AI" already says FANCE.AI, no change needed
+- The `NanoClaw` kernel name stays as-is
 
-Current nav items: 平台架构, MPLP 协议, 技术文档, Login, Book a Demo
+## Naming Convention
 
-Changes:
-- Rename "技术文档" to "开发者文档" and style it as a secondary ghost button (border border-white/10, hover:border-cyan-500/30) to make it visually distinct from plain nav links
-- Add a persistent subtle glowing bottom border on scroll: `border-b border-[#22d3ee]/15 shadow-[0_1px_15px_rgba(34,211,238,0.08)]` (enhance existing scrolled state)
-- Ensure the glass effect uses `backdrop-blur-md` minimum (currently xl, which is fine)
-
-### 2. HeroSection.tsx -- Neon Glow CTA Button + Hover Pulse
-
-Current CTA button has gradient fill but no glow shadow or hover scale.
-
-Changes:
-- Add neon glow shadow to the "获取内测邀请码" submit button: `shadow-[0_0_25px_rgba(34,211,238,0.4),0_0_60px_rgba(129,140,248,0.2)]`
-- Add hover pulse scale: `transition-transform hover:scale-[1.05] active:scale-[0.97]`
-- Add the same glow treatment to the email input's focus state: `focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]`
-
-### 3. BentoFeatures.tsx -- Fix Reactive Spotlight
-
-Current spotlight hover uses `x.get()` and `y.get()` in a static style object, which does not update reactively with framer-motion. The spotlight circle position is frozen.
-
-Changes:
-- Use `useMotionTemplate` from framer-motion to create a reactive radial-gradient background string that updates as the mouse moves
-- This makes the "searchlight sweeping across glass" effect actually work
-
-### 4. Global Card Hover Border Glow
-
-The requirement specifies `hover:border-cyan-500/50` on all glass cards. The current BentoFeatures cards use `hover:border-[#22d3ee]/30`.
-
-Changes:
-- Increase to `hover:border-[#22d3ee]/50` for stronger visual feedback on all SpotlightCard instances
-
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `src/components/landing/GlassNavbar.tsx` | Rename "技术文档" to "开发者文档" as styled ghost button; enhance scroll glow border |
-| `src/components/landing/HeroSection.tsx` | Add neon glow shadow + hover pulse to CTA button; add focus glow to input |
-| `src/components/landing/BentoFeatures.tsx` | Fix spotlight with `useMotionTemplate`; increase hover border opacity to /50 |
-
-## Technical Details
-
-### Spotlight Fix (BentoFeatures.tsx)
-The current implementation builds the gradient string once:
-```tsx
-style={{
-  background: `radial-gradient(400px circle at ${x.get()}px ${y.get()}px, ...)`,
-}}
-```
-This captures the initial value only. The fix uses:
-```tsx
-import { useMotionTemplate } from "framer-motion";
-const bg = useMotionTemplate`radial-gradient(400px circle at ${x}px ${y}px, rgba(34,211,238,0.06), transparent 60%)`;
-// Then: <motion.div style={{ background: bg }} />
-```
-
-### CTA Glow (HeroSection.tsx)
-The button gets a persistent dual-layer glow shadow plus an absolute-positioned blur element behind it for the "neon halo":
-```
-shadow-[0_0_25px_rgba(34,211,238,0.4),0_0_60px_rgba(129,140,248,0.2)]
-hover:shadow-[0_0_35px_rgba(34,211,238,0.6),0_0_80px_rgba(129,140,248,0.3)]
-```
+- Brand display: **FANCE** (uppercase)
+- CLI/terminal identifiers: **fance** (lowercase, e.g. `fance-terminal`, `fance deploy`)
+- Studio name: **FANCE Studio**
 
