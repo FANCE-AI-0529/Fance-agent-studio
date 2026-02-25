@@ -7,40 +7,56 @@ const corsHeaders = {
 };
 
 // ── Security: SSRF Prevention ──────────────────────────────────
+function isPrivateOrBlockedIP(ip: string): boolean {
+  const ipv4Match = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b, c, d] = ipv4Match.map(Number);
+    if (a === 127) return true;         // Loopback
+    if (a === 10) return true;          // Private 10/8
+    if (a === 172 && b >= 16 && b <= 31) return true; // Private 172.16/12
+    if (a === 192 && b === 168) return true;           // Private 192.168/16
+    if (a === 169 && b === 254) return true;           // Link-local
+    if (a === 0) return true;           // 0.0.0.0/8
+    if (a === 255 && b === 255 && c === 255 && d === 255) return true;
+  }
+  // IPv6 checks
+  if (ip === '::1' || ip === '[::1]') return true;
+  if (ip.toLowerCase().startsWith('fe80')) return true;
+  if (ip.toLowerCase().startsWith('fc') || ip.toLowerCase().startsWith('fd')) return true; // ULA
+  return false;
+}
+
 function isPrivateOrBlockedHost(hostname: string): boolean {
-  // Explicit blocklist
   const blockedHosts = [
     'localhost', '169.254.169.254', 'metadata.google.internal',
     'metadata.google', 'metadata', '0.0.0.0',
   ];
   if (blockedHosts.includes(hostname.toLowerCase())) return true;
+  return isPrivateOrBlockedIP(hostname);
+}
 
-  // IPv4 parsing
-  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4Match) {
-    const [, a, b, c, d] = ipv4Match.map(Number);
-    // Loopback 127.0.0.0/8
-    if (a === 127) return true;
-    // Private 10.0.0.0/8
-    if (a === 10) return true;
-    // Private 172.16.0.0/12
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    // Private 192.168.0.0/16
-    if (a === 192 && b === 168) return true;
-    // Link-local 169.254.0.0/16
-    if (a === 169 && b === 254) return true;
-    // 0.0.0.0/8
-    if (a === 0) return true;
-    // Broadcast
-    if (a === 255 && b === 255 && c === 255 && d === 255) return true;
+/**
+ * DNS rebinding defense: resolve hostname and verify resolved IPs
+ * are not private/internal addresses.
+ */
+async function validateResolvedDns(hostname: string): Promise<{ ok: boolean; error?: string }> {
+  // Skip if hostname is already an IP literal
+  if (/^[\d.]+$/.test(hostname) || hostname.includes(':')) {
+    return isPrivateOrBlockedIP(hostname)
+      ? { ok: false, error: 'Blocked endpoint: resolved to private/internal IP' }
+      : { ok: true };
   }
-
-  // IPv6 loopback
-  if (hostname === '::1' || hostname === '[::1]') return true;
-  // IPv6 link-local
-  if (hostname.toLowerCase().startsWith('fe80')) return true;
-
-  return false;
+  try {
+    const aRecords = await Deno.resolveDns(hostname, 'A');
+    for (const ip of aRecords) {
+      if (isPrivateOrBlockedIP(ip)) {
+        return { ok: false, error: `Blocked endpoint: "${hostname}" resolves to private IP ${ip}` };
+      }
+    }
+  } catch {
+    // DNS resolution failed — allow through (the actual fetch will fail anyway)
+  }
+  return { ok: true };
 }
 
 // ── Security: Path Traversal Prevention ────────────────────────
@@ -101,13 +117,22 @@ serve(async (req) => {
     if (nanoclawEndpoint) {
       try {
         const url = new URL(nanoclawEndpoint);
+        // Layer 1: hostname literal check
         if (isPrivateOrBlockedHost(url.hostname)) {
           return new Response(
             JSON.stringify({ error: 'Blocked endpoint: private/internal address' }),
             { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        // Block non-HTTPS in production (allow HTTP for localhost dev)
+        // Layer 2: DNS rebinding defense — resolve and verify IPs
+        const dnsCheck = await validateResolvedDns(url.hostname);
+        if (!dnsCheck.ok) {
+          return new Response(
+            JSON.stringify({ error: dnsCheck.error }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Block non-HTTP(S) protocols
         if (url.protocol !== 'https:' && url.protocol !== 'http:') {
           return new Response(
             JSON.stringify({ error: 'Only HTTP(S) endpoints are allowed' }),
@@ -210,6 +235,20 @@ serve(async (req) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...baseHeaders },
           body: JSON.stringify({ skillDir: params.skillDir }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'unapply_skill': {
+        const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/skills/unapply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({
+            skillName: params.skillName,
+            skillDir: params.skillDir,
+            restoreBackup: params.restoreBackup ?? true,
+          }),
         });
         result = await response.json();
         break;
