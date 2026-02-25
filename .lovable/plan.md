@@ -1,48 +1,73 @@
 
 
-# Plan: Global Rename HIVE → FANCE
+# Plan: Email Waiting List for Landing Page
 
-## Scope
+## Overview
 
-Replace all instances of "HIVE" (as brand name) with "FANCE" across the entire project. This includes UI text, meta tags, comments, alt attributes, CLI commands in terminal demos, and i18n strings. Internal code identifiers like `archive`, `log_archive` etc. are NOT related to the brand and will not be touched.
+The email input in the Hero section currently does nothing meaningful — it just opens the invite modal. The goal is to make it collect emails into a `waiting_list` database table, providing users with feedback (success/duplicate/error), and serve as the foundation for future invite code distribution.
 
-## Files to Modify (21 files)
+## Database Changes
 
-| # | File | Changes |
-|---|------|---------|
-| 1 | `index.html` | Title, meta description, og/twitter tags: HIVE → FANCE |
-| 2 | `src/components/landing/GlassNavbar.tsx` | Logo alt text + brand text span |
-| 3 | `src/components/landing/HeroSection.tsx` | `hive-terminal` → `fance-terminal`, `hive deploy` → `fance deploy` |
-| 4 | `src/components/landing/Footer.tsx` | "HIVE" heading + "HIVE Studio" → "FANCE Studio" |
-| 5 | `src/components/landing/InviteModal.tsx` | "欢迎加入 HIVE" → "欢迎加入 FANCE", "访问 HIVE 控制台" → "访问 FANCE 控制台", "登录 HIVE" → "登录 FANCE" |
-| 6 | `src/components/landing/TestimonialsSection.tsx` | "HIVE 让我们..." → "FANCE 让我们...", "用 HIVE" → "用 FANCE" |
-| 7 | `src/pages/Landing.tsx` | "使用 HIVE 构建" → "使用 FANCE 构建" |
-| 8 | `src/pages/SharedConversation.tsx` | "HIVE" → "FANCE" |
-| 9 | `src/components/layout/MainLayout.tsx` | Logo alt + brand text |
-| 10 | `src/components/layout/AppSidebar.tsx` | Logo alt + sidebar brand name |
-| 11 | `src/components/consumer/ConsumerHeader.tsx` | Logo alt + brand text |
-| 12 | `src/components/onboarding/OnboardingProvider.tsx` | "欢迎来到 HIVE" → "欢迎来到 FANCE" |
-| 13 | `src/components/settings/ThemeEditor.tsx` | "HIVE" label + "你的 HIVE 外观" |
-| 14 | `src/components/settings/DataExportForm.tsx` | "HIVE 数据导出" → "FANCE 数据导出" |
-| 15 | `src/components/runtime/AgentSelector.tsx` | `hive-guide` → `fance-guide`, "HIVE 助手" → "FANCE 助手", comment |
-| 16 | `src/components/runtime/SystemPromptEditor.tsx` | "HIVE 平台" → "FANCE 平台" |
-| 17 | `src/components/foundry/MCPSourceFilter.tsx` | "HIVE" label → "FANCE" |
-| 18 | `src/components/pwa/PWAInstallPrompt.tsx` | "安装 HIVE" → "安装 FANCE", "HIVE 已添加" → "FANCE 已添加" |
-| 19 | `src/contexts/LanguageContext.tsx` | All brand.name, brand.description, skill.origin.native references |
-| 20 | `src/contexts/extendedTranslations.ts` | PWA strings + brand.name values |
-| 21 | `src/utils/terminalStylePrompt.ts` | Comment header |
+Create a new `waiting_list` table:
 
-## What Will NOT Change
+```sql
+CREATE TABLE public.waiting_list (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  source TEXT DEFAULT 'hero_cta',
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'invited', 'registered')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  invited_at TIMESTAMPTZ,
+  metadata JSONB DEFAULT '{}'
+);
 
-- `src/integrations/supabase/types.ts` (auto-generated, never edit)
-- Database table/column names (e.g. `memory_archives`)
-- Internal code identifiers unrelated to brand (e.g. `ArchivesSummary`, `log_archive`)
-- "Powered by FANCE.AI" already says FANCE.AI, no change needed
-- The `NanoClaw` kernel name stays as-is
+-- RLS: allow anonymous inserts (public landing page, no auth required)
+ALTER TABLE public.waiting_list ENABLE ROW LEVEL SECURITY;
 
-## Naming Convention
+CREATE POLICY "Anyone can join waiting list"
+  ON public.waiting_list FOR INSERT
+  WITH CHECK (true);
 
-- Brand display: **FANCE** (uppercase)
-- CLI/terminal identifiers: **fance** (lowercase, e.g. `fance-terminal`, `fance deploy`)
-- Studio name: **FANCE Studio**
+-- No SELECT/UPDATE/DELETE for anon — admin only via service role
+```
+
+Key design decisions:
+- `UNIQUE` constraint on `email` prevents duplicates
+- No auth required for INSERT (public-facing landing page)
+- No SELECT policy for anon users — only admins can view the list
+- `status` column tracks lifecycle: pending → invited → registered
+- `source` column tracks where the signup came from (hero CTA, bottom CTA, etc.)
+
+## File Changes
+
+### 1. `src/components/landing/HeroSection.tsx`
+
+- Add `useState` for the email input value, loading state, and submitted state
+- On form submit: insert email into `waiting_list` via Supabase client
+- Handle duplicate emails gracefully (show "already on the list" message)
+- Show success feedback inline (replace the form briefly or show a toast)
+- Remove the `onBookDemo` call from the form submit — the form now has its own purpose
+- Keep the `onBookDemo` prop for the button, but change flow: submit email first, then optionally open invite modal
+
+The form will:
+1. Validate email format client-side
+2. Insert into `waiting_list` table
+3. On success: show "已加入等候名单" confirmation with a checkmark
+4. On duplicate (unique constraint error): show "该邮箱已在等候名单中"
+5. On error: show generic error toast
+
+### 2. `src/pages/Landing.tsx`
+
+- Pass email submission handler or update `HeroSection` props if needed (minimal change — most logic stays in `HeroSection`)
+
+### 3. Bottom CTA section in `Landing.tsx`
+
+- Convert the bottom CTA email-like button into a similar email collection form with `source: 'bottom_cta'`, reusing the same pattern
+
+## Technical Details
+
+- Uses `supabase.from('waiting_list').insert({ email })` directly from the client
+- The unique constraint violation returns a Postgres error code `23505` which we catch to show "already registered"
+- No authentication required — RLS policy allows anonymous inserts
+- Email validation uses a simple HTML5 `type="email"` + basic regex check before submission
 
