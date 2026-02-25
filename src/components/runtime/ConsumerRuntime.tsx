@@ -22,6 +22,8 @@ import { AttachmentPreview } from "./AttachmentPreview";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { createMultimodalContent } from "@/hooks/useAgentChat";
 import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
+import { FormattedText } from "./FormattedText";
+import { parseAgentMeta } from "@/constants/agentRoleThemes";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AuroraBackground } from "@/components/consumer/AuroraBackground";
@@ -767,9 +769,14 @@ export function ConsumerRuntime() {
                           }
                         `}
                       >
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {message.content}
-                        </p>
+                        {message.role === 'assistant' ? (() => {
+                          const { cleanContent } = parseAgentMeta(message.content);
+                          return <FormattedText content={cleanContent} className="text-sm leading-relaxed" />;
+                        })() : (
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                            {message.content}
+                          </p>
+                        )}
                       </div>
 
                       {message.role === 'user' && (
@@ -793,10 +800,10 @@ export function ConsumerRuntime() {
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
                   <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl px-4 py-3 max-w-[80%]">
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {streamingContent}
+                    <div className="text-sm leading-relaxed">
+                      <FormattedText content={parseAgentMeta(streamingContent).cleanContent} />
                       <span className="inline-block w-2 h-4 bg-primary/50 ml-1 animate-pulse" />
-                    </p>
+                    </div>
                   </div>
                 </motion.div>
               )}
