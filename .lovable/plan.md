@@ -1,51 +1,41 @@
 
 
-# Plan: Replace All Logos with New Uploaded Image
+# Plan: Replace All Logos with New Uploaded Image (image-45.png)
 
 ## Overview
 
-Replace the current logo assets (`logo-icon.png`, `logo-full.png`, `favicon.png`) with the user's uploaded image (the holographic hexagonal core — `image-44.png`) across the entire system.
+Replace the current logo assets with the user's newly uploaded image (`image-45.png` — the holographic hexagonal chip with circuit board elements) across the entire system. This is the same process as before but with a different source image.
 
-## Asset Preparation
+## Asset Replacement (3 files, parallel)
 
-1. **Copy the uploaded image** to two asset locations:
-   - `src/assets/logo-icon.png` — overwrite existing (used in React component imports)
-   - `src/assets/logo-full.png` — overwrite existing (used in Auth page, Landing navbar)
-   - `public/favicon.png` — overwrite existing (browser tab favicon)
+Copy `user-uploads://image-45.png` to:
+- `src/assets/logo-icon.png` — used by React component imports across Studio, Consumer, Runtime
+- `src/assets/logo-full.png` — used by Auth page, Landing navbar
+- `public/favicon.png` — browser tab favicon
 
-All three will use the same source: `user-uploads://image-44.png`
+## Component Review
 
-## Files Requiring Updates
+Based on the last diff, all 6 component files already have the correct styling from the previous logo swap:
 
-The image imports remain the same (`@/assets/logo-icon.png`, `@/assets/logo-full.png`), so the core change is the asset files themselves. However, some components need sizing/styling adjustments to ensure the new logo (which is square with a dark background and glowing center) fits seamlessly:
+| File | Current State | Action Needed |
+|------|--------------|---------------|
+| `AppSidebar.tsx` | `w-9 h-9 rounded-lg object-cover` | No change |
+| `ConsumerHeader.tsx` | `w-9 h-9 rounded-xl object-cover` | No change |
+| `ConsumerRuntime.tsx` | `w-7 h-7 rounded-lg object-cover` | No change |
+| `MainLayout.tsx` | `w-7 h-7 rounded-lg object-cover` | No change |
+| `GlassNavbar.tsx` | `h-8 sm:h-9 rounded-lg object-cover` | No change |
+| `Auth.tsx` | `h-14 w-14 rounded-xl object-cover` | No change |
 
-### Component Adjustments (6 files)
+All filters (`brightness-0 invert`) were already removed and `object-cover` is already applied everywhere. The new image has a similar dark background with glowing cyan-purple elements, so the existing styling will integrate seamlessly.
 
-| File | Current Style | Adjustment |
-|------|--------------|------------|
-| `src/components/layout/AppSidebar.tsx` | `w-6 h-6` icon in `w-9 h-9` container with `bg-primary/10` | Change to `w-9 h-9 rounded-lg` directly, remove wrapper background (image has its own dark bg) |
-| `src/components/consumer/ConsumerHeader.tsx` | `w-9 h-9 rounded-xl` with overlay ring | Keep size, ensure `object-cover` for clean fit |
-| `src/components/runtime/ConsumerRuntime.tsx` | `w-7 h-7 rounded-lg`, alt text says "Fance OS" | Fix alt text to "Agent Studio", adjust sizing |
-| `src/components/layout/MainLayout.tsx` | `w-7 h-7 rounded-lg` | Keep, add `object-cover` |
-| `src/components/landing/GlassNavbar.tsx` | Uses `logo-full.png` with `brightness-0 invert` filter | Remove the `brightness-0 invert` filter (new logo is already bright on dark), adjust height |
-| `src/pages/Auth.tsx` | Uses `logo-full.png` at `h-16`, alt says "FANCE.AI" | Fix alt text, remove any filters, adjust size to `h-14 w-14 rounded-xl` for square logo |
+## Execution
 
-### HTML Meta (1 file)
+1. Copy `image-45.png` → 3 asset locations (parallel)
+2. No component code changes needed — styling is already optimized from previous swap
 
-| File | Change |
-|------|--------|
-| `index.html` | No code change needed — `favicon.png` path stays the same, just the file content changes |
+## Technical Notes
 
-## Technical Details
-
-- The new logo is a square image with a dark/black background and a glowing cyan-purple hexagonal core
-- Since it has a dark background, it integrates naturally with the dark theme without needing `brightness-0 invert` or `bg-primary/10` wrappers
-- All `rounded-lg` / `rounded-xl` classes will create a subtle border-radius crop on the square image
-- The `object-cover` class ensures proper scaling without distortion
-- No new imports are needed since the filenames remain the same
-
-## Execution Order
-
-1. Copy `image-44.png` → `src/assets/logo-icon.png`, `src/assets/logo-full.png`, `public/favicon.png` (3 copies, parallel)
-2. Update all 6 component files in parallel to adjust styling
+- The new image has a slightly different composition (circuit board chip vs. core sphere) but the same color palette and dark background
+- `rounded-lg`/`rounded-xl` will softly crop the corners
+- `object-cover` ensures proper scaling in all size contexts
 
