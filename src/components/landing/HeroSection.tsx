@@ -28,7 +28,7 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
           <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-[#22d3ee]/20 bg-[#22d3ee]/5">
             <span className="w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse" />
             <span className="text-[10px] sm:text-xs font-mono text-[#22d3ee] tracking-wider">
-              SYSTEM KERNEL v2.0 ONLINE
+              System Kernel v2.0 Online
             </span>
           </div>
         </motion.div>
@@ -38,7 +38,7 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
           variants={fadeUp}
           className="text-4xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter leading-[0.9] mb-5 sm:mb-6"
         >
-          <span className="block text-white/90">构建你的</span>
+          <span className="block text-white/90">构建你的企业级</span>
           <span
             className="block mt-1 sm:mt-2"
             style={{
@@ -86,7 +86,7 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
             href="#features"
             className="w-full sm:w-auto text-center px-8 py-3.5 sm:py-4 rounded-xl text-base font-medium text-[#a1a1aa] border border-white/10 hover:border-[#22d3ee]/30 hover:text-white hover:bg-white/[0.03] transition-all"
           >
-            查看技术白皮书
+             查看技术白皮书
           </a>
         </motion.div>
 
@@ -110,13 +110,9 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
                 <span className="text-white">os deploy --type "Audit Agent"</span>
               </p>
               <p className="text-[#71717a] mt-1">&gt; Initializing NanoClaw isolated container...</p>
-              <p className="text-[#71717a]">&gt; Mounting Skills: [code-review, risk-analysis]</p>
-              <p className="text-[#71717a]">&gt; Applying MPLP governance policy...</p>
-              <p className="mt-1">
-                <span className="text-[#28c840]">&gt; [SUCCESS]</span>{" "}
-                <span className="text-[#a1a1aa]">Agent deployed. Awaiting instructions.</span>
-              </p>
-              <p className="text-[#22d3ee] animate-pulse mt-1">█</p>
+              <p className="text-[#71717a]">&gt; Mounting specific filesystem...</p>
+              <p className="text-[#71717a]">&gt; [SUCCESS] Swarm initialized. Awaiting commands.</p>
+              <p className="text-[#22d3ee] animate-pulse mt-1">_</p>
             </div>
           </div>
         </motion.div>
