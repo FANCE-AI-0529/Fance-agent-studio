@@ -16,6 +16,7 @@ import {
   type ExtractedCondition 
 } from './intentConditionExtractor';
 import { generateSecureSystemPrompt, inferSecurityLevel, injectSecurityBoundaries } from './securityPromptTemplate';
+import { generateSmartAvatar } from './avatarGenerator';
 import { 
   selectLogicNode, 
   selectMultipleLogicNodes,
@@ -484,7 +485,7 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
       name: agentName || plan.extractedIntent?.role || 'AI Agent',
       systemPrompt: systemPrompt || generateSystemPrompt(plan),
       model: 'google/gemini-2.5-flash',
-      avatar: { iconId: 'bot', colorId: 'primary' },
+      avatar: generateSmartAvatar(input.userDescription || plan.description || agentName || ''),
     },
   });
   
@@ -563,7 +564,7 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
       name: agentName || plan.extractedIntent?.role || 'AI Agent',
       systemPrompt: systemPrompt || generateSystemPrompt(plan),
       model: 'google/gemini-2.5-flash',
-      avatar: { iconId: 'bot', colorId: 'primary' },
+      avatar: generateSmartAvatar(input.userDescription || plan.description || agentName || ''),
       department: plan.extractedIntent?.category,
     },
     warnings,

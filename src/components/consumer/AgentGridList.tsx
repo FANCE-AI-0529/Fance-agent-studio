@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { MessageCircle, Plus, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMyAgents } from "@/hooks/useAgents";
-import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { AgentAvatarDisplay, type AgentAvatar, getAvatarColor } from "@/components/builder/AgentAvatarPicker";
 import { cn } from "@/lib/utils";
 
 interface AgentGridListProps {
@@ -63,6 +63,9 @@ export function AgentGridList({ onCreateNew, className }: AgentGridListProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 px-4">
         {agents.slice(0, 8).map((agent, index) => {
           const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
+          const resolvedAvatar = avatar || { iconId: 'bot', colorId: 'primary' };
+          const colorConfig = getAvatarColor(resolvedAvatar.colorId);
+          const description = (agent.manifest as any)?.description || (agent.manifest as any)?.originalDescription || '';
           
           return (
             <motion.button
@@ -72,21 +75,29 @@ export function AgentGridList({ onCreateNew, className }: AgentGridListProps) {
               transition={{ delay: 0.1 * index }}
               onClick={() => handleAgentClick(agent.id)}
               className={cn(
-                "group relative flex flex-col items-center gap-2 p-4 rounded-xl",
+                "group relative flex flex-col items-center gap-2.5 p-4 rounded-xl",
                 "bg-card/50 hover:bg-card/80 backdrop-blur-sm",
                 "border border-border/40 hover:border-primary/40",
                 "transition-all duration-200"
               )}
             >
-              {/* Avatar */}
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden">
-                <AgentAvatarDisplay 
-                  avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
-                  size="lg" 
-                />
+              {/* Avatar with gradient ring */}
+              <div className="relative">
+                {/* Gradient glow ring */}
+                <div className={cn(
+                  "absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm",
+                  colorConfig.className
+                )} />
                 
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="relative group-hover:scale-110 transition-transform duration-200">
+                  <AgentAvatarDisplay 
+                    avatar={resolvedAvatar} 
+                    size="xl" 
+                  />
+                </div>
+                
+                {/* Hover chat icon overlay */}
+                <div className="absolute inset-0 rounded-xl bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <MessageCircle className="h-5 w-5 text-primary-foreground" />
                 </div>
               </div>
@@ -95,6 +106,13 @@ export function AgentGridList({ onCreateNew, className }: AgentGridListProps) {
               <span className="text-xs font-medium text-foreground/80 group-hover:text-foreground truncate max-w-full">
                 {agent.name}
               </span>
+
+              {/* Description - one line truncated */}
+              {description && (
+                <span className="text-[10px] text-muted-foreground/70 truncate max-w-full leading-tight -mt-1">
+                  {description.length > 20 ? description.slice(0, 20) + '…' : description}
+                </span>
+              )}
 
               {/* Glow effect on hover */}
               <div className="absolute inset-0 rounded-xl bg-primary/10 opacity-0 group-hover:opacity-100 blur-xl transition-opacity -z-10" />
