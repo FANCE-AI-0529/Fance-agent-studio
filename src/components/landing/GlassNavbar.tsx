@@ -42,7 +42,7 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
           >
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <img src={logoFull} alt="Agent OS" className="h-6 sm:h-7 brightness-0 invert" />
+              <img src={logoFull} alt="Agent OS" className="h-8 sm:h-9 rounded-lg object-cover" />
             </div>
 
             {/* Nav links - hidden on mobile */}
