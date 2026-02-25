@@ -89,6 +89,71 @@ export interface SkillInjectionResult {
   state?: SkillState;
 }
 
+// ── 生命周期操作类型 ──
+export type SkillLifecycleAction = 'install' | 'uninstall' | 'update' | 'rebase' | 'replay';
+
+// ── 卸载结果 ──
+export interface UninstallResult {
+  success: boolean;
+  skill: string;
+  restoredFiles: string[];
+  error?: string;
+}
+
+// ── 更新预览 ──
+export interface UpdatePreview {
+  skill: string;
+  currentVersion: string;
+  newVersion: string;
+  filesToChange: string[];
+  hasConflicts: boolean;
+  conflictFiles?: string[];
+}
+
+// ── 更新结果 ──
+export interface UpdateResult {
+  success: boolean;
+  skill: string;
+  fromVersion: string;
+  toVersion: string;
+  mergedFiles: string[];
+  conflicts?: string[];
+  error?: string;
+}
+
+// ── Rebase 结果 ──
+export interface RebaseResult {
+  success: boolean;
+  rebasedSkills: string[];
+  conflicts: Array<{ skill: string; files: string[] }>;
+  error?: string;
+}
+
+// ── Replay 结果 ──
+export interface ReplayResult {
+  success: boolean;
+  replayedSkills: string[];
+  failedSkills: Array<{ skill: string; error: string }>;
+}
+
+// ── 合并结果 ──
+export interface MergeResult {
+  merged: string;
+  hasConflicts: boolean;
+  conflictMarkers?: number;
+}
+
+// ── 文件操作结果 ──
+export interface FileOpsResult {
+  success: boolean;
+  operations: Array<{
+    type: 'rename' | 'delete' | 'copy' | 'move';
+    path: string;
+    ok: boolean;
+    error?: string;
+  }>;
+}
+
 // ── 常量（与 NanoClaw constants.ts 对齐）──
 export const NANOCLAW_PATHS = {
   DIR: '.nanoclaw',
