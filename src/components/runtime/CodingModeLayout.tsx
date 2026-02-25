@@ -11,10 +11,13 @@ import {
   ResizablePanelGroup 
 } from '@/components/ui/resizable';
 import { OpenCodeStatusBar } from './OpenCodeStatusBar';
-import { CodingTerminalView } from './CodingTerminalView';
+import { TerminalStreamView } from './TerminalStreamView';
 import { CodeDiffViewer, InlineDiffPreview } from './CodeDiffViewer';
+import { VibeLoopIndicator } from './VibeLoopIndicator';
 import { cn } from '@/lib/utils';
 import type { OpenCodeMode, TerminalCommand, FileDiff } from '@/types/openCode';
+import type { TerminalStreamState } from '@/hooks/useTerminalStream';
+import type { VibeLoopPhase, VibeLoopAttempt } from '@/services/vibeLoopEngine';
 
 interface CodingModeLayoutProps {
   // Mode and state
@@ -23,8 +26,9 @@ interface CodingModeLayoutProps {
   
   // Terminal
   terminalCommands: TerminalCommand[];
-  isTerminalStreaming?: boolean;
+  streamState?: TerminalStreamState;
   onClearTerminal?: () => void;
+  onSendCommand?: (command: string) => void;
   
   // Diffs
   pendingDiffs: FileDiff[];
@@ -37,6 +41,14 @@ interface CodingModeLayoutProps {
   // Style check
   styleCheckPassed?: boolean;
   styleViolationsCount?: number;
+  
+  // Vibe Loop
+  vibeLoopPhase?: VibeLoopPhase;
+  vibeLoopAttempt?: number;
+  vibeLoopMaxRetries?: number;
+  vibeLoopAttempts?: VibeLoopAttempt[];
+  onApproveEscalation?: () => void;
+  onDismissVibeLoop?: () => void;
   
   // Callbacks
   onViewPlan?: () => void;
@@ -51,14 +63,21 @@ export function CodingModeLayout({
   mode,
   isActive,
   terminalCommands,
-  isTerminalStreaming = false,
+  streamState,
   onClearTerminal,
+  onSendCommand,
   pendingDiffs,
   onAcceptDiff,
   onRejectDiff,
   currentFile,
   styleCheckPassed = true,
   styleViolationsCount = 0,
+  vibeLoopPhase,
+  vibeLoopAttempt = 0,
+  vibeLoopMaxRetries = 3,
+  vibeLoopAttempts = [],
+  onApproveEscalation,
+  onDismissVibeLoop,
   onViewPlan,
   onClose,
   children,
@@ -145,14 +164,29 @@ export function CodingModeLayout({
               <>
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={30} minSize={15} maxSize={50}>
-                  <CodingTerminalView
-                    commands={terminalCommands}
-                    isStreaming={isTerminalStreaming}
-                    onClear={onClearTerminal}
-                    onClose={() => setShowTerminal(false)}
-                    className="h-full"
-                    defaultExpanded={true}
-                  />
+                  <div className="h-full flex flex-col">
+                    <TerminalStreamView
+                      commands={terminalCommands}
+                      streamState={streamState || { isStreaming: false, currentPhase: null, progress: null, lastExitCode: null }}
+                      onClear={onClearTerminal}
+                      onClose={() => setShowTerminal(false)}
+                      onSendCommand={onSendCommand}
+                      className="flex-1"
+                      defaultExpanded={true}
+                    />
+                    {/* Vibe Loop Indicator */}
+                    {vibeLoopPhase && (
+                      <VibeLoopIndicator
+                        phase={vibeLoopPhase}
+                        currentAttempt={vibeLoopAttempt}
+                        maxRetries={vibeLoopMaxRetries}
+                        attempts={vibeLoopAttempts}
+                        onApproveEscalation={onApproveEscalation}
+                        onDismiss={onDismissVibeLoop}
+                        className="mx-2 mb-2"
+                      />
+                    )}
+                  </div>
                 </ResizablePanel>
               </>
             )}

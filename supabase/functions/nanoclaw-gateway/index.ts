@@ -144,6 +144,50 @@ serve(async (req) => {
         break;
       }
 
+      case 'apply_skill': {
+        const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/skills/apply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'X-User-ID': userId,
+          },
+          body: JSON.stringify({
+            skillDir: params.skillDir,
+          }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'read_file': {
+        const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/files?path=${encodeURIComponent(params.filePath)}`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'X-User-ID': userId,
+          },
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'write_file': {
+        const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/files`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'X-User-ID': userId,
+          },
+          body: JSON.stringify({
+            path: params.filePath,
+            content: params.content,
+          }),
+        });
+        result = await response.json();
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),

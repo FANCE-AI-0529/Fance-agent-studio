@@ -666,7 +666,7 @@ export function ConsumerRuntime() {
           mode={openCodeRuntime.mode}
           isActive={openCodeRuntime.isActive}
           terminalCommands={openCodeRuntime.terminalCommands}
-          isTerminalStreaming={false}
+          streamState={undefined}
           onClearTerminal={openCodeRuntime.clearTerminal}
           pendingDiffs={openCodeRuntime.pendingDiffs}
           onAcceptDiff={openCodeRuntime.acceptDiff}
