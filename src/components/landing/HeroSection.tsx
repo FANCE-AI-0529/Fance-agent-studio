@@ -16,7 +16,7 @@ const fadeUp = {
 
 export function HeroSection({ onBookDemo }: HeroSectionProps) {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-32 pb-20 px-6">
+    <section className="relative min-h-[100svh] flex items-center justify-center pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6">
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -24,10 +24,10 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
         className="max-w-5xl mx-auto text-center"
       >
         {/* Status badge */}
-        <motion.div variants={fadeUp} className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#22d3ee]/20 bg-[#22d3ee]/5">
+        <motion.div variants={fadeUp} className="flex justify-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-[#22d3ee]/20 bg-[#22d3ee]/5">
             <span className="w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse" />
-            <span className="text-xs font-mono text-[#22d3ee] tracking-wider">
+            <span className="text-[10px] sm:text-xs font-mono text-[#22d3ee] tracking-wider">
               SYSTEM KERNEL v2.0 ONLINE
             </span>
           </div>
@@ -36,11 +36,11 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
         {/* Main heading */}
         <motion.h1
           variants={fadeUp}
-          className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter leading-[0.9] mb-6"
+          className="text-4xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter leading-[0.9] mb-5 sm:mb-6"
         >
           <span className="block text-white/90">构建你的</span>
           <span
-            className="block mt-2"
+            className="block mt-1 sm:mt-2"
             style={{
               background: "linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #c084fc 100%)",
               WebkitBackgroundClip: "text",
@@ -54,7 +54,7 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
         {/* Subtitle */}
         <motion.p
           variants={fadeUp}
-          className="text-lg sm:text-xl text-[#a1a1aa] max-w-2xl mx-auto mb-10 leading-relaxed"
+          className="text-base sm:text-xl text-[#a1a1aa] max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2"
         >
           基于 NanoClaw 容器级隔离与 MPLP 治理协议。
           <br className="hidden sm:block" />
@@ -63,21 +63,18 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
         </motion.p>
 
         {/* CTAs */}
-        <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          {/* Primary CTA with glow */}
+        <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-2">
           <button
             onClick={onBookDemo}
-            className="group relative px-8 py-4 rounded-xl text-base font-semibold text-white overflow-hidden transition-transform hover:scale-[1.03] active:scale-[0.98]"
+            className="group relative w-full sm:w-auto px-8 py-3.5 sm:py-4 rounded-xl text-base font-semibold text-white overflow-hidden transition-transform hover:scale-[1.03] active:scale-[0.98]"
           >
-            {/* Glow background */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#22d3ee] to-[#818cf8]" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#818cf8] to-[#22d3ee] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            {/* Animated glow shadow */}
             <div
               className="absolute -inset-1 rounded-xl opacity-50 group-hover:opacity-80 transition-opacity duration-500 blur-xl"
               style={{ background: "linear-gradient(135deg, #22d3ee, #818cf8)" }}
             />
-            <span className="relative z-10 flex items-center gap-2">
+            <span className="relative z-10 flex items-center justify-center gap-2">
               获取内测邀请码
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -85,29 +82,28 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
             </span>
           </button>
 
-          {/* Secondary CTA */}
           <a
             href="#features"
-            className="px-8 py-4 rounded-xl text-base font-medium text-[#a1a1aa] border border-white/10 hover:border-[#22d3ee]/30 hover:text-white hover:bg-white/[0.03] transition-all"
+            className="w-full sm:w-auto text-center px-8 py-3.5 sm:py-4 rounded-xl text-base font-medium text-[#a1a1aa] border border-white/10 hover:border-[#22d3ee]/30 hover:text-white hover:bg-white/[0.03] transition-all"
           >
             查看技术白皮书
           </a>
         </motion.div>
 
         {/* Terminal preview */}
-        <motion.div variants={fadeUp} className="mt-16 max-w-2xl mx-auto">
+        <motion.div variants={fadeUp} className="mt-10 sm:mt-16 max-w-2xl mx-auto">
           <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/50">
             {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/[0.06]">
               <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+                <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#ff5f57]" />
+                <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#febc2e]" />
+                <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#28c840]" />
               </div>
-              <span className="text-xs font-mono text-[#71717a] ml-2">agent-os-terminal</span>
+              <span className="text-[10px] sm:text-xs font-mono text-[#71717a] ml-2">agent-os-terminal</span>
             </div>
             {/* Terminal content */}
-            <div className="p-5 font-mono text-sm leading-relaxed text-left">
+            <div className="p-3 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed text-left overflow-x-auto">
               <p>
                 <span className="text-[#22d3ee]">➜</span>{" "}
                 <span className="text-[#a1a1aa]">~</span>{" "}

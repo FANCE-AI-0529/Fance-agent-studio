@@ -28,7 +28,6 @@ function SpotlightCard({
       onMouseMove={handleMouse}
       className={`relative group overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a]/70 backdrop-blur-xl transition-colors hover:border-[#22d3ee]/30 ${className}`}
     >
-      {/* Spotlight radial */}
       <motion.div
         className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style={{
@@ -51,7 +50,7 @@ const fadeUp = {
 
 export function BentoFeatures() {
   return (
-    <section id="features" className="relative py-32 px-6">
+    <section id="features" className="relative py-16 sm:py-32 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Section header */}
         <motion.div
@@ -59,12 +58,12 @@ export function BentoFeatures() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
-          <span className="text-xs font-mono text-[#22d3ee] tracking-[0.3em] uppercase mb-4 block">
+          <span className="text-[10px] sm:text-xs font-mono text-[#22d3ee] tracking-[0.3em] uppercase mb-3 sm:mb-4 block">
             Core Architecture
           </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+          <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight text-white">
             为生产环境而生的
             <span
               style={{
@@ -79,8 +78,8 @@ export function BentoFeatures() {
         </motion.div>
 
         {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Card A - Dual Mode (spans 2 cols) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {/* Card A - Dual Mode (spans 2 cols on lg) */}
           <motion.div
             custom={0}
             variants={fadeUp}
@@ -89,39 +88,39 @@ export function BentoFeatures() {
             viewport={{ once: true, margin: "-80px" }}
             className="lg:col-span-2"
           >
-            <SpotlightCard className="h-full p-8">
-              <div className="flex flex-col lg:flex-row gap-8">
+            <SpotlightCard className="h-full p-5 sm:p-8">
+              <div className="flex flex-col lg:flex-row gap-5 sm:gap-8">
                 <div className="flex-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#22d3ee]/10 border border-[#22d3ee]/20 mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#22d3ee]/10 border border-[#22d3ee]/20 mb-3 sm:mb-4">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#22d3ee]" />
-                    <span className="text-xs font-mono text-[#22d3ee]">DUAL-MODE</span>
+                    <span className="text-[10px] sm:text-xs font-mono text-[#22d3ee]">DUAL-MODE</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Consumer × Studio 双模架构</h3>
-                  <p className="text-[#a1a1aa] leading-relaxed mb-6">
-                    <span className="text-white font-medium">Consumer 模式</span> 提供终端用户级的自然语言交互界面，支持语音输入、实时流式响应、表情与文件附件。
-                    <span className="text-white font-medium"> Studio 模式</span> 则是工程师的可视化画布——拖拽节点、连接数据流、挂载技能包、编辑系统提示词，一切尽在掌控。
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">Consumer × Studio 双模架构</h3>
+                  <p className="text-sm text-[#a1a1aa] leading-relaxed mb-4 sm:mb-6">
+                    <span className="text-white font-medium">Consumer 模式</span> 提供终端用户级的自然语言交互界面，支持语音输入、实时流式响应。
+                    <span className="text-white font-medium"> Studio 模式</span> 则是工程师的可视化画布——拖拽节点、连接数据流、挂载技能包。
                   </p>
-                  <div className="flex gap-3 flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     {["可视化工作流", "拖拽编排", "实时预览", "版本快照"].map((tag) => (
-                      <span key={tag} className="px-3 py-1 text-xs font-mono rounded-md bg-white/5 border border-white/10 text-[#a1a1aa]">
+                      <span key={tag} className="px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-mono rounded-md bg-white/5 border border-white/10 text-[#a1a1aa]">
                         {tag}
                       </span>
                     ))}
                   </div>
                 </div>
                 {/* Visual element */}
-                <div className="flex-shrink-0 w-full lg:w-64 h-48 rounded-xl bg-gradient-to-br from-[#22d3ee]/10 to-[#818cf8]/10 border border-white/[0.06] flex items-center justify-center">
+                <div className="flex-shrink-0 w-full lg:w-64 h-36 sm:h-48 rounded-xl bg-gradient-to-br from-[#22d3ee]/10 to-[#818cf8]/10 border border-white/[0.06] flex items-center justify-center">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-4 mb-3">
-                      <div className="w-12 h-12 rounded-lg bg-[#22d3ee]/20 border border-[#22d3ee]/30 flex items-center justify-center">
-                        <span className="text-[#22d3ee] text-lg">C</span>
+                      <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg bg-[#22d3ee]/20 border border-[#22d3ee]/30 flex items-center justify-center">
+                        <span className="text-[#22d3ee] text-base sm:text-lg">C</span>
                       </div>
-                      <div className="text-[#71717a] text-2xl">⇌</div>
-                      <div className="w-12 h-12 rounded-lg bg-[#818cf8]/20 border border-[#818cf8]/30 flex items-center justify-center">
-                        <span className="text-[#818cf8] text-lg">S</span>
+                      <div className="text-[#71717a] text-xl sm:text-2xl">⇌</div>
+                      <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg bg-[#818cf8]/20 border border-[#818cf8]/30 flex items-center justify-center">
+                        <span className="text-[#818cf8] text-base sm:text-lg">S</span>
                       </div>
                     </div>
-                    <p className="text-xs font-mono text-[#71717a]">Mode Switch</p>
+                    <p className="text-[10px] sm:text-xs font-mono text-[#71717a]">Mode Switch</p>
                   </div>
                 </div>
               </div>
@@ -136,15 +135,14 @@ export function BentoFeatures() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >
-            <SpotlightCard className="h-full p-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#818cf8]/10 border border-[#818cf8]/20 mb-4">
+            <SpotlightCard className="h-full p-5 sm:p-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#818cf8]/10 border border-[#818cf8]/20 mb-3 sm:mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#818cf8]" />
-                <span className="text-xs font-mono text-[#818cf8]">GOVERNANCE</span>
+                <span className="text-[10px] sm:text-xs font-mono text-[#818cf8]">GOVERNANCE</span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">MPLP 协议</h3>
-              <p className="text-[#a1a1aa] leading-relaxed mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">MPLP 协议</h3>
+              <p className="text-sm text-[#a1a1aa] leading-relaxed mb-4 sm:mb-6">
                 多级权限准入协议。每个 Agent 在执行高风险操作前，必须经过策略引擎的实时拦截与人机确认。
-                支持 <span className="text-[#818cf8] font-mono text-sm">strict</span>、<span className="text-[#818cf8] font-mono text-sm">confirm</span>、<span className="text-[#818cf8] font-mono text-sm">auto</span> 三级策略。
               </p>
               <div className="space-y-2">
                 {[
@@ -153,7 +151,7 @@ export function BentoFeatures() {
                   { label: "auto", desc: "自主执行" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                    <span className="font-mono text-xs text-[#818cf8] min-w-[60px]">{item.label}</span>
+                    <span className="font-mono text-xs text-[#818cf8] min-w-[52px] sm:min-w-[60px]">{item.label}</span>
                     <span className="text-xs text-[#71717a]">{item.desc}</span>
                   </div>
                 ))}
@@ -169,26 +167,25 @@ export function BentoFeatures() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >
-            <SpotlightCard className="h-full p-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c084fc]/10 border border-[#c084fc]/20 mb-4">
+            <SpotlightCard className="h-full p-5 sm:p-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c084fc]/10 border border-[#c084fc]/20 mb-3 sm:mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#c084fc]" />
-                <span className="text-xs font-mono text-[#c084fc]">SANDBOX</span>
+                <span className="text-[10px] sm:text-xs font-mono text-[#c084fc]">SANDBOX</span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">NanoClaw 沙箱引擎</h3>
-              <p className="text-[#a1a1aa] leading-relaxed mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">NanoClaw 沙箱引擎</h3>
+              <p className="text-sm text-[#a1a1aa] leading-relaxed mb-4 sm:mb-6">
                 每个 Agent 运行在独立的容器级隔离环境中。独立文件系统、独立进程空间、独立网络策略。
-                技能以热插拔方式挂载，支持原子回滚。
               </p>
-              <div className="font-mono text-xs text-[#71717a] space-y-1 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                <p><span className="text-[#22d3ee]">├──</span> /skills/      <span className="text-[#a1a1aa]"># 已挂载技能</span></p>
-                <p><span className="text-[#22d3ee]">├──</span> /memory/      <span className="text-[#a1a1aa]"># 持久化记忆</span></p>
-                <p><span className="text-[#22d3ee]">├──</span> /state.yaml   <span className="text-[#a1a1aa]"># 运行状态</span></p>
-                <p><span className="text-[#22d3ee]">└──</span> /lock         <span className="text-[#a1a1aa]"># 并发锁</span></p>
+              <div className="font-mono text-[10px] sm:text-xs text-[#71717a] space-y-1 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] overflow-x-auto">
+                <p className="whitespace-nowrap"><span className="text-[#22d3ee]">├──</span> /skills/      <span className="text-[#a1a1aa]"># 已挂载技能</span></p>
+                <p className="whitespace-nowrap"><span className="text-[#22d3ee]">├──</span> /memory/      <span className="text-[#a1a1aa]"># 持久化记忆</span></p>
+                <p className="whitespace-nowrap"><span className="text-[#22d3ee]">├──</span> /state.yaml   <span className="text-[#a1a1aa]"># 运行状态</span></p>
+                <p className="whitespace-nowrap"><span className="text-[#22d3ee]">└──</span> /lock         <span className="text-[#a1a1aa]"># 并发锁</span></p>
               </div>
             </SpotlightCard>
           </motion.div>
 
-          {/* Card D - Skills (spans 2 cols) */}
+          {/* Card D - Skills (spans 2 cols on lg) */}
           <motion.div
             custom={3}
             variants={fadeUp}
@@ -197,43 +194,43 @@ export function BentoFeatures() {
             viewport={{ once: true, margin: "-80px" }}
             className="lg:col-span-2"
           >
-            <SpotlightCard className="h-full p-8">
-              <div className="flex flex-col lg:flex-row gap-8">
+            <SpotlightCard className="h-full p-5 sm:p-8">
+              <div className="flex flex-col lg:flex-row gap-5 sm:gap-8">
                 <div className="flex-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/20 mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fbbf24]/10 border border-[#fbbf24]/20 mb-3 sm:mb-4">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#fbbf24]" />
-                    <span className="text-xs font-mono text-[#fbbf24]">SKILLS ENGINE</span>
+                    <span className="text-[10px] sm:text-xs font-mono text-[#fbbf24]">SKILLS ENGINE</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">可编程技能生态</h3>
-                  <p className="text-[#a1a1aa] leading-relaxed mb-6">
-                    技能是 Agent 能力的最小单元。每个技能包含 manifest.yaml（声明）、handler 逻辑、测试脚本与版本控制。
-                    支持从 Skill Foundry 一键安装，也支持自研定制。通过 Semantic Router 智能匹配用户意图。
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">可编程技能生态</h3>
+                  <p className="text-sm text-[#a1a1aa] leading-relaxed mb-4 sm:mb-6">
+                    技能是 Agent 能力的最小单元。每个技能包含 manifest.yaml 声明、handler 逻辑与版本控制。
+                    支持从 Skill Foundry 一键安装，也支持自研定制。
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
                     {[
                       { name: "Web Search", icon: "🔍" },
                       { name: "Code Review", icon: "🔬" },
                       { name: "Data Analysis", icon: "📊" },
                       { name: "RAG Pipeline", icon: "🧠" },
                     ].map((skill) => (
-                      <div key={skill.name} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                        <span>{skill.icon}</span>
-                        <span className="text-xs text-[#a1a1aa] font-mono">{skill.name}</span>
+                      <div key={skill.name} className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                        <span className="text-sm">{skill.icon}</span>
+                        <span className="text-[10px] sm:text-xs text-[#a1a1aa] font-mono truncate">{skill.name}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 {/* Stats */}
-                <div className="flex-shrink-0 grid grid-cols-2 gap-3">
+                <div className="flex-shrink-0 grid grid-cols-4 lg:grid-cols-2 gap-2 sm:gap-3">
                   {[
                     { value: "60+", label: "内置技能" },
                     { value: "<3s", label: "热装载" },
                     { value: "100%", label: "原子回滚" },
                     { value: "∞", label: "可扩展" },
                   ].map((stat) => (
-                    <div key={stat.label} className="w-24 h-24 rounded-xl bg-white/[0.03] border border-white/[0.06] flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold text-white">{stat.value}</span>
-                      <span className="text-[10px] font-mono text-[#71717a] mt-1">{stat.label}</span>
+                    <div key={stat.label} className="sm:w-24 h-20 sm:h-24 rounded-xl bg-white/[0.03] border border-white/[0.06] flex flex-col items-center justify-center">
+                      <span className="text-lg sm:text-xl font-bold text-white">{stat.value}</span>
+                      <span className="text-[9px] sm:text-[10px] font-mono text-[#71717a] mt-1">{stat.label}</span>
                     </div>
                   ))}
                 </div>
@@ -249,13 +246,13 @@ export function BentoFeatures() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >
-            <SpotlightCard className="h-full p-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#34d399]/10 border border-[#34d399]/20 mb-4">
+            <SpotlightCard className="h-full p-5 sm:p-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#34d399]/10 border border-[#34d399]/20 mb-3 sm:mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]" />
-                <span className="text-xs font-mono text-[#34d399]">SWARM</span>
+                <span className="text-[10px] sm:text-xs font-mono text-[#34d399]">SWARM</span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Agent 集群协作</h3>
-              <p className="text-[#a1a1aa] leading-relaxed mb-4">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">Agent 集群协作</h3>
+              <p className="text-sm text-[#a1a1aa] leading-relaxed mb-4">
                 多 Agent 之间通过 A2A 协议进行任务委派、上下文透传与结果汇聚。
                 支持链式编排、并行扇出与熔断保护。
               </p>
