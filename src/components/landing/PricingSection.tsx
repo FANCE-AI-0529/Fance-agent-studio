@@ -63,6 +63,7 @@ interface PricingSectionProps {
 export function PricingSection({ onBookDemo }: PricingSectionProps) {
   return (
     <section id="pricing" className="relative py-16 sm:py-32 px-4 sm:px-6">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm pointer-events-none" />
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
