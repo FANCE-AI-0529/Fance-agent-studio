@@ -296,6 +296,15 @@ serve(async (req) => {
       }
     }
 
+    // [安全]：请求体大小限制 (1MB)
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 1048576) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Request too large' }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // 解析请求
     const request: MCPExecuteRequest = await req.json();
     const { 

@@ -5448,6 +5448,7 @@ export type Database = {
       agent_api_keys_safe: {
         Row: {
           agent_id: string | null
+          api_key_prefix: string | null
           created_at: string | null
           expires_at: string | null
           id: string | null
@@ -5461,6 +5462,7 @@ export type Database = {
         }
         Insert: {
           agent_id?: string | null
+          api_key_prefix?: string | null
           created_at?: string | null
           expires_at?: string | null
           id?: string | null
@@ -5474,6 +5476,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string | null
+          api_key_prefix?: string | null
           created_at?: string | null
           expires_at?: string | null
           id?: string | null
