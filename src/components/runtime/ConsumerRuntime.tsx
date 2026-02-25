@@ -23,6 +23,7 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 import { createMultimodalContent } from "@/hooks/useAgentChat";
 import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
 import { FormattedText } from "./FormattedText";
+import { TypewriterFormattedText } from "./TypewriterFormattedText";
 import { parseAgentMeta } from "@/constants/agentRoleThemes";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -801,7 +802,7 @@ export function ConsumerRuntime() {
                   </div>
                   <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl px-4 py-3 max-w-[80%]">
                     <div className="text-sm leading-relaxed">
-                      <FormattedText content={parseAgentMeta(streamingContent).cleanContent} />
+                      <TypewriterFormattedText content={parseAgentMeta(streamingContent).cleanContent} speed={30} />
                       <span className="inline-block w-2 h-4 bg-primary/50 ml-1 animate-pulse" />
                     </div>
                   </div>
