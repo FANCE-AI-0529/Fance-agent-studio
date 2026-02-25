@@ -53,6 +53,7 @@ import { useBuildPlanStore } from "@/stores/buildPlanStore";
 import { useSandboxValidation } from "@/hooks/useSandboxValidation";
 import { useSelfHealing } from "@/hooks/useSelfHealing";
 import { useAgentEvals } from "@/hooks/useAgentEvals";
+import { useEvalDiagnosis } from "@/hooks/useEvalDiagnosis";
 import { aiAgentScenarios, AIAgentScenario } from "@/data/aiAgentScenarios";
 import type { Node, Edge } from "@xyflow/react";
 import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
@@ -182,6 +183,9 @@ export function EnhancedAIGenerator({
     resetHealing,
     MAX_RETRIES,
   } = useSelfHealing();
+
+  // 质检诊断与自动修复
+  const evalDiagnosis = useEvalDiagnosis();
 
   // Auto-fill description from initialDescription
   useEffect(() => {
@@ -453,11 +457,96 @@ export function EnhancedAIGenerator({
     }
   }, [lastResult, agentEvals]);
 
+  // 手动触发诊断
+  const handleDiagnose = useCallback(async () => {
+    if (!agentEvals.evaluationResult || !lastResult) return;
+    const agentConfig = {
+      name: lastResult.dsl?.name || 'AI 生成的智能体',
+      systemPrompt: lastResult.dsl?.stages?.[0]?.nodes?.find(
+        (n: any) => n.type === 'agent'
+      )?.config?.systemPrompt || '',
+      department: lastResult.dsl?.metadata?.category,
+      model: 'google/gemini-2.5-flash',
+    };
+    await evalDiagnosis.diagnose(agentEvals.evaluationResult, agentConfig);
+  }, [agentEvals.evaluationResult, lastResult, evalDiagnosis]);
+
+  // 全自动修复
+  const handleAutoFix = useCallback(async () => {
+    if (!agentEvals.evaluationResult || !lastResult) return;
+
+    const currentAgentConfig = {
+      name: lastResult.dsl?.name || 'AI 生成的智能体',
+      systemPrompt: lastResult.dsl?.stages?.[0]?.nodes?.find(
+        (n: any) => n.type === 'agent'
+      )?.config?.systemPrompt || '',
+      department: lastResult.dsl?.metadata?.category,
+      model: 'google/gemini-2.5-flash',
+    };
+
+    await evalDiagnosis.startAutoFix(
+      agentEvals.evaluationResult,
+      currentAgentConfig,
+      {
+        onPatchPrompt: (_patchedPrompt) => {
+          // Prompt patched - will be used in regenerate
+        },
+        onRegenerate: async () => {
+          // Trigger regeneration with current description
+          const desc = description.trim() || initialDescription?.trim();
+          if (desc) {
+            await generate(desc, {
+              mplpPolicy,
+              includeKnowledge,
+              maxNodes,
+              autoApplyPolicies,
+              enableBuildPlan: false,
+            });
+          }
+        },
+        onRetest: async () => {
+          agentEvals.reset();
+          try {
+            await agentEvals.runEvaluation({
+              agentId: `gen-autofix-${Date.now()}`,
+              agentConfig: currentAgentConfig,
+              includeRedTeam: true,
+              evalType: 'pre_deploy',
+            });
+            return agentEvals.evaluationResult;
+          } catch {
+            return null;
+          }
+        },
+        onComplete: () => {
+          setEvalPhase('complete');
+        },
+        onEscalated: () => {
+          setEvalPhase('complete');
+        },
+      }
+    );
+  }, [agentEvals, lastResult, description, initialDescription, generate, mplpPolicy, includeKnowledge, maxNodes, autoApplyPolicies, evalDiagnosis]);
+
+  // 自动诊断：质检完成且未通过时自动触发
+  useEffect(() => {
+    if (
+      evalPhase === 'complete' &&
+      agentEvals.evaluationResult &&
+      !agentEvals.evaluationResult.passed &&
+      !evalDiagnosis.diagnosisResult &&
+      !evalDiagnosis.isDiagnosing
+    ) {
+      handleDiagnose();
+    }
+  }, [evalPhase, agentEvals.evaluationResult, evalDiagnosis.diagnosisResult, evalDiagnosis.isDiagnosing]);
+
   const handleClose = () => {
     reset();
     resetValidation();
     resetHealing();
     agentEvals.reset();
+    evalDiagnosis.resetDiagnosis();
     buildPlanStore.reset();
     setDescription("");
     setSelectedScenario(null);
@@ -473,6 +562,7 @@ export function EnhancedAIGenerator({
     resetValidation();
     resetHealing();
     agentEvals.reset();
+    evalDiagnosis.resetDiagnosis();
     buildPlanStore.reset();
     hasAutoTriggeredRef.current = false;
     hasAutoAppliedRef.current = false;
@@ -771,6 +861,11 @@ export function EnhancedAIGenerator({
                       <AgentScorecard
                         evaluationResult={agentEvals.evaluationResult}
                         onRerun={handleRerunEvaluation}
+                        diagnosisResult={evalDiagnosis.diagnosisResult}
+                        isDiagnosing={evalDiagnosis.isDiagnosing}
+                        autoFixProgress={evalDiagnosis.autoFixProgress}
+                        onAutoFix={handleAutoFix}
+                        onDiagnose={handleDiagnose}
                       />
                     )}
                     

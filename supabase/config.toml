@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.nanoclaw-memory]
 verify_jwt = false
+
+[functions.eval-diagnosis]
+verify_jwt = false
