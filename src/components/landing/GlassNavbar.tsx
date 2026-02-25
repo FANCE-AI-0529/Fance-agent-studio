@@ -26,8 +26,9 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
 
   const Brand = () => (
     <div className="flex items-center justify-between py-5 md:block">
-      <a href="#">
+      <a href="#" className="flex items-center gap-2">
         <img src={logoFull} alt="HIVE" className="h-8 sm:h-9 rounded-lg object-cover" />
+        <span className="text-white font-bold text-xl tracking-wider">HIVE</span>
       </a>
       <div className="md:hidden">
         <button
