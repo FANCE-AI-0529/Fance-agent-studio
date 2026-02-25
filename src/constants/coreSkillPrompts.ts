@@ -1240,6 +1240,1211 @@ allowed-tools:
 };
 
 // ─────────────────────────────────────────────
+// 9. skill-lifecycle — 技能生命周期管理
+// ─────────────────────────────────────────────
+const SKILL_LIFECYCLE: CoreSkillPrompt = {
+  id: 'nc-skill-lifecycle',
+  name: '技能生命周期管理',
+  description: '技能安装/卸载/更新/回滚 — 基于 NanoClaw apply/uninstall/update 逻辑',
+  category: '高级自主',
+  allowedTools: 'Bash(*), Read, Write',
+  difficulty: 'advanced',
+  skillMd: `---
+name: skill-lifecycle
+description: Manage the full lifecycle of NanoClaw skills — install, uninstall, update, rebase, and replay. Handles three-way merges, backup/restore, and state synchronization.
+allowed-tools: Bash(*), Read, Write
+---
+
+# Skill Lifecycle Manager
+
+## Quick start
+
+\`\`\`bash
+# Install a skill
+cd .nanoclaw && cat state.yaml
+nanoclaw apply <skill-name>
+
+# Update a skill
+nanoclaw update <skill-name>
+
+# Uninstall a skill
+nanoclaw uninstall <skill-name>
+
+# Rebase after core update
+nanoclaw rebase
+\`\`\`
+
+## Core workflow
+
+1. **Pre-flight**: Read \`.nanoclaw/state.yaml\` to check current state
+2. **Backup**: Snapshot affected files to \`.nanoclaw/backup/\`
+3. **Apply**: Three-way merge (base → skill patch → current files)
+4. **Verify**: Run \`post_apply\` hooks and tests
+5. **Commit**: Update \`state.yaml\` with new skill entry and file hashes
+
+## Operations
+
+### Install (apply)
+\`\`\`bash
+# Check manifest
+cat skills/<name>/manifest.yaml
+
+# Run apply
+nanoclaw apply <skill-name> --dry-run   # Preview changes
+nanoclaw apply <skill-name>             # Apply skill
+
+# Verify
+cat .nanoclaw/state.yaml | grep <skill-name>
+\`\`\`
+
+### Update
+\`\`\`bash
+# Preview update
+nanoclaw update <skill-name> --preview
+
+# Apply update (three-way merge: old-base → new-base → current)
+nanoclaw update <skill-name>
+
+# Resolve conflicts if any
+grep -r "<<<<<<" .   # Find merge conflicts
+\`\`\`
+
+### Uninstall
+\`\`\`bash
+# Preview removal
+nanoclaw uninstall <skill-name> --dry-run
+
+# Remove skill (restores base files from backup)
+nanoclaw uninstall <skill-name>
+\`\`\`
+
+### Rebase
+\`\`\`bash
+# After core version update, replay all skills
+nanoclaw rebase --preview
+nanoclaw rebase
+\`\`\`
+
+### Replay
+\`\`\`bash
+# Re-apply all skills from clean state
+nanoclaw replay --from-scratch
+\`\`\`
+
+## State management
+
+The \`state.yaml\` file tracks:
+- \`skills_system_version\`: Current infrastructure version
+- \`core_version\`: Base project version
+- \`applied_skills[]\`: Each skill with name, version, applied_at, file_hashes
+- \`custom_modifications[]\`: Manual patches tracked separately
+
+## Conflict resolution
+
+When three-way merge produces conflicts:
+1. Check conflict markers: \`grep -rn "<<<<<<" .\`
+2. Review both versions between markers
+3. Choose the correct resolution
+4. Remove conflict markers
+5. Run \`nanoclaw verify\` to confirm
+
+## Safety
+
+- Always \`--dry-run\` before destructive operations
+- Backups are automatic but verify: \`ls .nanoclaw/backup/\`
+- Lock file prevents concurrent modifications
+- State file is the single source of truth
+`,
+  handlerPy: `"""
+Skill lifecycle manager — install, uninstall, update, rebase, replay.
+"""
+import subprocess
+import json
+import yaml
+from typing import Dict, Any
+
+STATE_FILE = ".nanoclaw/state.yaml"
+BACKUP_DIR = ".nanoclaw/backup"
+
+async def handler(inputs: dict) -> dict:
+    action = inputs.get("action", "status")
+    skill_name = inputs.get("skill_name", "")
+    dry_run = inputs.get("dry_run", False)
+
+    if action == "status":
+        try:
+            with open(STATE_FILE) as f:
+                state = yaml.safe_load(f)
+            return {"success": True, "state": state}
+        except FileNotFoundError:
+            return {"success": True, "state": {"applied_skills": []}}
+
+    if not skill_name:
+        return {"error": "skill_name is required", "success": False}
+
+    cmd = f"nanoclaw {action} {skill_name}"
+    if dry_run:
+        cmd += " --dry-run"
+
+    try:
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=120)
+        return {
+            "success": result.returncode == 0,
+            "stdout": result.stdout[:10000],
+            "stderr": result.stderr[:5000],
+            "action": action,
+            "skill": skill_name,
+        }
+    except Exception as e:
+        return {"error": str(e), "success": False}
+`,
+  configYaml: `name: skill-lifecycle
+version: "1.0.0"
+runtime: python3.11
+timeout: 120
+memory: 512
+mplp_policy: "strict"
+allowed-tools:
+  - "Bash(*)"
+  - "Read"
+  - "Write"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 10. git-operator — Git 版本控制
+// ─────────────────────────────────────────────
+const GIT_OPERATOR: CoreSkillPrompt = {
+  id: 'nc-git-operator',
+  name: 'Git 版本控制',
+  description: '代码提交、分支管理、PR 创建、冲突解决 — 完整的 Git 工作流',
+  category: '高级自主',
+  allowedTools: 'Bash(git,diff,patch)',
+  difficulty: 'intermediate',
+  skillMd: `---
+name: git-operator
+description: Full Git version control — commits, branches, merges, PRs, conflict resolution, and history analysis.
+allowed-tools: Bash(git,diff,patch)
+---
+
+# Git Version Control Operator
+
+## Quick start
+
+\`\`\`bash
+git status                        # Check working tree
+git add -A && git commit -m "msg" # Stage and commit
+git checkout -b feature/name      # Create branch
+git push origin feature/name      # Push to remote
+\`\`\`
+
+## Core workflow
+
+1. **Status**: \`git status\` + \`git diff\` to understand changes
+2. **Stage**: \`git add\` specific files or \`-A\` for all
+3. **Commit**: Write clear conventional commit messages
+4. **Push**: \`git push\` to remote
+5. **PR**: Create pull request if needed
+
+## Commands
+
+### Status & diff
+\`\`\`bash
+git status                        # Working tree status
+git diff                          # Unstaged changes
+git diff --staged                 # Staged changes
+git log --oneline -20             # Recent commits
+git log --graph --oneline --all   # Branch graph
+\`\`\`
+
+### Branching
+\`\`\`bash
+git branch -a                     # List all branches
+git checkout -b feature/name      # Create and switch
+git switch main                   # Switch to main
+git branch -d feature/name        # Delete merged branch
+git merge feature/name            # Merge branch
+\`\`\`
+
+### Commits
+\`\`\`bash
+git add -A                        # Stage all
+git add <file>                    # Stage specific file
+git commit -m "type: description" # Commit with message
+git commit --amend                # Amend last commit
+git reset HEAD~1                  # Undo last commit (keep changes)
+\`\`\`
+
+### Remote operations
+\`\`\`bash
+git push origin <branch>          # Push branch
+git pull origin main              # Pull latest
+git fetch --all                   # Fetch all remotes
+git remote -v                     # List remotes
+\`\`\`
+
+### Conflict resolution
+\`\`\`bash
+git merge <branch>                # Start merge
+grep -rn "<<<<<<" .               # Find conflicts
+# Edit files to resolve
+git add <resolved-files>
+git merge --continue
+\`\`\`
+
+### Stash
+\`\`\`bash
+git stash                         # Stash changes
+git stash list                    # List stashes
+git stash pop                     # Apply and remove stash
+\`\`\`
+
+## Commit message convention
+
+\`type(scope): description\`
+
+Types: feat, fix, docs, style, refactor, test, chore, perf
+
+## Safety
+
+- Never force-push to main/master
+- Always pull before push
+- Use \`--dry-run\` for destructive operations
+- Keep commits atomic and well-described
+`,
+  handlerPy: `"""
+Git operator skill handler.
+"""
+import subprocess
+from typing import Dict, Any
+
+BLOCKED_COMMANDS = [
+    "git push --force origin main",
+    "git push --force origin master",
+    "git push -f origin main",
+    "git push -f origin master",
+]
+
+async def handler(inputs: dict) -> dict:
+    command = inputs.get("command", "")
+    if not command:
+        return {"error": "command is required", "success": False}
+    
+    full_cmd = f"git {command}" if not command.startswith("git ") else command
+    
+    for blocked in BLOCKED_COMMANDS:
+        if blocked in full_cmd:
+            return {"error": f"Blocked: {blocked}", "success": False, "blocked": True}
+    
+    try:
+        result = subprocess.run(full_cmd, shell=True, capture_output=True, text=True, timeout=60)
+        return {
+            "success": result.returncode == 0,
+            "stdout": result.stdout[:10000],
+            "stderr": result.stderr[:5000],
+        }
+    except Exception as e:
+        return {"error": str(e), "success": False}
+`,
+  configYaml: `name: git-operator
+version: "1.0.0"
+runtime: python3.11
+timeout: 60
+memory: 256
+allowed-tools:
+  - "Bash(git,diff,patch)"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 11. env-configurator — 环境配置管理
+// ─────────────────────────────────────────────
+const ENV_CONFIGURATOR: CoreSkillPrompt = {
+  id: 'nc-env-configurator',
+  name: '环境配置管理',
+  description: '.env 管理、npm 依赖、Docker Compose 服务配置 — 对应 structured.ts',
+  category: '高级自主',
+  allowedTools: 'Bash(cat,echo,sed,grep), Read, Write',
+  difficulty: 'intermediate',
+  skillMd: `---
+name: env-configurator
+description: Manage environment configuration — .env files, npm dependencies, Docker Compose services, and structured configuration updates.
+allowed-tools: Bash(cat,echo,sed,grep), Read, Write
+---
+
+# Environment Configuration Manager
+
+## Quick start
+
+\`\`\`bash
+cat .env                          # Read current env
+echo "NEW_KEY=value" >> .env      # Add env variable
+grep -v "^OLD_KEY" .env > .env.tmp && mv .env.tmp .env  # Remove key
+npm install <package>             # Add npm dependency
+\`\`\`
+
+## Core workflow
+
+1. **Inspect**: Read current \`.env\`, \`package.json\`, \`docker-compose.yml\`
+2. **Plan**: Determine what needs to change
+3. **Backup**: Copy original files
+4. **Apply**: Make structured changes
+5. **Verify**: Validate configuration is correct
+
+## .env Management
+
+### Read & search
+\`\`\`bash
+cat .env                          # Full env file
+grep "DATABASE" .env              # Search for keys
+grep -c "=" .env                  # Count variables
+\`\`\`
+
+### Add & update
+\`\`\`bash
+echo "NEW_KEY=value" >> .env                  # Append new key
+sed -i 's/^OLD_KEY=.*/OLD_KEY=new_value/' .env  # Update existing
+sed -i '/^#.*FEATURE/s/^#//' .env             # Uncomment key
+\`\`\`
+
+### Remove
+\`\`\`bash
+grep -v "^REMOVE_KEY" .env > .env.tmp && mv .env.tmp .env
+\`\`\`
+
+## npm Dependencies
+
+\`\`\`bash
+cat package.json | grep -A 50 '"dependencies"'  # View deps
+npm install <package>@<version>                  # Add dependency
+npm uninstall <package>                          # Remove dependency
+npm outdated                                     # Check for updates
+\`\`\`
+
+## Docker Compose
+
+\`\`\`bash
+cat docker-compose.yml             # View services
+# Add new service via structured YAML editing
+\`\`\`
+
+## Safety
+
+- Never expose secrets in logs or output
+- Always backup \`.env\` before modifications
+- Validate key=value format after changes
+- Use \`grep\` to verify changes applied correctly
+`,
+  handlerPy: `"""
+Environment configurator skill handler.
+"""
+import os
+import subprocess
+from typing import Dict, Any
+
+async def handler(inputs: dict) -> dict:
+    action = inputs.get("action", "read")
+    env_file = inputs.get("env_file", ".env")
+    
+    if action == "read":
+        try:
+            with open(env_file) as f:
+                lines = f.readlines()
+            keys = [l.split("=")[0] for l in lines if "=" in l and not l.startswith("#")]
+            return {"success": True, "keys": keys, "count": len(keys)}
+        except FileNotFoundError:
+            return {"success": False, "error": f"{env_file} not found"}
+    
+    elif action == "set":
+        key = inputs.get("key", "")
+        value = inputs.get("value", "")
+        if not key:
+            return {"error": "key is required", "success": False}
+        
+        # Update or append
+        cmd = f'grep -q "^{key}=" {env_file} && sed -i "s/^{key}=.*/{key}={value}/" {env_file} || echo "{key}={value}" >> {env_file}'
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        return {"success": result.returncode == 0}
+    
+    elif action == "remove":
+        key = inputs.get("key", "")
+        if not key:
+            return {"error": "key is required", "success": False}
+        cmd = f'grep -v "^{key}=" {env_file} > {env_file}.tmp && mv {env_file}.tmp {env_file}'
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        return {"success": result.returncode == 0}
+    
+    return {"error": f"Unknown action: {action}", "success": False}
+`,
+  configYaml: `name: env-configurator
+version: "1.0.0"
+runtime: python3.11
+timeout: 30
+memory: 256
+allowed-tools:
+  - "Bash(cat,echo,sed,grep)"
+  - "Read"
+  - "Write"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 12. data-pipeline — 数据管道处理
+// ─────────────────────────────────────────────
+const DATA_PIPELINE: CoreSkillPrompt = {
+  id: 'nc-data-pipeline',
+  name: '数据管道处理',
+  description: 'CSV/JSON/日志数据的 ETL 处理、统计分析 — Unix 管道式数据流',
+  category: '高级自主',
+  allowedTools: 'Bash(cat,sort,uniq,awk,sed,cut,paste,tr,jq), Read',
+  difficulty: 'advanced',
+  skillMd: `---
+name: data-pipeline
+description: Process and transform data using Unix pipeline tools — CSV, JSON, and log file ETL, statistical analysis, and data extraction.
+allowed-tools: Bash(cat,sort,uniq,awk,sed,cut,paste,tr,jq), Read
+---
+
+# Data Pipeline Processor
+
+## Quick start
+
+\`\`\`bash
+cat data.csv | head -5                    # Preview data
+cat data.json | jq '.items[] | .name'     # Extract JSON fields
+cat server.log | grep ERROR | wc -l       # Count errors
+\`\`\`
+
+## Core workflow
+
+1. **Inspect**: \`head\`, \`wc\`, \`file\` to understand data shape
+2. **Extract**: \`cut\`, \`awk\`, \`jq\` to select fields
+3. **Transform**: \`sed\`, \`tr\`, \`awk\` to clean and reshape
+4. **Load**: Redirect output to target file or pipe to next stage
+5. **Validate**: Compare row counts, spot-check values
+
+## CSV Operations
+
+\`\`\`bash
+# Preview
+head -5 data.csv
+wc -l data.csv                            # Row count
+
+# Extract columns
+cut -d',' -f1,3 data.csv                  # Columns 1 and 3
+awk -F',' '{print $1, $3}' data.csv       # Same with awk
+
+# Filter rows
+awk -F',' '$3 > 100' data.csv             # Where col3 > 100
+grep "pattern" data.csv                   # Rows matching pattern
+
+# Sort & deduplicate
+sort -t',' -k2 -n data.csv               # Sort by col2 numeric
+sort -t',' -k1 -u data.csv               # Unique by col1
+
+# Aggregate
+awk -F',' '{sum += $3} END {print sum}' data.csv        # Sum col3
+awk -F',' '{sum += $3; n++} END {print sum/n}' data.csv # Average
+\`\`\`
+
+## JSON Operations
+
+\`\`\`bash
+# Pretty print
+cat data.json | jq '.'
+
+# Extract fields
+cat data.json | jq '.items[] | {name, price}'
+
+# Filter
+cat data.json | jq '.items[] | select(.price > 50)'
+
+# Transform
+cat data.json | jq '[.items[] | {id: .id, total: (.price * .qty)}]'
+
+# Aggregate
+cat data.json | jq '[.items[].price] | add'
+cat data.json | jq '.items | length'
+\`\`\`
+
+## Log Analysis
+
+\`\`\`bash
+# Error frequency
+grep ERROR app.log | awk '{print $1}' | sort | uniq -c | sort -rn
+
+# Response time percentiles
+awk '/response_time/ {print $NF}' app.log | sort -n | awk '
+  {a[NR]=$1} END {
+    print "p50:", a[int(NR*0.5)];
+    print "p95:", a[int(NR*0.95)];
+    print "p99:", a[int(NR*0.99)];
+  }'
+
+# Top IPs
+awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10
+\`\`\`
+
+## Multi-stage Pipelines
+
+\`\`\`bash
+# CSV → filtered → sorted → top 10
+cat sales.csv | awk -F',' '$4 == "2024"' | sort -t',' -k3 -rn | head -10
+
+# JSON → CSV conversion
+cat data.json | jq -r '.items[] | [.name, .price] | @csv' > output.csv
+
+# Log → error summary → JSON report
+grep ERROR app.log | awk '{print $3}' | sort | uniq -c | sort -rn | \\
+  awk '{printf "{\\"error\\": \\"%s\\", \\"count\\": %d}\\n", $2, $1}'
+\`\`\`
+
+## Safety
+
+- Always preview with \`head\` before processing large files
+- Use \`wc -l\` to verify row counts after transforms
+- Redirect to new file, don't overwrite source: \`> output.csv\` not \`> input.csv\`
+`,
+  handlerPy: `"""
+Data pipeline skill handler — Unix-style ETL processing.
+"""
+import subprocess
+from typing import Dict, Any
+
+async def handler(inputs: dict) -> dict:
+    pipeline = inputs.get("pipeline", "")
+    input_file = inputs.get("input_file", "")
+    
+    if not pipeline:
+        return {"error": "pipeline command is required", "success": False}
+    
+    try:
+        result = subprocess.run(
+            pipeline, shell=True, capture_output=True, text=True, timeout=120
+        )
+        lines = result.stdout.strip().split("\\n") if result.stdout.strip() else []
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout[:20000],
+            "row_count": len(lines),
+            "stderr": result.stderr[:2000],
+        }
+    except subprocess.TimeoutExpired:
+        return {"error": "Pipeline timed out", "success": False}
+    except Exception as e:
+        return {"error": str(e), "success": False}
+`,
+  configYaml: `name: data-pipeline
+version: "1.0.0"
+runtime: python3.11
+timeout: 120
+memory: 512
+allowed-tools:
+  - "Bash(cat,sort,uniq,awk,sed,cut,paste,tr,jq)"
+  - "Read"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 13. test-runner — 测试执行引擎
+// ─────────────────────────────────────────────
+const TEST_RUNNER: CoreSkillPrompt = {
+  id: 'nc-test-runner',
+  name: '测试执行引擎',
+  description: '自动运行测试套件、解析结果、生成覆盖率报告',
+  category: '高级自主',
+  allowedTools: 'Bash(*), Read',
+  difficulty: 'intermediate',
+  skillMd: `---
+name: test-runner
+description: Automatically run test suites, parse results, generate coverage reports, and identify failing tests for targeted fixes.
+allowed-tools: Bash(*), Read
+---
+
+# Test Execution Engine
+
+## Quick start
+
+\`\`\`bash
+npm test                          # Run all tests
+npm test -- --coverage            # With coverage
+pytest -v                         # Python tests
+pytest --tb=short -q              # Compact output
+\`\`\`
+
+## Core workflow
+
+1. **Discover**: Find test files and determine framework
+2. **Run**: Execute test suite with appropriate flags
+3. **Parse**: Extract pass/fail counts, failing test details
+4. **Report**: Generate coverage and summary
+5. **Fix**: If tests fail, analyze errors and suggest fixes
+
+## Framework detection
+
+\`\`\`bash
+# Detect test framework
+cat package.json | grep -E "jest|vitest|mocha"    # JS/TS
+cat setup.cfg | grep -E "pytest|unittest"         # Python
+ls -la *.test.* test_*.py tests/                  # Find test files
+\`\`\`
+
+## JavaScript/TypeScript
+
+\`\`\`bash
+# Jest
+npx jest --verbose --coverage
+npx jest --testPathPattern="auth" --verbose       # Run specific
+npx jest --watch                                  # Watch mode
+
+# Vitest
+npx vitest run --reporter=verbose
+npx vitest run --coverage
+
+# Mocha
+npx mocha --recursive --reporter spec
+\`\`\`
+
+## Python
+
+\`\`\`bash
+# Pytest
+pytest -v --tb=short
+pytest -v --cov=src --cov-report=term-missing
+pytest -k "test_auth" -v                          # Run specific
+pytest --lf                                       # Last failed only
+
+# Unittest
+python -m unittest discover -v
+\`\`\`
+
+## Coverage analysis
+
+\`\`\`bash
+# JS coverage
+npx jest --coverage --coverageReporters=text
+cat coverage/lcov.info | head -50
+
+# Python coverage
+pytest --cov=src --cov-report=term-missing
+coverage report --show-missing
+\`\`\`
+
+## Result parsing
+
+After running tests, extract:
+- Total tests, passed, failed, skipped
+- Failing test names and error messages
+- Coverage percentage per file
+- Uncovered lines for targeted improvement
+
+## Safety
+
+- Run tests in isolated environment
+- Never modify test files to make them pass
+- Report actual results honestly
+- Use \`--timeout\` to prevent hanging tests
+`,
+  handlerPy: `"""
+Test runner skill handler — auto-detect and execute test suites.
+"""
+import subprocess
+import os
+import json
+from typing import Dict, Any
+
+async def handler(inputs: dict) -> dict:
+    framework = inputs.get("framework", "auto")
+    path = inputs.get("path", ".")
+    coverage = inputs.get("coverage", False)
+    pattern = inputs.get("pattern", "")
+    
+    if framework == "auto":
+        framework = detect_framework(path)
+    
+    cmd = build_command(framework, path, coverage, pattern)
+    
+    try:
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, text=True,
+            timeout=300, cwd=path if os.path.isdir(path) else "."
+        )
+        return {
+            "success": result.returncode == 0,
+            "framework": framework,
+            "stdout": result.stdout[:20000],
+            "stderr": result.stderr[:5000],
+            "exit_code": result.returncode,
+        }
+    except subprocess.TimeoutExpired:
+        return {"error": "Tests timed out after 300s", "success": False}
+    except Exception as e:
+        return {"error": str(e), "success": False}
+
+def detect_framework(path: str) -> str:
+    pkg = os.path.join(path, "package.json")
+    if os.path.exists(pkg):
+        with open(pkg) as f:
+            data = json.load(f)
+        deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
+        if "vitest" in deps: return "vitest"
+        if "jest" in deps: return "jest"
+    if os.path.exists(os.path.join(path, "pytest.ini")) or os.path.exists(os.path.join(path, "setup.cfg")):
+        return "pytest"
+    return "pytest"
+
+def build_command(framework: str, path: str, coverage: bool, pattern: str) -> str:
+    if framework == "vitest":
+        cmd = "npx vitest run --reporter=verbose"
+        if coverage: cmd += " --coverage"
+    elif framework == "jest":
+        cmd = "npx jest --verbose"
+        if coverage: cmd += " --coverage"
+        if pattern: cmd += f' --testPathPattern="{pattern}"'
+    elif framework == "pytest":
+        cmd = "pytest -v --tb=short"
+        if coverage: cmd += " --cov=src --cov-report=term-missing"
+        if pattern: cmd += f' -k "{pattern}"'
+    else:
+        cmd = f"{framework}"
+    return cmd
+`,
+  configYaml: `name: test-runner
+version: "1.0.0"
+runtime: python3.11
+timeout: 300
+memory: 512
+allowed-tools:
+  - "Bash(*)"
+  - "Read"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 14. doc-generator — 文档生成器
+// ─────────────────────────────────────────────
+const DOC_GENERATOR: CoreSkillPrompt = {
+  id: 'nc-doc-generator',
+  name: '文档生成器',
+  description: '从代码生成 API 文档、README、变更日志 — 自动化文档工作流',
+  category: '高级自主',
+  allowedTools: 'Read, Write, Bash(grep,wc)',
+  difficulty: 'beginner',
+  skillMd: `---
+name: doc-generator
+description: Generate documentation from code — API docs, README files, changelogs, and inline documentation. Analyzes code structure to produce clear, accurate docs.
+allowed-tools: Read, Write, Bash(grep,wc)
+---
+
+# Documentation Generator
+
+## Quick start
+
+\`\`\`bash
+# Analyze codebase structure
+find src -name "*.ts" | head -20
+grep -rn "export function\\|export class\\|export interface" src/
+
+# Count documentation coverage
+grep -rn "/\\*\\*" src/ | wc -l       # JSDoc comments
+grep -rn "def " src/ | wc -l        # Python functions
+\`\`\`
+
+## Core workflow
+
+1. **Scan**: Find all public APIs, classes, functions
+2. **Analyze**: Read signatures, types, existing comments
+3. **Generate**: Write structured documentation
+4. **Review**: Cross-reference with actual behavior
+5. **Output**: Write to README.md, API.md, CHANGELOG.md
+
+## README Generation
+
+Generate a README with:
+- Project title and description
+- Installation instructions
+- Quick start / usage examples
+- API reference (key functions)
+- Configuration options
+- Contributing guidelines
+- License
+
+## API Documentation
+
+For each public function/class:
+\`\`\`markdown
+### \`functionName(param1: type, param2: type): returnType\`
+
+Description of what it does.
+
+**Parameters:**
+- \`param1\` (type) — Description
+- \`param2\` (type, optional) — Description
+
+**Returns:** Description of return value
+
+**Example:**
+\\\`\\\`\\\`typescript
+const result = functionName("hello", 42);
+\\\`\\\`\\\`
+\`\`\`
+
+## Changelog Generation
+
+\`\`\`bash
+# Git-based changelog
+git log --oneline --since="2024-01-01" | head -50
+git log --pretty=format:"- %s (%h)" --since="last month"
+\`\`\`
+
+Format: Keep a Changelog (keepachangelog.com)
+- Added / Changed / Deprecated / Removed / Fixed / Security
+
+## Code Analysis Commands
+
+\`\`\`bash
+# Find exports
+grep -rn "export" src/ --include="*.ts"
+
+# Count functions per file
+for f in src/*.ts; do echo "$f: $(grep -c 'function\\|=>' $f)"; done
+
+# Find undocumented functions
+grep -B1 "export function" src/**/*.ts | grep -v "/\\*\\*"
+\`\`\`
+`,
+  handlerPy: `"""
+Documentation generator skill handler.
+"""
+import os
+import subprocess
+from typing import Dict, Any
+
+async def handler(inputs: dict) -> dict:
+    action = inputs.get("action", "scan")
+    path = inputs.get("path", "src")
+    output = inputs.get("output", "README.md")
+    
+    if action == "scan":
+        result = subprocess.run(
+            f'grep -rn "export function\\|export class\\|export interface" {path}',
+            shell=True, capture_output=True, text=True
+        )
+        exports = result.stdout.strip().split("\\n") if result.stdout.strip() else []
+        return {"success": True, "exports": exports[:100], "count": len(exports)}
+    
+    elif action == "coverage":
+        jsdoc = subprocess.run(f'grep -rn "/\\*\\*" {path} | wc -l', shell=True, capture_output=True, text=True)
+        funcs = subprocess.run(f'grep -rn "export function\\|export class" {path} | wc -l', shell=True, capture_output=True, text=True)
+        doc_count = int(jsdoc.stdout.strip() or 0)
+        func_count = int(funcs.stdout.strip() or 0)
+        coverage = (doc_count / func_count * 100) if func_count > 0 else 0
+        return {"success": True, "documented": doc_count, "total": func_count, "coverage_pct": round(coverage, 1)}
+    
+    return {"error": f"Unknown action: {action}", "success": False}
+`,
+  configYaml: `name: doc-generator
+version: "1.0.0"
+runtime: python3.11
+timeout: 60
+memory: 256
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash(grep,wc)"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 15. container-monitor — 容器监控
+// ─────────────────────────────────────────────
+const CONTAINER_MONITOR: CoreSkillPrompt = {
+  id: 'nc-container-monitor',
+  name: '容器监控',
+  description: '实时资源监控、性能分析、瓶颈检测 — 容器健康守护',
+  category: '高级自主',
+  allowedTools: 'Bash(ps,top,df,free,netstat,lsof)',
+  difficulty: 'intermediate',
+  skillMd: `---
+name: container-monitor
+description: Monitor container resources in real-time — CPU, memory, disk, network, and process analysis. Detect bottlenecks and performance issues.
+allowed-tools: Bash(ps,top,df,free,netstat,lsof)
+---
+
+# Container Resource Monitor
+
+## Quick start
+
+\`\`\`bash
+free -h                           # Memory usage
+df -h                             # Disk usage
+ps aux --sort=-%mem | head -10    # Top memory processes
+\`\`\`
+
+## Core workflow
+
+1. **Overview**: Quick health check of CPU, memory, disk
+2. **Deep dive**: Identify resource-heavy processes
+3. **Network**: Check open ports and connections
+4. **Diagnose**: Correlate resource usage with issues
+5. **Alert**: Report if thresholds are exceeded
+
+## Resource checks
+
+### Memory
+\`\`\`bash
+free -h                           # Human-readable memory
+free -m | awk 'NR==2{printf "Used: %sMB / %sMB (%.1f%%)\\n", $3, $2, $3*100/$2}'
+cat /proc/meminfo | head -5       # Detailed memory info
+\`\`\`
+
+### Disk
+\`\`\`bash
+df -h                             # Filesystem usage
+df -h / | awk 'NR==2{print $5}'  # Root usage percentage
+du -sh /workspace/*               # Directory sizes
+du -sh /tmp/*                     # Temp file sizes
+\`\`\`
+
+### CPU & Processes
+\`\`\`bash
+ps aux --sort=-%cpu | head -10    # Top CPU consumers
+ps aux --sort=-%mem | head -10    # Top memory consumers
+ps aux | wc -l                    # Total process count
+top -bn1 | head -20               # Snapshot of top
+\`\`\`
+
+### Network
+\`\`\`bash
+netstat -tlnp                     # Listening ports
+netstat -an | grep ESTABLISHED | wc -l  # Active connections
+lsof -i -P -n | head -20         # Open network files
+\`\`\`
+
+## Health thresholds
+
+| Metric | Warning | Critical |
+|---|---|---|
+| Memory usage | > 80% | > 95% |
+| Disk usage | > 80% | > 95% |
+| CPU (1min avg) | > 80% | > 95% |
+| Open files | > 10000 | > 50000 |
+
+## Automated checks
+
+Run periodic health checks:
+\`\`\`bash
+# Quick health score
+echo "=== Memory ===" && free -h
+echo "=== Disk ===" && df -h /
+echo "=== Top Processes ===" && ps aux --sort=-%mem | head -5
+echo "=== Network ===" && netstat -tlnp 2>/dev/null | grep LISTEN
+\`\`\`
+`,
+  handlerPy: `"""
+Container monitoring skill handler.
+"""
+import subprocess
+from typing import Dict, Any
+
+THRESHOLDS = {
+    "memory_warn": 80,
+    "memory_crit": 95,
+    "disk_warn": 80,
+    "disk_crit": 95,
+}
+
+async def handler(inputs: dict) -> dict:
+    check = inputs.get("check", "all")
+    
+    results = {}
+    
+    if check in ("all", "memory"):
+        r = subprocess.run("free -m | awk 'NR==2{printf \\"%.1f\\", $3*100/$2}'", shell=True, capture_output=True, text=True)
+        mem_pct = float(r.stdout.strip() or 0)
+        results["memory"] = {"usage_pct": mem_pct, "status": "critical" if mem_pct > 95 else "warning" if mem_pct > 80 else "ok"}
+    
+    if check in ("all", "disk"):
+        r = subprocess.run("df -h / | awk 'NR==2{print $5}' | tr -d '%'", shell=True, capture_output=True, text=True)
+        disk_pct = float(r.stdout.strip() or 0)
+        results["disk"] = {"usage_pct": disk_pct, "status": "critical" if disk_pct > 95 else "warning" if disk_pct > 80 else "ok"}
+    
+    if check in ("all", "processes"):
+        r = subprocess.run("ps aux --sort=-%mem | head -6", shell=True, capture_output=True, text=True)
+        results["top_processes"] = r.stdout
+    
+    overall = "ok"
+    for v in results.values():
+        if isinstance(v, dict) and v.get("status") == "critical": overall = "critical"; break
+        if isinstance(v, dict) and v.get("status") == "warning": overall = "warning"
+    
+    return {"success": True, "checks": results, "overall": overall}
+`,
+  configYaml: `name: container-monitor
+version: "1.0.0"
+runtime: python3.11
+timeout: 30
+memory: 256
+allowed-tools:
+  - "Bash(ps,top,df,free,netstat,lsof)"
+`,
+};
+
+// ─────────────────────────────────────────────
+// 16. secret-manager — 密钥安全管理
+// ─────────────────────────────────────────────
+const SECRET_MANAGER: CoreSkillPrompt = {
+  id: 'nc-secret-manager',
+  name: '密钥安全管理',
+  description: '.env 密钥轮换、敏感信息检测、安全审计 — 密钥守护者',
+  category: '高级自主',
+  allowedTools: 'Bash(grep,sed), Read, Write',
+  difficulty: 'advanced',
+  skillMd: `---
+name: secret-manager
+description: Manage secrets securely — detect exposed credentials, rotate API keys, audit .env files, and enforce secret hygiene across the project.
+allowed-tools: Bash(grep,sed), Read, Write
+---
+
+# Secret Security Manager
+
+## Quick start
+
+\`\`\`bash
+# Scan for exposed secrets
+grep -rn "sk-\\|AKIA\\|ghp_\\|password=" . --include="*.ts" --include="*.js" --include="*.py"
+
+# Check .env is gitignored
+grep ".env" .gitignore
+
+# Audit .env file
+wc -l .env && grep -c "=" .env
+\`\`\`
+
+## Core workflow
+
+1. **Scan**: Detect exposed secrets in code and config files
+2. **Audit**: Verify .env files are properly gitignored
+3. **Rotate**: Guide key rotation process
+4. **Report**: Generate security audit report
+5. **Fix**: Remove exposed secrets from git history if needed
+
+## Secret Detection Patterns
+
+\`\`\`bash
+# API keys
+grep -rn "sk-[a-zA-Z0-9]\\{20,\\}" . --include="*.ts" --include="*.js"
+grep -rn "AKIA[A-Z0-9]\\{16\\}" .                          # AWS access key
+grep -rn "ghp_[a-zA-Z0-9]\\{36\\}" .                       # GitHub PAT
+grep -rn "xoxb-\\|xoxp-" .                                 # Slack tokens
+
+# Hardcoded passwords
+grep -rn "password\\s*=\\s*['\\\"]" . --include="*.ts" --include="*.py"
+grep -rn "secret\\s*=\\s*['\\\"]" . --include="*.ts" --include="*.py"
+
+# Connection strings
+grep -rn "postgresql://\\|mysql://\\|mongodb://" . --include="*.ts"
+\`\`\`
+
+## .env Audit
+
+\`\`\`bash
+# Verify .gitignore includes .env
+grep -q ".env" .gitignore && echo "OK: .env is gitignored" || echo "WARNING: .env not in .gitignore"
+
+# Check for .env in git history
+git log --all --diff-filter=A -- ".env" "*.env"
+
+# List all env files
+find . -name "*.env*" -not -path "*/node_modules/*"
+\`\`\`
+
+## Key Rotation Process
+
+1. Generate new key from provider
+2. Update \`.env\` with new value: \`sed -i 's/^KEY=.*/KEY=new_value/' .env\`
+3. Verify application works with new key
+4. Revoke old key from provider
+5. Record rotation in audit log
+
+## Security Report
+
+Generate a report covering:
+- Number of env variables
+- Exposed secrets found (0 = pass)
+- .gitignore coverage
+- Key age (if tracked)
+- Recommendations
+
+## Safety
+
+- NEVER log or output actual secret values
+- Always mask: \`sk-...last4\`
+- Use \`grep\` patterns, never \`cat\` full secrets to stdout
+- Rotate immediately if exposure detected
+`,
+  handlerPy: `"""
+Secret manager skill handler — detect, audit, and rotate secrets.
+"""
+import subprocess
+import re
+from typing import Dict, Any, List
+
+SECRET_PATTERNS = [
+    (r"sk-[a-zA-Z0-9]{20,}", "OpenAI API Key"),
+    (r"AKIA[A-Z0-9]{16}", "AWS Access Key"),
+    (r"ghp_[a-zA-Z0-9]{36}", "GitHub PAT"),
+    (r"xoxb-[a-zA-Z0-9-]+", "Slack Bot Token"),
+]
+
+async def handler(inputs: dict) -> dict:
+    action = inputs.get("action", "scan")
+    path = inputs.get("path", ".")
+    
+    if action == "scan":
+        findings = []
+        for pattern, name in SECRET_PATTERNS:
+            r = subprocess.run(
+                f'grep -rn "{pattern}" {path} --include="*.ts" --include="*.js" --include="*.py" --include="*.env"',
+                shell=True, capture_output=True, text=True
+            )
+            if r.stdout.strip():
+                count = len(r.stdout.strip().split("\\n"))
+                findings.append({"type": name, "count": count, "severity": "critical"})
+        
+        return {"success": True, "findings": findings, "clean": len(findings) == 0}
+    
+    elif action == "audit":
+        checks = {}
+        
+        # Check .gitignore
+        r = subprocess.run('grep -q ".env" .gitignore', shell=True)
+        checks["gitignore_env"] = r.returncode == 0
+        
+        # Count env vars
+        r = subprocess.run('grep -c "=" .env 2>/dev/null', shell=True, capture_output=True, text=True)
+        checks["env_var_count"] = int(r.stdout.strip() or 0)
+        
+        # Check git history
+        r = subprocess.run('git log --all --diff-filter=A -- ".env" 2>/dev/null | head -1', shell=True, capture_output=True, text=True)
+        checks["env_in_history"] = bool(r.stdout.strip())
+        
+        return {"success": True, "audit": checks}
+    
+    return {"error": f"Unknown action: {action}", "success": False}
+`,
+  configYaml: `name: secret-manager
+version: "1.0.0"
+runtime: python3.11
+timeout: 60
+memory: 256
+allowed-tools:
+  - "Bash(grep,sed)"
+  - "Read"
+  - "Write"
+`,
+};
+
+// ─────────────────────────────────────────────
 // 导出
 // ─────────────────────────────────────────────
 export const CORE_SKILL_PROMPTS: CoreSkillPrompt[] = [
@@ -1251,6 +2456,14 @@ export const CORE_SKILL_PROMPTS: CoreSkillPrompt[] = [
   CODE_REVIEWER,
   API_CONNECTOR,
   SELF_HEALER,
+  SKILL_LIFECYCLE,
+  GIT_OPERATOR,
+  ENV_CONFIGURATOR,
+  DATA_PIPELINE,
+  TEST_RUNNER,
+  DOC_GENERATOR,
+  CONTAINER_MONITOR,
+  SECRET_MANAGER,
 ];
 
 export const CORE_SKILL_MAP: Record<string, CoreSkillPrompt> = Object.fromEntries(

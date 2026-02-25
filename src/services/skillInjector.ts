@@ -153,6 +153,20 @@ export class SkillInjector {
   listByCategory(category: string): CoreSkillPrompt[] {
     return CORE_SKILL_PROMPTS.filter(s => s.category === category);
   }
+
+  /**
+   * 按难度筛选核心技能
+   */
+  listByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): CoreSkillPrompt[] {
+    return CORE_SKILL_PROMPTS.filter(s => s.difficulty === difficulty);
+  }
+
+  /**
+   * 列出所有可用的技能类别
+   */
+  listCategories(): string[] {
+    return [...new Set(CORE_SKILL_PROMPTS.map(s => s.category))];
+  }
 }
 
 export const skillInjector = new SkillInjector();

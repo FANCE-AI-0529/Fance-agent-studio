@@ -78,6 +78,7 @@ export interface SkillTemplate {
 
 // NanoClaw 原生核心技能图标映射
 const nativeSkillIcons: Record<string, React.ReactNode> = {
+  // 基础自主 (Batch 1)
   'nc-agent-browser': createElement(Monitor, { className: "h-4 w-4" }),
   'nc-file-manager': createElement(FolderOpen, { className: "h-4 w-4" }),
   'nc-shell-executor': createElement(Terminal, { className: "h-4 w-4" }),
@@ -86,6 +87,15 @@ const nativeSkillIcons: Record<string, React.ReactNode> = {
   'nc-code-reviewer': createElement(ScanSearch, { className: "h-4 w-4" }),
   'nc-api-connector': createElement(Plug, { className: "h-4 w-4" }),
   'nc-self-healer': createElement(HeartPulse, { className: "h-4 w-4" }),
+  // 高级自主 (Batch 2)
+  'nc-skill-lifecycle': createElement(Zap, { className: "h-4 w-4" }),
+  'nc-git-operator': createElement(GitBranch, { className: "h-4 w-4" }),
+  'nc-env-configurator': createElement(Cloud, { className: "h-4 w-4" }),
+  'nc-data-pipeline': createElement(Database, { className: "h-4 w-4" }),
+  'nc-test-runner': createElement(Code, { className: "h-4 w-4" }),
+  'nc-doc-generator': createElement(FileText, { className: "h-4 w-4" }),
+  'nc-container-monitor': createElement(BarChart3, { className: "h-4 w-4" }),
+  'nc-secret-manager': createElement(Lock, { className: "h-4 w-4" }),
 };
 
 // 将核心技能提示词转换为 SkillTemplate 格式
