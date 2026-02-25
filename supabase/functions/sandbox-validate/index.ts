@@ -147,6 +147,17 @@ serve(async (req) => {
       }
     }
 
+    // 注入终端风格指令，禁止 Markdown 格式
+    enhancedSystemPrompt += `\n\n响应格式：禁用 ** 加粗和 # 标题。必须使用语义标签：
+<h-entity>实体</h-entity>（文件/人名/ID）
+<h-alert>警告</h-alert>（错误/警告）
+<h-data>数据</h-data>（金额/百分比/日期）
+<h-status>状态</h-status>（完成/成功）
+<h-code>代码</h-code>（命令/变量名）
+<h-action>操作</h-action>（建议操作）
+结构符号：[v]/[x]/(!)、┌─├─└─│
+`;
+
     // 3. 使用 Lovable AI Gateway 进行测试 (模拟对话)
     const aiGatewayUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const apiKey = Deno.env.get("LOVABLE_API_KEY");

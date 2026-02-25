@@ -179,11 +179,11 @@ find . -name "*.py" -type f     # Search files
 
 ## Core workflow
 
-1. **Explore**: \`ls\`, \`find\`, \`tree\` to understand directory structure
-2. **Read**: \`cat\`, \`head\`, \`tail\` to inspect file content
-3. **Write**: \`echo\`, \`cat >\`, \`sed\` to modify files
-4. **Organize**: \`mkdir\`, \`cp\`, \`mv\`, \`rm\` to manage structure
-5. **Analyze**: \`wc\`, \`grep\`, \`diff\` to understand content
+1. [Explore]: \`ls\`, \`find\`, \`tree\` to understand directory structure
+2. [Read]: \`cat\`, \`head\`, \`tail\` to inspect file content
+3. [Write]: \`echo\`, \`cat >\`, \`sed\` to modify files
+4. [Organize]: \`mkdir\`, \`cp\`, \`mv\`, \`rm\` to manage structure
+5. [Analyze]: \`wc\`, \`grep\`, \`diff\` to understand content
 
 ## Commands
 
@@ -296,11 +296,11 @@ npm run build
 
 ## Core workflow
 
-1. **Plan**: Determine the sequence of commands needed
-2. **Check**: Use \`which\`, \`--version\` to verify tool availability
-3. **Execute**: Run commands one at a time, check exit codes
-4. **Verify**: Confirm output matches expectations
-5. **Handle errors**: Parse stderr, retry or escalate
+1. [Plan]: Determine the sequence of commands needed
+2. [Check]: Use \`which\`, \`--version\` to verify tool availability
+3. [Execute]: Run commands one at a time, check exit codes
+4. [Verify]: Confirm output matches expectations
+5. [Handle errors]: Parse stderr, retry or escalate
 
 ## Capabilities
 
@@ -440,10 +440,10 @@ cat task_plan.md                # Check active tasks
 
 ## Core workflow
 
-1. **Session start**: Read \`CLAUDE.md\` to restore context
-2. **Task planning**: Update \`task_plan.md\` with current objectives
-3. **During work**: Record key decisions in \`progress.md\`
-4. **Session end**: Update \`CLAUDE.md\` with new learnings
+1. [Session start]: Read \`CLAUDE.md\` to restore context
+2. [Task planning]: Update \`task_plan.md\` with current objectives
+3. [During work]: Record key decisions in \`progress.md\`
+4. [Session end]: Update \`CLAUDE.md\` with new learnings
 
 ## CLAUDE.md structure
 
@@ -771,11 +771,11 @@ diff file_a.ts file_b.ts        # Compare versions
 
 ## Core workflow
 
-1. **Scan**: Identify files to review (\`find\`, \`wc\`)
-2. **Read**: Understand code structure (\`cat\`, \`head\`)
-3. **Analyze**: Check for patterns and anti-patterns (\`grep\`)
-4. **Compare**: Diff against previous versions (\`diff\`)
-5. **Report**: Generate structured review with actionable items
+1. [Scan]: Identify files to review (\`find\`, \`wc\`)
+2. [Read]: Understand code structure (\`cat\`, \`head\`)
+3. [Analyze]: Check for patterns and anti-patterns (\`grep\`)
+4. [Compare]: Diff against previous versions (\`diff\`)
+5. [Report]: Generate structured review with actionable items
 
 ## Review checklist
 
@@ -826,8 +826,8 @@ grep -rn "function\\|const.*=.*=>" --include="*.ts" . | sort | uniq -d
 - Issues found: 5 (2 critical, 3 minor)
 
 ### Critical Issues
-1. **[SECURITY]** SQL injection in \`src/db.ts:42\`
-2. **[ERROR]** Unhandled promise rejection in \`src/api.ts:88\`
+1. [SECURITY] SQL injection in \`src/db.ts:42\`
+2. [ERROR] Unhandled promise rejection in \`src/api.ts:88\`
 
 ### Suggestions
 1. Extract duplicated logic in handlers to shared utility
@@ -910,11 +910,11 @@ curl -X POST https://api.example.com/items -H "Content-Type: application/json" -
 
 ## Core workflow
 
-1. **Prepare**: Set headers, auth tokens, request body
-2. **Execute**: Make HTTP request with curl
-3. **Parse**: Extract data with jq
-4. **Chain**: Feed output into subsequent requests
-5. **Handle errors**: Check HTTP status codes
+1. [Prepare]: Set headers, auth tokens, request body
+2. [Execute]: Make HTTP request with curl
+3. [Parse]: Extract data with jq
+4. [Chain]: Feed output into subsequent requests
+5. [Handle errors]: Check HTTP status codes
 
 ## Commands
 
@@ -1058,12 +1058,12 @@ ps aux | grep node              # Check process status
 
 ## Core workflow
 
-1. **Detect**: Monitor exit codes, log patterns, process status
-2. **Diagnose**: Analyze error messages, stack traces, system state
-3. **Plan fix**: Choose repair strategy based on error type
-4. **Execute fix**: Apply the repair with rollback capability
-5. **Verify**: Confirm the fix resolved the issue
-6. **Record**: Log the incident and resolution for future reference
+1. [Detect]: Monitor exit codes, log patterns, process status
+2. [Diagnose]: Analyze error messages, stack traces, system state
+3. [Plan fix]: Choose repair strategy based on error type
+4. [Execute fix]: Apply the repair with rollback capability
+5. [Verify]: Confirm the fix resolved the issue
+6. [Record]: Log the incident and resolution for future reference
 
 ## Error detection patterns
 
@@ -1155,13 +1155,13 @@ echo "Health check complete"
 \`\`\`markdown
 ## Incident Report
 
-**Time**: [timestamp]
-**Severity**: [critical/high/medium/low]
-**Error**: [error message]
-**Root cause**: [what went wrong]
-**Fix applied**: [what was done]
-**Verified**: [yes/no]
-**Prevention**: [how to avoid in future]
+[Time]: [timestamp]
+[Severity]: [critical/high/medium/low]
+[Error]: [error message]
+[Root cause]: [what went wrong]
+[Fix applied]: [what was done]
+[Verified]: [yes/no]
+[Prevention]: [how to avoid in future]
 \`\`\`
 `,
   handlerPy: `"""
@@ -1276,11 +1276,11 @@ nanoclaw rebase
 
 ## Core workflow
 
-1. **Pre-flight**: Read \`.nanoclaw/state.yaml\` to check current state
-2. **Backup**: Snapshot affected files to \`.nanoclaw/backup/\`
-3. **Apply**: Three-way merge (base → skill patch → current files)
-4. **Verify**: Run \`post_apply\` hooks and tests
-5. **Commit**: Update \`state.yaml\` with new skill entry and file hashes
+1. [Pre-flight]: Read \`.nanoclaw/state.yaml\` to check current state
+2. [Backup]: Snapshot affected files to \`.nanoclaw/backup/\`
+3. [Apply]: Three-way merge (base → skill patch → current files)
+4. [Verify]: Run \`post_apply\` hooks and tests
+5. [Commit]: Update \`state.yaml\` with new skill entry and file hashes
 
 ## Operations
 
@@ -1440,11 +1440,11 @@ git push origin feature/name      # Push to remote
 
 ## Core workflow
 
-1. **Status**: \`git status\` + \`git diff\` to understand changes
-2. **Stage**: \`git add\` specific files or \`-A\` for all
-3. **Commit**: Write clear conventional commit messages
-4. **Push**: \`git push\` to remote
-5. **PR**: Create pull request if needed
+1. [Status]: \`git status\` + \`git diff\` to understand changes
+2. [Stage]: \`git add\` specific files or \`-A\` for all
+3. [Commit]: Write clear conventional commit messages
+4. [Push]: \`git push\` to remote
+5. [PR]: Create pull request if needed
 
 ## Commands
 
@@ -1585,11 +1585,11 @@ npm install <package>             # Add npm dependency
 
 ## Core workflow
 
-1. **Inspect**: Read current \`.env\`, \`package.json\`, \`docker-compose.yml\`
-2. **Plan**: Determine what needs to change
-3. **Backup**: Copy original files
-4. **Apply**: Make structured changes
-5. **Verify**: Validate configuration is correct
+1. [Inspect]: Read current \`.env\`, \`package.json\`, \`docker-compose.yml\`
+2. [Plan]: Determine what needs to change
+3. [Backup]: Copy original files
+4. [Apply]: Make structured changes
+5. [Verify]: Validate configuration is correct
 
 ## .env Management
 
@@ -1716,11 +1716,11 @@ cat server.log | grep ERROR | wc -l       # Count errors
 
 ## Core workflow
 
-1. **Inspect**: \`head\`, \`wc\`, \`file\` to understand data shape
-2. **Extract**: \`cut\`, \`awk\`, \`jq\` to select fields
-3. **Transform**: \`sed\`, \`tr\`, \`awk\` to clean and reshape
-4. **Load**: Redirect output to target file or pipe to next stage
-5. **Validate**: Compare row counts, spot-check values
+1. [Inspect]: \`head\`, \`wc\`, \`file\` to understand data shape
+2. [Extract]: \`cut\`, \`awk\`, \`jq\` to select fields
+3. [Transform]: \`sed\`, \`tr\`, \`awk\` to clean and reshape
+4. [Load]: Redirect output to target file or pipe to next stage
+5. [Validate]: Compare row counts, spot-check values
 
 ## CSV Operations
 
@@ -1873,11 +1873,11 @@ pytest --tb=short -q              # Compact output
 
 ## Core workflow
 
-1. **Discover**: Find test files and determine framework
-2. **Run**: Execute test suite with appropriate flags
-3. **Parse**: Extract pass/fail counts, failing test details
-4. **Report**: Generate coverage and summary
-5. **Fix**: If tests fail, analyze errors and suggest fixes
+1. [Discover]: Find test files and determine framework
+2. [Run]: Execute test suite with appropriate flags
+3. [Parse]: Extract pass/fail counts, failing test details
+4. [Report]: Generate coverage and summary
+5. [Fix]: If tests fail, analyze errors and suggest fixes
 
 ## Framework detection
 
@@ -2051,11 +2051,11 @@ grep -rn "def " src/ | wc -l        # Python functions
 
 ## Core workflow
 
-1. **Scan**: Find all public APIs, classes, functions
-2. **Analyze**: Read signatures, types, existing comments
-3. **Generate**: Write structured documentation
-4. **Review**: Cross-reference with actual behavior
-5. **Output**: Write to README.md, API.md, CHANGELOG.md
+1. [Scan]: Find all public APIs, classes, functions
+2. [Analyze]: Read signatures, types, existing comments
+3. [Generate]: Write structured documentation
+4. [Review]: Cross-reference with actual behavior
+5. [Output]: Write to README.md, API.md, CHANGELOG.md
 
 ## README Generation
 
@@ -2076,13 +2076,13 @@ For each public function/class:
 
 Description of what it does.
 
-**Parameters:**
+[Parameters]:
 - \`param1\` (type) — Description
 - \`param2\` (type, optional) — Description
 
-**Returns:** Description of return value
+[Returns]: Description of return value
 
-**Example:**
+[Example]:
 \\\`\\\`\\\`typescript
 const result = functionName("hello", 42);
 \\\`\\\`\\\`
@@ -2182,11 +2182,11 @@ ps aux --sort=-%mem | head -10    # Top memory processes
 
 ## Core workflow
 
-1. **Overview**: Quick health check of CPU, memory, disk
-2. **Deep dive**: Identify resource-heavy processes
-3. **Network**: Check open ports and connections
-4. **Diagnose**: Correlate resource usage with issues
-5. **Alert**: Report if thresholds are exceeded
+1. [Overview]: Quick health check of CPU, memory, disk
+2. [Deep dive]: Identify resource-heavy processes
+3. [Network]: Check open ports and connections
+4. [Diagnose]: Correlate resource usage with issues
+5. [Alert]: Report if thresholds are exceeded
 
 ## Resource checks
 
@@ -2322,11 +2322,11 @@ wc -l .env && grep -c "=" .env
 
 ## Core workflow
 
-1. **Scan**: Detect exposed secrets in code and config files
-2. **Audit**: Verify .env files are properly gitignored
-3. **Rotate**: Guide key rotation process
-4. **Report**: Generate security audit report
-5. **Fix**: Remove exposed secrets from git history if needed
+1. [Scan]: Detect exposed secrets in code and config files
+2. [Audit]: Verify .env files are properly gitignored
+3. [Rotate]: Guide key rotation process
+4. [Report]: Generate security audit report
+5. [Fix]: Remove exposed secrets from git history if needed
 
 ## Secret Detection Patterns
 
