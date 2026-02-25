@@ -30,6 +30,15 @@ serve(async (req) => {
     );
   }
 
+  // Request size limit (1MB)
+  const contentLength = req.headers.get('content-length');
+  if (contentLength && parseInt(contentLength) > 1048576) {
+    return new Response(
+      JSON.stringify({ error: "Request too large" }),
+      { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     // Get API key from header
     const apiKey = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");

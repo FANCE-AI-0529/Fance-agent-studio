@@ -721,12 +721,35 @@ serve(async (req) => {
 
     console.log(`[agent-chat] Authenticated user: ${user.id}`);
 
+    // [安全]：检查请求体大小（限制 1MB）
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 1048576) {
+      return new Response(
+        JSON.stringify({ error: "请求体过大", code: "PAYLOAD_TOO_LARGE" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // [解析]：获取请求体
     const { messages, agentConfig, webSearchEnabled = true } = await req.json() as {
       messages: ChatMessage[];
       agentConfig?: AgentConfig;
       webSearchEnabled?: boolean;
     };
+
+    // [验证]：基本输入校验
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "messages 不能为空", code: "INVALID_INPUT" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (messages.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "消息数量超过限制（最多200条）", code: "INVALID_INPUT" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     console.log(`[agent-chat] Web search enabled: ${webSearchEnabled}`);
     

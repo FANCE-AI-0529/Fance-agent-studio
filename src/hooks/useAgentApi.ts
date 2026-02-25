@@ -201,19 +201,18 @@ export function useCreateAgentApiKey() {
       // [前缀]：提取前 12 位用于显示
       const apiKeyPrefix = apiKey.substring(0, 12) + "...";
 
-      // [存储]：将密钥信息写入数据库
+      // [存储]：将密钥信息写入数据库（仅存储哈希，不存储明文）
       const { data, error } = await supabase
         .from("agent_api_keys")
         .insert({
           agent_id: agentId,
           user_id: user.id,
           name,
-          api_key: apiKey,
           api_key_hash: apiKeyHash,
           api_key_prefix: apiKeyPrefix,
           rate_limit: rateLimit,
           expires_at: expiresAt,
-        })
+        } as any)
         .select()
         .single();
 
