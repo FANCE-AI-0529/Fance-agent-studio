@@ -12,7 +12,7 @@ interface MCPSourceFilterProps {
 
 const sources: { value: SkillOrigin; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: "all", label: "全部", icon: LayoutGrid },
-  { value: "native", label: "Agent OS", icon: Sparkles },
+  { value: "native", label: "HIVE", icon: Sparkles },
   { value: "mcp", label: "MCP 生态", icon: Puzzle },
 ];
 

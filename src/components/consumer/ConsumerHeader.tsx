@@ -31,12 +31,12 @@ export function ConsumerHeader() {
           onClick={() => navigate('/')}
         >
           <div className="relative">
-            <img src={logoIcon} alt="Agent Studio" className="w-9 h-9 rounded-xl object-cover" />
+            <img src={logoIcon} alt="HIVE" className="w-9 h-9 rounded-xl object-cover" />
             <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-semibold text-foreground tracking-tight">
-              Agent Studio
+              HIVE
             </span>
             <span className="text-[10px] text-muted-foreground/60 -mt-0.5">
               智能数字员工平台

@@ -28,7 +28,7 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
           <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-[#22d3ee]/20 bg-[#22d3ee]/5">
             <span className="w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse" />
             <span className="text-[10px] sm:text-xs font-mono text-[#22d3ee] tracking-wider">
-              SYSTEM KERNEL v2.0 ONLINE
+              Kernel: NanoClaw | Engine: FANCE.AI
             </span>
           </div>
         </motion.div>
@@ -100,16 +100,17 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
                 <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#febc2e]" />
                 <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#28c840]" />
               </div>
-              <span className="text-[10px] sm:text-xs font-mono text-[#71717a] ml-2">agent-os-terminal</span>
+              <span className="text-[10px] sm:text-xs font-mono text-[#71717a] ml-2">hive-terminal</span>
             </div>
             {/* Terminal content */}
             <div className="p-3 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed text-left overflow-x-auto">
               <p>
                 <span className="text-[#22d3ee]">➜</span>{" "}
                 <span className="text-[#a1a1aa]">~</span>{" "}
-                <span className="text-white">os deploy --type "Audit Agent"</span>
+                <span className="text-white">hive deploy --type "Audit Agent"</span>
               </p>
               <p className="text-[#71717a] mt-1">&gt; Initializing NanoClaw isolated container...</p>
+              <p className="text-[#71717a]">&gt; Injecting FANCE.AI Cognitive Core...</p>
               <p className="text-[#71717a]">&gt; Mounting Skills: [code-review, risk-analysis]</p>
               <p className="text-[#71717a]">&gt; Applying MPLP governance policy...</p>
               <p className="mt-1">
