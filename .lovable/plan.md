@@ -1,229 +1,97 @@
 
 
-# OpenClaw 级体验复刻计划 (The OpenClaw Vibe Coding Experience)
+# 全系统 Markdown 格式清除 & 语义标签统一计划
 
-## 现有基础设施分析
+## 问题根因
 
-系统已具备：
-- `CodingTerminalView` — 基础终端 UI（静态命令列表，无流式）
-- `CodingModeLayout` — 可拉伸的终端/Diff 面板布局
-- `NanoClawClient` — WebSocket + IPC 通信层，支持 `executeInContainer`
-- `nanoclaw-gateway` Edge Function — 代理到 NanoClaw 实例的 REST 网关（无 SSE/流式）
-- `useSelfHealing` — 已有自愈 Hook（面向 Studio 生成器，非容器级）
-- `useCircuitBreaker` — 已有熔断器状态管理
-- `SkillGenerator` + `SkillInjector` — 技能生成与注入管道
-- 16 个 NanoClaw 原生 SKILL.md 核心技能
+从用户截图可见，构建完成的智能体回复中仍大量使用 `**双星号加粗**` 格式，这是因为：
 
-**缺口：**
-1. 终端无流式回显（`isTerminalStreaming` 始终为 `false`）
-2. 无 SSE 端点，gateway 只返回完整 JSON
-3. 自愈 Hook 仅针对 Studio YAML 错误，非容器 Bash 执行错误
-4. 无 "Skill Crafter" 自治技能锻造闭环
+1. `agent-chat/index.ts` 第 419-420 行：当智能体配置了自定义 `systemPrompt` 时，返回的提示词中 **缺失** `TERMINAL_STYLE_INSTRUCTIONS` 和 `ROLE_META_INSTRUCTIONS`，导致 LLM 完全不知道要用语义标签
+2. `sandbox-validate/index.ts`：直接使用 `agentConfig.systemPrompt` 发送给 AI，同样无终端风格指令注入
+3. `FormattedText.tsx` 第 51 行：`**bold**` 仍作为兜底渲染（type `"bold"`），只是普通 `font-medium` 灰色文字，无语义颜色区分
+4. `coreSkillPrompts.ts`：16 个核心技能的 SKILL.md 内容本身也大量使用 `**bold**` Markdown 格式
 
----
+## 修复方案
 
-## 阶段一：实时终端流式 UI 与指令穿透
+### 1. 修复 agent-chat Edge Function（核心修复）
 
-### 1.1 新增 SSE 流式执行 Edge Function
+**修改** `supabase/functions/agent-chat/index.ts`
 
-**新建** `supabase/functions/nanoclaw-stream/index.ts`
+- 第 419-420 行：自定义 systemPrompt 路径追加 `TERMINAL_STYLE_INSTRUCTIONS` + `ROLE_META_INSTRUCTIONS`
+- 确保所有 3 条路径（无配置 / 有自定义 prompt / 默认 prompt）都注入终端风格指令
 
-- 代理到 NanoClaw 的 `/execute/stream` 端点
-- 返回 `text/event-stream` 响应，逐行转发容器 stdout/stderr
-- SSE 事件格式：`data: {"type":"stdout"|"stderr"|"exit","content":"...","exitCode":0}`
-- 含身份验证和安全检查（复用 gateway 逻辑）
-
-### 1.2 新增流式终端 Hook
-
-**新建** `src/hooks/useTerminalStream.ts`
-
-```text
-┌─ useTerminalStream(containerId, endpoint, authToken)
-├─ startStream(command) → EventSource 连接 nanoclaw-stream
-├─ 实时 append stdout/stderr 到 terminalCommands
-├─ 自动检测 exitCode → 触发 onComplete/onError 回调
-└─ cleanup: 关闭 EventSource
+变更前：
+```
+if (config?.systemPrompt) {
+    return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}`;
+}
 ```
 
-- 与 `useOpenCodeRuntime` 的 `addTerminalCommand`/`updateCommandOutput` 对接
-- 支持多命令并发流
-
-### 1.3 升级 TerminalStreamView 组件
-
-**新建** `src/components/runtime/TerminalStreamView.tsx`
-
-- 替代当前 `CodingTerminalView` 的静态渲染
-- 深色背景 + JetBrains Mono 等宽字体
-- 实时逐行滚动（ANSI 转义码解析：颜色、进度条）
-- 状态徽章（右上角）：`Compiling...` / `Build Failed` / `Success`，使用语义标签 `<h-status>` / `<h-alert>` / `<h-entity>` 着色
-- 折叠机制：成功时自动折叠日志，失败时高亮展开 Error Trace
-- 支持用户输入命令（底部输入框，回车发送到容器）
-
-### 1.4 更新 CodingModeLayout 集成
-
-**修改** `src/components/runtime/CodingModeLayout.tsx`
-
-- 将 `CodingTerminalView` 替换为 `TerminalStreamView`
-- 传入流式状态和回调
-
----
-
-## 阶段二：自治技能锻造者 (Agentic Skill Crafter)
-
-### 2.1 新增 Skill Crafter 引擎服务
-
-**新建** `src/services/skillCrafter.ts`
-
-- `craftSkill(naturalLanguageRequest)` — 完整的自治流程：
-  1. 调用 LLM 生成 SKILL.md + manifest.yaml
-  2. 通过 `nanoclaw-gateway` 写入容器 `.claude/skills/[feature-name]/`
-  3. 调用容器内 `apply_nanoclaw_skill` 执行安装
-  4. 运行容器内测试验证
-  5. 返回结果（成功/失败+日志）
-- 内置 system prompt 强制约束："不直接修改文件，只通过 skill 机制注入"
-
-### 2.2 新增 Skill Crafter Edge Function
-
-**新建** `supabase/functions/skill-crafter/index.ts`
-
-- 接收自然语言需求 → 调用 Lovable AI 生成 NanoClaw 原生 SKILL.md
-- 返回生成的 skillMd + manifest + 测试代码
-- 使用 `LOVABLE_API_KEY` 调用 AI 模型
-
-### 2.3 新增 Skill Crafter UI 面板
-
-**新建** `src/components/runtime/SkillCrafterPanel.tsx`
-
-- 嵌入 ConsumerRuntime 侧边栏
-- 输入框："描述你想要的能力..."
-- 实时显示锻造进度：生成中 → 注入中 → 测试中 → 完成
-- 生成结果预览（SKILL.md 内容 + diff）
-
-### 2.4 更新 nanoclaw-gateway 新增 actions
-
-**修改** `supabase/functions/nanoclaw-gateway/index.ts`
-
-- 新增 `apply_skill` action — 在容器内执行 skill apply 流程
-- 新增 `read_file` action — 读取容器内文件（已部分存在于 skillInjector 调用中）
-- 新增 `write_file` action — 写入文件到容器
-
----
-
-## 阶段三：错误自愈无限循环 (Vibe-Loop & Self-Healing)
-
-### 3.1 新增容器级自愈引擎
-
-**新建** `src/services/vibeLoopEngine.ts`
-
-```text
-┌─ VibeLoopEngine
-├─ executeWithHealing(command, containerId)
-│  ├─ 执行命令 → 检查 exitCode
-│  ├─ exitCode > 0 → 截取 stderr 前50行+后50行
-│  ├─ 构造反思 prompt → 发送给 Agent
-│  ├─ Agent 返回修复方案 → 重新执行
-│  └─ 循环直到成功或达到 max_retries(3)
-├─ 熔断器集成
-│  ├─ 复用 useCircuitBreaker 的 recordFailure/recordSuccess
-│  └─ 3 次失败 → MPLP 介入，等待人类审批
-└─ 事件发射
-   ├─ onAttempt(attemptNumber, totalAttempts)
-   ├─ onAnalysis(errorAnalysis)
-   ├─ onFix(fixPlan)
-   └─ onComplete(success, totalAttempts) / onEscalate(error, thinkingProcess)
+变更后：
+```
+if (config?.systemPrompt) {
+    return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}${TERMINAL_STYLE_INSTRUCTIONS}${ROLE_META_INSTRUCTIONS}`;
+}
 ```
 
-### 3.2 新增 Vibe Loop 反思 Edge Function
+### 2. 强化 TERMINAL_STYLE_INSTRUCTIONS 提示词
 
-**新建** `supabase/functions/vibe-loop-reflect/index.ts`
+**修改** `supabase/functions/agent-chat/index.ts` 中的 `TERMINAL_STYLE_INSTRUCTIONS` 常量
 
-- 接收 stderr 日志 → 调用 AI 分析错误原因
-- 输出：错误分类 + 修复代码 + 重试命令
-- 使用 `LOVABLE_API_KEY` 的 gemini-2.5-flash（快速响应）
+- 加强禁令措辞，明确"这是硬性规定"
+- 增加更多 **错误 vs 正确** 对比示例
+- 新增"遇到重点内容用不同颜色标签替代加粗"的明确指令
 
-### 3.3 新增 Vibe Loop UI 组件
+### 3. 修复 sandbox-validate Edge Function
 
-**新建** `src/components/runtime/VibeLoopIndicator.tsx`
+**修改** `supabase/functions/sandbox-validate/index.ts`
 
-- 脉冲动画显示自愈进度：`Self-Healing Attempt 1/3`
-- 展开时显示：原始错误 → AI 分析 → 修复方案 → 重试结果
-- 3 次失败后切换为 MPLP 授权卡片（复用 `IPCAuthorizationCard`）
+- 在 `enhancedSystemPrompt` 末尾追加终端风格指令（复用 compact 版本）
 
-### 3.4 更新 ConsumerRuntime 集成
+### 4. 升级 FormattedText 渲染层（前端兜底）
 
-**修改** `src/components/runtime/ConsumerRuntime.tsx`
+**修改** `src/components/runtime/FormattedText.tsx`
 
-- 集成 `TerminalStreamView` 替代静态终端
-- 集成 `SkillCrafterPanel` 到侧边栏
-- 集成 `VibeLoopIndicator` 到终端面板
-- 新增 "Vibe Mode" 开关 — 启用后所有容器执行自动进入自愈循环
+- 将 `**bold**` 的渲染从 `font-medium text-foreground`（灰色无差异）改为自动转换成 `<h-entity>` 风格的彩色高亮胶囊
+- 这样即使 LLM 仍然输出 `**text**`，前端也会自动以彩色呈现，而非灰色加粗
+
+变更前（第 198-205 行）：
+```tsx
+case "bold":
+case "emphasis":
+  parts.push(
+    <span key={keyIndex++} className="font-medium text-foreground">
+      {match.content}
+    </span>
+  );
+```
+
+变更后：
+```tsx
+case "bold":
+case "emphasis":
+  parts.push(
+    <span key={keyIndex++} className="inline bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded-md font-medium text-sm border border-indigo-500/20">
+      {match.content}
+    </span>
+  );
+```
+
+### 5. 清理 coreSkillPrompts.ts 中的 Markdown 格式
+
+**修改** `src/constants/coreSkillPrompts.ts`
+
+- 将所有 `**bold text**` 替换为对应的语义标签或 `[方括号]` 格式
+- 约 159 处 `**...**` 需替换
 
 ---
 
 ## 文件变更清单
 
-### 新建文件 (8 个)
-
-| 文件 | 说明 |
-|------|------|
-| `supabase/functions/nanoclaw-stream/index.ts` | SSE 流式执行代理 |
-| `src/hooks/useTerminalStream.ts` | 流式终端数据 Hook |
-| `src/components/runtime/TerminalStreamView.tsx` | 极客风实时终端组件 |
-| `src/services/skillCrafter.ts` | 自治技能锻造引擎 |
-| `supabase/functions/skill-crafter/index.ts` | AI 技能生成 Edge Function |
-| `src/components/runtime/SkillCrafterPanel.tsx` | 技能锻造 UI 面板 |
-| `src/services/vibeLoopEngine.ts` | 错误自愈无限循环引擎 |
-| `src/components/runtime/VibeLoopIndicator.tsx` | 自愈进度可视化组件 |
-
-### 修改文件 (3 个)
-
-| 文件 | 变更 |
-|------|------|
-| `supabase/functions/nanoclaw-gateway/index.ts` | 新增 `apply_skill`、`read_file`、`write_file` actions |
-| `src/components/runtime/CodingModeLayout.tsx` | 集成 TerminalStreamView 替代 CodingTerminalView |
-| `src/components/runtime/ConsumerRuntime.tsx` | 集成 SkillCrafter、VibeLoop、流式终端 |
-
----
-
-## 技术细节
-
-### SSE 流式协议格式
-
-```text
-event: stdout
-data: {"content": "Installing dependencies...\n"}
-
-event: stderr
-data: {"content": "warn: peer dependency missing\n"}
-
-event: status
-data: {"phase": "compiling", "progress": 45}
-
-event: exit
-data: {"exitCode": 0, "durationMs": 12340}
-```
-
-### Vibe Loop 反思 Prompt 模板
-
-```text
-[Execution Failed with Exit Code {code}]
-Container: {containerId}
-Command: {command}
-Attempt: {attempt}/{maxRetries}
-
-[Error Log - First 50 lines]
-{stderrHead}
-
-[Error Log - Last 50 lines]
-{stderrTail}
-
-Analyze the error, identify root cause, generate a fix, and provide the corrected command to retry.
-Output JSON: {"analysis": "...", "fixCode": "...", "retryCommand": "..."}
-```
-
-### 熔断器与 MPLP 集成
-
-- 3 次自愈失败 → `useCircuitBreaker.recordFailure()` → 熔断器开启
-- 熔断器开启 → 生成 `IPCAuthorizationCard` 展示给用户
-- 用户审批后 → 重置熔断器 → 可选继续自愈或手动修复
+| 文件 | 变更类型 | 说明 |
+|------|---------|------|
+| `supabase/functions/agent-chat/index.ts` | 修改 | 自定义 prompt 路径注入终端风格指令；强化 TERMINAL_STYLE_INSTRUCTIONS 措辞 |
+| `supabase/functions/sandbox-validate/index.ts` | 修改 | enhancedSystemPrompt 末尾追加终端风格指令 |
+| `src/components/runtime/FormattedText.tsx` | 修改 | `**bold**` 渲染改为彩色高亮胶囊（前端兜底） |
+| `src/constants/coreSkillPrompts.ts` | 修改 | 清除 159 处 `**...**` Markdown 加粗，替换为 `[方括号]` 或语义标签 |
 
