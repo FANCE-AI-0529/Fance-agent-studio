@@ -19,7 +19,22 @@ export interface SandboxConfig {
 /**
  * 运行时类型
  */
-export type SandboxRuntime = 'deno' | 'wasm' | 'quickjs';
+export type SandboxRuntime = 'deno' | 'wasm' | 'quickjs' | 'container';
+
+/**
+ * 容器挂载点（沙箱层面）
+ */
+export interface ContainerMountPoint {
+  hostPath: string;
+  containerPath: string;
+  readOnly: boolean;
+  description?: string;
+}
+
+/**
+ * 容器隔离级别
+ */
+export type ContainerIsolationLevel = 'full' | 'network' | 'filesystem';
 
 /**
  * 资源限制

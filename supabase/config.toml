@@ -101,3 +101,9 @@ verify_jwt = false
 
 [functions.workflow-code-executor]
 verify_jwt = false
+
+[functions.nanoclaw-gateway]
+verify_jwt = false
+
+[functions.nanoclaw-memory]
+verify_jwt = false

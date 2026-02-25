@@ -1388,6 +1388,7 @@ const Runtime = () => {
                             <TypingIndicator phase={
                               currentPhase === "confirm" ? "executing" : 
                               currentPhase === "idle" ? "executing" : 
+                              currentPhase === "ipc_intercept" ? "executing" :
                               currentPhase
                             } />
                           </div>
