@@ -21,7 +21,7 @@ const plans = [
   {
     name: "Pro",
     tag: "最受欢迎",
-    price: "¥299",
+    price: "¥49",
     period: "/月",
     color: "#818cf8",
     highlight: true,
