@@ -1,8 +1,5 @@
 import { motion } from "framer-motion";
-
-interface HeroSectionProps {
-  onBookDemo: () => void;
-}
+import { WaitingListForm } from "./WaitingListForm";
 
 const stagger = {
   hidden: {},
@@ -14,7 +11,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
-export function HeroSection({ onBookDemo }: HeroSectionProps) {
+export function HeroSection() {
   return (
     <section className="relative">
       {/* Gradient blur orb */}
@@ -73,31 +70,9 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
           </motion.p>
 
           {/* Email form CTA */}
-          <motion.form
-            variants={fadeUp}
-            onSubmit={(e) => {
-              e.preventDefault();
-              onBookDemo();
-            }}
-            className="justify-center items-center gap-x-3 sm:flex"
-          >
-            <input
-              type="email"
-              placeholder="输入你的邮箱"
-              className="w-full px-4 py-2.5 text-[#a1a1aa] bg-white/[0.06] border border-white/[0.08] focus:bg-white/[0.1] focus:border-[#22d3ee]/30 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] duration-150 outline-none rounded-lg shadow sm:max-w-sm sm:w-auto placeholder:text-[#71717a]"
-            />
-            <button
-              type="submit"
-              className="group relative flex items-center justify-center gap-x-2 py-2.5 px-5 mt-3 w-full text-sm text-white font-medium rounded-lg overflow-hidden sm:mt-0 sm:w-auto shadow-[0_0_25px_rgba(34,211,238,0.4),0_0_60px_rgba(129,140,248,0.2)] hover:shadow-[0_0_35px_rgba(34,211,238,0.6),0_0_80px_rgba(129,140,248,0.3)] transition-all hover:scale-[1.05] active:scale-[0.97]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#22d3ee] to-[#818cf8] opacity-90 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-[#818cf8] to-[#22d3ee]" />
-              <span className="relative z-10">获取内测邀请码</span>
-              <svg className="relative z-10 w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l-3.5 3.25a.75.75 0 11-1.02-1.1l2.1-1.95H2.75A.75.75 0 012 10z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </motion.form>
+          <motion.div variants={fadeUp}>
+            <WaitingListForm source="hero_cta" />
+          </motion.div>
 
           {/* Secondary link */}
           <motion.div variants={fadeUp}>

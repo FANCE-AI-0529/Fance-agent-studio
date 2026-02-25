@@ -5345,6 +5345,36 @@ export type Database = {
           },
         ]
       }
+      waiting_list: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          invited_at: string | null
+          metadata: Json | null
+          source: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string | null
+          metadata?: Json | null
+          source?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string | null
+          metadata?: Json | null
+          source?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           agent_id: string
