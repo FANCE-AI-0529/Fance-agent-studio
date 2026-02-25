@@ -197,8 +197,9 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
         // Legacy patterns (backwards compatibility)
         case "bold":
         case "emphasis":
+          // 前端兜底：将漏网的 **bold** 自动渲染为彩色高亮胶囊（与 h-entity 同风格）
           parts.push(
-            <span key={keyIndex++} className="font-medium text-foreground">
+            <span key={keyIndex++} className="inline bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded-md font-medium text-sm border border-indigo-500/20">
               {match.content}
             </span>
           );

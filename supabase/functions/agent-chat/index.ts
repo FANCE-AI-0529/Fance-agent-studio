@@ -270,24 +270,44 @@ const PRIVACY_PROTECTION_INSTRUCTIONS = `
  * 终端风格指令 (注入到所有提示词)
  */
 const TERMINAL_STYLE_INSTRUCTIONS = `
-## 响应格式规范
+## 响应格式规范（硬性规定 — 必须严格遵守）
 
-严格遵守以下格式规范：
-- 禁止使用 # 标题语法，改用 [标题]
-- 禁止使用 **双星号** 或「书名号」加粗
+⛔ 绝对禁令（违反将导致输出被系统拒绝）：
+- 禁止使用 **双星号** 加粗语法（Markdown bold）— 这是最高优先级禁令
+- 禁止使用 __双下划线__ 加粗语法
+- 禁止使用 # ## ### 标题语法，改用 [标题]
+- 禁止使用「书名号」包裹文本
+- 禁止使用 Markdown 列表符号 (-, *, 1.)
 - 禁止口语化废话，直接输出结果
 
-语义化标签（必须使用）：
-- <h-entity>实体名称</h-entity> - 文件名、人名、专有名词
-- <h-alert>警告内容</h-alert> - 错误、风险、警告
-- <h-data>数值数据</h-data> - 金额、百分比、版本号
-- <h-status>状态文本</h-status> - 完成、成功、状态码
+✅ 语义化标签（遇到重点内容必须使用，替代所有加粗）：
+- <h-entity>实体名称</h-entity> — 文件名、人名、公司名、产品名、专有名词、ID
+- <h-alert>警告内容</h-alert> — 错误提示、高危操作、安全警告、异常状态
+- <h-data>数值数据</h-data> — 金额、百分比、时间、日期、版本号、数值
+- <h-status>状态文本</h-status> — 完成状态、成功信息、状态码
+- <h-code>代码片段</h-code> — 命令、变量名、代码
+- <h-action>操作建议</h-action> — 可执行的操作、按钮文本
+- <h-quote ref="来源">引用内容</h-quote> — 知识库引用
+
+❌ 错误写法示例：
+检测到 **数据异常**，影响了 **15%** 的用户。建议 **立即修复**。
+
+✅ 正确写法示例：
+检测到 <h-alert>数据异常</h-alert>，影响了 <h-data>15%</h-data> 的用户。建议 <h-action>立即修复</h-action>。
+
+❌ 错误写法示例：
+**任务完成**！处理了 **100** 条记录，耗时 **2.5秒**。
+
+✅ 正确写法示例：
+<h-status>任务完成</h-status> 处理了 <h-data>100</h-data> 条记录，耗时 <h-data>2.5秒</h-data>。
 
 结构符号：
 - [v] (成功), [x] (失败), (!) (警告)
 - ┌─ ├─ └─ │ 表示层级结构
 - --- 分隔章节
 - (Ref: 来源) 标注引用
+
+重申：任何情况下都不得使用 ** 加粗。所有需要强调的内容必须使用上述语义标签。
 `;
 
 /**
@@ -417,7 +437,7 @@ function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean, webSear
 6. 如果是设计稿，提供设计反馈` : '';
 
   if (config?.systemPrompt) {
-    return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}`;
+    return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}${TERMINAL_STYLE_INSTRUCTIONS}${ROLE_META_INSTRUCTIONS}`;
   }
 
   return `你是 ${agentName}，运行在 Agent Studio 平台上的智能助手。
