@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
+import { AlertCircle } from "lucide-react";
 
 interface TypewriterFormattedTextProps {
   content: string;
@@ -13,7 +14,7 @@ interface TypewriterFormattedTextProps {
 
 /**
  * Typewriter effect for formatted text content
- * Terminal Style: Uses [v], [x], (!), [header] symbols
+ * Terminal Style: Uses [v], [x], (!), [header] symbols + semantic tags
  * Legacy: Supports **bold**, `code`, and ```code blocks```
  */
 export function TypewriterFormattedText({
@@ -29,14 +30,11 @@ export function TypewriterFormattedText({
   const prevContentRef = useRef(content);
 
   useEffect(() => {
-    // If content changed and we're getting more content (streaming), show all
     if (content !== prevContentRef.current) {
       if (content.startsWith(prevContentRef.current)) {
-        // Streaming - just update to show new content
         setDisplayedLength(content.length);
         setIsComplete(true);
       } else {
-        // New content - reset
         setDisplayedLength(enabled ? 0 : content.length);
         setIsComplete(!enabled);
       }
@@ -53,21 +51,17 @@ export function TypewriterFormattedText({
     }
 
     const timer = setTimeout(() => {
-      // Check if we're inside a code block - if so, skip to end of it
       const remaining = content.slice(displayedLength);
       const codeBlockStart = remaining.match(/^```/);
       
       if (codeBlockStart) {
-        // Find the end of the code block and render it all at once
         const endMatch = remaining.slice(3).indexOf('```');
         if (endMatch !== -1) {
-          // Skip to after the closing ```
           setDisplayedLength((prev) => prev + endMatch + 6);
           return;
         }
       }
       
-      // Speed up for spaces and common characters
       const nextChar = content[displayedLength];
       const increment = nextChar === " " || nextChar === "\n" ? 3 : 1;
       setDisplayedLength((prev) => Math.min(prev + increment, content.length));
@@ -101,6 +95,16 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
 
     const patterns = useTerminalStyle
       ? [
+          // Semantic highlighting tags (highest priority)
+          { regex: /<h-entity>([^<]+)<\/h-entity>/g, type: "h-entity" as const },
+          { regex: /<h-alert>([^<]+)<\/h-alert>/g, type: "h-alert" as const },
+          { regex: /<h-data>([^<]+)<\/h-data>/g, type: "h-data" as const },
+          { regex: /<h-status>([^<]+)<\/h-status>/g, type: "h-status" as const },
+          // Extended semantic tags
+          { regex: /<h-link>([^<]+)<\/h-link>/g, type: "h-link" as const },
+          { regex: /<h-code>([^<]+)<\/h-code>/g, type: "h-code" as const },
+          { regex: /<h-quote(?:\s+ref="([^"]*)")?>([^<]+)<\/h-quote>/g, type: "h-quote" as const },
+          { regex: /<h-action>([^<]+)<\/h-action>/g, type: "h-action" as const },
           // Terminal style patterns
           { regex: /\[v\]/g, type: "success" as const },
           { regex: /\[x\]/g, type: "failure" as const },
@@ -109,8 +113,10 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
           { regex: /\(Ref:\s*[^)]+\)/g, type: "ref" as const },
           { regex: /```([\s\S]*?)```/g, type: "codeblock" as const },
           { regex: /`([^`]+)`/g, type: "code" as const },
-          // 书名号强调
+          { regex: /^\[([^\]]+)\]$/gm, type: "header" as const },
+          // Legacy emphasis (backwards compatibility)
           { regex: /「([^」]+)」/g, type: "emphasis" as const },
+          { regex: /\*\*(.+?)\*\*/g, type: "bold" as const },
         ]
       : [
           // Legacy patterns
@@ -124,7 +130,8 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
       length: number;
       content: string;
       fullMatch: string;
-      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "emphasis";
+      refSource?: string;
+      type: "bold" | "code" | "codeblock" | "success" | "failure" | "warning" | "pending" | "ref" | "header" | "emphasis" | "h-entity" | "h-alert" | "h-data" | "h-status" | "h-link" | "h-code" | "h-quote" | "h-action";
     }
 
     const matches: Match[] = [];
@@ -135,8 +142,9 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
         matches.push({
           index: match.index,
           length: match[0].length,
-          content: match[1] || match[0],
+          content: type === 'h-quote' ? match[2] || match[1] : (match[1] || match[0]),
           fullMatch: match[0],
+          refSource: type === 'h-quote' ? match[1] : undefined,
           type,
         });
       }
@@ -161,9 +169,74 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
       }
 
       switch (match.type) {
-        case "bold":
+        case "h-entity":
           parts.push(
-            <span key={keyIndex++} className="text-primary">
+            <span key={keyIndex++} className="inline bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded-md font-medium text-sm border border-indigo-500/20">
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-alert":
+          parts.push(
+            <span key={keyIndex++} className="inline-flex items-center gap-1 bg-rose-500/15 text-rose-300 px-1.5 py-0.5 rounded-md font-semibold text-sm border border-rose-500/20">
+              <AlertCircle className="h-3 w-3" />
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-data":
+          parts.push(
+            <span key={keyIndex++} className="font-mono text-cyan-400 font-bold tracking-wide">
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-status":
+          parts.push(
+            <span key={keyIndex++} className="text-emerald-400 font-medium">
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-link":
+          parts.push(
+            <span key={keyIndex++} className="text-blue-400 underline underline-offset-2 cursor-pointer hover:text-blue-300 transition-colors">
+              {match.content}
+            </span>
+          );
+          break;
+        case "h-code":
+          parts.push(
+            <code key={keyIndex++} className="px-1.5 py-0.5 rounded bg-muted text-cyan-400 font-mono text-xs border border-cyan-500/20">
+              {match.content}
+            </code>
+          );
+          break;
+        case "h-quote":
+          parts.push(
+            <span 
+              key={keyIndex++} 
+              className="inline italic text-muted-foreground border-l-2 border-primary/40 pl-2"
+              title={match.refSource ? `来源: ${match.refSource}` : undefined}
+            >
+              "{match.content}"
+              {match.refSource && (
+                <sup className="text-[9px] text-primary ml-0.5">[{match.refSource.slice(-8)}]</sup>
+              )}
+            </span>
+          );
+          break;
+        case "h-action":
+          parts.push(
+            <span key={keyIndex++} className="inline-flex items-center gap-1 bg-primary/15 text-primary px-2 py-0.5 rounded-full text-xs font-medium border border-primary/25 cursor-pointer hover:bg-primary/25 transition-colors">
+              {match.content}
+            </span>
+          );
+          break;
+        case "bold":
+        case "emphasis":
+          parts.push(
+            <span key={keyIndex++} className="inline bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded-md font-medium text-sm border border-indigo-500/20">
               {match.content}
             </span>
           );
@@ -203,20 +276,16 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
             </span>
           );
           break;
-        case "emphasis":
-          // 书名号强调渲染为高亮胶囊
+        case "header":
           parts.push(
-            <span key={keyIndex++} className="highlight-pill highlight-pill-default">
-              {match.content}
+            <span key={keyIndex++} className={TERMINAL_CLASSES.header}>
+              {match.fullMatch}
             </span>
           );
           break;
         case "code":
           parts.push(
-            <code
-              key={keyIndex++}
-              className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs"
-            >
+            <code key={keyIndex++} className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
               {match.content}
             </code>
           );
@@ -242,18 +311,25 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
     return parts;
   };
 
-  // Handle box drawing characters for terminal style
+  // Handle line-level formatting for terminal style
   if (useTerminalStyle) {
     const lines = content.split('\n');
     const result: React.ReactNode[] = [];
     
     lines.forEach((line, lineIdx) => {
+      // Empty line → spacer
+      if (/^\s*$/.test(line)) {
+        result.push(<div key={`space-${lineIdx}`} className="h-2" />);
+        return;
+      }
+
+      // Box drawing characters
       if (/^[┌├└│─]/.test(line)) {
         const boxMatch = line.match(/^([┌├└│─]+)\s*(.*)/);
         if (boxMatch) {
           result.push(
             <React.Fragment key={`line-${lineIdx}`}>
-              <span className={TERMINAL_CLASSES.boxChar}>{boxMatch[1]}</span>
+              <span className="text-muted-foreground/60 mr-1.5">{boxMatch[1]}</span>
               {formatContent(boxMatch[2] || '')}
               {lineIdx < lines.length - 1 && '\n'}
             </React.Fragment>
@@ -262,14 +338,15 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
         }
       }
       
+      // Separator ---
       if (/^-{3,}$/.test(line.trim())) {
         result.push(
-          <hr key={`sep-${lineIdx}`} className="border-t border-border my-2" />
+          <hr key={`sep-${lineIdx}`} className="border-t border-border my-3" />
         );
         return;
       }
       
-      // Check for header lines [Title]
+      // Header lines [Title]
       if (/^\[.+\]$/.test(line.trim())) {
         result.push(
           <React.Fragment key={`line-${lineIdx}`}>
@@ -279,7 +356,34 @@ function FormattedContent({ content, useTerminalStyle = true }: FormattedContent
         );
         return;
       }
+
+      // Numbered heading: 1. Title
+      if (/^\d+\.\s+/.test(line)) {
+        const numMatch = line.match(/^(\d+\.)\s+(.*)/);
+        if (numMatch) {
+          result.push(
+            <div key={`line-${lineIdx}`} className="flex items-start gap-2 mt-2 mb-1 border-l-2 border-primary/40 pl-2">
+              <span className="text-primary font-bold text-sm">{numMatch[1]}</span>
+              <span className="text-primary font-medium text-sm">{formatContent(numMatch[2])}</span>
+            </div>
+          );
+          return;
+        }
+      }
+
+      // Bullet list: * item or - item
+      if (/^[\*\-]\s+/.test(line)) {
+        const bulletContent = line.replace(/^[\*\-]\s+/, '');
+        result.push(
+          <div key={`line-${lineIdx}`} className="flex items-start gap-2 pl-4">
+            <span className="text-muted-foreground mt-1.5 text-[6px]">●</span>
+            <span>{formatContent(bulletContent)}</span>
+          </div>
+        );
+        return;
+      }
       
+      // Regular line
       result.push(
         <React.Fragment key={`line-${lineIdx}`}>
           {formatContent(line)}

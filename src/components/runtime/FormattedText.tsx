@@ -287,13 +287,19 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
     const result: React.ReactNode[] = [];
     
     lines.forEach((line, lineIdx) => {
+      // Empty line → spacer
+      if (/^\s*$/.test(line)) {
+        result.push(<div key={`space-${lineIdx}`} className="h-2" />);
+        return;
+      }
+
       // Check for box drawing characters
       if (/^[┌├└│─]/.test(line)) {
         const boxMatch = line.match(/^([┌├└│─]+)\s*(.*)/);
         if (boxMatch) {
           result.push(
             <React.Fragment key={`line-${lineIdx}`}>
-              <span className={TERMINAL_CLASSES.boxChar}>{boxMatch[1]}</span>
+              <span className="text-muted-foreground/60 mr-1.5">{boxMatch[1]}</span>
               {formatContent(boxMatch[2] || '')}
               {lineIdx < lines.length - 1 && '\n'}
             </React.Fragment>
@@ -305,7 +311,33 @@ export function FormattedText({ content, className, useTerminalStyle = true, age
       // Check for separator
       if (/^-{3,}$/.test(line.trim())) {
         result.push(
-          <hr key={`sep-${lineIdx}`} className="border-t border-border my-2" />
+          <hr key={`sep-${lineIdx}`} className="border-t border-border my-3" />
+        );
+        return;
+      }
+
+      // Numbered heading: 1. Title
+      if (/^\d+\.\s+/.test(line)) {
+        const numMatch = line.match(/^(\d+\.)\s+(.*)/);
+        if (numMatch) {
+          result.push(
+            <div key={`line-${lineIdx}`} className="flex items-start gap-2 mt-2 mb-1 border-l-2 border-primary/40 pl-2">
+              <span className="text-primary font-bold text-sm">{numMatch[1]}</span>
+              <span className="text-primary font-medium text-sm">{formatContent(numMatch[2])}</span>
+            </div>
+          );
+          return;
+        }
+      }
+
+      // Bullet list: * item or - item (but not ---)
+      if (/^[\*\-]\s+/.test(line)) {
+        const bulletContent = line.replace(/^[\*\-]\s+/, '');
+        result.push(
+          <div key={`line-${lineIdx}`} className="flex items-start gap-2 pl-4">
+            <span className="text-muted-foreground mt-1.5 text-[6px]">●</span>
+            <span>{formatContent(bulletContent)}</span>
+          </div>
         );
         return;
       }
