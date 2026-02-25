@@ -158,7 +158,7 @@ export function AgentAvatarDisplay({
   className,
 }: {
   avatar: AgentAvatar;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }) {
   const iconConfig = getAvatarIcon(avatar.iconId);
@@ -169,12 +169,14 @@ export function AgentAvatarDisplay({
     sm: "w-8 h-8",
     md: "w-10 h-10",
     lg: "w-14 h-14",
+    xl: "w-16 h-16",
   };
 
   const iconSizes = {
     sm: "h-4 w-4",
     md: "h-5 w-5",
     lg: "h-7 w-7",
+    xl: "h-9 w-9",
   };
 
   return (

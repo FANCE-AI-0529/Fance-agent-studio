@@ -12,42 +12,8 @@ import type { Json } from "@/integrations/supabase/types";
 import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecision } from "@/hooks/useKnowledgeMatching";
 import { useGlobalAgentStore } from "@/stores/globalAgentStore";
 import { toast } from "sonner";
-import { 
-  agentAvatarIcons, 
-  agentAvatarColors, 
-  type AgentAvatar 
-} from "@/components/builder/AgentAvatarPicker";
-
-// =====================================================
-// Avatar Generation Helper
-// =====================================================
-function generateRandomAvatar(description: string): AgentAvatar {
-  // 颜色关键词映射 - 始终使用 bot 图标，通过颜色区分功能类别
-  const colorKeywordMap: Record<string, string[]> = {
-    'green': ['客服', '服务', '对话', '聊天', '咨询', '问答', '沟通'],
-    'blue': ['数据', '分析', '统计', '报表', 'BI', '洞察'],
-    'cyan': ['代码', '编程', '开发', '程序', '技术', 'API', '工程'],
-    'amber': ['金融', '财务', '财报', '会计', '银行', '投资', '理财'],
-    'rose': ['医疗', '健康', '诊断', '医生', '病', '养生'],
-    'orange': ['教育', '学习', '培训', '老师', '课程', '知识', '考试'],
-    'indigo': ['法律', '合规', '法务', '合同', '律师', '政策'],
-    'purple': ['设计', '创意', '美工', 'UI', '视觉', '品牌'],
-    'teal': ['翻译', '语言', '多语', '国际', '外语'],
-    'pink': ['电商', '购物', '选品', '商品', '店铺', '运营'],
-  };
-  
-  // 匹配颜色
-  let matchedColorId = 'primary';
-  for (const [colorId, keywords] of Object.entries(colorKeywordMap)) {
-    if (keywords.some(keyword => description.includes(keyword))) {
-      matchedColorId = colorId;
-      break;
-    }
-  }
-  
-  // 始终使用 bot 图标，通过颜色区分功能
-  return { iconId: 'bot', colorId: matchedColorId };
-}
+import { type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { generateSmartAvatar } from "@/utils/avatarGenerator";
 
 export interface InvisibleBuildResult {
   agentId: string;
@@ -377,7 +343,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       await advanceToStep(3);
 
       // Generate avatar based on description
-      const generatedAvatar = generateRandomAvatar(description);
+      const generatedAvatar = generateSmartAvatar(description);
 
       // Create manifest with complete knowledge base configuration and avatar
       const manifest = {
