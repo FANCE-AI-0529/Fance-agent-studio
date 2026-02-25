@@ -1,77 +1,61 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-function Particles({ count = 800 }) {
-  const mesh = useRef<THREE.Points>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const { viewport } = useThree();
+/* ── Holographic Planet (Point Cloud Sphere) ── */
+function HoloPlanet() {
+  const meshRef = useRef<THREE.Points>(null);
 
   const [positions, colors, sizes] = useMemo(() => {
+    const count = 12000;
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
     const sz = new Float32Array(count);
 
     const cyan = new THREE.Color("#22d3ee");
-    const indigo = new THREE.Color("#818cf8");
-    const purple = new THREE.Color("#a78bfa");
+    const indigo = new THREE.Color("#6366f1");
+    const dim = new THREE.Color("#1e293b");
+
+    const radius = 6;
 
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 20;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 12;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      // Fibonacci sphere distribution
+      const phi = Math.acos(1 - 2 * (i + 0.5) / count);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const r = radius + (Math.random() - 0.5) * 0.3;
+
+      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i * 3 + 2] = r * Math.cos(phi);
 
       const t = Math.random();
-      const color = t < 0.33 ? cyan : t < 0.66 ? indigo : purple;
-      col[i * 3] = color.r;
-      col[i * 3 + 1] = color.g;
-      col[i * 3 + 2] = color.b;
+      const c = t < 0.3 ? cyan : t < 0.6 ? indigo : dim;
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
 
-      sz[i] = Math.random() * 3 + 0.5;
+      sz[i] = Math.random() * 2 + 0.5;
     }
     return [pos, col, sz];
-  }, [count]);
+  }, []);
 
-  useFrame(({ clock, pointer }) => {
-    if (!mesh.current) return;
-    const time = clock.getElapsedTime();
-
-    // Smooth mouse tracking
-    mouseRef.current.x += (pointer.x * viewport.width * 0.3 - mouseRef.current.x) * 0.02;
-    mouseRef.current.y += (pointer.y * viewport.height * 0.3 - mouseRef.current.y) * 0.02;
-
-    const posAttr = mesh.current.geometry.attributes.position;
-    const arr = posAttr.array as Float32Array;
-
-    for (let i = 0; i < count; i++) {
-      const ix = i * 3;
-      const baseX = positions[ix];
-      const baseY = positions[ix + 1];
-      const baseZ = positions[ix + 2];
-
-      // Breathing wave
-      arr[ix] = baseX + Math.sin(time * 0.3 + baseY * 0.5) * 0.15 + mouseRef.current.x * (0.02 + baseZ * 0.005);
-      arr[ix + 1] = baseY + Math.sin(time * 0.4 + baseX * 0.3) * 0.2 + mouseRef.current.y * (0.02 + baseZ * 0.005);
-      arr[ix + 2] = baseZ + Math.sin(time * 0.2 + i * 0.01) * 0.1;
-    }
-    posAttr.needsUpdate = true;
-
-    mesh.current.rotation.y = time * 0.015;
-    mesh.current.rotation.x = Math.sin(time * 0.1) * 0.03;
+  useFrame(({ clock }) => {
+    if (!meshRef.current) return;
+    meshRef.current.rotation.y = clock.getElapsedTime() * 0.02;
+    meshRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.01) * 0.05;
   });
 
   return (
-    <points ref={mesh}>
+    <points ref={meshRef} position={[0, -4, -8]}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions.slice(), 3]} count={count} itemSize={3} />
-        <bufferAttribute attach="attributes-color" args={[colors, 3]} count={count} itemSize={3} />
-        <bufferAttribute attach="attributes-size" args={[sizes, 1]} count={count} itemSize={1} />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} count={positions.length / 3} itemSize={3} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} count={colors.length / 3} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial
         vertexColors
         transparent
-        opacity={0.7}
-        size={0.04}
+        opacity={0.6}
+        size={0.035}
         sizeAttenuation
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -80,76 +64,282 @@ function Particles({ count = 800 }) {
   );
 }
 
-// Neural connection lines
-function NeuralGrid() {
-  const lineRef = useRef<THREE.LineSegments>(null);
+/* ── Wireframe Sphere Shell ── */
+function WireframeSphere() {
+  const ref = useRef<THREE.LineSegments>(null);
 
-  const geometry = useMemo(() => {
-    const positions: number[] = [];
-    const colors: number[] = [];
-    const nodes = 40;
-    const points: THREE.Vector3[] = [];
-
-    for (let i = 0; i < nodes; i++) {
-      points.push(new THREE.Vector3(
-        (Math.random() - 0.5) * 16,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 6
-      ));
-    }
-
-    const cyan = new THREE.Color("#22d3ee");
-    const indigo = new THREE.Color("#818cf8");
-
-    for (let i = 0; i < nodes; i++) {
-      for (let j = i + 1; j < nodes; j++) {
-        const d = points[i].distanceTo(points[j]);
-        if (d < 3.5) {
-          positions.push(points[i].x, points[i].y, points[i].z);
-          positions.push(points[j].x, points[j].y, points[j].z);
-          const c = Math.random() > 0.5 ? cyan : indigo;
-          colors.push(c.r, c.g, c.b);
-          colors.push(c.r, c.g, c.b);
-        }
-      }
-    }
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-    return geo;
+  const geo = useMemo(() => {
+    const sphere = new THREE.IcosahedronGeometry(6.2, 3);
+    return new THREE.WireframeGeometry(sphere);
   }, []);
 
   useFrame(({ clock }) => {
-    if (!lineRef.current) return;
-    lineRef.current.rotation.y = clock.getElapsedTime() * 0.01;
+    if (!ref.current) return;
+    ref.current.rotation.y = clock.getElapsedTime() * 0.02;
+    ref.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.01) * 0.05;
   });
 
   return (
-    <lineSegments ref={lineRef} geometry={geometry}>
-      <lineBasicMaterial vertexColors transparent opacity={0.08} blending={THREE.AdditiveBlending} />
+    <lineSegments ref={ref} geometry={geo} position={[0, -4, -8]}>
+      <lineBasicMaterial color="#6366f1" transparent opacity={0.06} blending={THREE.AdditiveBlending} />
     </lineSegments>
   );
 }
 
+/* ── Galaxy Ring (tilted particle ring) ── */
+function GalaxyRing() {
+  const meshRef = useRef<THREE.Points>(null);
+
+  const [positions, colors] = useMemo(() => {
+    const count = 4000;
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+
+    const cyan = new THREE.Color("#22d3ee");
+    const indigo = new THREE.Color("#818cf8");
+    const purple = new THREE.Color("#a78bfa");
+
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3;
+      const ringRadius = 8 + Math.random() * 3.5;
+      const ySpread = (Math.random() - 0.5) * 0.4;
+
+      pos[i * 3] = Math.cos(angle) * ringRadius;
+      pos[i * 3 + 1] = ySpread;
+      pos[i * 3 + 2] = Math.sin(angle) * ringRadius;
+
+      const t = Math.random();
+      const c = t < 0.4 ? cyan : t < 0.7 ? indigo : purple;
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+    return [pos, col];
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!meshRef.current) return;
+    meshRef.current.rotation.y = clock.getElapsedTime() * 0.015;
+  });
+
+  return (
+    <points
+      ref={meshRef}
+      position={[0, -4, -8]}
+      rotation={[Math.PI * 0.35, 0, Math.PI * 0.05]}
+    >
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} count={positions.length / 3} itemSize={3} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} count={colors.length / 3} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial
+        vertexColors
+        transparent
+        opacity={0.5}
+        size={0.025}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+/* ── Data Beams (fast orbiting elliptical rings) ── */
+function DataBeams() {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const beams = useMemo(() => {
+    return [
+      { radiusX: 9, radiusZ: 7, tilt: 0.6, speed: 0.4, color: "#22d3ee", opacity: 0.15 },
+      { radiusX: 10, radiusZ: 8, tilt: 0.8, speed: -0.3, color: "#818cf8", opacity: 0.12 },
+      { radiusX: 11, radiusZ: 6, tilt: 0.4, speed: 0.5, color: "#6366f1", opacity: 0.1 },
+    ];
+  }, []);
+
+  const lineObjects = useMemo(() => {
+    return beams.map((beam) => {
+      const points: THREE.Vector3[] = [];
+      const segments = 128;
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        points.push(
+          new THREE.Vector3(
+            Math.cos(angle) * beam.radiusX,
+            0,
+            Math.sin(angle) * beam.radiusZ
+          )
+        );
+      }
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineBasicMaterial({
+        color: beam.color,
+        transparent: true,
+        opacity: beam.opacity,
+        blending: THREE.AdditiveBlending,
+      });
+      const line = new THREE.Line(geo, mat);
+      line.rotation.x = beam.tilt;
+      return line;
+    });
+  }, [beams]);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    groupRef.current.children.forEach((child, i) => {
+      child.rotation.y = clock.getElapsedTime() * beams[i].speed;
+    });
+  });
+
+  return (
+    <group ref={groupRef} position={[0, -4, -8]}>
+      {lineObjects.map((obj, i) => (
+        <primitive key={i} object={obj} />
+      ))}
+    </group>
+  );
+}
+
+/* ── Ambient floating particles (foreground dust) ── */
+function AmbientDust({ count = 300 }) {
+  const meshRef = useRef<THREE.Points>(null);
+  const basePositions = useRef<Float32Array | null>(null);
+
+  const [positions, colors] = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+
+    const cyan = new THREE.Color("#22d3ee");
+    const indigo = new THREE.Color("#818cf8");
+
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 30;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 15;
+
+      const c = Math.random() > 0.5 ? cyan : indigo;
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+
+    basePositions.current = pos.slice();
+    return [pos, col];
+  }, [count]);
+
+  useFrame(({ clock }) => {
+    if (!meshRef.current || !basePositions.current) return;
+    const time = clock.getElapsedTime();
+    const posAttr = meshRef.current.geometry.attributes.position;
+    const arr = posAttr.array as Float32Array;
+    const base = basePositions.current;
+
+    for (let i = 0; i < count; i++) {
+      const ix = i * 3;
+      arr[ix] = base[ix] + Math.sin(time * 0.15 + i * 0.1) * 0.2;
+      arr[ix + 1] = base[ix + 1] + Math.sin(time * 0.2 + i * 0.05) * 0.15;
+      arr[ix + 2] = base[ix + 2] + Math.sin(time * 0.1 + i * 0.08) * 0.1;
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={meshRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions.slice(), 3]} count={count} itemSize={3} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} count={count} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial
+        vertexColors
+        transparent
+        opacity={0.4}
+        size={0.03}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+/* ── Parallax Camera Controller ── */
+function ParallaxCamera() {
+  const { camera } = useThree();
+  const mouse = useRef({ x: 0, y: 0 });
+  const target = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      target.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      target.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+    window.addEventListener("mousemove", handler, { passive: true });
+    return () => window.removeEventListener("mousemove", handler);
+  }, []);
+
+  useFrame(() => {
+    mouse.current.x += (target.current.x - mouse.current.x) * 0.015;
+    mouse.current.y += (target.current.y - mouse.current.y) * 0.015;
+
+    camera.position.x = mouse.current.x * 1.2;
+    camera.position.y = mouse.current.y * 0.8;
+    camera.lookAt(0, -2, -8);
+  });
+
+  return null;
+}
+
+/* ── Fog Setup ── */
+function SceneFog() {
+  const { scene } = useThree();
+  useEffect(() => {
+    scene.fog = new THREE.FogExp2("#050505", 0.035);
+    return () => { scene.fog = null; };
+  }, [scene]);
+  return null;
+}
+
+/* ── Main Export ── */
 export function ParticleField() {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+
   return (
     <div className="fixed inset-0" style={{ zIndex: -1 }}>
       <Canvas
-        camera={{ position: [0, 0, 7], fov: 60 }}
+        camera={{ position: [0, 0, 12], fov: 55 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: "transparent" }}
-        dpr={[1, 1.5]}
+        dpr={[1, isMobile ? 1 : 1.5]}
       >
-        <ambientLight intensity={0.1} />
-        <Particles count={typeof window !== 'undefined' && window.innerWidth < 640 ? 400 : 1000} />
-        <NeuralGrid />
+        <SceneFog />
+        <ParallaxCamera />
+        <ambientLight intensity={0.05} />
+
+        {/* Core planet */}
+        <HoloPlanet />
+        <WireframeSphere />
+
+        {/* Orbiting elements */}
+        <GalaxyRing />
+        <DataBeams />
+
+        {/* Ambient particles */}
+        <AmbientDust count={isMobile ? 150 : 300} />
       </Canvas>
-      {/* Vignette overlay */}
+
+      {/* Deep vignette overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, transparent 30%, #050505 80%)",
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 70%, transparent 20%, #050505 75%)",
+        }}
+      />
+      {/* Top fade for navbar readability */}
+      <div
+        className="absolute inset-x-0 top-0 h-40 pointer-events-none"
+        style={{
+          background: "linear-gradient(180deg, #050505 0%, transparent 100%)",
         }}
       />
     </div>
