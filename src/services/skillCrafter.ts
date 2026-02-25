@@ -14,7 +14,7 @@ export interface SkillPackage {
   testCode?: string;
 }
 
-export type CraftingPhase = 'idle' | 'generating' | 'writing' | 'applying' | 'testing' | 'complete' | 'error';
+export type CraftingPhase = 'idle' | 'generating' | 'writing' | 'applying' | 'testing' | 'rolling_back' | 'complete' | 'error';
 
 export interface CraftingProgress {
   phase: CraftingPhase;
@@ -51,8 +51,9 @@ async function generateSkill(request: string, context?: string): Promise<SkillPa
 async function writeSkillToContainer(
   skill: SkillPackage,
   options: { nanoclawEndpoint: string; authToken: string; containerId: string }
-): Promise<void> {
+): Promise<string[]> {
   const skillDir = `.nanoclaw/skills/${skill.skillName}`;
+  const writtenPaths: string[] = [];
   
   const files = [
     { path: `${skillDir}/SKILL.md`, content: skill.skillMd },
@@ -76,7 +77,39 @@ async function writeSkillToContainer(
       },
     });
     
-    if (error) throw new Error(`Failed to write ${file.path}: ${error.message}`);
+    if (error) {
+      // Partial write — attempt to clean up already-written files
+      await cleanupFiles(writtenPaths, options).catch(() => {});
+      throw new Error(`Failed to write ${file.path}: ${error.message}`);
+    }
+    writtenPaths.push(file.path);
+  }
+
+  return writtenPaths;
+}
+
+/**
+ * Clean up files from container (best-effort)
+ */
+async function cleanupFiles(
+  filePaths: string[],
+  options: { nanoclawEndpoint: string; authToken: string; containerId: string }
+): Promise<void> {
+  for (const filePath of filePaths) {
+    try {
+      await supabase.functions.invoke('nanoclaw-gateway', {
+        body: {
+          action: 'delete_file',
+          nanoclawEndpoint: options.nanoclawEndpoint,
+          authToken: options.authToken,
+          containerId: options.containerId,
+          filePath,
+        },
+      });
+    } catch {
+      // best effort — log but continue cleanup
+      console.warn(`[skillCrafter] Cleanup failed for: ${filePath}`);
+    }
   }
 }
 
@@ -102,7 +135,7 @@ async function applySkillInContainer(
 }
 
 /**
- * Full autonomous crafting pipeline
+ * Full autonomous crafting pipeline with rollback on failure
  */
 export async function craftSkill(
   request: string,
@@ -117,15 +150,19 @@ export async function craftSkill(
     onProgress?.({ phase, message, logs: [...logs], ...extra });
   };
 
+  let writtenFiles: string[] = [];
+  let skillApplied = false;
+  let skill: SkillPackage | undefined;
+
   try {
     // Phase 1: Generate skill via AI
     emit('generating', '正在通过 AI 生成技能定义...');
-    const skill = await generateSkill(request, context);
+    skill = await generateSkill(request, context);
     emit('generating', `技能 "${skill.skillName}" 生成完成`, { skill });
 
     // Phase 2: Write to container
     emit('writing', `正在将技能文件写入容器...`);
-    await writeSkillToContainer(skill, options);
+    writtenFiles = await writeSkillToContainer(skill, options);
     emit('writing', '技能文件写入成功');
 
     // Phase 3: Apply skill
@@ -134,6 +171,7 @@ export async function craftSkill(
     if (!applyResult.success) {
       throw new Error(`Apply failed: ${applyResult.output}`);
     }
+    skillApplied = true;
     emit('applying', '技能应用成功');
 
     // Phase 4: Test (if test code exists)
@@ -151,13 +189,26 @@ export async function craftSkill(
         },
       });
       const testPassed = testResult?.exitCode === 0;
-      emit('testing', testPassed ? '测试通过 ✓' : `测试失败 (exit: ${testResult?.exitCode})`);
+      if (!testPassed) {
+        // Test failed — rollback
+        const exitCode = testResult?.exitCode;
+        const testOutput = testResult?.output || '';
+        throw new Error(`Test failed (exit: ${exitCode}): ${testOutput}`.slice(0, 500));
+      }
+      emit('testing', '测试通过 ✓');
     }
 
     emit('complete', `技能 "${skill.skillName}" 锻造完成！`, { skill });
     return skill;
 
   } catch (error: any) {
+    // ── Rollback on any failure after files were written ──
+    if (writtenFiles.length > 0 || skillApplied) {
+      emit('rolling_back', '正在回滚已写入的文件...');
+      await cleanupFiles(writtenFiles, options).catch(() => {});
+      emit('rolling_back', '回滚完成');
+    }
+
     emit('error', error.message || '锻造失败', { error: error.message });
     throw error;
   }

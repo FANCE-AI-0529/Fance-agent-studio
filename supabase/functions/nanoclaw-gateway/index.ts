@@ -6,6 +6,64 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ── Security: SSRF Prevention ──────────────────────────────────
+function isPrivateOrBlockedHost(hostname: string): boolean {
+  // Explicit blocklist
+  const blockedHosts = [
+    'localhost', '169.254.169.254', 'metadata.google.internal',
+    'metadata.google', 'metadata', '0.0.0.0',
+  ];
+  if (blockedHosts.includes(hostname.toLowerCase())) return true;
+
+  // IPv4 parsing
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b, c, d] = ipv4Match.map(Number);
+    // Loopback 127.0.0.0/8
+    if (a === 127) return true;
+    // Private 10.0.0.0/8
+    if (a === 10) return true;
+    // Private 172.16.0.0/12
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    // Private 192.168.0.0/16
+    if (a === 192 && b === 168) return true;
+    // Link-local 169.254.0.0/16
+    if (a === 169 && b === 254) return true;
+    // 0.0.0.0/8
+    if (a === 0) return true;
+    // Broadcast
+    if (a === 255 && b === 255 && c === 255 && d === 255) return true;
+  }
+
+  // IPv6 loopback
+  if (hostname === '::1' || hostname === '[::1]') return true;
+  // IPv6 link-local
+  if (hostname.toLowerCase().startsWith('fe80')) return true;
+
+  return false;
+}
+
+// ── Security: Path Traversal Prevention ────────────────────────
+function validateFilePath(filePath: string): { ok: boolean; error?: string } {
+  if (!filePath || typeof filePath !== 'string') {
+    return { ok: false, error: 'filePath is required' };
+  }
+  // Block absolute paths
+  if (filePath.startsWith('/') || /^[a-zA-Z]:/.test(filePath)) {
+    return { ok: false, error: 'Absolute paths are not allowed — path escapes project root' };
+  }
+  // Block directory traversal
+  const segments = filePath.split(/[\\/]/);
+  if (segments.some(s => s === '..' || s === '~')) {
+    return { ok: false, error: 'Path traversal (..) detected — path escapes project root' };
+  }
+  // Block null bytes
+  if (filePath.includes('\0')) {
+    return { ok: false, error: 'Null bytes in path are not allowed' };
+  }
+  return { ok: true };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -39,23 +97,50 @@ serve(async (req) => {
     const userId = claimsData.claims.sub;
     const { action, nanoclawEndpoint, authToken, ...params } = await req.json();
 
-    // 安全检查：验证 NanoClaw endpoint 不是内部地址
+    // ── SSRF check on endpoint ──
     if (nanoclawEndpoint) {
-      const url = new URL(nanoclawEndpoint);
-      const blockedHosts = ['169.254.169.254', 'metadata.google.internal'];
-      if (blockedHosts.includes(url.hostname)) {
+      try {
+        const url = new URL(nanoclawEndpoint);
+        if (isPrivateOrBlockedHost(url.hostname)) {
+          return new Response(
+            JSON.stringify({ error: 'Blocked endpoint: private/internal address' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Block non-HTTPS in production (allow HTTP for localhost dev)
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+          return new Response(
+            JSON.stringify({ error: 'Only HTTP(S) endpoints are allowed' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch {
         return new Response(
-          JSON.stringify({ error: 'Blocked endpoint' }),
+          JSON.stringify({ error: 'Invalid endpoint URL' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // ── Path validation for file operations ──
+    if ((action === 'write_file' || action === 'read_file') && params.filePath) {
+      const pathCheck = validateFilePath(params.filePath);
+      if (!pathCheck.ok) {
+        return new Response(
+          JSON.stringify({ error: pathCheck.error }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
 
     let result;
+    const baseHeaders = {
+      'Authorization': `Bearer ${authToken}`,
+      'X-User-ID': userId,
+    };
 
     switch (action) {
       case 'health': {
-        // 健康检查 - 代理到 NanoClaw 实例
         const response = await fetch(`${nanoclawEndpoint}/health`, {
           headers: { 'Authorization': `Bearer ${authToken}` },
           signal: AbortSignal.timeout(5000),
@@ -67,11 +152,7 @@ serve(async (req) => {
       case 'create_container': {
         const response = await fetch(`${nanoclawEndpoint}/containers`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
           body: JSON.stringify(params.config),
         });
         result = await response.json();
@@ -81,10 +162,7 @@ serve(async (req) => {
       case 'terminate_container': {
         const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
+          headers: baseHeaders,
         });
         result = await response.json();
         break;
@@ -92,10 +170,7 @@ serve(async (req) => {
 
       case 'container_status': {
         const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/status`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
+          headers: baseHeaders,
         });
         result = await response.json();
         break;
@@ -103,10 +178,7 @@ serve(async (req) => {
 
       case 'list_containers': {
         const response = await fetch(`${nanoclawEndpoint}/containers?userId=${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
+          headers: baseHeaders,
         });
         result = await response.json();
         break;
@@ -115,11 +187,7 @@ serve(async (req) => {
       case 'execute': {
         const response = await fetch(`${nanoclawEndpoint}/execute`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
           body: JSON.stringify(params.request),
           signal: AbortSignal.timeout(60000),
         });
@@ -130,15 +198,8 @@ serve(async (req) => {
       case 'deploy_skill': {
         const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/skills`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
-          body: JSON.stringify({
-            name: params.skillName,
-            content: params.skillMd,
-          }),
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({ name: params.skillName, content: params.skillMd }),
         });
         result = await response.json();
         break;
@@ -147,42 +208,47 @@ serve(async (req) => {
       case 'apply_skill': {
         const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/skills/apply`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
-          body: JSON.stringify({
-            skillDir: params.skillDir,
-          }),
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({ skillDir: params.skillDir }),
         });
         result = await response.json();
         break;
       }
 
       case 'read_file': {
+        // Path already validated above
         const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/files?path=${encodeURIComponent(params.filePath)}`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
+          headers: baseHeaders,
         });
         result = await response.json();
         break;
       }
 
       case 'write_file': {
+        // Path already validated above
         const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/files`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'X-User-ID': userId,
-          },
-          body: JSON.stringify({
-            path: params.filePath,
-            content: params.content,
-          }),
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({ path: params.filePath, content: params.content }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'delete_file': {
+        // Validate path for delete operations too
+        if (params.filePath) {
+          const pathCheck = validateFilePath(params.filePath);
+          if (!pathCheck.ok) {
+            return new Response(
+              JSON.stringify({ error: pathCheck.error }),
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+        const response = await fetch(`${nanoclawEndpoint}/containers/${params.containerId}/files?path=${encodeURIComponent(params.filePath)}`, {
+          method: 'DELETE',
+          headers: baseHeaders,
         });
         result = await response.json();
         break;

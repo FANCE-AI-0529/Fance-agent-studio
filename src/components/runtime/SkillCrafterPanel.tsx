@@ -34,6 +34,7 @@ const PHASE_LABELS: Record<CraftingPhase, { label: string; icon: React.ReactNode
   writing: { label: '写入容器', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
   applying: { label: '应用技能', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
   testing: { label: '测试验证', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
+  rolling_back: { label: '回滚中', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
   complete: { label: '锻造完成', icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
   error: { label: '锻造失败', icon: <XCircle className="h-3.5 w-3.5" /> },
 };
