@@ -82,7 +82,7 @@ export const extendedTranslations: Record<Language, Record<string, string>> = {
 
     // PWA
     "pwa.install": "安装应用",
-    "pwa.install_desc": "将 HIVE 添加到主屏幕，获得原生应用体验",
+    "pwa.install_desc": "将 FANCE 添加到主屏幕，获得原生应用体验",
     "pwa.install_button": "立即安装",
     "pwa.installed": "已安装",
     "pwa.offline": "离线模式",
@@ -189,7 +189,7 @@ export const extendedTranslations: Record<Language, Record<string, string>> = {
 
     // PWA
     "pwa.install": "Install App",
-    "pwa.install_desc": "Add HIVE to your home screen for a native app experience",
+    "pwa.install_desc": "Add FANCE to your home screen for a native app experience",
     "pwa.install_button": "Install Now",
     "pwa.installed": "Installed",
     "pwa.offline": "Offline Mode",
@@ -225,12 +225,12 @@ export function getFullTranslations(lang: Language): Record<string, string> {
   const base = lang === "zh" 
     ? {
         // Brand
-        "brand.name": "HIVE",
+        "brand.name": "FANCE",
         "brand.slogan": "技能驱动，智能无限",
         // ... include all base translations
       }
     : {
-        "brand.name": "HIVE",
+        "brand.name": "FANCE",
         "brand.slogan": "Skill-driven, Intelligence Unlimited",
         // ... include all base translations
       };

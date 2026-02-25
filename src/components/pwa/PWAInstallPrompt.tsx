@@ -47,7 +47,7 @@ function PWABanner({ className }: { className?: string }) {
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm">
-                  {isUpdateAvailable ? "有新版本可用" : "安装 HIVE"}
+                  {isUpdateAvailable ? "有新版本可用" : "安装 FANCE"}
                 </h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isUpdateAvailable 
@@ -125,7 +125,7 @@ function PWACard({ className }: { className?: string }) {
             </p>
             <p className="text-xs text-muted-foreground">
               {isInstalled 
-                ? "HIVE 已添加到您的设备" 
+                ? "FANCE 已添加到您的设备" 
                 : "安装后可离线使用，体验更流畅"}
             </p>
           </div>

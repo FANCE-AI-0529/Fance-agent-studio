@@ -3,7 +3,7 @@ import { Star } from "lucide-react";
 
 const testimonials = [
   {
-    quote: "HIVE 让我们的客服团队效率提升了 3 倍。MPLP 协议确保每个 AI 回复都在合规范围内，再也不用担心 AI 幻觉带来的风险。",
+    quote: "FANCE 让我们的客服团队效率提升了 3 倍。MPLP 协议确保每个 AI 回复都在合规范围内，再也不用担心 AI 幻觉带来的风险。",
     author: "陈思远",
     role: "CTO",
     company: "智联科技",
@@ -67,7 +67,7 @@ export function TestimonialsSection() {
             Trusted By Builders
           </span>
           <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight text-white">
-            他们正在用 HIVE
+            他们正在用 FANCE
             <span
               style={{
                 background: "linear-gradient(135deg, #c084fc, #22d3ee)",

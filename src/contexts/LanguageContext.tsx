@@ -11,9 +11,9 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   zh: {
     // 品牌
-  "brand.name": "HIVE",
+  "brand.name": "FANCE",
     "brand.slogan": "技能驱动，智能无限",
-    "brand.description": "HIVE - Agent Skills 驱动的智能体构建平台",
+    "brand.description": "FANCE - Agent Skills 驱动的智能体构建平台",
     
     // 导航
     "nav.home": "首页",
@@ -94,7 +94,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // 来源过滤
     "skill.origin.all": "全部",
-    "skill.origin.native": "HIVE 原生",
+    "skill.origin.native": "FANCE 原生",
     "skill.origin.mcp": "MCP 生态",
     
     // MCP 确认
@@ -112,9 +112,9 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // Brand
-    "brand.name": "HIVE",
+    "brand.name": "FANCE",
     "brand.slogan": "Skill-driven, Intelligence Unlimited",
-    "brand.description": "HIVE - AI agent building platform powered by Agent Skills",
+    "brand.description": "FANCE - AI agent building platform powered by Agent Skills",
     
     // Navigation
     "nav.home": "Home",
@@ -199,7 +199,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Origin filter
     "skill.origin.all": "All",
-    "skill.origin.native": "HIVE Native",
+    "skill.origin.native": "FANCE Native",
     "skill.origin.mcp": "MCP Ecosystem",
     
     // MCP Confirm
