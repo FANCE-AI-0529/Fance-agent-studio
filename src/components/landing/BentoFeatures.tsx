@@ -51,8 +51,6 @@ const fadeUp = {
 export function BentoFeatures() {
   return (
     <section id="features" className="relative py-16 sm:py-32 px-4 sm:px-6">
-      {/* Glass backdrop */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm pointer-events-none rounded-none" />
       <div className="max-w-7xl mx-auto">
         {/* Section header */}
         <motion.div

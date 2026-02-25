@@ -55,7 +55,6 @@ const testimonials = [
 export function TestimonialsSection() {
   return (
     <section className="relative py-16 sm:py-32 px-4 sm:px-6 overflow-hidden">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm pointer-events-none" />
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

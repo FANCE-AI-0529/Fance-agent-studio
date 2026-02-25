@@ -17,8 +17,6 @@ const fadeUp = {
 export function HeroSection({ onBookDemo }: HeroSectionProps) {
   return (
     <section className="relative min-h-[100svh] flex items-center justify-center pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6">
-      {/* Subtle glass backdrop for readability */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] pointer-events-none" />
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -94,7 +92,7 @@ export function HeroSection({ onBookDemo }: HeroSectionProps) {
 
         {/* Terminal preview */}
         <motion.div variants={fadeUp} className="mt-10 sm:mt-16 max-w-2xl mx-auto">
-          <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0a]/70 backdrop-blur-2xl overflow-hidden shadow-2xl shadow-black/60">
+          <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/50">
             {/* Title bar */}
             <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/[0.06]">
               <div className="flex gap-1.5">
