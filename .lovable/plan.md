@@ -1,41 +1,63 @@
 
 
-# Plan: Replace All Logos with New Uploaded Image (image-45.png)
+# Plan: Adapt FloatUI Layout Structure to Landing Page
 
-## Overview
+## Goal
+Apply the FloatUI template's layout and structural patterns to the existing HIVE landing page. All existing content (text, CTAs, terminal, sections) is preserved — only the layout format changes.
 
-Replace the current logo assets with the user's newly uploaded image (`image-45.png` — the holographic hexagonal chip with circuit board elements) across the entire system. This is the same process as before but with a different source image.
+## Changes Overview
 
-## Asset Replacement (3 files, parallel)
+### 1. GlassNavbar.tsx — Adopt FloatUI Navbar Structure
 
-Copy `user-uploads://image-45.png` to:
-- `src/assets/logo-icon.png` — used by React component imports across Studio, Consumer, Runtime
-- `src/assets/logo-full.png` — used by Auth page, Landing navbar
-- `public/favicon.png` — browser tab favicon
+**Current**: Floating glass pill (`rounded-2xl`) centered in viewport
+**Target**: Full-width navbar with `max-w-screen-xl mx-auto px-4 md:px-8` container, nav links and CTA inline on desktop, overlay panel on mobile (matching FloatUI's `bg-gray-800 rounded-xl mx-2 mt-2` mobile pattern)
 
-## Component Review
+Changes:
+- Replace floating pill container with `max-w-screen-xl mx-auto px-4 md:px-8` full-width layout
+- Move nav links and CTAs into a single flex row with `flex-1 justify-end` for right-alignment
+- Mobile menu: Use FloatUI's overlay pattern (`absolute z-20 top-0 inset-x-0 rounded-xl mx-2 mt-2`) instead of the current fixed dropdown
+- Keep glass blur + scroll darkening effect, keep `framer-motion` entry animation
+- Keep all existing nav items: 平台架构, MPLP 协议, 技术文档, Login, Book a Demo
+- CTA "Book a Demo" uses `rounded-full` pill style (FloatUI's `bg-sky-500 rounded-full`) adapted to HIVE gradient colors
 
-Based on the last diff, all 6 component files already have the correct styling from the previous logo swap:
+### 2. HeroSection.tsx — Adopt FloatUI Hero Layout
 
-| File | Current State | Action Needed |
-|------|--------------|---------------|
-| `AppSidebar.tsx` | `w-9 h-9 rounded-lg object-cover` | No change |
-| `ConsumerHeader.tsx` | `w-9 h-9 rounded-xl object-cover` | No change |
-| `ConsumerRuntime.tsx` | `w-7 h-7 rounded-lg object-cover` | No change |
-| `MainLayout.tsx` | `w-7 h-7 rounded-lg object-cover` | No change |
-| `GlassNavbar.tsx` | `h-8 sm:h-9 rounded-lg object-cover` | No change |
-| `Auth.tsx` | `h-14 w-14 rounded-xl object-cover` | No change |
+**Current**: `max-w-5xl` centered, badge + heading + subtitle + two buttons + terminal
+**Target**: `max-w-screen-xl` outer container with `max-w-4xl` text block, add email input form row alongside existing CTA, add star-rating social proof row, add FloatUI's gradient blur orb background element
 
-All filters (`brightness-0 invert`) were already removed and `object-cover` is already applied everywhere. The new image has a similar dark background with glowing cyan-purple elements, so the existing styling will integrate seamlessly.
+Changes:
+- Wrap in `max-w-screen-xl mx-auto px-4 md:px-8` with `py-28` spacing (FloatUI pattern)
+- Keep status badge, heading, and subtitle exactly as-is
+- Replace the two-button CTA row with FloatUI-style inline form: email input + gradient CTA button (styled with HIVE's cyan-indigo gradient instead of sky-500), plus keep "查看技术白皮书" as secondary link below
+- Add star-rating social proof row below the form (5 stars + "5.0 by over 200 users" adapted to Chinese: "5.0 · 超过 200 位用户信赖")
+- Add FloatUI's gradient blur orb (`absolute inset-0 m-auto max-w-xs h-[357px] blur-[118px]`) behind the hero content, using HIVE's color palette (#c084fc, #22d3ee, #818cf8)
+- Keep terminal preview section below, unchanged
 
-## Execution
+### 3. Landing.tsx — Minor Wrapper Adjustment
 
-1. Copy `image-45.png` → 3 asset locations (parallel)
-2. No component code changes needed — styling is already optimized from previous swap
+- Add a `relative` section wrapper around `HeroSection` to properly contain the gradient blur orb (matching FloatUI's `<section className="relative">` pattern)
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/landing/GlassNavbar.tsx` | Full rewrite of layout structure |
+| `src/components/landing/HeroSection.tsx` | Layout restructure + email form + social proof |
+| `src/pages/Landing.tsx` | Minor wrapper adjustment |
+
+## What Stays the Same
+
+- All text content (Chinese headings, descriptions, nav labels)
+- All section components: BentoFeatures, DetailedFeatures, PricingSection, TestimonialsSection, FAQSection, Footer, InviteModal
+- ParticleField 3D background
+- Color palette and branding
+- Terminal preview block
+- Framer Motion animations (adapted to new structure)
+- All functionality (onBookDemo, onLogin, mobile toggle)
 
 ## Technical Notes
 
-- The new image has a slightly different composition (circuit board chip vs. core sphere) but the same color palette and dark background
-- `rounded-lg`/`rounded-xl` will softly crop the corners
-- `object-cover` ensures proper scaling in all size contexts
+- The FloatUI template uses `document.onclick` for closing menus — we will keep our current React state approach which is cleaner
+- FloatUI uses `javascript:void(0)` hrefs — we keep our existing `#features` anchors and button `onClick` handlers
+- The email form input will be non-functional (visual only, `e.preventDefault()`) and trigger `onBookDemo` on submit, matching the existing invite flow
 
