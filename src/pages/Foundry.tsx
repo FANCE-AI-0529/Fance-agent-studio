@@ -403,6 +403,41 @@ function ValidationStatusCard({ validation }: { validation: ValidationResult }) 
 // C端消费者视图类型
 type ConsumerView = "store" | "bundles" | "plaza" | "myBundles" | "create" | "lowcode" | "creator" | "knowledge";
 
+// 3-category mapping
+type FoundryCategory = "discover" | "create" | "mine";
+
+const CATEGORY_VIEWS: Record<FoundryCategory, { label: string; views: { key: ConsumerView; label: string; icon: typeof Store }[] }> = {
+  discover: {
+    label: "发现",
+    views: [
+      { key: "store", label: "能力商店", icon: Store },
+      { key: "bundles", label: "能力包", icon: Package },
+      { key: "plaza", label: "智能体广场", icon: Store },
+    ],
+  },
+  create: {
+    label: "创建",
+    views: [
+      { key: "create", label: "AI 创建", icon: Wand2 },
+      { key: "lowcode", label: "可视化配置", icon: Settings },
+    ],
+  },
+  mine: {
+    label: "我的",
+    views: [
+      { key: "knowledge", label: "知识库", icon: Server },
+      { key: "creator", label: "创作者中心", icon: User },
+    ],
+  },
+};
+
+function getCategoryForView(view: ConsumerView): FoundryCategory {
+  for (const [cat, config] of Object.entries(CATEGORY_VIEWS)) {
+    if (config.views.some(v => v.key === view)) return cat as FoundryCategory;
+  }
+  return "discover";
+}
+
 const Foundry = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -814,105 +849,87 @@ const Foundry = () => {
     return (
       <TooltipProvider>
         <div className="h-full flex flex-col">
-          {/* 顶部导航栏 */}
-          <div className="h-14 px-6 flex items-center justify-between border-b border-border bg-card">
-            <div className="flex items-center gap-6">
-              <h1 className="text-lg font-semibold">能力工坊</h1>
-              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                <Button
-                  variant={consumerView === "store" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("store")}
-                  className="gap-2"
-                >
-                  <Store className="h-4 w-4" />
-                  能力商店
-                </Button>
-                <Button
-                  variant={consumerView === "bundles" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("bundles")}
-                  className="gap-2"
-                >
-                  <Package className="h-4 w-4" />
-                  能力包
-                </Button>
-                <Button
-                  variant={consumerView === "plaza" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("plaza")}
-                  className="gap-2"
-                >
-                  <Store className="h-4 w-4" />
-                  智能体广场
-                </Button>
-                <Button
-                  variant={consumerView === "create" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("create")}
-                  className="gap-2"
-                >
-                  <Wand2 className="h-4 w-4" />
-                  AI创建
-                </Button>
-                <Button
-                  variant={consumerView === "lowcode" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("lowcode")}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  可视化配置
-                </Button>
-                <Button
-                  variant={consumerView === "knowledge" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setConsumerView("knowledge")}
-                  className="gap-2"
-                >
-                  <Server className="h-4 w-4" />
-                  知识库
-                </Button>
-                {user && (
+          {/* 顶部导航栏 - 3-category design */}
+          <div className="border-b border-border bg-card">
+            <div className="h-12 px-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <h1 className="text-sm font-semibold">能力工坊</h1>
+                
+                {/* Primary category tabs */}
+                <div className="flex items-center gap-1">
+                  {(Object.entries(CATEGORY_VIEWS) as [FoundryCategory, typeof CATEGORY_VIEWS[FoundryCategory]][]).map(([cat, config]) => {
+                    const isActive = getCategoryForView(consumerView) === cat;
+                    // Hide "mine" category if not logged in
+                    if (cat === "mine" && !user) return null;
+                    return (
+                      <Button
+                        key={cat}
+                        variant={isActive ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setConsumerView(config.views[0].key)}
+                        className="h-7 text-xs px-3"
+                      >
+                        {config.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {!user && (
                   <Button
-                    variant={consumerView === "creator" ? "default" : "ghost"}
+                    variant="outline"
                     size="sm"
-                    onClick={() => setConsumerView("creator")}
-                    className="gap-2"
+                    onClick={() => navigate("/auth")}
+                    className="gap-1.5 h-7 text-xs"
                   >
-                    <User className="h-4 w-4" />
-                    创作者中心
+                    <LogIn className="h-3.5 w-3.5" />
+                    登录
                   </Button>
                 )}
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
+                  <Switch
+                    checked={isDeveloperMode}
+                    onCheckedChange={setIsDeveloperMode}
+                  />
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Wrench className="h-3 w-3" />
+                    开发者
+                  </Label>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              {!user && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/auth")}
-                  className="gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  登录
-                </Button>
-              )}
-              
-              {/* 开发者模式切换 */}
-              <div className="flex items-center gap-2 pl-4 border-l border-border">
-                <Sparkles className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={isDeveloperMode}
-                  onCheckedChange={setIsDeveloperMode}
-                />
-                <Label className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Wrench className="h-3 w-3" />
-                  开发者
-                </Label>
-              </div>
-            </div>
+            {/* Sub-navigation within active category */}
+            {(() => {
+              const activeCat = getCategoryForView(consumerView);
+              const catConfig = CATEGORY_VIEWS[activeCat];
+              if (catConfig.views.length <= 1) return null;
+              return (
+                <div className="h-9 px-6 flex items-center gap-1 border-t border-border/50 bg-muted/30">
+                  {catConfig.views.map((view) => {
+                    const Icon = view.icon;
+                    const isActive = consumerView === view.key;
+                    return (
+                      <button
+                        key={view.key}
+                        onClick={() => setConsumerView(view.key)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 h-7 rounded-md text-xs font-medium transition-all",
+                          isActive
+                            ? "bg-background text-foreground shadow-sm border border-border"
+                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {view.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* 主内容区 */}
