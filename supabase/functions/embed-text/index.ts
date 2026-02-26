@@ -1,5 +1,11 @@
+/**
+ * @file embed-text/index.ts
+ * @description 文本向量嵌入服务 - 使用真实 Embedding API
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { generateEmbedding, generateBatchEmbeddings } from "../_shared/embed-with-gateway.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +18,6 @@ serve(async (req) => {
   }
 
   try {
-    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -37,8 +42,7 @@ serve(async (req) => {
 
     const { text, texts } = await req.json();
     
-    // Support both single text and batch texts
-    const inputTexts = texts || (text ? [text] : []);
+    const inputTexts: string[] = texts || (text ? [text] : []);
     
     if (inputTexts.length === 0) {
       return new Response(
@@ -47,40 +51,16 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    // Use real embedding API via shared module
+    if (inputTexts.length === 1) {
+      const embedding = await generateEmbedding(inputTexts[0]);
       return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Use Lovable AI Gateway for embeddings
-    // Since Lovable AI doesn't have a dedicated embedding endpoint,
-    // we'll use a workaround: generate embeddings using the chat model
-    // with a specific prompt that extracts semantic meaning
-    
-    // For production, you'd want to use OpenAI's embedding API directly
-    // For now, we'll generate a mock 1536-dimensional embedding based on text hash
-    // This is a placeholder - replace with actual embedding API call
-    
-    const embeddings: number[][] = [];
-    
-    for (const inputText of inputTexts) {
-      // Generate a deterministic but semantic-aware mock embedding
-      // In production, call OpenAI's text-embedding-3-small API
-      const embedding = generateMockEmbedding(inputText);
-      embeddings.push(embedding);
-    }
-
-    // Return single embedding if only one text was provided
-    if (text && !texts) {
-      return new Response(
-        JSON.stringify({ embedding: embeddings[0] }),
+        JSON.stringify(text && !texts ? { embedding } : { embeddings: [embedding] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const embeddings = await generateBatchEmbeddings(inputTexts);
     return new Response(
       JSON.stringify({ embeddings }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -93,31 +73,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Generate a mock 1536-dimensional embedding based on text content
-// This is a placeholder for demonstration - replace with actual embedding API
-function generateMockEmbedding(text: string): number[] {
-  const embedding = new Array(1536).fill(0);
-  
-  // Simple hash-based approach for consistent embeddings
-  const words = text.toLowerCase().split(/\s+/);
-  
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    for (let j = 0; j < word.length; j++) {
-      const charCode = word.charCodeAt(j);
-      const index = (charCode * (i + 1) * (j + 1)) % 1536;
-      embedding[index] += 0.1 / Math.sqrt(words.length);
-    }
-  }
-  
-  // Normalize the embedding
-  const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-  if (magnitude > 0) {
-    for (let i = 0; i < embedding.length; i++) {
-      embedding[i] /= magnitude;
-    }
-  }
-  
-  return embedding;
-}

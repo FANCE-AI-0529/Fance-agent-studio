@@ -265,6 +265,19 @@ export function useDeleteKnowledgeBase() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // [清理]：删除 Storage 中的知识库文件目录
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: files } = await supabase.storage
+          .from("knowledge-documents")
+          .list(`${user.id}/${id}`);
+        if (files && files.length > 0) {
+          await supabase.storage
+            .from("knowledge-documents")
+            .remove(files.map(f => `${user.id}/${id}/${f.name}`));
+        }
+      }
+
       // [删除]：执行删除操作
       const { error } = await supabase
         .from("knowledge_bases")

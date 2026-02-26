@@ -88,9 +88,16 @@ serve(async (req) => {
       });
     }
 
-    // Combine chunks for extraction (limit to prevent token overflow)
-    const combinedContent = chunks
-      .slice(0, 10)
+    // Process chunks in batches to handle large documents
+    const CHUNK_BATCH_SIZE = 10;
+    const maxBatches = 5; // Process up to 50 chunks total
+    const totalChunksToProcess = Math.min(chunks.length, CHUNK_BATCH_SIZE * maxBatches);
+    const chunkBatches: typeof chunks[] = [];
+    for (let i = 0; i < totalChunksToProcess; i += CHUNK_BATCH_SIZE) {
+      chunkBatches.push(chunks.slice(i, i + CHUNK_BATCH_SIZE));
+    }
+
+    const combinedContent = chunkBatches[0]
       .map((c, i) => `[Chunk ${i + 1}]:\n${c.content}`)
       .join("\n\n");
 
@@ -209,10 +216,15 @@ Return structured data using the provided function.`
 
       if (existing) {
         nodeNameToId[node.name] = existing.id;
-        // Update occurrence count
+        // Update occurrence count - fetch current value and increment
+        const { data: currentNode } = await supabase
+          .from("knowledge_nodes")
+          .select("occurrence_count")
+          .eq("id", existing.id)
+          .single();
         await supabase
           .from("knowledge_nodes")
-          .update({ occurrence_count: supabase.rpc("increment", { x: 1 }) })
+          .update({ occurrence_count: (currentNode?.occurrence_count || 0) + 1 })
           .eq("id", existing.id);
       } else {
         const { data: newNode, error: insertError } = await supabase

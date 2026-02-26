@@ -465,27 +465,32 @@ serve(async (req) => {
         // 调用真实 Embedding API
         const embeddings = await generateBatchEmbeddings(texts, LOVABLE_API_KEY);
         
-        // 存储切片和向量
-        for (let j = 0; j < batch.length; j++) {
-          const { error: insertError } = await supabase
-            .from("document_chunks")
-            .insert({
-              document_id: documentId,
-              knowledge_base_id: document.knowledge_base_id,
-              user_id: user.id,
-              content: batch[j].content,
-              embedding: `[${embeddings[j].join(",")}]`,
-              chunk_index: batch[j].index,
-              token_count: batch[j].tokenCount,
-              metadata: batch[j].metadata,
-            });
+        // 批量插入切片和向量
+        const batchRecords = batch.map((chunk, j) => ({
+          document_id: documentId,
+          knowledge_base_id: document.knowledge_base_id,
+          user_id: user.id,
+          content: chunk.content,
+          embedding: `[${embeddings[j].join(",")}]`,
+          chunk_index: chunk.index,
+          token_count: chunk.tokenCount,
+          metadata: chunk.metadata,
+        }));
 
-          if (insertError) {
-            console.error("[rag-ingest] Error inserting chunk:", insertError);
-            throw insertError;
-          }
-          processedCount++;
+        const { error: insertError } = await supabase
+          .from("document_chunks")
+          .insert(batchRecords);
+
+        if (insertError) {
+          console.error("[rag-ingest] Error inserting chunk batch:", insertError);
+          // 清理已插入的脏数据
+          await supabase
+            .from("document_chunks")
+            .delete()
+            .eq("document_id", documentId);
+          throw insertError;
         }
+        processedCount += batch.length;
       }
 
       // [完成]：更新文档状态
