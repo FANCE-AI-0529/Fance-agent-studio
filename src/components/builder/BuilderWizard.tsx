@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Bot,
   Sparkles,
@@ -120,87 +121,39 @@ export function BuilderWizard({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-4xl mx-4 bg-card rounded-2xl shadow-2xl border border-border overflow-hidden"
-      >
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 z-10"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-
-        {/* Progress Steps */}
-        <div className="px-8 pt-8 pb-4">
-          <div className="flex items-center justify-between mb-8">
+    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <SheetContent side="right" className="w-[440px] sm:w-[480px] p-0 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto">
+        {/* Vertical Step Indicator */}
+        <div className="px-6 pt-6 pb-4 border-b border-border">
+          <h2 className="text-lg font-semibold mb-3">创建智能体</h2>
+          <div className="flex items-center gap-2">
             {steps.map((step, index) => {
-              const StepIcon = step.icon;
               const isActive = index === currentStep;
               const isCompleted = index < currentStep;
-
               return (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "flex items-center gap-3 flex-1",
-                    index !== steps.length - 1 && "relative"
-                  )}
-                >
+                <div key={step.id} className="flex items-center gap-1.5">
                   <div
                     className={cn(
-                      "flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300",
+                      "flex items-center justify-center w-7 h-7 rounded-lg text-xs font-medium transition-all",
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-lg"
+                        ? "bg-primary text-primary-foreground"
                         : isCompleted
                         ? "bg-primary/20 text-primary"
-                        : "bg-secondary text-muted-foreground"
+                        : "bg-muted text-muted-foreground"
                     )}
                   >
-                    {isCompleted ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <StepIcon className="h-5 w-5" />
-                    )}
+                    {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
                   </div>
-                  <div className="hidden sm:block">
-                    <div
-                      className={cn(
-                        "text-sm font-medium",
-                        isActive
-                          ? "text-foreground"
-                          : isCompleted
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {step.title}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {step.description}
-                    </div>
-                  </div>
+                  <span className={cn(
+                    "text-xs font-medium",
+                    isActive ? "text-foreground" : "text-muted-foreground"
+                  )}>
+                    {step.title}
+                  </span>
                   {index !== steps.length - 1 && (
-                    <div
-                      className={cn(
-                        "flex-1 h-px mx-4",
-                        isCompleted ? "bg-primary" : "bg-border"
-                      )}
-                    />
+                    <div className={cn("w-4 h-px", isCompleted ? "bg-primary" : "bg-border")} />
                   )}
                 </div>
               );
@@ -209,7 +162,7 @@ export function BuilderWizard({
         </div>
 
         {/* Step Content */}
-        <div className="px-8 pb-8 min-h-[400px]">
+        <div className="px-6 pb-6 min-h-[300px]">
           <AnimatePresence mode="wait">
             {currentStep === 0 && (
               <motion.div
@@ -437,7 +390,7 @@ export function BuilderWizard({
         </div>
 
         {/* Navigation */}
-        <div className="px-8 py-4 border-t border-border flex justify-between">
+        <div className="px-6 py-4 border-t border-border flex justify-between">
           <Button
             variant="ghost"
             onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
@@ -458,11 +411,12 @@ export function BuilderWizard({
           ) : (
             <Button onClick={handleComplete} disabled={!canProceed()}>
               <Check className="mr-2 h-4 w-4" />
-              完成并进入画布
+              完成
             </Button>
           )}
         </div>
-      </motion.div>
-    </motion.div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
