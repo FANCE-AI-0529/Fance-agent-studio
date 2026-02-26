@@ -1,23 +1,48 @@
 import { useState } from "react";
-import { Database, Plus, FileText, Settings2 } from "lucide-react";
+import { Database, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useKnowledgeBases } from "@/hooks/useKnowledgeBases";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
 import { useKnowledgeStore } from "@/stores/knowledgeStore";
 import { KnowledgeBaseList } from "./KnowledgeBaseList";
 import { KnowledgeBaseDetail } from "./KnowledgeBaseDetail";
 import { CreateKnowledgeBaseDialog } from "./CreateKnowledgeBaseDialog";
+import { EditKnowledgeBaseDialog } from "./EditKnowledgeBaseDialog";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export function KnowledgeManager() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editTarget, setEditTarget] = useState<KnowledgeBase | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<KnowledgeBase | null>(null);
   const { data: knowledgeBases = [], isLoading } = useKnowledgeBases();
   const { selectedKnowledgeBaseId, setSelectedKnowledgeBase } = useKnowledgeStore();
+  const deleteKnowledgeBase = useDeleteKnowledgeBase();
 
   const selectedKnowledgeBase = knowledgeBases.find(
     (kb) => kb.id === selectedKnowledgeBaseId
   );
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteKnowledgeBase.mutateAsync(deleteTarget.id);
+      if (selectedKnowledgeBaseId === deleteTarget.id) {
+        setSelectedKnowledgeBase(null);
+      }
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   return (
     <div className="h-full flex">
@@ -49,6 +74,8 @@ export function KnowledgeManager() {
             isLoading={isLoading}
             selectedId={selectedKnowledgeBaseId}
             onSelect={setSelectedKnowledgeBase}
+            onEdit={setEditTarget}
+            onDelete={setDeleteTarget}
           />
         </ScrollArea>
       </div>
@@ -59,7 +86,7 @@ export function KnowledgeManager() {
           <KnowledgeBaseDetail knowledgeBase={selectedKnowledgeBase} />
         ) : (
           <div className="h-full flex items-center justify-center">
-          <EmptyState
+            <EmptyState
               icon={Database}
               title="选择或创建知识库"
               description="从左侧选择一个知识库，或创建新的知识库开始管理文档"
@@ -72,10 +99,43 @@ export function KnowledgeManager() {
         )}
       </div>
 
+      {/* Dialogs - rendered at top level to avoid portal conflicts */}
       <CreateKnowledgeBaseDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
       />
+
+      <EditKnowledgeBaseDialog
+        knowledgeBase={editTarget}
+        open={!!editTarget}
+        onOpenChange={(open) => !open && setEditTarget(null)}
+      />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除知识库</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除知识库 "{deleteTarget?.name}" 吗？此操作将删除所有文档和索引数据，无法恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteKnowledgeBase.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteKnowledgeBase.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  删除中...
+                </>
+              ) : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
