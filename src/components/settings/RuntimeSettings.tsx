@@ -1,7 +1,8 @@
 // 运行时设置页面 (Runtime Settings)
 
 import { useState } from 'react';
-import { Server, Cloud, Wifi, WifiOff, RefreshCw, Settings, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Server, Cloud, Wifi, WifiOff, RefreshCw, Settings, CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,17 +32,68 @@ export function RuntimeSettings() {
     });
   };
 
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
   const handleTestConnection = async () => {
     setIsTesting(true);
+    setConnectionError(null);
+    setLatencyMs(null);
+    store.setConnectionStatus('connecting');
+
+    const fullEndpoint = `${nanoclawConfig.endpoint}:${nanoclawConfig.port}`;
+    const startTime = Date.now();
+
     try {
-      // Simulate connection test
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      store.setConnectionStatus('connected');
-      store.setNanoclawVersion('1.0.0');
-      toast({ title: '连接成功', description: 'NanoClaw 实例已就绪' });
-    } catch {
+      const { data, error } = await supabase.functions.invoke('nanoclaw-gateway', {
+        body: {
+          action: 'health',
+          nanoclawEndpoint: fullEndpoint,
+          authToken: nanoclawConfig.authToken,
+        },
+      });
+
+      const elapsed = Date.now() - startTime;
+      setLatencyMs(elapsed);
+
+      if (error) {
+        throw new Error(error.message || '网关调用失败');
+      }
+
+      if (data?.status === 'ok' || data?.version) {
+        store.setConnectionStatus('connected');
+        store.setNanoclawVersion(data.version || 'unknown');
+        toast({
+          title: '连接成功',
+          description: `NanoClaw v${data.version || '?'} 已就绪 (${elapsed}ms)`,
+        });
+      } else if (data?.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error('健康检查返回异常数据');
+      }
+    } catch (err: any) {
+      const elapsed = Date.now() - startTime;
+      setLatencyMs(elapsed);
       store.setConnectionStatus('error');
-      toast({ title: '连接失败', variant: 'destructive' });
+
+      let errorMsg = err.message || '未知错误';
+      if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
+        errorMsg = '认证失败 — 请检查认证令牌';
+      } else if (errorMsg.includes('fetch') || errorMsg.includes('network') || errorMsg.includes('ECONNREFUSED')) {
+        errorMsg = '网络不通 — 请检查地址和端口是否正确';
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+        errorMsg = '连接超时 — 服务器无响应';
+      } else if (errorMsg.includes('Blocked endpoint')) {
+        errorMsg = '安全拦截 — 该端点地址不被允许';
+      }
+
+      setConnectionError(errorMsg);
+      toast({
+        title: '连接失败',
+        description: errorMsg,
+        variant: 'destructive',
+      });
     } finally {
       setIsTesting(false);
     }
@@ -156,9 +208,20 @@ export function RuntimeSettings() {
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {store.containers.length > 0 && (
                   <span>活跃容器: {store.containers.length}</span>
+                )}
+                {latencyMs !== null && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {latencyMs}ms
+                  </span>
+                )}
+                {connectionError && (
+                  <span className="text-destructive max-w-[200px] truncate" title={connectionError}>
+                    {connectionError}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
