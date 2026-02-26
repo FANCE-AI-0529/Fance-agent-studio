@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.workflow-executor]
 verify_jwt = false
+
+[functions.workflow-api]
+verify_jwt = false

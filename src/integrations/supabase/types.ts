@@ -892,6 +892,7 @@ export type Database = {
           clones_count: number | null
           created_at: string
           department: string | null
+          flow_type: string
           id: string
           is_featured: boolean | null
           likes_count: number | null
@@ -913,6 +914,7 @@ export type Database = {
           clones_count?: number | null
           created_at?: string
           department?: string | null
+          flow_type?: string
           id?: string
           is_featured?: boolean | null
           likes_count?: number | null
@@ -934,6 +936,7 @@ export type Database = {
           clones_count?: number | null
           created_at?: string
           department?: string | null
+          flow_type?: string
           id?: string
           is_featured?: boolean | null
           likes_count?: number | null
@@ -5430,6 +5433,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_published_apis: {
+        Row: {
+          allowed_origins: string[] | null
+          auth_type: string
+          avg_latency_ms: number | null
+          created_at: string
+          description: string | null
+          edges: Json
+          error_rate: number | null
+          id: string
+          input_schema: Json | null
+          is_active: boolean
+          name: string
+          nodes: Json
+          output_schema: Json | null
+          rate_limit: number
+          slug: string
+          total_calls: number
+          updated_at: string
+          user_id: string
+          version: string
+          workflow_id: string
+        }
+        Insert: {
+          allowed_origins?: string[] | null
+          auth_type?: string
+          avg_latency_ms?: number | null
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          error_rate?: number | null
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean
+          name: string
+          nodes?: Json
+          output_schema?: Json | null
+          rate_limit?: number
+          slug: string
+          total_calls?: number
+          updated_at?: string
+          user_id: string
+          version?: string
+          workflow_id: string
+        }
+        Update: {
+          allowed_origins?: string[] | null
+          auth_type?: string
+          avg_latency_ms?: number | null
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          error_rate?: number | null
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean
+          name?: string
+          nodes?: Json
+          output_schema?: Json | null
+          rate_limit?: number
+          slug?: string
+          total_calls?: number
+          updated_at?: string
+          user_id?: string
+          version?: string
+          workflow_id?: string
+        }
+        Relationships: []
       }
       workflow_runs: {
         Row: {
