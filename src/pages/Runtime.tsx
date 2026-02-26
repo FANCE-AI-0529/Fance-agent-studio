@@ -354,9 +354,12 @@ function createMCPConfirmAction(
 const Runtime = () => {
   const { user } = useAuth();
   const { mode } = useAppModeStore();
+  const [urlSearchParams] = useState(() => new URLSearchParams(window.location.search));
+  const agentIdFromUrl = urlSearchParams.get('agentId');
   
   const { data: deployedAgents = [], isLoading: isLoadingAgents } = useDeployedAgents();
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [agentIdApplied, setAgentIdApplied] = useState(false);
   
   // Consumer mode - render simplified runtime
   if (mode === 'consumer') {
@@ -514,6 +517,17 @@ const Runtime = () => {
     }
   }, [chatSession, isLoadingSession, user, localMessages.length, selectedAgent]);
 
+  // Auto-select agent from URL parameter (e.g., /runtime?agentId=xxx)
+  useEffect(() => {
+    if (agentIdFromUrl && !agentIdApplied && deployedAgents.length > 0 && !isLoadingAgents) {
+      const target = deployedAgents.find(a => a.id === agentIdFromUrl);
+      if (target) {
+        handleAgentChange(target);
+        setAgentIdApplied(true);
+      }
+    }
+  }, [agentIdFromUrl, agentIdApplied, deployedAgents, isLoadingAgents]);
+
   // Reset messages when agent changes and load existing session
   const handleAgentChange = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
@@ -654,7 +668,7 @@ const Runtime = () => {
     const response: Message = {
       id: Date.now().toString(),
       role: "assistant",
-      content: scenario.mockResponse,
+      content: `> 🎭 **演示模式** — 此为 MPLP 流程演示，非真实执行结果\n\n${scenario.mockResponse}`,
       timestamp: new Date(),
       skill: scenario.skillName,
       status: "idle",

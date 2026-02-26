@@ -97,7 +97,10 @@ const Index = () => {
             </p>
           </div>
           {hasAgents && (
-            <Button onClick={() => navigate("/runtime")} className="gap-2">
+            <Button onClick={() => {
+              const lastDeployed = myAgents.find(a => a.status === 'deployed');
+              navigate(lastDeployed ? `/runtime?agentId=${lastDeployed.id}` : "/runtime");
+            }} className="gap-2">
               <Play className="h-4 w-4" />
               继续对话
             </Button>
@@ -179,7 +182,7 @@ const Index = () => {
                     >
                       <div className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
                         <Link
-                          to={agent.status === 'deployed' ? '/runtime' : `/builder/${agent.id}`}
+                          to={agent.status === 'deployed' ? `/runtime?agentId=${agent.id}` : `/builder/${agent.id}`}
                           className="flex items-center gap-4 flex-1 min-w-0"
                         >
                           <div className="w-12 h-12 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">

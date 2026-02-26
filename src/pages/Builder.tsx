@@ -1893,7 +1893,7 @@ const Builder = () => {
                 variant="ghost"
                 onClick={() => {
                   setShowDeploySuccessDialog(false);
-                  navigate("/runtime");
+                  navigate(currentAgentId ? `/runtime?agentId=${currentAgentId}` : "/runtime");
                 }}
               >
                 稍后设置，前往运行环境
