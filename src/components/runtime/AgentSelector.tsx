@@ -1,15 +1,15 @@
 import { Bot, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Agent } from "@/hooks/useAgents";
 import { AgentAvatarDisplay, AgentAvatar, getAvatarIcon, getAvatarColor } from "@/components/builder/AgentAvatarPicker";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
 
 interface AgentSelectorProps {
   agents: Agent[];
@@ -46,13 +46,19 @@ export function AgentSelector({
   onSelectAgent,
   isLoading,
 }: AgentSelectorProps) {
+  const [open, setOpen] = useState(false);
   const displayAgent = selectedAgent || defaultAgent;
   const deployedAgents = agents.filter(a => a.status === "deployed");
   const currentAvatar = selectedAgent ? getAgentAvatar(selectedAgent) : defaultAgent.avatar;
 
+  const handleSelect = (agent: Agent | null) => {
+    onSelectAgent(agent);
+    setOpen(false);
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           variant="ghost"
           className="h-auto p-2 gap-3 hover:bg-accent/50"
@@ -74,76 +80,73 @@ export function AgentSelector({
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground ml-2" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72 z-50 bg-card border border-border shadow-lg">
-        <div className="px-3 py-2 border-b border-border">
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 p-0">
+        <div className="px-4 py-3 border-b border-border">
           <p className="text-xs text-muted-foreground">
-            选择一个智能体开始对话，智能体会根据您的指令自动执行任务
+            选择一个智能体开始对话
           </p>
         </div>
-        <DropdownMenuItem
-          onClick={() => onSelectAgent(null)}
-          className="flex items-start gap-3 p-3"
-        >
-          <AgentAvatarDisplay avatar={defaultAgent.avatar} size="sm" />
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm">Agent Studio 助手</div>
-            <div className="text-xs text-muted-foreground">平台向导 · 智能体构建顾问</div>
-            <div className="text-[10px] text-muted-foreground mt-1">
-              帮助您了解平台功能、构建智能体、探索技能商店
-            </div>
+        <ScrollArea className="max-h-[320px]">
+          <div className="p-1">
+            {/* Default agent */}
+            <button
+              onClick={() => handleSelect(null)}
+              className="w-full flex items-start gap-3 p-3 rounded-md hover:bg-accent/50 transition-colors text-left"
+            >
+              <AgentAvatarDisplay avatar={defaultAgent.avatar} size="sm" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm">Agent Studio 助手</div>
+                <div className="text-xs text-muted-foreground">平台向导 · 智能体构建顾问</div>
+                <div className="text-[10px] text-muted-foreground mt-1">
+                  帮助您了解平台功能、构建智能体
+                </div>
+              </div>
+              {!selectedAgent && (
+                <Badge variant="secondary" className="text-[10px] flex-shrink-0">当前</Badge>
+              )}
+            </button>
+
+            {deployedAgents.length > 0 && (
+              <>
+                <div className="px-3 py-2 mt-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    已部署的 Agent
+                  </span>
+                </div>
+                {deployedAgents.map((agent) => {
+                  const agentAvatar = getAgentAvatar(agent);
+                  return (
+                    <button
+                      key={agent.id}
+                      onClick={() => handleSelect(agent)}
+                      className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-accent/50 transition-colors text-left"
+                    >
+                      <AgentAvatarDisplay avatar={agentAvatar} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{agent.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {agent.department || "通用助手"}
+                        </div>
+                      </div>
+                      {selectedAgent?.id === agent.id && (
+                        <Badge variant="secondary" className="text-[10px]">当前</Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </>
+            )}
+
+            {deployedAgents.length === 0 && (
+              <div className="px-3 py-6 text-center">
+                <p className="text-xs text-muted-foreground">暂无已部署的 Agent</p>
+                <p className="text-xs text-muted-foreground mt-1">在 Builder 中创建并部署</p>
+              </div>
+            )}
           </div>
-          {!selectedAgent && (
-            <Badge variant="secondary" className="text-[10px] flex-shrink-0">当前</Badge>
-          )}
-        </DropdownMenuItem>
-
-        {deployedAgents.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5">
-              <span className="text-xs font-medium text-muted-foreground">
-                已部署的 Agent
-              </span>
-            </div>
-            {deployedAgents.map((agent) => {
-              const agentAvatar = getAgentAvatar(agent);
-              return (
-                <DropdownMenuItem
-                  key={agent.id}
-                  onClick={() => onSelectAgent(agent)}
-                  className="flex items-center gap-3 p-3"
-                >
-                  <AgentAvatarDisplay avatar={agentAvatar} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{agent.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {agent.department || "通用助手"}
-                    </div>
-                  </div>
-                  {selectedAgent?.id === agent.id && (
-                    <Badge variant="secondary" className="text-[10px]">当前</Badge>
-                  )}
-                </DropdownMenuItem>
-              );
-            })}
-          </>
-        )}
-
-        {deployedAgents.length === 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="px-3 py-4 text-center">
-              <p className="text-xs text-muted-foreground">
-                暂无已部署的 Agent
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                在 Builder 中创建并部署 Agent
-              </p>
-            </div>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
   );
 }
