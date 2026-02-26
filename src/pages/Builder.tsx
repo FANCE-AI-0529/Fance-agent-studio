@@ -100,6 +100,8 @@ import { MCPActionDragItem, InterventionDragItem } from "@/components/builder/MC
 import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
 import { ManifestPreview } from "@/components/builder/ManifestPreview";
 import { BuilderWizard } from "@/components/builder/BuilderWizard";
+import { BuilderToolbar } from "@/components/builder/BuilderToolbar";
+import { BuilderDialogs } from "@/components/builder/BuilderDialogs";
 import { ConversationalCreator } from "@/components/builder/ConversationalCreator";
 import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
 import { WebhookPanel } from "@/components/builder/WebhookPanel";
@@ -1269,394 +1271,59 @@ const Builder = () => {
 
         {/* Center - Canvas */}
         <div className="flex-1 flex flex-col min-w-0 relative">
-          {/* Toolbar */}
-          <div className="h-12 px-3 flex items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-              {/* Return to Chat button - only show if came from Consumer mode */}
-              {isFromConsumerMode && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                      onClick={() => {
-                        const returnUrl = ejectContext?.returnUrl || '/runtime';
-                        returnToConsumer(returnUrl);
-                        setTimeout(() => navigate(returnUrl), 800);
-                      }}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      返回对话
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>返回 Consumer 模式</TooltipContent>
-                </Tooltip>
-              )}
-
-              {isFromConsumerMode && <div className="h-5 w-px bg-border" />}
-
-              {/* Left panel toggle */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-                  >
-                    {leftPanelCollapsed ? (
-                      <ChevronRight className="h-4 w-4" />
-                    ) : (
-                      <ChevronLeft className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {leftPanelCollapsed ? "显示能力市场" : "隐藏能力市场"}
-                </TooltipContent>
-              </Tooltip>
-
-              <div className="h-5 w-px bg-border" />
-
-              <div className="flex items-center gap-2">
-                <Brain className="h-4 w-4 text-primary" />
-                <span className="font-medium text-sm">
-                  {agentConfig.name || "智能体构建器"}
-                </span>
-              </div>
-
-              {currentAgentId && (
-                <Badge variant="secondary" className="text-[10px]">
-                  已保存
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {(draggingSkill || draggingKnowledge) && (
-                <Badge className="text-xs bg-primary/10 text-primary border-0 animate-pulse">
-                  拖拽中: {draggingSkill?.name || draggingKnowledge?.name}
-                </Badge>
-              )}
-
-              <Badge variant="outline" className="text-xs">
-                {addedSkills.length} 技能
-              </Badge>
-              {mountedKnowledgeBases.length > 0 && (
-                <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-600">
-                  {mountedKnowledgeBases.length} 知识库
-                </Badge>
-              )}
-
-              <div className="h-5 w-px bg-border" />
-
-              {/* Creation mode buttons */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowVoiceCreator(true)}
-                  >
-                    <Mic className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>语音创建</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowConversational(true)}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>对话创建</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowWizard(true)}
-                  >
-                    <Wand2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>向导模式</TooltipContent>
-              </Tooltip>
-
-              {/* AI Generator Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="gap-1.5 h-8"
-                    onClick={() => setShowAIGenerator(true)}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    AI生成
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>AI一键生成完整智能体</TooltipContent>
-              </Tooltip>
-
-              {/* Debug Mode Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={isDebugMode ? "default" : "ghost"}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => {
-                      setDebugMode(!isDebugMode);
-                      if (!isDebugMode) setShowDebugPanel(true);
-                    }}
-                  >
-                    <Bug className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>调试模式</TooltipContent>
-              </Tooltip>
-
-              {/* Verification Test Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={showVerificationPanel ? "default" : "ghost"}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowVerificationPanel(true)}
-                  >
-                    <FlaskConical className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>验证测试</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleFitView}
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>适应画布</TooltipContent>
-              </Tooltip>
-
-              {/* Live Test Button */}
-              {agentConfig.name && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={showLiveTest ? "default" : "ghost"}
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setShowLiveTest(!showLiveTest)}
-                    >
-                      <TestTube2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>实时测试</TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* API Management Button */}
-              {currentAgentId && existingAgent?.status === 'deployed' && (
-                <>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowApiPanel(true)}
-                      >
-                        <Key className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>API 管理</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowWebhookPanel(true)}
-                      >
-                        <Webhook className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Webhook 管理</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowAlertPanel(true)}
-                      >
-                        <Bell className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>告警管理</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowLLMConfig(true)}
-                      >
-                        <Cpu className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>大模型配置</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowStatsPanel(true)}
-                      >
-                        <BarChart3 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>API 统计</TooltipContent>
-                  </Tooltip>
-
-                  {/* Monitoring Dashboard */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={showMonitoringPanel ? "default" : "ghost"}
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowMonitoringPanel(true)}
-                      >
-                        <Activity className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>监控仪表板</TooltipContent>
-                  </Tooltip>
-
-                  {/* Evaluation Center */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={showEvaluationPanel ? "default" : "ghost"}
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowEvaluationPanel(true)}
-                      >
-                        <Target className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>评估中心</TooltipContent>
-                  </Tooltip>
-                </>
-              )}
-
-              {!user && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/auth")}
-                  className="gap-1.5 h-8 text-muted-foreground"
-                >
-                  <LogIn className="h-3.5 w-3.5" />
-                  登录
-                </Button>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving || !agentConfig.name.trim()}
-                className="gap-1.5 h-8"
-              >
-                {isSaving ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Save className="h-3.5 w-3.5" />
-                )}
-                保存
-              </Button>
-
-              {/* Run Workflow Button */}
-              <Button
-                size="sm"
-                className="gap-1.5 h-8"
-                disabled={workflowExecution.status === "running" || nodes.length === 0}
-                onClick={() => setShowRunDialog(true)}
-              >
-                {workflowExecution.status === "running" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Play className="h-3.5 w-3.5" />
-                )}
-                {workflowExecution.status === "running" ? "运行中" : "运行"}
-              </Button>
-
-              {/* Run History Toggle */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={showRunHistory ? "secondary" : "ghost"}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowRunHistory(!showRunHistory)}
-                  >
-                    <HistoryIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>运行历史</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-                  >
-                    {rightPanelCollapsed ? (
-                      <ChevronLeft className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {rightPanelCollapsed ? "显示配置面板" : "隐藏配置面板"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
+          {/* Toolbar - Progressive 3-tier disclosure */}
+          <BuilderToolbar
+            agentConfig={agentConfig}
+            currentAgentId={currentAgentId}
+            isDeployed={existingAgent?.status === 'deployed'}
+            addedSkills={addedSkills}
+            mountedKnowledgeBases={mountedKnowledgeBases}
+            draggingSkill={draggingSkill}
+            draggingKnowledge={draggingKnowledge}
+            leftPanelCollapsed={leftPanelCollapsed}
+            rightPanelCollapsed={rightPanelCollapsed}
+            isFromConsumerMode={isFromConsumerMode}
+            ejectContext={ejectContext}
+            isSaving={isSaving}
+            isDebugMode={isDebugMode}
+            isWorkflowRunning={workflowExecution.status === "running"}
+            nodeCount={nodes.length}
+            showLiveTest={showLiveTest}
+            showRunHistory={showRunHistory}
+            showVerificationPanel={showVerificationPanel}
+            showMonitoringPanel={showMonitoringPanel}
+            showEvaluationPanel={showEvaluationPanel}
+            user={user}
+            onToggleLeftPanel={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+            onToggleRightPanel={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+            onReturnToConsumer={() => {
+              const returnUrl = ejectContext?.returnUrl || '/runtime';
+              returnToConsumer(returnUrl);
+              setTimeout(() => navigate(returnUrl), 800);
+            }}
+            onSave={handleSave}
+            onShowWizard={() => setShowWizard(true)}
+            onShowConversational={() => setShowConversational(true)}
+            onShowVoiceCreator={() => setShowVoiceCreator(true)}
+            onShowAIGenerator={() => setShowAIGenerator(true)}
+            onToggleDebug={() => {
+              setDebugMode(!isDebugMode);
+              if (!isDebugMode) setShowDebugPanel(true);
+            }}
+            onShowVerification={() => setShowVerificationPanel(true)}
+            onFitView={handleFitView}
+            onToggleLiveTest={() => setShowLiveTest(!showLiveTest)}
+            onShowApiPanel={() => setShowApiPanel(true)}
+            onShowWebhookPanel={() => setShowWebhookPanel(true)}
+            onShowAlertPanel={() => setShowAlertPanel(true)}
+            onShowLLMConfig={() => setShowLLMConfig(true)}
+            onShowStatsPanel={() => setShowStatsPanel(true)}
+            onShowMonitoring={() => setShowMonitoringPanel(true)}
+            onShowEvaluation={() => setShowEvaluationPanel(true)}
+            onShowRunDialog={() => setShowRunDialog(true)}
+            onToggleRunHistory={() => setShowRunHistory(!showRunHistory)}
+            onNavigateToAuth={() => navigate("/auth")}
+          />
 
           {/* Debug Toolbar */}
           {isDebugMode && (
@@ -1835,13 +1502,43 @@ const Builder = () => {
           </div>
         )}
 
-        {/* Workflow Run Dialog */}
-        <WorkflowRunDialog
-          open={showRunDialog}
-          onOpenChange={setShowRunDialog}
-          isRunning={workflowExecution.status === "running"}
+        <BuilderDialogs
+          agentConfig={agentConfig}
+          currentAgentId={currentAgentId}
+          showStatsPanel={showStatsPanel}
+          setShowStatsPanel={setShowStatsPanel}
+          showDeploySuccessDialog={showDeploySuccessDialog}
+          setShowDeploySuccessDialog={setShowDeploySuccessDialog}
+          onGoToRuntime={() => {
+            setShowDeploySuccessDialog(false);
+            navigate(currentAgentId ? `/hive?tab=runtime&agentId=${currentAgentId}` : "/hive?tab=runtime");
+          }}
+          onSetupApi={() => {
+            setShowDeploySuccessDialog(false);
+            setShowApiPanel(true);
+          }}
+          showDeleteConfirm={showDeleteConfirm}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          onDeleteAgent={handleDeleteAgent}
+          isDeleting={isDeleting}
+          showDeployConfirmDialog={showDeployConfirmDialog}
+          setShowDeployConfirmDialog={setShowDeployConfirmDialog}
+          onDeploy={async () => {
+            setShowDeployConfirmDialog(false);
+            await handleDeploy();
+          }}
+          showVerificationPanel={showVerificationPanel}
+          setShowVerificationPanel={setShowVerificationPanel}
+          showMonitoringPanel={showMonitoringPanel}
+          setShowMonitoringPanel={setShowMonitoringPanel}
+          showEvaluationPanel={showEvaluationPanel}
+          setShowEvaluationPanel={setShowEvaluationPanel}
+          showRunDialog={showRunDialog}
+          setShowRunDialog={setShowRunDialog}
+          isWorkflowRunning={workflowExecution.status === "running"}
           nodes={nodes}
-          onRun={(inputs) => {
+          edges={edges}
+          onRunWorkflow={(inputs) => {
             const wfId = currentAgentId || "draft-" + Date.now();
             workflowExecution.executeWorkflow(wfId, nodes, edges, inputs);
             setShowRunDialog(false);
@@ -1856,7 +1553,6 @@ const Builder = () => {
           availableSkills={availableSkillsForWizard}
         />
 
-        {/* Conversational Creator (Chat Mode) */}
         <ConversationalCreator
           isOpen={showConversational}
           onClose={() => setShowConversational(false)}
@@ -1864,7 +1560,6 @@ const Builder = () => {
           useVoice={false}
         />
 
-        {/* Voice Creator Mode */}
         <ConversationalCreator
           isOpen={showVoiceCreator}
           onClose={() => setShowVoiceCreator(false)}
@@ -1872,7 +1567,6 @@ const Builder = () => {
           useVoice={true}
         />
 
-        {/* Live Test Panel */}
         {showLiveTest && (
           <div className="fixed bottom-4 right-4 z-50">
             <LiveTestPanel
@@ -1886,14 +1580,12 @@ const Builder = () => {
           </div>
         )}
 
-        {/* Manifest Preview Modal */}
         <ManifestPreview
           isOpen={showManifest}
           onClose={() => setShowManifest(false)}
           manifest={showManifest ? generateManifest() : null}
         />
 
-        {/* API Management Panel */}
         <AgentApiPanel
           agentId={currentAgentId}
           agentName={agentConfig.name}
@@ -1901,7 +1593,6 @@ const Builder = () => {
           onClose={() => setShowApiPanel(false)}
         />
 
-        {/* Webhook Panel */}
         <WebhookPanel
           agentId={currentAgentId}
           agentName={agentConfig.name}
@@ -1909,7 +1600,6 @@ const Builder = () => {
           onClose={() => setShowWebhookPanel(false)}
         />
 
-        {/* Alert Panel */}
         <ApiAlertPanel
           agentId={currentAgentId}
           agentName={agentConfig.name}
@@ -1917,7 +1607,6 @@ const Builder = () => {
           onClose={() => setShowAlertPanel(false)}
         />
 
-        {/* LLM Config Panel */}
         <LLMConfigPanel
           agentId={currentAgentId}
           agentName={agentConfig.name}
@@ -1925,115 +1614,10 @@ const Builder = () => {
           onClose={() => setShowLLMConfig(false)}
         />
 
-        {/* API Stats Dialog */}
-        {showStatsPanel && currentAgentId && (
-          <Dialog open={showStatsPanel} onOpenChange={setShowStatsPanel}>
-            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>API 调用统计</DialogTitle>
-              </DialogHeader>
-              <ApiStatsDashboard
-                agentId={currentAgentId}
-                apiKeyIds={[]}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Deploy Success Dialog */}
-        <Dialog open={showDeploySuccessDialog} onOpenChange={setShowDeploySuccessDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-full bg-status-success/10 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-status-success" />
-                </div>
-                <div>
-                  <DialogTitle>智能体部署成功！</DialogTitle>
-                  <DialogDescription className="mt-1">
-                    「{agentConfig.name}」已成功部署到云端
-                  </DialogDescription>
-                </div>
-              </div>
-            </DialogHeader>
-            <div className="py-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                下一步，您可以选择：
-              </p>
-              <div className="space-y-3">
-                <Button
-                  className="w-full justify-start gap-3"
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeploySuccessDialog(false);
-                    setShowApiPanel(true);
-                  }}
-                >
-                  <Key className="h-4 w-4 text-primary" />
-                  <div className="text-left">
-                    <div className="font-medium">生成 API 密钥</div>
-                    <div className="text-xs text-muted-foreground">创建密钥以便通过 API 调用智能体</div>
-                  </div>
-                </Button>
-                <Button
-                  className="w-full justify-start gap-3"
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeploySuccessDialog(false);
-                    navigate("/api-hub");
-                  }}
-                >
-                  <FileCode className="h-4 w-4 text-cognitive" />
-                  <div className="text-left">
-                    <div className="font-medium">查看 API 文档</div>
-                    <div className="text-xs text-muted-foreground">获取接口说明和代码示例</div>
-                  </div>
-                </Button>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowDeploySuccessDialog(false);
-                  navigate(currentAgentId ? `/hive?tab=runtime&agentId=${currentAgentId}` : "/hive?tab=runtime");
-                }}
-              >
-                稍后设置，前往运行环境
-                <Play className="h-4 w-4 ml-2" />
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>确定删除此智能体？</AlertDialogTitle>
-              <AlertDialogDescription>
-                此操作将永久删除「{agentConfig.name}」及其所有配置和关联数据。此操作不可撤销。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>取消</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={handleDeleteAgent}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "删除中..." : "确认删除"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Enhanced AI Workflow Generator Modal */}
         <EnhancedAIGenerator
           isOpen={showAIGenerator}
           onClose={() => {
             setShowAIGenerator(false);
-            // Clear inspiration state when closing
             setInspirationDescription(null);
             setAutoGenerateFromInspiration(false);
             setInspirationTitle(null);
@@ -2041,63 +1625,23 @@ const Builder = () => {
           initialDescription={inspirationDescription}
           autoGenerate={autoGenerateFromInspiration}
           inspirationTitle={inspirationTitle}
-          onApply={async (nodes, edges, config, knowledgeBases, result) => {
-            // Update canvas nodes and edges
-            setNodes(nodes);
-            setEdges(edges);
-            
-            // Update agent config (preserve inspiration title if set)
+          onApply={async (generatedNodes, generatedEdges, config, knowledgeBases, result) => {
+            setNodes(generatedNodes);
+            setEdges(generatedEdges);
             setAgentConfig(prev => ({
               ...config,
               name: inspirationTitle || config.name,
               department: prev.department || config.department,
             }));
-            
-            // Mount knowledge bases if provided
             knowledgeBases?.forEach(kb => addKnowledgeBase(kb));
-            
-            // Show auto-fix notification if interventions were added
             if (result?.complianceReport?.autoFixedOperations?.length > 0) {
-              toast({
-                title: "已自动添加安全确认",
-                description: `为了安全，系统已为 ${result.complianceReport.autoFixedOperations.length} 个高危操作添加了人工审批流程`,
-                duration: 6000,
-              });
-            } else if (result?.riskAssessment?.overallRisk === 'high') {
-              // Show risk warning if high risk
-              toast({
-                title: "检测到高风险操作",
-                description: `已自动添加 ${result.interventions.length} 个干预节点`,
-                variant: "destructive",
-              });
+              toast({ title: "已自动添加安全确认", description: `为 ${result.complianceReport.autoFixedOperations.length} 个高危操作添加了审批流程`, duration: 6000 });
             }
-            
-            // Fit view after a short delay
-            setTimeout(() => {
-              reactFlowInstance?.fitView({ padding: 0.2 });
-            }, 100);
-            
-            toast({
-              title: "工作流已生成",
-              description: `已创建 ${nodes.length} 个节点和 ${edges.length} 条连线`,
-            });
-            
-            // If from inspiration, auto-save and show deploy confirmation
+            setTimeout(() => { reactFlowInstance?.fitView({ padding: 0.2 }); }, 100);
+            toast({ title: "工作流已生成", description: `已创建 ${generatedNodes.length} 个节点` });
             if (autoGenerateFromInspiration && user) {
               setTimeout(async () => {
-                try {
-                  await handleSave();
-                  toast({
-                    title: "智能体已保存",
-                    description: "基于灵感生成的智能体已保存到您的账户",
-                  });
-                  // Show deploy confirmation dialog
-                  setShowDeployConfirmDialog(true);
-                } catch (err) {
-                  console.error("Auto-save failed:", err);
-                }
-                
-                // Clear inspiration state
+                try { await handleSave(); setShowDeployConfirmDialog(true); } catch {}
                 setInspirationDescription(null);
                 setAutoGenerateFromInspiration(false);
                 setInspirationTitle(null);
@@ -2106,104 +1650,6 @@ const Builder = () => {
           }}
         />
 
-        {/* Deploy Confirmation Dialog (after inspiration generation) */}
-        <Dialog open={showDeployConfirmDialog} onOpenChange={setShowDeployConfirmDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-full bg-status-success/10 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-status-success" />
-                </div>
-                <div>
-                  <DialogTitle>智能体生成完成！</DialogTitle>
-                  <DialogDescription className="mt-1">
-                    「{agentConfig.name}」已成功创建并保存
-                  </DialogDescription>
-                </div>
-              </div>
-            </DialogHeader>
-            <div className="py-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                是否立即部署使其可以真实使用？
-              </p>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-status-success" />
-                  <span>画布已显示完整工作流</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-status-success" />
-                  <span>Manus 规划内核已集成</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-status-success" />
-                  <span>智能体配置已保存</span>
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setShowDeployConfirmDialog(false)}>
-                稍后部署
-              </Button>
-              <Button 
-                onClick={async () => {
-                  setShowDeployConfirmDialog(false);
-                  await handleDeploy();
-                }}
-                className="gap-2"
-              >
-                <Play className="h-4 w-4" />
-                立即部署
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Verification Test Panel Dialog */}
-        <Dialog open={showVerificationPanel} onOpenChange={setShowVerificationPanel}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>一键生成链路验证</DialogTitle>
-              <DialogDescription>
-                验证语义搜索、拓扑生成、自动布线和合规注入的完整流程
-              </DialogDescription>
-            </DialogHeader>
-            <GenerationVerificationPanel />
-          </DialogContent>
-        </Dialog>
-
-        {/* Monitoring Dashboard Dialog */}
-        <Dialog open={showMonitoringPanel} onOpenChange={setShowMonitoringPanel}>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Agent 监控仪表板</DialogTitle>
-              <DialogDescription>
-                实时监控 Agent 运行状态、调用统计和健康指标
-              </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="max-h-[65vh]">
-              <AgentMonitoringDashboard agentId={currentAgentId} />
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-
-        {/* Evaluation Center Dialog */}
-        <Dialog open={showEvaluationPanel} onOpenChange={setShowEvaluationPanel}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden p-0">
-            <EvaluationCenter 
-              agentId={currentAgentId || ''}
-              agentConfig={{
-                name: agentConfig.name,
-                systemPrompt: agentConfig.systemPrompt,
-                department: agentConfig.department,
-                model: agentConfig.model,
-              }}
-              onClose={() => setShowEvaluationPanel(false)}
-            />
-          </DialogContent>
-        </Dialog>
-
-        {/* Node Config Drawer */}
         <NodeConfigDrawer
           selectedNode={configDrawerNode}
           onClose={() => setConfigDrawerNode(null)}
