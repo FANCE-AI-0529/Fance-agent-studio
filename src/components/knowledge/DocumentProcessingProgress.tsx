@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { CheckCircle2, Loader2, Circle } from "lucide-react";
+import { CheckCircle2, Loader2, Circle, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DocumentProcessingProgressProps {
   status: string;
+  chunksCount?: number;
 }
 
 const STAGES = [
@@ -13,52 +13,26 @@ const STAGES = [
   { id: "store", label: "入库" },
 ];
 
-export function DocumentProcessingProgress({ status }: DocumentProcessingProgressProps) {
-  const [currentStage, setCurrentStage] = useState(0);
-  const [stageProgress, setStageProgress] = useState<number[]>([0, 0, 0, 0]);
+/**
+ * 根据文档真实状态和切片数推断当前阶段
+ */
+function getStageFromStatus(status: string, chunksCount: number): number {
+  if (status === "indexed") return STAGES.length;
+  if (status === "failed") return -1;
+  if (status === "pending") return 0;
+  // processing: infer from chunks_count
+  if (chunksCount > 0) return 3; // embedding/storing phase
+  return 1; // parsing/chunking phase
+}
 
-  useEffect(() => {
-    if (status === "processing" || status === "pending") {
-      // Simulate progress through stages
-      const interval = setInterval(() => {
-        setCurrentStage((prev) => {
-          if (prev < STAGES.length - 1) {
-            return prev + 1;
-          }
-          clearInterval(interval);
-          return prev;
-        });
-      }, 1500);
-
-      // Simulate stage completion
-      const progressInterval = setInterval(() => {
-        setStageProgress((prev) => {
-          const newProgress = [...prev];
-          for (let i = 0; i <= currentStage && i < STAGES.length; i++) {
-            if (newProgress[i] < 100) {
-              newProgress[i] = Math.min(newProgress[i] + 25, 100);
-            }
-          }
-          return newProgress;
-        });
-      }, 300);
-
-      return () => {
-        clearInterval(interval);
-        clearInterval(progressInterval);
-      };
-    } else if (status === "indexed") {
-      setStageProgress([100, 100, 100, 100]);
-      setCurrentStage(STAGES.length);
-    }
-  }, [status, currentStage]);
+export function DocumentProcessingProgress({ status, chunksCount = 0 }: DocumentProcessingProgressProps) {
+  const currentStage = getStageFromStatus(status, chunksCount);
 
   const getStageStatus = (index: number) => {
     if (status === "indexed") return "complete";
-    if (status === "failed") return index <= currentStage ? "error" : "pending";
-    if (stageProgress[index] === 100) return "complete";
-    if (index === currentStage) return "active";
+    if (status === "failed") return index <= Math.max(currentStage, 0) ? "error" : "pending";
     if (index < currentStage) return "complete";
+    if (index === currentStage) return "active";
     return "pending";
   };
 
@@ -83,6 +57,8 @@ export function DocumentProcessingProgress({ status }: DocumentProcessingProgres
                   <CheckCircle2 className="h-4 w-4 text-status-executing" />
                 ) : stageStatus === "active" ? (
                   <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                ) : stageStatus === "error" ? (
+                  <AlertCircle className="h-4 w-4 text-destructive" />
                 ) : (
                   <Circle className="h-3 w-3 text-muted-foreground" />
                 )}
@@ -92,6 +68,7 @@ export function DocumentProcessingProgress({ status }: DocumentProcessingProgres
                   "text-[10px] mt-1 transition-colors",
                   stageStatus === "complete" && "text-status-executing",
                   stageStatus === "active" && "text-primary font-medium",
+                  stageStatus === "error" && "text-destructive",
                   stageStatus === "pending" && "text-muted-foreground"
                 )}
               >
@@ -103,8 +80,10 @@ export function DocumentProcessingProgress({ status }: DocumentProcessingProgres
               <div
                 className={cn(
                   "w-8 h-0.5 mx-1 transition-colors",
-                  stageProgress[index] === 100
+                  getStageStatus(index) === "complete"
                     ? "bg-status-executing"
+                    : getStageStatus(index) === "error"
+                    ? "bg-destructive"
                     : "bg-muted"
                 )}
               />

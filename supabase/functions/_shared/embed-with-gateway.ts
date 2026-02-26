@@ -191,7 +191,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * 最大允许 AI 解析的文件大小 (3MB)
  * 超过此大小的文件将直接使用正则解析
  */
-const MAX_AI_PARSE_SIZE = 3 * 1024 * 1024;
+const MAX_AI_PARSE_SIZE = 10 * 1024 * 1024;
 
 /**
  * 使用 AI 多模态能力解析 PDF 文档

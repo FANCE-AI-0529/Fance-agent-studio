@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Settings2, Loader2 } from "lucide-react";
+import { Settings2, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +53,10 @@ export function EditKnowledgeBaseDialog({
 
   const updateKnowledgeBase = useUpdateKnowledgeBase();
 
-  // Populate form when knowledgeBase changes
+  // Track original chunk params to detect changes
+  const [originalChunkSize, setOriginalChunkSize] = useState(512);
+  const [originalChunkOverlap, setOriginalChunkOverlap] = useState(50);
+
   useEffect(() => {
     if (knowledgeBase) {
       setName(knowledgeBase.name);
@@ -60,10 +64,14 @@ export function EditKnowledgeBaseDialog({
       setDepartment(knowledgeBase.department || "general");
       setChunkSize(knowledgeBase.chunk_size || 512);
       setChunkOverlap(knowledgeBase.chunk_overlap || 50);
+      setOriginalChunkSize(knowledgeBase.chunk_size || 512);
+      setOriginalChunkOverlap(knowledgeBase.chunk_overlap || 50);
       const meta = knowledgeBase.metadata as Record<string, unknown> | null;
       setEnableEntityExtraction(!!meta?.enableEntityExtraction);
     }
   }, [knowledgeBase]);
+
+  const chunkParamsChanged = chunkSize !== originalChunkSize || chunkOverlap !== originalChunkOverlap;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +158,7 @@ export function EditKnowledgeBaseDialog({
               step={64}
             />
             <p className="text-xs text-muted-foreground">
-              修改分块大小仅影响后续新增文档，已索引的文档不会自动重新分块
+              修改分块参数将影响后续新增文档
             </p>
           </div>
 
@@ -167,6 +175,15 @@ export function EditKnowledgeBaseDialog({
               step={16}
             />
           </div>
+
+          {chunkParamsChanged && (
+            <Alert variant="destructive" className="bg-destructive/5 border-destructive/30">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                更改分块参数后，建议对已有文档重新索引以获得最佳检索效果
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
             <div className="space-y-0.5">
