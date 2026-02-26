@@ -7,6 +7,7 @@ import { spawn } from 'child_process';
 // import { applySkill } from './apply.js'; // 引用 NanoClaw 原生技能引擎
 import path from 'path';
 import fs from 'fs';
+import swarmRoutes from './swarm-routes.js';
 
 const app = express();
 app.use(cors());
@@ -23,6 +24,9 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
 };
 
 app.use(authMiddleware);
+
+// ─── Swarm 批量编排路由 ───
+app.use(swarmRoutes);
 
 // ─── 1. 健康检查 ───
 app.get('/health', (_req, res) => {

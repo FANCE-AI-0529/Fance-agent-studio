@@ -67,6 +67,9 @@ import { ManusStatusBadge } from "@/components/runtime/ManusStatusIndicator";
 import { ImmersiveHeader } from "@/components/runtime/ImmersiveHeader";
 import { TaskSchedulerPanel } from "@/components/runtime/TaskSchedulerPanel";
 import { ExecutionHistoryContent } from "@/components/runtime/ExecutionHistoryContent";
+import { SwarmStatusPanel } from "@/components/runtime/SwarmStatusPanel";
+import { useSwarmStore } from "@/stores/swarmStore";
+import { useSwarmRunner } from "@/hooks/useSwarmRunner";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
 import { useManusKernel } from "@/hooks/useManusKernel";
 import { useNanoClawExecutor } from "@/hooks/useNanoClawExecutor";
@@ -412,6 +415,10 @@ const Runtime = () => {
   // NanoClaw executor
   const nanoClawExecutor = useNanoClawExecutor();
   const runtimeStore = useRuntimeStore();
+  
+  // Swarm runner
+  const swarmRunner = useSwarmRunner();
+  const focusedSwarm = useSwarmStore((s) => s.getFocusedSwarm());
   
   // File upload hook
   const { files: pendingFiles, isUploading, addFiles, removeFile, clearFiles } = useFileUpload();
@@ -1627,6 +1634,19 @@ const Runtime = () => {
                   renderHistory={() => (
                     <ExecutionHistoryContent />
                   )}
+                  renderSwarm={() =>
+                    focusedSwarm ? (
+                      <SwarmStatusPanel
+                        state={focusedSwarm}
+                        onPauseMember={(memberId) => swarmRunner.pauseMember(focusedSwarm.swarmId, memberId)}
+                        onResumeMember={(memberId) => swarmRunner.resumeMember(focusedSwarm.swarmId, memberId)}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                        暂无活跃 Swarm
+                      </div>
+                    )
+                  }
                   onClose={() => setIsDeveloperMode(false)}
                 />
               </ResizablePanel>

@@ -60,10 +60,13 @@ interface DevToolsPanelProps {
   renderScheduler?: () => React.ReactNode;
   renderIntent?: () => React.ReactNode;
   renderDebug?: () => React.ReactNode;
+  renderSwarm?: () => React.ReactNode;
   
   // 回调
   onClose?: () => void;
 }
+
+export { type DevToolsPanelProps };
 
 export function DevToolsPanel({
   renderTrace,
@@ -77,6 +80,7 @@ export function DevToolsPanel({
   renderScheduler,
   renderIntent,
   renderDebug,
+  renderSwarm,
   onClose,
 }: DevToolsPanelProps) {
   const {
@@ -130,6 +134,7 @@ export function DevToolsPanel({
       scheduler: renderScheduler,
       intent: renderIntent,
       debug: renderDebug,
+      swarm: renderSwarm,
     };
 
     const renderer = renderers[tab];
