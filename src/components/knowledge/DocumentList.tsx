@@ -1,4 +1,5 @@
-import { FileText, Trash2, RefreshCw, Eye, Loader2, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { FileText, Trash2, RefreshCw, Eye, Loader2, AlertCircle, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,13 +11,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import {
   useKnowledgeDocuments,
   useDeleteDocument,
   useIngestDocument,
 } from "@/hooks/useKnowledgeDocuments";
 import { useKnowledgeStore } from "@/stores/knowledgeStore";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { DocumentProcessingProgress } from "./DocumentProcessingProgress";
+import { DocumentPreview } from "./DocumentPreview";
+import { toast } from "sonner";
 
 interface DocumentListProps {
   knowledgeBaseId: string;
@@ -27,6 +35,24 @@ export function DocumentList({ knowledgeBaseId }: DocumentListProps) {
   const deleteDocument = useDeleteDocument();
   const ingestDocument = useIngestDocument();
   const { selectedDocumentId, setSelectedDocument, indexingDocumentIds } = useKnowledgeStore();
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; fileName: string; mimeType: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+
+  const handlePreview = async (doc: { id: string; file_path: string | null; name: string; mime_type: string | null }) => {
+    if (!doc.file_path) return;
+    setPreviewLoading(doc.id);
+    try {
+      const { data, error } = await supabase.storage
+        .from("knowledge-documents")
+        .createSignedUrl(doc.file_path, 3600);
+      if (error) throw error;
+      setPreviewDoc({ url: data.signedUrl, fileName: doc.name, mimeType: doc.mime_type || "application/octet-stream" });
+    } catch (e: any) {
+      toast.error(`预览失败: ${e.message}`);
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "-";
@@ -86,6 +112,7 @@ export function DocumentList({ knowledgeBaseId }: DocumentListProps) {
   }
 
   return (
+    <>
     <ScrollArea className="h-full pt-4">
       <div className="space-y-2 pr-4">
         {documents.map((doc) => {
@@ -118,6 +145,28 @@ export function DocumentList({ knowledgeBaseId }: DocumentListProps) {
                   {getStatusIcon(doc.status)}
                   
                   <div className="flex items-center gap-1">
+                    {doc.file_path && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handlePreview(doc)}
+                              disabled={previewLoading === doc.id}
+                            >
+                              {previewLoading === doc.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <FileSearch className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>预览原文</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                     {doc.status === "indexed" && (
                       <TooltipProvider>
                         <Tooltip>
@@ -190,5 +239,19 @@ export function DocumentList({ knowledgeBaseId }: DocumentListProps) {
         })}
       </div>
     </ScrollArea>
+
+    <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+      <DialogContent className="max-w-4xl max-h-[85vh] p-0 overflow-hidden">
+        {previewDoc && (
+          <DocumentPreview
+            url={previewDoc.url}
+            fileName={previewDoc.fileName}
+            mimeType={previewDoc.mimeType}
+            onClose={() => setPreviewDoc(null)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
