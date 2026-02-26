@@ -94,7 +94,7 @@ export function KnowledgeBaseList({
                     <Eye className="h-4 w-4 mr-2" />
                     查看详情
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onEdit(kb)}>
+                  <DropdownMenuItem onSelect={() => setTimeout(() => onEdit(kb), 0)}>
                     <Settings2 className="h-4 w-4 mr-2" />
                     配置
                   </DropdownMenuItem>
