@@ -153,11 +153,28 @@ export default function Knowledge() {
                               <Eye className="h-4 w-4 mr-2" />
                               查看详情
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedKBId(kb.id);
+                            }}>
                               <Settings className="h-4 w-4 mr-2" />
                               配置
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`确定要删除知识库「${kb.name}」吗？此操作不可恢复。`)) {
+                                  // Delete will be handled via the hook
+                                  import("@/hooks/useKnowledgeBases").then(mod => {
+                                    // For now, show toast - proper deletion needs hook integration
+                                    import("sonner").then(({ toast }) => {
+                                      toast.info("请在知识库详情页中删除");
+                                    });
+                                  });
+                                }
+                              }}
+                            >
                               <Trash2 className="h-4 w-4 mr-2" />
                               删除
                             </DropdownMenuItem>
@@ -183,7 +200,7 @@ export default function Knowledge() {
               <div className="text-lg font-semibold text-foreground">
                 {knowledgeBases.reduce((sum, kb) => sum + (kb.documents_count || 0), 0)}
               </div>
-              <div className="text-[10px] text-muted-foreground">图谱化</div>
+              <div className="text-[10px] text-muted-foreground">总文档</div>
             </div>
           </div>
         </div>
