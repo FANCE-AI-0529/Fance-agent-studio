@@ -129,6 +129,7 @@ import { GenerationVerificationPanel } from "@/components/builder/verification";
 import { AgentMonitoringDashboard } from "@/components/builder/AgentMonitoringDashboard";
 import { EvaluationCenter } from "@/components/builder/evaluation/EvaluationCenter";
 import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
+import { syncBuilderGraphToDatabase } from "@/hooks/useGraphSync";
 import { useAgentBuildReplay } from "@/hooks/useAgentBuildReplay";
 import { BuildReplayOverlay } from "@/components/builder/BuildReplayOverlay";
 import {
@@ -1038,6 +1039,11 @@ const Builder = () => {
           newParams.set("agentId", agentId);
           setSearchParams(newParams, { replace: true });
         }
+
+        // Phase A: Sync canvas graph data to agent_graph_nodes/edges for Consumer sync
+        syncBuilderGraphToDatabase(agentId, nodes, edges).catch((err) => {
+          console.warn("[Builder] Graph sync failed (non-blocking):", err);
+        });
       }
     } catch (err: any) {
       console.error("Save failed:", err);
