@@ -197,13 +197,11 @@ function extractPlainTextFallback(text: string): string {
  */
 async function fetchFileFromStorage(
   supabase: any,
-  userId: string,
-  knowledgeBaseId: string,
+  filePath: string,
   fileName: string,
   apiKey?: string
 ): Promise<{ content: string; success: boolean; error?: string }> {
   try {
-    const filePath = `${userId}/${knowledgeBaseId}/${fileName}`;
     console.log(`[rag-ingest] Fetching file from storage: ${filePath}`);
     
     // [下载]：从 Storage 获取文件
@@ -396,10 +394,12 @@ serve(async (req) => {
       if (!content || content.trim().length === 0) {
         console.log("[rag-ingest] No content in database, fetching from storage...");
         
+        // Use file_path from DB (sanitized path), fallback to constructing from name
+        const filePath = document.file_path || `${user.id}/${document.knowledge_base_id}/${document.name}`;
+        
         const storageResult = await fetchFileFromStorage(
           supabase,
-          user.id,
-          document.knowledge_base_id,
+          filePath,
           document.name,
           LOVABLE_API_KEY
         );
