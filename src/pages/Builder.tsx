@@ -122,6 +122,7 @@ import NodeConfigDrawer from "@/components/builder/config-panels/NodeConfigDrawe
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { useWorkflowExecution } from "@/hooks/useWorkflowExecution";
 import { RunHistoryPanel } from "@/components/builder/RunHistoryPanel";
+import { WorkflowRunDialog } from "@/components/builder/WorkflowRunDialog";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
 import { GenerationVerificationPanel } from "@/components/builder/verification";
@@ -240,6 +241,7 @@ const Builder = () => {
   const [showEvaluationPanel, setShowEvaluationPanel] = useState(false);
   const [configDrawerNode, setConfigDrawerNode] = useState<Node | null>(null);
   const [showRunHistory, setShowRunHistory] = useState(false);
+  const [showRunDialog, setShowRunDialog] = useState(false);
 
   // Workflow execution hook
   const workflowExecution = useWorkflowExecution();
@@ -1603,10 +1605,7 @@ const Builder = () => {
                 size="sm"
                 className="gap-1.5 h-8"
                 disabled={workflowExecution.status === "running" || nodes.length === 0}
-                onClick={() => {
-                  const wfId = currentAgentId || "draft-" + Date.now();
-                  workflowExecution.executeWorkflow(wfId, nodes, edges, {});
-                }}
+                onClick={() => setShowRunDialog(true)}
               >
                 {workflowExecution.status === "running" ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1830,6 +1829,19 @@ const Builder = () => {
           </div>
         )}
 
+        {/* Workflow Run Dialog */}
+        <WorkflowRunDialog
+          open={showRunDialog}
+          onOpenChange={setShowRunDialog}
+          isRunning={workflowExecution.status === "running"}
+          nodes={nodes}
+          onRun={(inputs) => {
+            const wfId = currentAgentId || "draft-" + Date.now();
+            workflowExecution.executeWorkflow(wfId, nodes, edges, inputs);
+            setShowRunDialog(false);
+            toast({ title: "工作流已启动", description: "正在执行节点..." });
+          }}
+        />
 
         <BuilderWizard
           isOpen={showWizard}

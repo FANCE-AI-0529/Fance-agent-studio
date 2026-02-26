@@ -153,20 +153,36 @@ async function executeLLMNode(
   data: Record<string, unknown>,
   context: Record<string, Record<string, unknown>>
 ): Promise<{ output: Record<string, unknown>; tokensUsed: number }> {
-  const systemPrompt = resolveVariables(String(data.systemPrompt || ""), context);
-  const userMessage = resolveVariables(String(data.userMessage || data.prompt || ""), context);
+  // Support both flat data.* and nested data.config.* (from config panel)
+  const config = (data.config || {}) as Record<string, unknown>;
+  const model = String(config.model || data.model || "google/gemini-2.5-flash");
+  const temperature = (config.temperature ?? data.temperature ?? 0.7) as number;
+  const topP = (config.topP ?? data.topP ?? 1.0) as number;
+  const maxTokens = (config.maxTokens ?? data.maxTokens ?? 4096) as number;
+  const rawSystemPrompt = String(config.systemPrompt || data.systemPrompt || "");
+  const rawUserMessage = String(config.userMessage || data.userMessage || data.prompt || "");
+  const structuredOutputEnabled = !!(config.structuredOutput || data.structuredOutput);
+  const outputSchema = (config.outputSchema || data.outputSchema) as Record<string, unknown> | undefined;
+
+  const systemPrompt = resolveVariables(rawSystemPrompt, context);
+  const userMessage = resolveVariables(rawUserMessage, context);
   
   const messages: Array<{ role: string; content: string }> = [];
   if (userMessage) messages.push({ role: "user", content: userMessage });
 
+  // Build structured output config
+  const structuredOutput = structuredOutputEnabled && outputSchema
+    ? { enabled: true, schema: outputSchema }
+    : undefined;
+
   const result = await callEdgeFunction("workflow-llm-call", {
-    model: data.model || "google/gemini-2.5-flash",
+    model,
     messages,
     systemPrompt,
-    temperature: data.temperature ?? 0.7,
-    topP: data.topP ?? 1.0,
-    maxTokens: data.maxTokens ?? 4096,
-    structuredOutput: data.structuredOutput,
+    temperature,
+    topP,
+    maxTokens,
+    structuredOutput,
   }) as Record<string, unknown>;
 
   const metadata = (result.metadata || {}) as Record<string, unknown>;
