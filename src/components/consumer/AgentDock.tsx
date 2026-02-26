@@ -151,5 +151,46 @@ export function AgentDock({
   if (isLoading) {
     return null;
   }
-  return;
+
+  return (
+    <motion.div
+      onMouseMove={(e) => mouseX.set(e.pageX)}
+      onMouseLeave={() => mouseX.set(Infinity)}
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+    >
+      <div className="flex items-end gap-2 px-4 py-3 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl">
+        <AnimatePresence mode="popLayout">
+          {allAgents.map((agent) => (
+            <DockItem
+              key={agent.id}
+              agent={{
+                id: agent.id,
+                name: agent.name,
+                avatar: (agent.manifest as any)?.avatar,
+              }}
+              mouseX={mouseX}
+              onClick={() => handleAgentClick(agent.id)}
+              onDelete={() => handleDeleteAgent(agent.id, agent.name)}
+              onEdit={() => handleEditAgent(agent.id)}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Divider */}
+        {allAgents.length > 0 && (
+          <div className="w-px h-10 bg-border/50 mx-1 self-center" />
+        )}
+
+        {/* Add button */}
+        <DockItem
+          isAddButton
+          mouseX={mouseX}
+          onClick={handleCreateNew}
+        />
+      </div>
+    </motion.div>
+  );
 }
