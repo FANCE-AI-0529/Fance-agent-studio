@@ -97,9 +97,16 @@ serve(async (req) => {
       chunkBatches.push(chunks.slice(i, i + CHUNK_BATCH_SIZE));
     }
 
-    const combinedContent = chunkBatches[0]
+    // Combine ALL batches into one content block for AI extraction
+    const allChunksToProcess = chunks.slice(0, totalChunksToProcess);
+    const combinedContent = allChunksToProcess
       .map((c, i) => `[Chunk ${i + 1}]:\n${c.content}`)
       .join("\n\n");
+
+    // Truncate to ~30k chars to stay within AI context window
+    const truncatedContent = combinedContent.length > 30000
+      ? combinedContent.slice(0, 30000) + "\n\n[Content truncated...]"
+      : combinedContent;
 
     // Call Lovable AI Gateway for entity extraction
     const aiResponse = await fetch("https://api.lovable.dev/v1/chat/completions", {
@@ -121,7 +128,7 @@ Return structured data using the provided function.`
           },
           {
             role: "user",
-            content: `Extract entities and relationships from this content:\n\n${combinedContent}`
+            content: `Extract entities and relationships from this content:\n\n${truncatedContent}`
           }
         ],
         tools: [{
