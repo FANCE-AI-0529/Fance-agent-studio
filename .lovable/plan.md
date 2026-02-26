@@ -1,90 +1,73 @@
 
 
-# 知识库模块三按钮修复 + 全面改进方案
+# 为文档列表添加原始文件预览功能
 
-## 问题分析
+## 现状分析
 
-从截图可见，知识库列表项上有三个右键菜单按钮（查看详情、配置、删除），但当前 `KnowledgeBaseList.tsx` 代码中**完全没有**这三个按钮的实现 — 只是一个简单的点击选择按钮。这意味着：
+- `DocumentPreview.tsx` 已完整实现，支持 PDF（iframe）、图片（缩放/旋转）、文本文件预览
+- `DocumentList.tsx` 当前 `Eye` 按钮只做"查看切片"（`setSelectedDocument`），没有原始文件预览
+- 文件存储在 `knowledge-documents` bucket（**私有 bucket**），需要用 `createSignedUrl` 生成临时访问链接
+- 文档记录中有 `file_path`、`mime_type` 字段可用于定位文件和判断预览类型
 
-1. **查看详情** — 没有独立的详情查看弹窗，只能通过左侧点击选中
-2. **配置** — 不存在任何编辑/配置知识库的对话框（创建对话框有参数设置，但没有编辑版本）
-3. **删除** — 删除功能仅存在于右侧 `KnowledgeBaseDetail` 头部，列表项本身不能直接删除
+## 实施方案
 
-## 实施计划
+### 修改 1: `DocumentList.tsx` — 添加预览按钮和预览弹窗
 
-### 任务 1: 为知识库列表项添加三点菜单（DropdownMenu）
+- 在每个文档操作区域新增一个 `FileSearch`（预览原文）按钮，与现有 `Eye`（查看切片）按钮并列
+- 条件：文档有 `file_path` 时显示（无论状态）
+- 点击后：
+  1. 调用 `supabase.storage.from('knowledge-documents').createSignedUrl(doc.file_path, 3600)` 生成 1 小时有效的签名 URL
+  2. 将签名 URL、文件名、MIME 类型存入组件 state
+  3. 打开 `Dialog` 弹窗渲染 `DocumentPreview` 组件
+- 添加 loading 状态防止重复点击
 
-**文件**: `src/components/knowledge/KnowledgeBaseList.tsx`
+### 修改 2: 状态管理
 
-- 在每个知识库列表项右上角添加 `⋮` 三点按钮，使用 `DropdownMenu` 组件
-- 三个菜单项：
-  - **查看详情** (`Eye` 图标) — 选中该知识库并切换到详情视图
-  - **配置** (`Settings2` 图标) — 打开配置对话框
-  - **删除** (`Trash2` 图标，红色) — 打开删除确认对话框
-- 阻止菜单按钮的点击事件冒泡，避免触发选择
-
-### 任务 2: 创建知识库配置对话框
-
-**新文件**: `src/components/knowledge/EditKnowledgeBaseDialog.tsx`
-
-- 复用 `CreateKnowledgeBaseDialog` 的表单结构
-- 预填充当前知识库的名称、描述、部门、chunk_size、chunk_overlap、实体提取开关
-- 调用 `useUpdateKnowledgeBase` hook 保存修改
-- 字段：名称、描述、分类、分块大小、分块重叠、实体提取开关
-
-### 任务 3: 在列表项集成删除确认对话框
-
-**文件**: `src/components/knowledge/KnowledgeBaseList.tsx`
-
-- 添加 `AlertDialog` 删除确认，调用 `useDeleteKnowledgeBase`
-- 删除后如果当前选中的就是被删的知识库，清空选中状态
-- 添加删除中 loading 状态
-
-### 任务 4: 查看详情功能完善
-
-- 点击"查看详情"时，选中该知识库（等同于点击列表项），同时在右侧显示详情面板
-- 如果右侧已显示该知识库，则无额外操作
-
----
-
-## 二次审查发现的额外问题
-
-### 问题 A: `graph-search` 中 edges 查询仍使用字符串拼接 IN
-
-**文件**: `supabase/functions/graph-search/index.ts` 第 154 行
+在 `DocumentList` 组件内添加局部 state：
 
 ```ts
-.or(`source_node_id.in.(${allNodeIds.join(",")}),target_node_id.in.(${allNodeIds.join(",")})`)
+const [previewDoc, setPreviewDoc] = useState<{
+  url: string;
+  fileName: string;
+  mimeType: string;
+} | null>(null);
 ```
 
-当节点数量大时可能超出 URL 长度限制。将改为分批查询或使用 RPC。
+- 打开预览时设置 `previewDoc`
+- 关闭弹窗时设为 `null`
 
-### 问题 B: `graph-extract` 仍仅处理第一个批次的文本用于 AI 提取
+### 修改 3: 预览弹窗渲染
 
-**文件**: `supabase/functions/graph-extract/index.ts` 第 100 行
+在组件底部添加 `Dialog`：
 
-`combinedContent = chunkBatches[0]` 只使用了第一批（10 个 chunks）的内容发送给 AI。虽然循环结构存在，但实际上 AI 调用只处理了第一个批次的文本。
+```tsx
+<Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+  <DialogContent className="max-w-4xl max-h-[85vh] p-0">
+    <DocumentPreview
+      url={previewDoc.url}
+      fileName={previewDoc.fileName}
+      mimeType={previewDoc.mimeType}
+      onClose={() => setPreviewDoc(null)}
+    />
+  </DialogContent>
+</Dialog>
+```
 
-### 问题 C: DocumentList 中文档无法查看原始文件内容
+### 技术细节
 
-当前 `Eye` 按钮只显示"查看切片"，但没有提供查看原始文档内容的方式（如 PDF 预览）。`DocumentPreview.tsx` 文件存在但未在文档列表中使用。
+| 项目 | 说明 |
+|------|------|
+| bucket 权限 | 私有 bucket，使用 `createSignedUrl` 生成临时链接 |
+| 签名有效期 | 3600 秒（1 小时） |
+| 支持的文件类型 | PDF、图片（jpg/png/webp）、文本（txt/md/json/csv）|
+| 不可预览文件 | `DocumentPreview` 内置 `UnsupportedPreview` 兜底 |
+| 新增依赖 | 无，所有组件已存在 |
 
----
+### 涉及文件
 
-## 技术细节
-
-### 需要新增的组件依赖
-- `DropdownMenu` (已安装 `@radix-ui/react-dropdown-menu`)
-- `AlertDialog` (已安装)
-
-### 涉及修改的文件
 | 文件 | 操作 |
 |------|------|
-| `src/components/knowledge/KnowledgeBaseList.tsx` | 重构：添加三点菜单、删除确认 |
-| `src/components/knowledge/EditKnowledgeBaseDialog.tsx` | **新建**：配置/编辑对话框 |
-| `supabase/functions/graph-extract/index.ts` | 修复：合并所有批次文本 |
-| `supabase/functions/graph-search/index.ts` | 优化：分批查询 edges |
+| `src/components/knowledge/DocumentList.tsx` | 添加预览按钮 + Dialog + 签名 URL 逻辑 |
 
-### 不需要数据库迁移
-所有修改在前端组件和现有 Edge Functions 层面完成，`useUpdateKnowledgeBase` hook 已存在。
+无需数据库迁移，无需新建文件。
 
