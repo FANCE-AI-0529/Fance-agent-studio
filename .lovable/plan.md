@@ -1,119 +1,174 @@
 
 
-# Swarm 执行链路补全实施计划
+# 智能体构建模块工业级增强 — 对标 Dify 实施计划
 
 ## 现状分析
 
-当前系统中 Swarm 相关链路的完成度：
+当前 Builder 已具备的能力：
+- 画布节点系统（LLM、HTTP Request、Code、Template、Iterator 等 Dify 核心节点的 **UI 壳**已存在）
+- 边缘函数后端（workflow-llm-call、workflow-http-request、workflow-code-executor 已实现基础逻辑）
+- 变量系统（variableStore + EdgeMappingPanel）
+- 调试工具（断点、变量快照、执行日志）
 
-| 层级 | 组件 | 状态 |
-|------|------|------|
-| UI 展示层 | `SwarmNode.tsx` (画布节点) | ✅ 已完成 |
-| UI 展示层 | `SwarmStatusPanel.tsx` (运行时面板) | ✅ 已完成 |
-| 类型定义 | `types/swarms.ts` (全部类型) | ✅ 已完成 |
-| 编译层 | `swarmCompiler.ts` (画布→YAML) | ✅ 已完成 |
-| **状态管理** | **swarmStore** (Swarm 运行时状态) | ✅ **已实现** |
-| **编排引擎** | **useSwarmRunner** (成员→容器映射 + 调度) | ✅ **已实现** |
-| **消息路由** | **SwarmMessage IPC 转发** | ✅ **已实现 (via useSwarmRunner)** |
-| **Kernel API** | **Swarm 批量编排端点** | ✅ **已实现 (swarm-routes.ts)** |
-| **Gateway 代理** | **nanoclaw-gateway 新 action** | ✅ **已实现** |
-| **Runtime 集成** | **DevToolsPanel Swarm Tab** | ✅ **已实现** |
-| **消息路由** | **SwarmMessage IPC 转发** | **缺失** |
-| **Kernel API** | **Swarm 批量编排端点** | **缺失** |
-| **Gateway 代理** | **nanoclaw-gateway 新 action** | **缺失** |
+**与 Dify 的核心差距（按优先级排列）：**
 
-核心断裂点：`swarmCompiler` 生成了 `SwarmDefinition`，但没有任何组件消费它来创建容器、分派任务、路由成员间通信。
+| 差距 | 严重程度 | 说明 |
+|------|----------|------|
+| 无工作流运行时引擎 | **致命** | 节点只能展示，无法真正按拓扑顺序执行 |
+| 节点无配置面板 | **严重** | 点击节点的"配置"按钮无任何响应，无法编辑 LLM prompt、Code 代码、HTTP URL 等 |
+| 无变量引用系统 | **严重** | Dify 的 `{{node.output}}` 变量插值机制不存在 |
+| 无运行历史/日志 | **重要** | Dify 可查看每次运行的输入输出和耗时 |
+| 无发布为 API 的完整链路 | **重要** | 工作流无法作为独立 API endpoint 调用 |
+| 无对话型/工作流型模式切换 | **中等** | Dify 支持 Chatflow 和 Workflow 两种模式 |
 
 ---
 
 ## 实施内容
 
-### 1. 新建 `swarmStore` — Swarm 运行时状态管理
+### Phase 1: 节点配置面板系统（最高优先级）
 
-**新文件**: `src/stores/swarmStore.ts`
+**新建文件**: `src/components/builder/config-panels/`
 
-管理所有活跃 Swarm 的生命周期状态：
+为每种节点类型创建可交互配置面板，点击节点或配置按钮时在右侧滑出：
 
-- `activeSwarms: Map<swarmId, SwarmRuntimeState>` — 当前运行的 Swarm 列表
-- `startSwarm(definition: SwarmDefinition)` — 初始化运行时状态，所有成员设为 `idle`
-- `updateMemberState(swarmId, memberId, updates)` — 更新单个成员的 `status`、`progress`、`currentTask`
-- `addMessage(swarmId, message: SwarmMessage)` — 记录成员间通信
-- `setSwarmState(swarmId, state)` — 切换全局状态（`running`→`completed` 等）
-- `getActiveSwarm()` — 获取当前焦点 Swarm
-- `resetSwarm(swarmId)` — 清理完成的 Swarm
+| 面板 | 文件名 | 核心配置项 |
+|------|--------|-----------|
+| LLM 配置 | `LLMConfigDialog.tsx` | 模型选择、System Prompt（支持变量插值）、温度/TopP/MaxTokens、结构化输出 Schema 编辑器、上下文窗口配置、开启记忆 |
+| Code 配置 | `CodeConfigDialog.tsx` | Monaco 代码编辑器（JS/Python）、输入/输出变量声明表、超时设置、依赖库白名单 |
+| HTTP 配置 | `HTTPConfigDialog.tsx` | Method 选择、URL（支持变量）、Headers 键值对编辑器、Body 编辑器（JSON/Form/Raw）、认证配置、超时/重试、响应映射 |
+| 条件配置 | `ConditionConfigDialog.tsx` | 多条件分支编辑器（IF/ELIF/ELSE）、条件表达式构建器（支持变量引用）|
+| 模板配置 | `TemplateConfigDialog.tsx` | Jinja2 模板编辑器、变量引用补全 |
+| 参数提取器 | `ExtractorConfigDialog.tsx` | 提取参数列表定义（名称、类型、描述）、提取指令 Prompt、模型选择 |
+| 迭代器 | `IteratorConfigDialog.tsx` | 输入数组变量选择、子工作流编辑入口、并行/串行模式 |
+| 知识检索 | `KnowledgeConfigDialog.tsx` | 知识库选择、检索模式（向量/图谱/混合）、TopK、相似度阈值、重排序模型 |
+| 变量聚合器 | `AggregatorConfigDialog.tsx` | 输入变量多选列表、聚合模式（合并/取最新） |
+| 触发器 | `TriggerConfigDialog.tsx` | 输入变量声明（对话型：用户消息+文件；工作流型：自定义字段列表） |
 
-### 2. 新建 `useSwarmRunner` Hook — 编排引擎
+**关键 UI 模式**: 参考 Dify，采用右侧滑出抽屉（Drawer）而非模态对话框，允许用户同时查看画布和编辑配置。
 
-**新文件**: `src/hooks/useSwarmRunner.ts`
+**新建文件**: `src/components/builder/config-panels/NodeConfigDrawer.tsx` — 统一的抽屉容器，根据选中节点类型动态渲染对应配置面板。
 
-这是核心调度器，将 `SwarmDefinition` 转化为真实的容器操作序列：
+**修改文件**: `src/pages/Builder.tsx` — 添加 `onNodeClick` 处理器，打开 NodeConfigDrawer；将节点数据的读写与抽屉双向绑定。
 
-**职责**:
-- 消费 `SwarmDefinition`（由 `swarmCompiler` 生成）
-- 按 `communicationMode` 调度执行策略：
-  - `sequential`: 逐个成员依次执行，前一个完成后启动下一个
-  - `parallel`: 所有成员同时创建容器并执行
-  - `hierarchical`: Leader 先执行，分析任务后向 Workers 分派子任务
-  - `consensus`: 所有成员执行后收集结果，发起投票汇总
-- 为每个 `SwarmMember` 调用 `nanoclaw-gateway` 的 `create_container` 创建隔离容器
-- 通过 `useTerminalStream` 向各容器发送命令并接收 SSE 输出
-- 将各容器的输出路由为 `SwarmMessage` 写入 `swarmStore`
-- 当所有成员完成（或超时/失败），汇总为 `SwarmResult`
+### Phase 2: 变量引用与数据流系统
 
-**关键接口**:
+**新建文件**: `src/components/builder/variables/VariableSelector.tsx`
+
+实现 Dify 风格的变量引用选择器：
+- 在任何文本输入框中输入 `{{` 或 `/` 触发变量选择弹出菜单
+- 按节点分组显示可引用变量（如 `Start.input`、`LLM_1.output.text`）
+- 支持类型校验（string、number、array、object）
+- 变量类型颜色标识与 portTypes 一致
+
+**新建文件**: `src/components/builder/variables/VariableInput.tsx`
+
+封装可复用的变量感知输入组件：
+- 普通文本与 `{{变量引用}}` 混合渲染
+- 变量标签化显示（彩色标签）
+- 自动补全与搜索
+
+**修改文件**: `src/stores/variableStore.ts` — 扩展为完整的变量注册表，追踪每个节点的输入/输出 Schema，支持变量解析 `resolveVariable(expression, context)`
+
+### Phase 3: 工作流运行时引擎（核心）
+
+**新建文件**: `supabase/functions/workflow-executor/index.ts`
+
+工作流执行引擎边缘函数，这是整个系统的核心：
+
+职责：
+- 接收完整的工作流定义（节点 + 边 + 变量映射）
+- 拓扑排序确定执行顺序
+- 逐节点执行，解析变量引用，调用对应子函数
+- 节点类型路由：`llm` → `workflow-llm-call`、`code` → `workflow-code-executor`、`http_request` → `workflow-http-request`
+- 条件分支路由
+- 迭代器循环执行
+- 并行节点并发执行
+- 收集每个节点的执行结果、耗时、token 消耗
+- SSE 流式返回执行进度
+
+关键数据结构：
 ```text
-startSwarm(definition) → swarmId
-pauseMember(swarmId, memberId)
-resumeMember(swarmId, memberId)  
-cancelSwarm(swarmId)
+WorkflowExecutionContext {
+  workflowId: string
+  runId: string
+  variables: Map<nodeId, Record<string, any>>  // 每个节点的输出
+  status: 'running' | 'completed' | 'failed'
+  nodeResults: Array<{
+    nodeId, status, output, duration, tokensUsed, error
+  }>
+}
 ```
 
-### 3. 扩展 NanoClaw Kernel API — 批量编排端点
+**新建文件**: `src/hooks/useWorkflowExecution.ts`
 
-**修改文件**: `docs/nanoclaw-kernel/src/api-server.ts`
+前端执行控制 Hook：
+- `executeWorkflow(nodes, edges, inputs)` — 调用 workflow-executor，接收 SSE
+- 实时更新各节点状态（idle → running → completed/failed）
+- 每个节点执行时画布节点高亮 + 动画
+- 收集运行历史
 
-新增 3 个端点：
+### Phase 4: 运行历史与日志系统
 
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/swarm/create` | POST | 批量创建容器组，接收 `SwarmDefinition`，为每个 member 创建容器，返回 `{ swarmId, containerMap: { memberId → containerId } }` |
-| `/swarm/dispatch` | POST | 向指定 member 的容器发送命令，`{ swarmId, memberId, command }` |
-| `/swarm/status` | GET | 查询 Swarm 下所有容器的聚合状态 |
+**数据库迁移**: 创建 `workflow_runs` 表
 
-这将 N 次独立 `create_container` 调用合并为一次原子操作，减少网络往返。
+```text
+workflow_runs
+  id: uuid (PK)
+  workflow_id: uuid (FK → agents.id 或独立 workflow 表)
+  user_id: uuid
+  status: text (running/completed/failed)
+  inputs: jsonb
+  outputs: jsonb
+  node_results: jsonb[]
+  total_duration_ms: integer
+  total_tokens_used: integer
+  created_at: timestamp
+  completed_at: timestamp
+```
 
-### 4. 扩展 nanoclaw-gateway — 新增 Swarm 代理 action
+**新建文件**: `src/components/builder/RunHistoryPanel.tsx`
 
-**修改文件**: `supabase/functions/nanoclaw-gateway/index.ts`
+运行历史面板：
+- 时间线式展示所有运行记录
+- 点击任一次运行可查看：每个节点的输入/输出、耗时、错误信息
+- 支持"回放"功能 — 将历史运行的节点状态映射回画布高亮
 
-在 `switch(action)` 中新增 3 个 case：
+### Phase 5: 工作流发布为 API
 
-- `action: 'swarm_create'` → 代理 `POST /swarm/create`
-- `action: 'swarm_dispatch'` → 代理 `POST /swarm/dispatch`  
-- `action: 'swarm_status'` → 代理 `GET /swarm/status`
+**新建文件**: `supabase/functions/workflow-api/index.ts`
 
-沿用现有的 SSRF 防护和 JWT 验证链路。
+将已部署的工作流暴露为可调用的 REST API：
+- `POST /workflow-api` — 接收 `{ workflowId, inputs }` 
+- 通过 API Key 鉴权（复用现有 agent_api_keys 表）
+- 内部调用 workflow-executor 执行
+- 返回结构化输出
 
-### 5. 接入点 — Agent Studio 画布触发 Swarm 执行
+**修改文件**: `src/components/builder/AgentApiPanel.tsx` — 添加"工作流 API"标签页，展示 curl 示例和 SDK 调用代码
 
-**修改文件**: `src/pages/Runtime.tsx` (或 Agent Studio 中的画布操作按钮)
+### Phase 6: Chatflow / Workflow 模式切换
 
-在 swarmCompiler 编译成功后，增加"部署 Swarm"操作：
+**修改文件**: `src/pages/Builder.tsx`
 
-- 调用 `compileCanvasToSwarm(nodes, edges, options)` 获取 `SwarmDefinition`
-- 检查 `runtimeStore.mode === 'nanoclaw'` 且已连接
-- 调用 `useSwarmRunner.startSwarm(definition)`
-- 在 Runtime 页面挂载 `SwarmStatusPanel`，绑定 `swarmStore` 的实时状态
+在顶部工具栏添加模式切换：
+- **Chatflow 模式**：触发器为用户消息，输出为 AI 回复，支持多轮对话上下文
+- **Workflow 模式**：触发器为自定义输入变量，输出为结构化数据，单次执行
 
-### 6. SwarmStatusPanel 接入真实数据
+模式影响：
+- Trigger 节点的输入 Schema 不同
+- Output 节点的行为不同
+- Chatflow 模式自动注入对话记忆变量
 
-**修改文件**: `src/components/runtime/SwarmStatusPanel.tsx` 的使用方式
+### Phase 7: 工作流画布增强
 
-当前 `SwarmStatusPanel` 接收 props 但无人传递真实数据。计划：
+**修改文件**: 多个节点组件
 
-- 在 Runtime 页面中，当存在活跃 Swarm 时渲染 `SwarmStatusPanel`
-- 从 `swarmStore` 读取 `SwarmRuntimeState` 作为 props
-- `onPauseMember` / `onResumeMember` 回调绑定到 `useSwarmRunner` 的控制方法
+增强画布交互以对标 Dify：
+- 节点展开/折叠：折叠时只显示节点名称和状态图标，展开时显示完整配置摘要
+- 节点状态指示器：未配置（灰色）/ 已配置（绿色）/ 运行中（蓝色动画）/ 错误（红色）
+- 边上显示变量映射标签
+- 节点右键菜单：复制、删除、禁用、查看日志
+- 批量选择和移动
+- 快捷键：Delete 删除、Ctrl+D 复制、Ctrl+Z 撤销
 
 ---
 
@@ -121,48 +176,38 @@ cancelSwarm(swarmId)
 
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| `src/stores/swarmStore.ts` | **新建** | Swarm 运行时状态管理 |
-| `src/hooks/useSwarmRunner.ts` | **新建** | 编排引擎 Hook（核心调度器） |
-| `docs/nanoclaw-kernel/src/api-server.ts` | 修改 | 新增 `/swarm/*` 批量端点 |
-| `supabase/functions/nanoclaw-gateway/index.ts` | 修改 | 新增 swarm_* action 代理 |
-| `src/pages/Runtime.tsx` | 修改 | 挂载 SwarmStatusPanel、添加 Swarm 启动入口 |
+| `src/components/builder/config-panels/NodeConfigDrawer.tsx` | **新建** | 统一配置抽屉容器 |
+| `src/components/builder/config-panels/LLMConfigDialog.tsx` | **新建** | LLM 节点配置面板 |
+| `src/components/builder/config-panels/CodeConfigDialog.tsx` | **新建** | 代码节点配置面板（含 Monaco） |
+| `src/components/builder/config-panels/HTTPConfigDialog.tsx` | **新建** | HTTP 请求配置面板 |
+| `src/components/builder/config-panels/ConditionConfigDialog.tsx` | **新建** | 条件分支配置面板 |
+| `src/components/builder/config-panels/TemplateConfigDialog.tsx` | **新建** | 模板节点配置面板 |
+| `src/components/builder/config-panels/ExtractorConfigDialog.tsx` | **新建** | 参数提取器配置面板 |
+| `src/components/builder/config-panels/IteratorConfigDialog.tsx` | **新建** | 迭代器配置面板 |
+| `src/components/builder/config-panels/KnowledgeConfigDialog.tsx` | **新建** | 知识检索配置面板 |
+| `src/components/builder/config-panels/AggregatorConfigDialog.tsx` | **新建** | 变量聚合器配置面板 |
+| `src/components/builder/config-panels/TriggerConfigDialog.tsx` | **新建** | 触发器配置面板 |
+| `src/components/builder/variables/VariableSelector.tsx` | **新建** | 变量选择器弹出菜单 |
+| `src/components/builder/variables/VariableInput.tsx` | **新建** | 变量感知输入组件 |
+| `src/components/builder/RunHistoryPanel.tsx` | **新建** | 运行历史面板 |
+| `supabase/functions/workflow-executor/index.ts` | **新建** | 工作流运行时引擎 |
+| `supabase/functions/workflow-api/index.ts` | **新建** | 工作流 API endpoint |
+| `src/hooks/useWorkflowExecution.ts` | **新建** | 工作流执行前端 Hook |
+| `src/stores/variableStore.ts` | 修改 | 扩展为完整变量注册表 |
+| `src/pages/Builder.tsx` | 修改 | 添加节点点击配置、模式切换、运行按钮 |
+| `src/components/builder/AgentApiPanel.tsx` | 修改 | 添加工作流 API 标签页 |
 
-## 不变的部分
+## 数据库变更
 
-- `swarmCompiler.ts` — 编译逻辑已完整，无需修改
-- `SwarmNode.tsx` — 画布展示节点无需变更
-- `SwarmStatusPanel.tsx` — 组件本身无需改动，只需在正确位置传入真实数据
-- `types/swarms.ts` — 类型定义已覆盖所有场景
-- 现有 `nanoclaw-gateway` 的 13 个 action 不变
-- `useTerminalStream` / `useNanoClawExecutor` 不变（被 `useSwarmRunner` 内部调用）
+新建 `workflow_runs` 表用于持久化运行历史，启用 RLS 策略确保用户只能访问自己的运行记录。
 
-## 数据流总览
+## 实施顺序建议
 
-```text
-Agent Studio 画布
-  │ (nodes + edges)
-  ▼
-swarmCompiler.compileCanvasToSwarm()
-  │ (SwarmDefinition)
-  ▼
-useSwarmRunner.startSwarm(definition)
-  │
-  ├─ swarmStore.startSwarm() ← 初始化运行时状态
-  │
-  ├─ nanoclaw-gateway (swarm_create) → Kernel /swarm/create
-  │     └─ 返回 containerMap: { memberId → containerId }
-  │
-  ├─ 按 communicationMode 调度:
-  │     ├─ sequential: 逐个 dispatch
-  │     ├─ parallel:   并发 dispatch
-  │     ├─ hierarchical: Leader 先行，再分派
-  │     └─ consensus:  全员执行后投票
-  │
-  ├─ useTerminalStream (SSE) ← 每个成员的实时输出
-  │     └─ swarmStore.updateMemberState() ← 更新进度
-  │     └─ swarmStore.addMessage() ← 记录通信
-  │
-  └─ 完成 → swarmStore.setSwarmState('completed')
-              └─ SwarmStatusPanel 显示最终结果
-```
+由于变更量极大，建议分批实施：
+
+**第一批（节点可配置化）**: Phase 1 + Phase 2 — 使节点从"展示壳"变为"可交互配置"
+**第二批（可执行化）**: Phase 3 + Phase 4 — 工作流引擎 + 运行历史
+**第三批（可发布化）**: Phase 5 + Phase 6 + Phase 7 — API 发布 + 模式切换 + 画布交互增强
+
+每批完成后均可独立验证，降低风险。
 
