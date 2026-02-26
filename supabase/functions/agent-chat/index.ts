@@ -173,6 +173,24 @@ function validateAgentConfig(config?: AgentConfig): AgentConfig | undefined {
 }
 
 /**
+ * 将技能名称转为合法的 function calling 名称
+ * Must start with a letter or underscore, alphanumeric + _ . : -
+ */
+function sanitizeToolName(name: string): string {
+  // Transliterate non-ASCII to underscores, lowercase, collapse
+  let sanitized = name
+    .toLowerCase()
+    .replace(/[^a-z0-9_.\-:]/g, '_')  // replace non-allowed chars
+    .replace(/_+/g, '_')               // collapse multiple underscores
+    .replace(/^[^a-z_]/, '_');         // must start with letter or _
+  
+  if (!sanitized || sanitized === '_') {
+    sanitized = `tool_${Date.now()}`;
+  }
+  return sanitized.slice(0, 64);
+}
+
+/**
  * 构建工具定义 (Function Calling)
  */
 function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
@@ -185,7 +203,7 @@ function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
     tools.push({
       type: 'function',
       function: {
-        name: skill.name.toLowerCase().replace(/\s+/g, '_'),
+        name: sanitizeToolName(skill.name),
         description: skill.description || `执行 ${skill.name} 技能`,
         parameters: skill.inputSchema || {
           type: 'object',
@@ -217,7 +235,7 @@ function buildToolDefinitions(config?: AgentConfig): ToolDefinition[] {
   if (manifest?.skills && Array.isArray(manifest.skills)) {
     for (const skill of manifest.skills) {
       if (typeof skill === 'string') {
-        const skillName = skill.toLowerCase().replace(/\s+/g, '_');
+        const skillName = sanitizeToolName(skill);
         if (!tools.some(t => t.function.name === skillName)) {
           tools.push({
             type: 'function',
