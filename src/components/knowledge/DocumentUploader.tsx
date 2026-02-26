@@ -18,6 +18,18 @@ interface DocumentUploaderProps {
 
 const ACCEPTED_EXTENSIONS = [".pdf", ".txt", ".md", ".json"];
 
+/**
+ * 将文件名转换为 Storage 安全路径
+ * Supabase Storage 不支持中文等非 ASCII 字符作为 key
+ * 使用 UUID 前缀 + 原始扩展名确保唯一且安全
+ */
+function sanitizeFileName(originalName: string): string {
+  const extension = originalName.split('.').pop()?.toLowerCase() || 'bin';
+  // 使用 UUID 作为文件名，附带原始扩展名
+  const safeId = crypto.randomUUID().slice(0, 12);
+  return `${safeId}.${extension}`;
+}
+
 function getMimeTypeForFile(file: File): string {
   const extension = file.name.split('.').pop()?.toLowerCase();
   const mimeMap: Record<string, string> = {
@@ -75,7 +87,8 @@ export function DocumentUploader({ knowledgeBaseId }: DocumentUploaderProps) {
 
   const uploadFileToStorage = async (file: File, retries = 2): Promise<string> => {
     if (!user) throw new Error("用户未登录");
-    const storagePath = `${user.id}/${knowledgeBaseId}/${file.name}`;
+    const safeFileName = sanitizeFileName(file.name);
+    const storagePath = `${user.id}/${knowledgeBaseId}/${safeFileName}`;
     const mimeType = getMimeTypeForFile(file);
     const fileToUpload = mimeType !== file.type
       ? new Blob([await file.arrayBuffer()], { type: mimeType })
