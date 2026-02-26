@@ -78,7 +78,7 @@ export function GraphChangeToast({ className }: GraphChangeToastProps) {
   // Navigate to builder
   const goToBuilder = useCallback(() => {
     if (agentId) {
-      navigate(`/builder?agentId=${agentId}`);
+      navigate(`/hive?tab=builder&agentId=${agentId}`);
     }
   }, [navigate, agentId]);
 

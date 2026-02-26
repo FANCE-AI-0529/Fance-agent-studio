@@ -98,7 +98,7 @@ export const MiniStudioPreview = React.memo(({
 
     // Navigate to Builder after animation
     setTimeout(() => {
-      navigate(`/builder/${agentId}`);
+      navigate(`/hive?tab=builder&agentId=${agentId}`);
       setIsTransitioning(false);
     }, 600);
   }, [agentId, startTransition, ejectToStudio, navigate, isTransitioning]);

@@ -196,9 +196,11 @@ const createAgentNode = (
 });
 
 const Builder = () => {
-  const { id: agentIdParam } = useParams<{ id: string }>();
+  const { id: agentIdFromRoute } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  // Support both /builder/:id (legacy) and /hive?tab=builder&agentId=xxx
+  const agentIdParam = agentIdFromRoute || searchParams.get("agentId") || undefined;
   const { user } = useAuth();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([createAgentNode()]);
@@ -1008,7 +1010,9 @@ const Builder = () => {
       if (agentId) {
         setCurrentAgentId(agentId);
         if (!agentIdParam) {
-          navigate(`/builder/${agentId}`, { replace: true });
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set("agentId", agentId);
+          setSearchParams(newParams, { replace: true });
         }
       }
     } catch (err: any) {
@@ -1055,7 +1059,9 @@ const Builder = () => {
       if (agentId) {
         setCurrentAgentId(agentId);
         if (!agentIdParam) {
-          navigate(`/builder/${agentId}`, { replace: true });
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set("agentId", agentId);
+          setSearchParams(newParams, { replace: true });
         }
         await deployAgent.mutateAsync(agentId);
 
@@ -1899,7 +1905,7 @@ const Builder = () => {
                 variant="ghost"
                 onClick={() => {
                   setShowDeploySuccessDialog(false);
-                  navigate(currentAgentId ? `/runtime?agentId=${currentAgentId}` : "/runtime");
+                  navigate(currentAgentId ? `/hive?tab=runtime&agentId=${currentAgentId}` : "/hive?tab=runtime");
                 }}
               >
                 稍后设置，前往运行环境

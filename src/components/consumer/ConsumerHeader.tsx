@@ -58,7 +58,7 @@ export function ConsumerHeader() {
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                onClick={() => navigate('/runtime')}
+                onClick={() => navigate('/hive?tab=runtime')}
               >
                 <MessageCircle className="h-4 w-4" />
               </Button>

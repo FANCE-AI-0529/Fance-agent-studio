@@ -1,20 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
-  Bot, 
-  Hammer, 
-  Play, 
   Settings, 
   HelpCircle,
   ChevronLeft,
   LayoutDashboard,
   LogOut,
   User,
-  Plug,
   Users,
-  BookOpen,
   Lock,
   Sparkles,
+  Hexagon,
+  Loader2,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 import { useAppModeStore } from "@/stores/appModeStore";
@@ -24,6 +21,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserManagementDialog } from "@/components/user/UserManagementDialog";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { HelpDialog } from "@/components/help/HelpDialog";
+import { useMyAgents } from "@/hooks/useAgents";
+import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 import {
   Sidebar,
   SidebarContent,
@@ -45,13 +44,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const mainNavItems = [
   { title: "工作台", url: "/", icon: LayoutDashboard },
-  { title: "智能体构建", url: "/builder", icon: Bot },
-  { title: "知识库", url: "/knowledge", icon: BookOpen },
-  { title: "技能工坊", url: "/foundry", icon: Hammer },
-  { title: "运行终端", url: "/runtime", icon: Play },
+  { title: "HIVE", url: "/hive", icon: Hexagon },
 ];
 
 export function AppSidebar() {
@@ -60,14 +57,15 @@ export function AppSidebar() {
   const { user, signOut } = useAuth();
   const { toggleMode } = useAppModeStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // 返回魔法界面 - 同时切换模式并导航到根路由
+  const { data: myAgents = [], isLoading: agentsLoading } = useMyAgents();
+
   const handleReturnToMagic = () => {
     toggleMode();
     navigate('/');
   };
 
-  // Dialog states
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -78,6 +76,16 @@ export function AppSidebar() {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const handleAgentClick = (agent: any) => {
+    if (agent.status === 'deployed') {
+      navigate(`/hive?tab=runtime&agentId=${agent.id}`);
+    } else {
+      navigate(`/hive?tab=builder&agentId=${agent.id}`);
+    }
+  };
+
+  const displayedAgents = myAgents.slice(0, 10);
 
   return (
     <>
@@ -114,7 +122,7 @@ export function AppSidebar() {
             </div>
           )}
 
-          <SidebarContent className="flex-1 py-2">
+          <SidebarContent className="flex-1 py-2 overflow-hidden flex flex-col">
             {/* Main Navigation */}
             <SidebarGroup>
               {!collapsed && (
@@ -154,9 +162,94 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* My Agents List */}
+            <SidebarGroup className="flex-1 overflow-hidden flex flex-col">
+              {!collapsed && (
+                <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-4 py-2 flex items-center justify-between">
+                  <span>我的智能体</span>
+                  {myAgents.length > 10 && (
+                    <button 
+                      onClick={() => navigate('/hive?tab=builder')}
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      全部
+                    </button>
+                  )}
+                </SidebarGroupLabel>
+              )}
+              <SidebarGroupContent className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="px-2 space-y-0.5">
+                    {agentsLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : displayedAgents.length === 0 ? (
+                      !collapsed && (
+                        <button
+                          onClick={() => navigate('/hive?tab=builder')}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent transition-colors"
+                        >
+                          <Hexagon className="h-4 w-4" />
+                          <span>创建第一个智能体</span>
+                        </button>
+                      )
+                    ) : (
+                      displayedAgents.map((agent) => {
+                        const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
+                        const isActive = location.search.includes(`agentId=${agent.id}`);
+                        
+                        return (
+                          <Tooltip key={agent.id}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => handleAgentClick(agent)}
+                                className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-all hover:bg-sidebar-accent group ${
+                                  collapsed ? "justify-center" : ""
+                                } ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                              >
+                                <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform">
+                                  <AgentAvatarDisplay 
+                                    avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
+                                    size="sm" 
+                                  />
+                                </div>
+                                {!collapsed && (
+                                  <>
+                                    <span className="text-sm truncate flex-1 text-left">
+                                      {agent.name}
+                                    </span>
+                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                      agent.status === 'deployed' 
+                                        ? "bg-emerald-500" 
+                                        : "border border-muted-foreground/40"
+                                    }`} />
+                                  </>
+                                )}
+                              </button>
+                            </TooltipTrigger>
+                            {collapsed && (
+                              <TooltipContent side="right" className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <span>{agent.name}</span>
+                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                    agent.status === 'deployed' ? "bg-emerald-500" : "border border-muted-foreground/40"
+                                  }`} />
+                                </div>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
             {/* Protocol Runtime Status */}
             {!collapsed && (
-              <div className="mx-4 mt-4 p-3 rounded-lg bg-card/50 border border-border">
+              <div className="mx-4 mt-2 p-3 rounded-lg bg-card/50 border border-border flex-shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-status-executing animate-pulse" />
                   <span className="text-xs font-medium text-foreground">治理引擎</span>
@@ -207,7 +300,6 @@ export function AppSidebar() {
 
           {/* User Section */}
           <div className="mt-auto border-t border-sidebar-border">
-            {/* User Info */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

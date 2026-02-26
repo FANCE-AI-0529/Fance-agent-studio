@@ -63,7 +63,7 @@ ${inspiration.story_content || '帮助用户高效完成任务'}
     
     // Short delay for visual feedback
     setTimeout(() => {
-      navigate(`/builder?inspiration=${inspiration.id}&autoGenerate=true&desc=${encodedDesc}&title=${encodedTitle}&category=${encodedCategory}`);
+      navigate(`/hive?tab=builder&inspiration=${inspiration.id}&autoGenerate=true&desc=${encodedDesc}&title=${encodedTitle}&category=${encodedCategory}`);
     }, 500);
   };
 

@@ -116,7 +116,7 @@ export default function SharedPrompt() {
       if (insertError) throw insertError;
 
       toast.success("提示词已添加到你的收藏");
-      navigate("/runtime");
+      navigate("/hive?tab=runtime");
     } catch (err) {
       console.error("Error applying prompt:", err);
       toast.error("应用提示词失败");

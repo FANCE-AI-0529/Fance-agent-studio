@@ -136,7 +136,7 @@ export default function PaymentSuccess() {
               <div className="space-y-3">
                 <Button 
                   className="w-full gap-2" 
-                  onClick={() => navigate("/runtime")}
+                  onClick={() => navigate("/hive?tab=runtime")}
                 >
                   开始使用
                   <ArrowRight className="h-4 w-4" />

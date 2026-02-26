@@ -68,7 +68,7 @@ export function useAgentClone() {
       toast.success("复刻成功！正在跳转到编辑页面...");
       
       // [跳转]：导航到构建器页面编辑新智能体
-      navigate(`/builder/${newAgentId}`);
+      navigate(`/hive?tab=builder&agentId=${newAgentId}`);
     },
     onError: (error: Error) => {
       // [错误]：显示错误提示

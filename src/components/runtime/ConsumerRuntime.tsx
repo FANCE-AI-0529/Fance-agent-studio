@@ -631,7 +631,7 @@ export function ConsumerRuntime() {
                           returnUrl: `/runtime?agent=${agentId}`,
                         });
                         setTimeout(() => {
-                          navigate(`/builder/${agentId}`);
+                          navigate(`/hive?tab=builder&agentId=${agentId}`);
                         }, 800);
                       }}
                       className="gap-2 border-primary/30 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5"
@@ -713,9 +713,9 @@ export function ConsumerRuntime() {
                             agentId,
                             targetPage: 'builder',
                             chatSessionId: session?.id || '',
-                            returnUrl: `/runtime?agent=${agentId}`,
+                            returnUrl: `/hive?tab=runtime&agentId=${agentId}`,
                           });
-                          setTimeout(() => navigate(`/builder/${agentId}`), 800);
+                          setTimeout(() => navigate(`/hive?tab=builder&agentId=${agentId}`), 800);
                         } : undefined}
                       />
                     );

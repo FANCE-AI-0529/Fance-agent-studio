@@ -46,7 +46,7 @@ function ActivityItem({ activity, showUser }: { activity: Activity; showUser: bo
 
   const handleTargetClick = () => {
     if (activity.target_type === "agent" && activity.target_id) {
-      navigate(`/builder/${activity.target_id}`);
+      navigate(`/hive?tab=builder&agentId=${activity.target_id}`);
     }
   };
 

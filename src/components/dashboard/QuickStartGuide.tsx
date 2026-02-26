@@ -37,7 +37,7 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
               </p>
             </div>
           </div>
-          <Button onClick={() => navigate("/runtime")} className="gap-2">
+          <Button onClick={() => navigate("/hive?tab=runtime")} className="gap-2">
             <Play className="h-4 w-4" />
             开始对话
           </Button>
@@ -108,7 +108,7 @@ export function QuickStartGuide({ hasAgents = false, onStartWizard }: QuickStart
             AI帮我创建
           </Button>
           <Button variant="outline" size="lg" asChild className="gap-2">
-            <Link to="/builder">
+            <Link to="/hive?tab=builder">
               <Bot className="h-4 w-4" />
               浏览模板
               <ArrowRight className="h-4 w-4" />
