@@ -144,16 +144,24 @@ serve(async (req) => {
         expandedNodes = traversalResult.filter((n: any) => n.depth > 0);
       }
 
-      // Get edges between all nodes
+      // Get edges between all nodes using batched queries to avoid URL length limits
       const allNodeIds = [...anchorIdArray, ...expandedNodes.map((n: any) => n.node_id)];
       
-      const { data: edges } = await supabase
-        .from("knowledge_edges")
-        .select("id, source_node_id, target_node_id, relation_type, description, strength")
-        .eq("knowledge_base_id", knowledgeBaseId)
-        .or(`source_node_id.in.(${allNodeIds.join(",")}),target_node_id.in.(${allNodeIds.join(",")})`);
-
-      graphEdges = edges || [];
+      const BATCH_SIZE = 20;
+      const allEdges: any[] = [];
+      for (let i = 0; i < allNodeIds.length; i += BATCH_SIZE) {
+        const batchIds = allNodeIds.slice(i, i + BATCH_SIZE);
+        const { data: batchEdges } = await supabase
+          .from("knowledge_edges")
+          .select("id, source_node_id, target_node_id, relation_type, description, strength")
+          .eq("knowledge_base_id", knowledgeBaseId)
+          .or(`source_node_id.in.(${batchIds.join(",")}),target_node_id.in.(${batchIds.join(",")})`);
+        if (batchEdges) allEdges.push(...batchEdges);
+      }
+      // Deduplicate edges by id
+      const edgeMap = new Map(allEdges.map(e => [e.id, e]));
+      const edges = Array.from(edgeMap.values());
+      graphEdges = edges;
     }
 
     // Step 6: Generate enriched context

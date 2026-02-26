@@ -1,8 +1,29 @@
-import { Database, FileText, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Database, FileText, Loader2, MoreVertical, Eye, Settings2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDeleteKnowledgeBase } from "@/hooks/useKnowledgeBases";
 import type { KnowledgeBase } from "@/hooks/useKnowledgeBases";
+import { EditKnowledgeBaseDialog } from "./EditKnowledgeBaseDialog";
 
 interface KnowledgeBaseListProps {
   knowledgeBases: KnowledgeBase[];
@@ -17,6 +38,22 @@ export function KnowledgeBaseList({
   selectedId,
   onSelect,
 }: KnowledgeBaseListProps) {
+  const [deleteTarget, setDeleteTarget] = useState<KnowledgeBase | null>(null);
+  const [editTarget, setEditTarget] = useState<KnowledgeBase | null>(null);
+  const deleteKnowledgeBase = useDeleteKnowledgeBase();
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteKnowledgeBase.mutateAsync(deleteTarget.id);
+      if (selectedId === deleteTarget.id) {
+        onSelect(null);
+      }
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-3 space-y-2">
@@ -45,40 +82,108 @@ export function KnowledgeBaseList({
   }
 
   return (
-    <div className="p-2 space-y-1">
-      {knowledgeBases.map((kb) => (
-        <button
-          key={kb.id}
-          onClick={() => onSelect(kb.id)}
-          className={cn(
-            "w-full p-3 rounded-lg text-left transition-all",
-            "hover:bg-accent/50",
-            selectedId === kb.id
-              ? "bg-primary/10 border border-primary/30"
-              : "border border-transparent"
-          )}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm truncate">{kb.name}</h3>
-              {kb.description && (
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                  {kb.description}
-                </p>
-              )}
+    <>
+      <div className="p-2 space-y-1">
+        {knowledgeBases.map((kb) => (
+          <div
+            key={kb.id}
+            onClick={() => onSelect(kb.id)}
+            className={cn(
+              "w-full p-3 rounded-lg text-left transition-all cursor-pointer group relative",
+              "hover:bg-accent/50",
+              selectedId === kb.id
+                ? "bg-primary/10 border border-primary/30"
+                : "border border-transparent"
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm truncate">{kb.name}</h3>
+                {kb.description && (
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {kb.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <IndexStatusBadge status={kb.index_status} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => onSelect(kb.id)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      查看详情
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditTarget(kb)}>
+                      <Settings2 className="h-4 w-4 mr-2" />
+                      配置
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setDeleteTarget(kb)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      删除
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-            <IndexStatusBadge status={kb.index_status} />
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                {kb.documents_count || 0} 文档
+              </span>
+              <span>{kb.chunks_count || 0} 切片</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              {kb.documents_count || 0} 文档
-            </span>
-            <span>{kb.chunks_count || 0} 切片</span>
-          </div>
-        </button>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除知识库</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除知识库 "{deleteTarget?.name}" 吗？此操作将删除所有文档和索引数据，无法恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteKnowledgeBase.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteKnowledgeBase.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  删除中...
+                </>
+              ) : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit/Configure Dialog */}
+      <EditKnowledgeBaseDialog
+        knowledgeBase={editTarget}
+        open={!!editTarget}
+        onOpenChange={(open) => !open && setEditTarget(null)}
+      />
+    </>
   );
 }
 
