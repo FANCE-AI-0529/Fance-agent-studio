@@ -13,30 +13,42 @@ import {
   Eye,
   Settings,
   RefreshCw,
-  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CreateKnowledgeBaseDialog } from "@/components/knowledge/CreateKnowledgeBaseDialog";
+import { EditKnowledgeBaseDialog } from "@/components/knowledge/EditKnowledgeBaseDialog";
 import { KnowledgeBaseDetail } from "@/components/knowledge/KnowledgeBaseDetail";
-import { useKnowledgeBases } from "@/hooks/useKnowledgeBases";
+import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
 import { cn } from "@/lib/utils";
 
 export default function Knowledge() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedKBId, setSelectedKBId] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<KnowledgeBase | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<KnowledgeBase | null>(null);
   const { data: knowledgeBases = [], isLoading } = useKnowledgeBases();
+  const deleteKnowledgeBase = useDeleteKnowledgeBase();
 
   const filteredKBs = knowledgeBases.filter(kb => 
     kb.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -44,6 +56,18 @@ export default function Knowledge() {
   );
 
   const selectedKB = knowledgeBases.find(kb => kb.id === selectedKBId);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteKnowledgeBase.mutateAsync(deleteTarget.id);
+      if (selectedKBId === deleteTarget.id) {
+        setSelectedKBId(null);
+      }
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   return (
     <div className="h-full flex overflow-hidden bg-background">
@@ -144,7 +168,7 @@ export default function Knowledge() {
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -155,7 +179,7 @@ export default function Knowledge() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedKBId(kb.id);
+                              setEditTarget(kb);
                             }}>
                               <Settings className="h-4 w-4 mr-2" />
                               配置
@@ -164,15 +188,7 @@ export default function Knowledge() {
                               className="text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm(`确定要删除知识库「${kb.name}」吗？此操作不可恢复。`)) {
-                                  // Delete will be handled via the hook
-                                  import("@/hooks/useKnowledgeBases").then(mod => {
-                                    // For now, show toast - proper deletion needs hook integration
-                                    import("sonner").then(({ toast }) => {
-                                      toast.info("请在知识库详情页中删除");
-                                    });
-                                  });
-                                }
+                                setDeleteTarget(kb);
                               }}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -200,7 +216,7 @@ export default function Knowledge() {
               <div className="text-lg font-semibold text-foreground">
                 {knowledgeBases.reduce((sum, kb) => sum + (kb.documents_count || 0), 0)}
               </div>
-              <div className="text-[10px] text-muted-foreground">总文档</div>
+              <div className="text-[10px] text-muted-foreground">总文档数</div>
             </div>
           </div>
         </div>
@@ -248,6 +264,40 @@ export default function Knowledge() {
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
       />
+
+      {/* Edit Dialog */}
+      <EditKnowledgeBaseDialog
+        knowledgeBase={editTarget}
+        open={!!editTarget}
+        onOpenChange={(open) => !open && setEditTarget(null)}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除知识库</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除知识库「{deleteTarget?.name}」吗？此操作将删除所有文档和索引数据，无法恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteKnowledgeBase.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteKnowledgeBase.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  删除中...
+                </>
+              ) : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
