@@ -89,7 +89,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ResizablePanelGroup,
   ResizablePanel,
-  ResizableHandle,
 } from "@/components/ui/resizable";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -1531,7 +1530,7 @@ const Runtime = () => {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-border bg-card/80 backdrop-blur-sm relative z-20">
+                <div className="px-4 py-3 border-t border-border bg-card/80 backdrop-blur-sm relative z-20">
                   {/* Scenario Quick Prompts */}
                   {activeScenario?.suggestedPrompts && activeScenario.suggestedPrompts.length > 0 && currentPhase === "idle" && (
                     <ScenarioPrompts
@@ -1567,17 +1566,19 @@ const Runtime = () => {
                     />
                   )}
                   
-                  <div className="flex gap-2">
-                    <TooltipProvider>
-                      <FileUploadButton
-                        onFilesSelected={addFiles}
-                        disabled={currentPhase !== "idle" || isUploading}
-                      />
-                      <VoiceInputButton 
-                        onTranscript={(text) => setInput(prev => prev ? `${prev} ${text}` : text)}
-                        disabled={currentPhase !== "idle"}
-                      />
-                    </TooltipProvider>
+                  <div className="flex items-end gap-2 bg-muted/40 rounded-2xl px-3 py-2 border border-border/50 focus-within:border-primary/50 transition-colors">
+                    <div className="flex items-center gap-1 pb-0.5">
+                      <TooltipProvider>
+                        <FileUploadButton
+                          onFilesSelected={addFiles}
+                          disabled={currentPhase !== "idle" || isUploading}
+                        />
+                        <VoiceInputButton 
+                          onTranscript={(text) => setInput(prev => prev ? `${prev} ${text}` : text)}
+                          disabled={currentPhase !== "idle"}
+                        />
+                      </TooltipProvider>
+                    </div>
                     <AutoResizeTextarea
                       placeholder="输入消息，或输入 / 打开快捷命令菜单..."
                       value={input}
@@ -1597,7 +1598,7 @@ const Runtime = () => {
                           setShowQuickCommands(false);
                         }
                       }}
-                      className="bg-card flex-1"
+                      className="flex-1 bg-transparent border-0 shadow-none focus-visible:ring-0 resize-none px-0"
                       disabled={currentPhase !== "idle"}
                       maxRows={5}
                       minRows={1}
@@ -1605,17 +1606,18 @@ const Runtime = () => {
                     <Button 
                       onClick={handleSend} 
                       disabled={(!input.trim() && pendingFiles.length === 0) || currentPhase !== "idle"}
-                      className="gap-2 self-end"
+                      size="icon"
+                      className="rounded-xl h-8 w-8 flex-shrink-0 mb-0.5"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
                   
-                  <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                    输入 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">/</kbd> 打开快捷命令 · 按 <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Enter</kbd> 发送
+                  <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">/</kbd> 快捷命令 · <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Enter</kbd> 发送
                     {isDeveloperMode && (
-                      <span className="ml-2">
-                        · <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Ctrl+`</kbd> 切换工具面板
+                      <span className="ml-1.5">
+                        · <kbd className="px-1 py-0.5 bg-muted rounded text-[9px]">Ctrl+`</kbd> 工具面板
                       </span>
                     )}
                   </p>
@@ -1624,54 +1626,49 @@ const Runtime = () => {
             </div>
           </ResizablePanel>
 
-          {/* Developer Tools Panel */}
-          {isDeveloperMode && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel 
-                defaultSize={35} 
-                minSize={15} 
-                maxSize={60}
-                collapsible
-                collapsedSize={0}
-                onCollapse={() => devToolsState.setCollapsed(true)}
-                onExpand={() => devToolsState.setCollapsed(false)}
-              >
-                <DevToolsPanel
-                  renderTrace={renderTraceContent}
-                  renderContext={renderContextContent}
-                  renderCircuit={renderCircuitContent}
-                  renderManus={() => (
-                    <ManusMemoryPanel
-                      agentId={selectedAgent?.id || null}
-                      onUpdateFile={async () => true}
-                    />
-                  )}
-                  renderScheduler={() => (
-                    <TaskSchedulerPanel />
-                  )}
-                  renderHistory={() => (
-                    <ExecutionHistoryContent />
-                  )}
-                  renderSwarm={() =>
-                    focusedSwarm ? (
-                      <SwarmStatusPanel
-                        state={focusedSwarm}
-                        onPauseMember={(memberId) => swarmRunner.pauseMember(focusedSwarm.swarmId, memberId)}
-                        onResumeMember={(memberId) => swarmRunner.resumeMember(focusedSwarm.swarmId, memberId)}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                        暂无活跃 Swarm
-                      </div>
-                    )
-                  }
-                  onClose={() => setIsDeveloperMode(false)}
-                />
-              </ResizablePanel>
-            </>
-          )}
         </ResizablePanelGroup>
+
+        {/* Developer Tools - Bottom Drawer */}
+        {isDeveloperMode && (
+          <div
+            className={cn(
+              "border-t border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ease-in-out",
+              devToolsState.isCollapsed ? "h-0 overflow-hidden" : "h-[35vh] min-h-[200px] max-h-[50vh]"
+            )}
+          >
+            <DevToolsPanel
+              renderTrace={renderTraceContent}
+              renderContext={renderContextContent}
+              renderCircuit={renderCircuitContent}
+              renderManus={() => (
+                <ManusMemoryPanel
+                  agentId={selectedAgent?.id || null}
+                  onUpdateFile={async () => true}
+                />
+              )}
+              renderScheduler={() => (
+                <TaskSchedulerPanel />
+              )}
+              renderHistory={() => (
+                <ExecutionHistoryContent />
+              )}
+              renderSwarm={() =>
+                focusedSwarm ? (
+                  <SwarmStatusPanel
+                    state={focusedSwarm}
+                    onPauseMember={(memberId) => swarmRunner.pauseMember(focusedSwarm.swarmId, memberId)}
+                    onResumeMember={(memberId) => swarmRunner.resumeMember(focusedSwarm.swarmId, memberId)}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    暂无活跃 Swarm
+                  </div>
+                )
+              }
+              onClose={() => setIsDeveloperMode(false)}
+            />
+          </div>
+        )}
       </div>
     </>
   );
