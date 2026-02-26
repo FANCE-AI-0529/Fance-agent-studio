@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  nanoclaw-kernel:
+    build: .
+    container_name: nanoclaw-kernel
+    ports:
+      - "3100:3100"
+    volumes:
+      # 关键：挂载 Docker Socket 以允许 Kernel 创建子容器
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PORT=3100
+      - KERNEL_AUTH_TOKEN=${KERNEL_AUTH_TOKEN:-YOUR_SECRET_KERNEL_TOKEN}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Authorization: Bearer ${KERNEL_AUTH_TOKEN:-YOUR_SECRET_KERNEL_TOKEN}", "http://localhost:3100/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

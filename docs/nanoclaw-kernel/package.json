@@ -1,0 +1,21 @@
+{
+  "name": "nanoclaw-kernel",
+  "version": "2.0.0",
+  "description": "NanoClaw Kernel API Server - 独立部署的容器执行引擎",
+  "private": true,
+  "scripts": {
+    "start:api": "tsx src/api-server.ts",
+    "dev": "tsx watch src/api-server.ts",
+    "build": "tsc && node dist/api-server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
