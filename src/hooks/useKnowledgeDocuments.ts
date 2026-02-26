@@ -8,6 +8,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -242,26 +243,19 @@ export function useDeleteDocument() {
 
 /**
  * 触发文档索引钩子
- * 
- * 调用RAG索引边缘函数，对指定文档进行向量化索引。
- * 
- * @returns {UseMutationResult} - 索引操作的变更结果
  */
 export function useIngestDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (documentId: string) => {
-      // [调用]：触发RAG索引边缘函数
       const { data, error } = await supabase.functions.invoke("rag-ingest", {
         body: { documentId },
       });
-
       if (error) throw error;
       return data;
     },
     onSuccess: (_, documentId) => {
-      // [刷新]：更新相关缓存
       queryClient.invalidateQueries({ queryKey: ["knowledge-document", documentId] });
       queryClient.invalidateQueries({ queryKey: ["knowledge-documents"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge-bases"] });
@@ -271,4 +265,41 @@ export function useIngestDocument() {
       toast.error(`索引失败: ${error.message}`);
     },
   });
+}
+
+/**
+ * 文档状态实时订阅钩子
+ * 
+ * 监听 knowledge_documents 表的实时更新，当文档状态变化时自动刷新缓存。
+ */
+export function useDocumentRealtimeUpdates(knowledgeBaseId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!knowledgeBaseId) return;
+
+    const channel = supabase
+      .channel(`kb-docs-${knowledgeBaseId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "knowledge_documents",
+          filter: `knowledge_base_id=eq.${knowledgeBaseId}`,
+        },
+        (payload) => {
+          const newStatus = payload.new?.status;
+          if (newStatus === "indexed" || newStatus === "failed") {
+            queryClient.invalidateQueries({ queryKey: ["knowledge-documents", knowledgeBaseId] });
+            queryClient.invalidateQueries({ queryKey: ["knowledge-bases"] });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [knowledgeBaseId, queryClient]);
 }

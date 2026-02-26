@@ -270,7 +270,7 @@ async function fetchFileFromStorage(
  * 最大可处理文件大小（5MB）
  * 超过此大小的文件将跳过 AI 解析，使用元数据降级
  */
-const MAX_PROCESSABLE_SIZE = 5 * 1024 * 1024;
+const MAX_PROCESSABLE_SIZE = 15 * 1024 * 1024;
 
 /**
  * 主服务入口

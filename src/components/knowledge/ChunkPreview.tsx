@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { FileText, Hash, Tag, Sparkles } from "lucide-react";
+import { FileText, Hash } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useKnowledgeDocument } from "@/hooks/useKnowledgeDocuments";
-import { cn } from "@/lib/utils";
 
 interface ChunkPreviewProps {
   documentId: string;
@@ -39,16 +37,7 @@ export function ChunkPreview({ documentId }: ChunkPreviewProps) {
         .order("chunk_index", { ascending: true });
 
       if (!error && data) {
-        // Add mock semantic weight to metadata
-        const chunksWithWeight = data.map((chunk) => ({
-          ...chunk,
-          metadata: {
-            ...(typeof chunk.metadata === 'object' && chunk.metadata !== null ? chunk.metadata : {}),
-            semanticWeight: Math.random() * 0.4 + 0.6, // 0.6-1.0
-            tags: generateMockTags(chunk.content),
-          },
-        }));
-        setChunks(chunksWithWeight);
+        setChunks(data as DocumentChunk[]);
       }
       
       setIsLoading(false);
@@ -113,16 +102,11 @@ export function ChunkPreview({ documentId }: ChunkPreviewProps) {
         <div className="space-y-4 pr-4 pb-4">
           {chunks.map((chunk) => {
             const isExpanded = expandedChunks.has(chunk.id);
-            const semanticWeight = (chunk.metadata?.semanticWeight as number) || 0.7;
-            const tags = (chunk.metadata?.tags as string[]) || [];
-
             return (
               <ChunkCard
                 key={chunk.id}
                 chunk={chunk}
                 isExpanded={isExpanded}
-                semanticWeight={semanticWeight}
-                tags={tags}
                 onToggleExpand={() => toggleExpand(chunk.id)}
               />
             );
@@ -136,18 +120,10 @@ export function ChunkPreview({ documentId }: ChunkPreviewProps) {
 interface ChunkCardProps {
   chunk: DocumentChunk;
   isExpanded: boolean;
-  semanticWeight: number;
-  tags: string[];
   onToggleExpand: () => void;
 }
 
-function ChunkCard({
-  chunk,
-  isExpanded,
-  semanticWeight,
-  tags,
-  onToggleExpand,
-}: ChunkCardProps) {
+function ChunkCard({ chunk, isExpanded, onToggleExpand }: ChunkCardProps) {
   const displayContent = isExpanded
     ? chunk.content
     : chunk.content.slice(0, 200);
@@ -169,7 +145,7 @@ function ChunkCard({
       </div>
 
       {/* Content */}
-      <div className="mb-3">
+      <div>
         <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
           {displayContent}
           {!isExpanded && hasMore && "..."}
@@ -185,60 +161,10 @@ function ChunkCard({
           </Button>
         )}
       </div>
-
-      {/* Semantic Weight */}
-      <div className="mb-3">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            语义权重
-          </span>
-          <span className="text-xs font-medium">{(semanticWeight * 100).toFixed(0)}%</span>
-        </div>
-        <Progress
-          value={semanticWeight * 100}
-          className={cn(
-            "h-1.5",
-            semanticWeight > 0.8 && "[&>div]:bg-status-executing",
-            semanticWeight > 0.6 && semanticWeight <= 0.8 && "[&>div]:bg-primary",
-            semanticWeight <= 0.6 && "[&>div]:bg-muted-foreground"
-          )}
-        />
-      </div>
-
-      {/* Tags */}
-      {tags.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Tag className="h-3 w-3 text-muted-foreground" />
-          {tags.map((tag, index) => (
-            <Badge
-              key={index}
-              variant="outline"
-              className="text-[10px] px-1.5 py-0 h-5"
-            >
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-// Helper functions
 function estimateTokens(text: string): number {
-  // Rough estimate: ~4 characters per token for mixed content
   return Math.ceil(text.length / 4);
-}
-
-function generateMockTags(content: string): string[] {
-  const allTags = [
-    "概念", "定义", "示例", "说明", "功能", "产品",
-    "技术", "流程", "规则", "接口", "配置", "指南"
-  ];
-  
-  // Select 2-4 random tags
-  const count = Math.floor(Math.random() * 3) + 2;
-  const shuffled = allTags.sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
 }

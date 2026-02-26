@@ -18,6 +18,7 @@ import {
   useKnowledgeDocuments,
   useDeleteDocument,
   useIngestDocument,
+  useDocumentRealtimeUpdates,
 } from "@/hooks/useKnowledgeDocuments";
 import { useKnowledgeStore } from "@/stores/knowledgeStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ interface DocumentListProps {
 
 export function DocumentList({ knowledgeBaseId }: DocumentListProps) {
   const { data: documents = [], isLoading } = useKnowledgeDocuments(knowledgeBaseId);
+  useDocumentRealtimeUpdates(knowledgeBaseId);
   const deleteDocument = useDeleteDocument();
   const ingestDocument = useIngestDocument();
   const { selectedDocumentId, setSelectedDocument, indexingDocumentIds } = useKnowledgeStore();
@@ -225,7 +227,7 @@ export function DocumentList({ knowledgeBaseId }: DocumentListProps) {
 
               {isIndexing && (
                 <div className="mt-3">
-                  <DocumentProcessingProgress status={doc.status || "pending"} />
+                  <DocumentProcessingProgress status={doc.status || "pending"} chunksCount={doc.chunks_count || 0} />
                 </div>
               )}
 

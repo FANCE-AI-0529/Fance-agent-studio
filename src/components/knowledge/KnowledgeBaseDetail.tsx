@@ -21,6 +21,7 @@ import { useKnowledgeStore } from "@/stores/knowledgeStore";
 import { DocumentUploader } from "./DocumentUploader";
 import { DocumentList } from "./DocumentList";
 import { ChunkPreview } from "./ChunkPreview";
+import { RetrievalTest } from "./RetrievalTest";
 import { EntityExtractionToggle } from "./EntityExtractionToggle";
 import { KnowledgeGraphPanel } from "./KnowledgeGraphPanel";
 
@@ -100,10 +101,11 @@ export function KnowledgeBaseDetail({ knowledgeBase }: KnowledgeBaseDetailProps)
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <div className="px-4 pt-2">
               <TabsList>
-                <TabsTrigger value="documents">文档列表</TabsTrigger>
+              <TabsTrigger value="documents">文档列表</TabsTrigger>
                 <TabsTrigger value="chunks" disabled={!selectedDocumentId}>
                   切片预览
                 </TabsTrigger>
+                <TabsTrigger value="retrieval">检索测试</TabsTrigger>
                 <TabsTrigger value="graph">知识图谱</TabsTrigger>
               </TabsList>
             </div>
@@ -114,6 +116,9 @@ export function KnowledgeBaseDetail({ knowledgeBase }: KnowledgeBaseDetailProps)
               {selectedDocumentId && (
                 <ChunkPreview documentId={selectedDocumentId} />
               )}
+            </TabsContent>
+            <TabsContent value="retrieval" className="flex-1 overflow-hidden m-0">
+              <RetrievalTest knowledgeBaseId={knowledgeBase.id} />
             </TabsContent>
             <TabsContent value="graph" className="flex-1 overflow-hidden m-0">
               <KnowledgeGraphPanel knowledgeBaseId={knowledgeBase.id} />
