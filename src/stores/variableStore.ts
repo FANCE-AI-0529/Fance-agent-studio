@@ -42,6 +42,15 @@ interface VariableActions {
   
   // Mock data
   setMockData: (nodeId: string, data: unknown) => void;
+
+  // Resolve variable references in a string
+  resolveVariables: (template: string, context: Record<string, Record<string, unknown>>) => string;
+  
+  // Register node schema
+  registerNodeSchema: (nodeId: string, schema: Record<string, VariableType>) => void;
+  
+  // Node schemas registry
+  nodeSchemas: Record<string, Record<string, VariableType>>;
   
   // Get all variables for autocomplete
   getAllVariables: () => Array<{
@@ -56,7 +65,7 @@ interface VariableActions {
   reset: () => void;
 }
 
-const initialState: VariableState = {
+const initialState: VariableState & { nodeSchemas: Record<string, Record<string, VariableType>> } = {
   globalVariables: [
     {
       id: "global-user-id",
@@ -81,6 +90,7 @@ const initialState: VariableState = {
   edgeMappings: {},
   selectedEdgeId: null,
   mockData: {},
+  nodeSchemas: {},
 };
 
 export const useVariableStore = create<VariableState & VariableActions>(
@@ -180,6 +190,27 @@ export const useVariableStore = create<VariableState & VariableActions>(
 
       return variables;
     },
+
+    resolveVariables: (template, context) => {
+      return template.replace(/\{\{([^}]+)\}\}/g, (match, expr) => {
+        const parts = expr.trim().split(".");
+        if (parts.length < 2) return match;
+        const [nodeId, ...pathParts] = parts;
+        const nodeData = context[nodeId];
+        if (!nodeData) return match;
+        let current: unknown = nodeData;
+        for (const key of pathParts) {
+          if (current === null || current === undefined || typeof current !== "object") return match;
+          current = (current as Record<string, unknown>)[key];
+        }
+        return current !== undefined && current !== null ? String(current) : match;
+      });
+    },
+
+    registerNodeSchema: (nodeId, schema) =>
+      set((state) => ({
+        nodeSchemas: { ...state.nodeSchemas, [nodeId]: schema },
+      })),
 
     reset: () => set(initialState),
   })
