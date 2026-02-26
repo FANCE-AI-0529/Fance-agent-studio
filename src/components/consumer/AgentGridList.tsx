@@ -15,14 +15,14 @@ export function AgentGridList({ onCreateNew, className }: AgentGridListProps) {
   const { data: agents, isLoading } = useMyAgents();
 
   const handleAgentClick = (agentId: string) => {
-    navigate(`/runtime?agent=${agentId}`);
+    navigate(`/hive?tab=runtime&agentId=${agentId}`);
   };
 
   const handleCreateNew = () => {
     if (onCreateNew) {
       onCreateNew();
     } else {
-      navigate('/builder');
+      navigate('/hive?tab=builder');
     }
   };
 

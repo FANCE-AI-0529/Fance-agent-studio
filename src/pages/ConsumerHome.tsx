@@ -93,13 +93,13 @@ export default function ConsumerHome() {
   };
   const handleStartChat = () => {
     if (buildResult) {
-      navigate(`/runtime?agentId=${buildResult.agentId}`);
+      navigate(`/hive?tab=runtime&agentId=${buildResult.agentId}`);
     }
   };
   const handleViewDetails = () => {
     if (buildResult) {
       toggleMode(); // Switch to Studio mode
-      navigate(`/builder?agentId=${buildResult.agentId}`);
+      navigate(`/hive?tab=builder&agentId=${buildResult.agentId}`);
     }
   };
   const handleInspirationSelect = (prompt: string) => {
@@ -116,7 +116,7 @@ export default function ConsumerHome() {
     } else if (inputValue.trim()) {
       handleSubmit(inputValue);
     } else {
-      navigate("/builder");
+      navigate("/hive?tab=builder");
     }
   };
   const handleBackToInput = () => {

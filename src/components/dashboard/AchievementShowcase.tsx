@@ -142,7 +142,7 @@ export function AchievementShowcase() {
             <Button 
               size="sm" 
               variant="outline"
-              onClick={() => navigate("/builder?wizard=true")}
+              onClick={() => navigate("/hive?tab=builder&wizard=true")}
             >
               立即开始
             </Button>

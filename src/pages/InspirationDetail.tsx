@@ -302,7 +302,7 @@ export default function InspirationDetail() {
             size="lg"
             variant="outline"
             className="gap-2"
-            onClick={() => navigate("/builder")}
+            onClick={() => navigate("/hive?tab=builder")}
           >
             自定义创建
           </Button>

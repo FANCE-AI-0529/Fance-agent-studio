@@ -64,7 +64,7 @@ const Index = () => {
   const hasAgents = myAgents.length > 0;
 
   const handleStartWizard = () => {
-    navigate("/builder?wizard=true");
+    navigate("/hive?tab=builder&wizard=true");
   };
 
   const handleDeleteAgent = async () => {
@@ -99,7 +99,7 @@ const Index = () => {
           {hasAgents && (
             <Button onClick={() => {
               const lastDeployed = myAgents.find(a => a.status === 'deployed');
-              navigate(lastDeployed ? `/runtime?agentId=${lastDeployed.id}` : "/runtime");
+              navigate(lastDeployed ? `/hive?tab=runtime&agentId=${lastDeployed.id}` : "/hive?tab=runtime");
             }} className="gap-2">
               <Play className="h-4 w-4" />
               继续对话
@@ -157,7 +157,7 @@ const Index = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">我的助手</h2>
-              <Link to="/builder">
+              <Link to="/hive?tab=builder">
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
                   查看全部
                   <ArrowRight className="h-3 w-3" />
@@ -182,7 +182,7 @@ const Index = () => {
                     >
                       <div className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
                         <Link
-                          to={agent.status === 'deployed' ? `/runtime?agentId=${agent.id}` : `/builder/${agent.id}`}
+                          to={agent.status === 'deployed' ? `/hive?tab=runtime&agentId=${agent.id}` : `/hive?tab=builder&agentId=${agent.id}`}
                           className="flex items-center gap-4 flex-1 min-w-0"
                         >
                           <div className="w-12 h-12 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
@@ -221,7 +221,7 @@ const Index = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/builder/${agent.id}`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/hive?tab=builder&agentId=${agent.id}`)}>
                               <Pencil className="h-4 w-4 mr-2" />
                               编辑
                             </DropdownMenuItem>
@@ -244,7 +244,7 @@ const Index = () => {
                 })}
                 {myAgents.length > 3 && (
                   <Link
-                    to="/builder"
+                    to="/hive?tab=builder"
                     className="flex items-center justify-center p-4 rounded-xl border border-dashed border-border hover:border-primary/50 transition-colors"
                   >
                     <span className="text-sm text-muted-foreground">

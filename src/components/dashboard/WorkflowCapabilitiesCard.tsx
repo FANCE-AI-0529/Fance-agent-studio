@@ -95,7 +95,7 @@ export function WorkflowCapabilitiesCard() {
             variant="ghost" 
             size="sm" 
             className="h-7 text-xs gap-1"
-            onClick={() => navigate("/builder?wizard=true")}
+            onClick={() => navigate("/hive?tab=builder&wizard=true")}
           >
             探索更多
             <ArrowRight className="h-3 w-3" />

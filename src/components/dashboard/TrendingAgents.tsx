@@ -114,7 +114,7 @@ function TrendingAgentCard({ agent, rank, isLoggedIn }: TrendingAgentCardProps) 
   };
 
   const handlePlay = () => {
-    navigate(`/runtime?agent=${agent.id}`);
+    navigate(`/hive?tab=runtime&agentId=${agent.id}`);
   };
 
   const getRankBadge = (rank: number) => {

@@ -128,13 +128,13 @@ export function AgentDock({
   // Show all agents (no slicing)
   const allAgents = agents || [];
   const handleAgentClick = (agentId: string) => {
-    navigate(`/runtime?agent=${agentId}`);
+    navigate(`/hive?tab=runtime&agentId=${agentId}`);
   };
   const handleCreateNew = () => {
     if (onCreateNew) {
       onCreateNew();
     } else {
-      navigate('/builder');
+      navigate('/hive?tab=builder');
     }
   };
   const handleDeleteAgent = async (agentId: string, agentName: string) => {
@@ -146,7 +146,7 @@ export function AgentDock({
     }
   };
   const handleEditAgent = (agentId: string) => {
-    navigate(`/builder?agent=${agentId}`);
+    navigate(`/hive?tab=builder&agentId=${agentId}`);
   };
   if (isLoading) {
     return null;

@@ -242,7 +242,7 @@ print(data["choices"][0]["message"]["content"])`;
         <p className="text-muted-foreground text-center max-w-md">
           您需要先在 Agent 构建器中创建并部署智能体，才能生成 API 接口
         </p>
-        <Button onClick={() => navigate("/builder")}>
+        <Button onClick={() => navigate("/hive?tab=builder")}>
           <Plus className="h-4 w-4 mr-2" />
           创建智能体
         </Button>

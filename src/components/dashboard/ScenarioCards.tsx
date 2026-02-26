@@ -14,7 +14,7 @@ export function ScenarioCards() {
           transition={{ delay: index * 0.05 }}
         >
           <Link
-            to={`/builder?template=${scenario.id}`}
+            to={`/hive?tab=builder&template=${scenario.id}`}
             className="group relative flex flex-col items-center p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-300"
           >
             {scenario.popular && (
@@ -49,7 +49,7 @@ export function HotTemplates() {
           transition={{ delay: index * 0.1 }}
         >
           <Link
-            to={`/builder?template=${template.id}`}
+            to={`/hive?tab=builder&template=${template.id}`}
             className="group flex items-start gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all"
           >
             <div className="flex-1 min-w-0">

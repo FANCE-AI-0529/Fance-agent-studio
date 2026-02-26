@@ -97,7 +97,7 @@ export default function SharedConversation() {
 
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/runtime">
+                <Link to="/hive?tab=runtime">
                   <Play className="h-4 w-4 mr-2" />
                   体验这个 Agent
                 </Link>
@@ -175,7 +175,7 @@ export default function SharedConversation() {
               </Link>
             </Button>
             <Button size="sm" asChild>
-              <Link to="/runtime">
+              <Link to="/hive?tab=runtime">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 开始对话
               </Link>

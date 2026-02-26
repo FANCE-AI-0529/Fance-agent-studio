@@ -183,7 +183,7 @@ export default function Creator() {
                   <Card 
                     key={agent.id}
                     className="cursor-pointer hover:bg-accent/50 transition-colors"
-                    onClick={() => navigate(`/builder/${agent.id}`)}
+                    onClick={() => navigate(`/hive?tab=builder&agentId=${agent.id}`)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
