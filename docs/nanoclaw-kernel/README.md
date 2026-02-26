@@ -9,6 +9,7 @@
 
 - [架构概览](#架构概览)
 - [环境要求](#环境要求)
+- [⚡ 一键部署（推荐）](#-一键部署推荐)
 - [快速部署（Docker Compose）](#快速部署docker-compose)
 - [手动部署（无 Docker Compose）](#手动部署无-docker-compose)
 - [云服务器部署](#云服务器部署)
@@ -54,6 +55,58 @@
 | cURL | 任意 | `curl --version` |
 
 > **可选**：如果不使用 Docker 部署，还需要 Node.js 20+ 和 npm/bun。
+
+---
+
+## ⚡ 一键部署（推荐）
+
+只需一行命令，即可在全新的 Linux 服务器上完成 Docker 安装检测、镜像构建、服务启动和健康检查验证。
+
+### 本地部署
+
+```bash
+# 进入部署目录
+cd docs/nanoclaw-kernel
+
+# 赋予执行权限并运行
+chmod +x deploy.sh && ./deploy.sh
+```
+
+### 远程服务器部署
+
+```bash
+# 1. 上传部署文件到服务器
+scp -r docs/nanoclaw-kernel/ user@your-server:~/nanoclaw-kernel
+
+# 2. SSH 到服务器并执行一键部署
+ssh user@your-server "cd ~/nanoclaw-kernel && chmod +x deploy.sh && ./deploy.sh"
+```
+
+### 指定自定义 Token
+
+```bash
+# 如果想使用自己的 Token（而非自动生成）
+KERNEL_AUTH_TOKEN="my-custom-secure-token" ./deploy.sh
+```
+
+### 脚本执行流程
+
+`deploy.sh` 会自动完成以下 10 个步骤：
+
+| 步骤 | 说明 | 失败处理 |
+|------|------|---------|
+| 1 | 检测操作系统（Linux/macOS） | 不支持的系统直接退出 |
+| 2 | 检测 Docker，未安装则自动安装 | macOS 提示手动安装 Docker Desktop |
+| 3 | 检测 Docker Compose 插件 | 提示升级 Docker |
+| 4 | 生成安全认证 Token（64 字符 hex） | 使用已有环境变量 |
+| 5 | 写入 `.env` 配置文件 | — |
+| 6 | 构建 Docker 镜像 | 构建失败则退出 |
+| 7 | 启动服务（后台运行） | — |
+| 8 | 等待服务就绪（最多 30 秒） | 超时则输出日志并退出 |
+| 9 | 健康检查验证 | 失败则输出响应详情 |
+| 10 | 鉴权拦截验证 | 验证未授权请求被正确拒绝 |
+
+部署成功后，脚本会输出完整的连接信息（端点地址 + Token），可直接复制到 FANCE Studio 的运行时设置中。
 
 ---
 
