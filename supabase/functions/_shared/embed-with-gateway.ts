@@ -191,7 +191,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * 最大允许 AI 解析的文件大小 (3MB)
  * 超过此大小的文件将直接使用正则解析
  */
-const MAX_AI_PARSE_SIZE = 10 * 1024 * 1024;
+const MAX_AI_PARSE_SIZE = 10 * 1024 * 1024; // 10MB
 
 /**
  * 使用 AI 多模态能力解析 PDF 文档
@@ -217,12 +217,20 @@ export async function extractTextWithAI(
   
   // [大小检查]：超过限制的文件跳过 AI 解析
   if (pdfBuffer.byteLength > MAX_AI_PARSE_SIZE) {
-    console.log(`[embed-with-gateway] ⚠️ File too large for AI parsing (${fileSizeMB}MB > 3MB limit)`);
+    console.log(`[embed-with-gateway] ⚠️ File too large for AI parsing (${fileSizeMB}MB > 10MB limit)`);
     console.log(`[embed-with-gateway] Skipping AI extraction to avoid memory overflow`);
-    throw new Error(`File too large for AI parsing: ${fileSizeMB}MB exceeds 3MB limit`);
+    throw new Error(`File too large for AI parsing: ${fileSizeMB}MB exceeds 10MB limit`);
   }
 
-  const effectiveApiKey = apiKey || AI_CONFIG.API_KEY;
+    // 优先使用 LOVABLE_API_KEY 通过 Lovable AI Gateway
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const effectiveApiKey = lovableApiKey || apiKey || AI_CONFIG.API_KEY;
+    const gatewayUrl = lovableApiKey 
+      ? "https://ai.gateway.lovable.dev/v1/chat/completions" 
+      : AI_CONFIG.GATEWAY_URL;
+    const model = lovableApiKey 
+      ? "google/gemini-2.5-flash" 
+      : AI_CONFIG.DEFAULT_MODEL;
   
   if (!effectiveApiKey) {
     throw new Error("AI API key not configured for PDF extraction");
@@ -234,16 +242,16 @@ export async function extractTextWithAI(
     const base64 = arrayBufferToBase64(pdfBuffer);
     console.log(`[embed-with-gateway] Base64 encoded: ${Math.round(base64.length / 1024)}KB`);
 
-    // [请求]：调用 AI Chat API (多模态)
-    console.log(`[embed-with-gateway] Calling AI for PDF extraction...`);
-    const response = await fetch(AI_CONFIG.GATEWAY_URL, {
+    // [请求]：调用 AI Chat API (多模态) - 使用 Gemini 2.5 Flash 进行 PDF OCR
+    console.log(`[embed-with-gateway] Calling AI (${model}) for PDF extraction via ${lovableApiKey ? 'Lovable Gateway' : 'custom gateway'}...`);
+    const response = await fetch(gatewayUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${effectiveApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: AI_CONFIG.DEFAULT_MODEL,
+        model,
         messages: [
           {
             role: "user",
@@ -259,7 +267,7 @@ export async function extractTextWithAI(
             ]
           }
         ],
-        max_tokens: 16000,
+        max_tokens: 32000,
         temperature: 0.1, // 低温度提高准确性
       }),
     });
