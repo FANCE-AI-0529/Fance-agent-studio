@@ -40,16 +40,17 @@ export default function LLMConfigPanel({ node, onUpdate, nodes }: Props) {
   const [enableMemory, setEnableMemory] = useState(config.enableMemory ?? false);
   const [structuredOutput, setStructuredOutput] = useState(config.structuredOutput ?? false);
   const [outputSchema, setOutputSchema] = useState(config.outputSchema ? JSON.stringify(config.outputSchema, null, 2) : "");
+  const [userMessage, setUserMessage] = useState(config.userMessage || "");
 
   useEffect(() => {
     onUpdate({
       config: {
-        model, temperature, topP, maxTokens, systemPrompt,
+        model, temperature, topP, maxTokens, systemPrompt, userMessage,
         enableStreaming, enableMemory, structuredOutput,
         outputSchema: outputSchema ? (() => { try { return JSON.parse(outputSchema); } catch { return undefined; } })() : undefined,
       },
     });
-  }, [model, temperature, topP, maxTokens, systemPrompt, enableStreaming, enableMemory, structuredOutput, outputSchema]);
+  }, [model, temperature, topP, maxTokens, systemPrompt, userMessage, enableStreaming, enableMemory, structuredOutput, outputSchema]);
 
   return (
     <div className="space-y-6">
@@ -88,6 +89,26 @@ export default function LLMConfigPanel({ node, onUpdate, nodes }: Props) {
           placeholder="输入系统提示词，使用 {{ }} 引用变量..."
           className="min-h-[120px]"
         />
+      </div>
+
+      <Separator />
+
+      {/* User Message / Prompt */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2 text-xs font-medium">
+          <MessageSquare className="h-3.5 w-3.5" /> 用户消息
+        </Label>
+        <VariableInput
+          value={userMessage}
+          onChange={setUserMessage}
+          nodes={nodes}
+          multiline
+          placeholder="输入用户消息，使用 {{start.query}} 引用输入变量..."
+          className="min-h-[80px]"
+        />
+        <p className="text-[10px] text-muted-foreground">
+          可使用 {"{{start.query}}"} 引用触发器输入，或 {"{{nodeId.text}}"} 引用其他节点输出
+        </p>
       </div>
 
       <Separator />
