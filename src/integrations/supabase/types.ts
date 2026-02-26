@@ -5431,6 +5431,54 @@ export type Database = {
           },
         ]
       }
+      workflow_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          inputs: Json | null
+          mode: string
+          node_results: Json | null
+          outputs: Json | null
+          status: string
+          total_duration_ms: number | null
+          total_tokens_used: number | null
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          inputs?: Json | null
+          mode?: string
+          node_results?: Json | null
+          outputs?: Json | null
+          status?: string
+          total_duration_ms?: number | null
+          total_tokens_used?: number | null
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          inputs?: Json | null
+          mode?: string
+          node_results?: Json | null
+          outputs?: Json | null
+          status?: string
+          total_duration_ms?: number | null
+          total_tokens_used?: number | null
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: []
+      }
       workflow_templates: {
         Row: {
           category: string | null

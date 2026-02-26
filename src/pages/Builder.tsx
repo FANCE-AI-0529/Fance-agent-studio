@@ -46,6 +46,7 @@ import {
   Target,
   ArrowLeft,
   MessageCircle,
+  History as HistoryIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,8 @@ import { NodeDataSnapshotPanel } from "@/components/builder/snapshot/NodeDataSna
 import { useCanvasHighlight } from "@/hooks/useCanvasHighlight";
 import NodeConfigDrawer from "@/components/builder/config-panels/NodeConfigDrawer";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
+import { useWorkflowExecution } from "@/hooks/useWorkflowExecution";
+import { RunHistoryPanel } from "@/components/builder/RunHistoryPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
 import { GenerationVerificationPanel } from "@/components/builder/verification";
@@ -236,6 +239,10 @@ const Builder = () => {
   const [showMonitoringPanel, setShowMonitoringPanel] = useState(false);
   const [showEvaluationPanel, setShowEvaluationPanel] = useState(false);
   const [configDrawerNode, setConfigDrawerNode] = useState<Node | null>(null);
+  const [showRunHistory, setShowRunHistory] = useState(false);
+
+  // Workflow execution hook
+  const workflowExecution = useWorkflowExecution();
   
   // Inspiration auto-generation state
   const [inspirationDescription, setInspirationDescription] = useState<string | null>(null);
@@ -1591,6 +1598,39 @@ const Builder = () => {
                 保存
               </Button>
 
+              {/* Run Workflow Button */}
+              <Button
+                size="sm"
+                className="gap-1.5 h-8"
+                disabled={workflowExecution.status === "running" || nodes.length === 0}
+                onClick={() => {
+                  const wfId = currentAgentId || "draft-" + Date.now();
+                  workflowExecution.executeWorkflow(wfId, nodes, edges, {});
+                }}
+              >
+                {workflowExecution.status === "running" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+                {workflowExecution.status === "running" ? "运行中" : "运行"}
+              </Button>
+
+              {/* Run History Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={showRunHistory ? "secondary" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowRunHistory(!showRunHistory)}
+                  >
+                    <HistoryIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>运行历史</TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1773,7 +1813,24 @@ const Builder = () => {
         />
         )}
 
-        {/* Wizard Modal */}
+        {/* Run History Panel */}
+        {showRunHistory && (
+          <div className="w-80 border-l border-border bg-card overflow-hidden">
+            <RunHistoryPanel
+              workflowId={currentAgentId}
+              onReplayRun={(run) => {
+                // Highlight nodes based on run results
+                const statuses: Record<string, string> = {};
+                for (const r of run.node_results || []) {
+                  statuses[r.nodeId] = r.status;
+                }
+                // Could apply to canvas highlighting in future
+              }}
+            />
+          </div>
+        )}
+
+
         <BuilderWizard
           isOpen={showWizard}
           onClose={() => setShowWizard(false)}
