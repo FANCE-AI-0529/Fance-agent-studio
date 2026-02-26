@@ -9,6 +9,10 @@ import {
   Pencil,
   Trash2,
   Plus,
+  Sparkles,
+  Wand2,
+  Bot,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,11 +38,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useLogActivity } from "@/hooks/useAchievements";
 import { toast } from "@/hooks/use-toast";
-import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
-import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
 import { DailyInspiration } from "@/components/dashboard/DailyInspiration";
 import { WorkflowCapabilitiesCard } from "@/components/dashboard/WorkflowCapabilitiesCard";
+import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 
 const Index = () => {
@@ -80,36 +83,47 @@ const Index = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      {/* Header */}
-      <div className="p-6 border-b border-border">
+    <div className="h-full overflow-y-auto scrollbar-thin">
+      {/* Compact Header */}
+      <div className="px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-1">
+            <h1 className="text-xl font-semibold">
               {user ? `你好，${user.user_metadata?.display_name || user.email?.split("@")[0] || "用户"}` : "欢迎使用"}
             </h1>
-            <p className="text-muted-foreground">
-              打造你的专属AI助手，10分钟上手
+            <p className="text-sm text-muted-foreground mt-0.5">
+              打造你的专属AI助手
             </p>
           </div>
-          {hasAgents && (
-            <Button onClick={() => {
-              const lastDeployed = myAgents.find(a => a.status === 'deployed');
-              navigate(lastDeployed ? `/hive?tab=runtime&agentId=${lastDeployed.id}` : "/hive?tab=runtime");
-            }} className="gap-2">
-              <Play className="h-4 w-4" />
-              继续对话
+          <div className="flex items-center gap-2">
+            {hasAgents && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  const lastDeployed = myAgents.find(a => a.status === 'deployed');
+                  navigate(lastDeployed ? `/hive?tab=runtime&agentId=${lastDeployed.id}` : "/hive?tab=runtime");
+                }} 
+                className="gap-1.5"
+              >
+                <Play className="h-3.5 w-3.5" />
+                继续对话
+              </Button>
+            )}
+            <Button size="sm" onClick={handleStartWizard} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" />
+              新建助手
             </Button>
-          )}
+          </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-8">
-        {/* Row 1: Stats + Daily Inspiration side by side */}
+      <div className="px-6 pb-6 space-y-6">
+        {/* Row 1: Stats Grid + Daily Inspiration - Bento Grid */}
         {user && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3">
-              <h2 className="text-lg font-semibold mb-4">使用统计</h2>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            {/* Stats - takes 2 cols on xl */}
+            <div className="xl:col-span-2">
               <UserStatsCards 
                 conversationsToday={userStats?.conversationsToday ?? 0}
                 timeSavedMinutes={userStats?.timeSavedMinutes ?? 0}
@@ -118,7 +132,8 @@ const Index = () => {
                 isLoading={statsLoading}
               />
             </div>
-            <div className="lg:col-span-2">
+            {/* Inspiration - compact single card on desktop */}
+            <div className="xl:col-span-1">
               <DailyInspiration />
             </div>
           </div>
@@ -127,8 +142,8 @@ const Index = () => {
         {/* Row 2: My Agents - Horizontal scroll */}
         {user && hasAgents && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">我的助手</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">我的助手</h2>
               <Link to="/hive?tab=builder">
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
                   查看全部
@@ -141,7 +156,7 @@ const Index = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
                 {myAgents.slice(0, 8).map((agent, index) => {
                   const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
                   return (
@@ -167,10 +182,10 @@ const Index = () => {
                 >
                   <button
                     onClick={handleStartWizard}
-                    className="w-48 h-full min-h-[120px] flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
+                    className="w-44 h-full min-h-[110px] flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
                   >
                     <Plus className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">新建助手</span>
+                    <span className="text-xs text-muted-foreground">新建助手</span>
                   </button>
                 </motion.div>
               </div>
@@ -178,24 +193,18 @@ const Index = () => {
           </div>
         )}
 
-        {/* Workflow Capabilities */}
-        <WorkflowCapabilitiesCard />
+        {/* Row 3: Quick Start (for new users) or Workflow Capabilities */}
+        {user && !hasAgents && (
+          <QuickStartHero onStartWizard={handleStartWizard} />
+        )}
 
-        {/* Quick Start Guide */}
-        <QuickStartGuide 
-          hasAgents={hasAgents} 
-          onStartWizard={handleStartWizard}
-        />
-
-        {/* Scenario Entry Points */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">我想创建...</h2>
-              <p className="text-sm text-muted-foreground">选择一个场景，快速开始</p>
-            </div>
+        {/* Row 4: Two-column - Workflow + Scenarios */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <WorkflowCapabilitiesCard />
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">快速创建</h2>
+            <ScenarioCards />
           </div>
-          <ScenarioCards />
         </div>
       </div>
 
@@ -224,6 +233,45 @@ const Index = () => {
   );
 };
 
+/** Inline quick-start hero for new users */
+function QuickStartHero({ onStartWizard }: { onStartWizard: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-xl border border-border bg-card p-6"
+    >
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-3">
+            <Badge variant="secondary" className="text-xs gap-1">
+              <Sparkles className="h-3 w-3" />
+              新用户专享
+            </Badge>
+          </div>
+          <h2 className="text-lg font-semibold mb-1">10 分钟创建你的第一个 AI 助手</h2>
+          <p className="text-sm text-muted-foreground">
+            告诉 AI 你的需求，系统自动选择最佳能力组合，一键部署即可使用
+          </p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <Button onClick={onStartWizard} className="gap-1.5">
+            <Wand2 className="h-4 w-4" />
+            AI 帮我创建
+          </Button>
+          <Button variant="outline" asChild className="gap-1.5">
+            <Link to="/hive?tab=builder">
+              <Bot className="h-4 w-4" />
+              浏览模板
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 /** Compact horizontal-scroll agent card */
 function AgentCard({ 
   agent, avatar, index, onEdit, onDelete 
@@ -240,14 +288,14 @@ function AgentCard({
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="flex-shrink-0 w-48"
+      transition={{ delay: index * 0.04 }}
+      className="flex-shrink-0 w-44"
     >
-      <div className="group relative p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+      <div className="group relative p-3.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
         onClick={() => navigate(agent.status === 'deployed' ? `/hive?tab=runtime&agentId=${agent.id}` : `/hive?tab=builder&agentId=${agent.id}`)}
       >
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
+        <div className="flex items-center gap-2.5 mb-2.5">
+          <div className="w-9 h-9 rounded-lg overflow-hidden group-hover:scale-105 transition-transform">
             <AgentAvatarDisplay 
               avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
               size="md" 
@@ -255,15 +303,15 @@ function AgentCard({
           </div>
           <Badge 
             variant={agent.status === 'deployed' ? 'default' : 'secondary'}
-            className="text-[10px] h-5"
+            className="text-[10px] h-4 px-1.5"
           >
             {agent.status === 'deployed' ? '运行中' : '草稿'}
           </Badge>
         </div>
-        <h3 className="font-medium text-sm truncate mb-1 group-hover:text-primary transition-colors">
+        <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
           {agent.name}
         </h3>
-        <p className="text-xs text-muted-foreground truncate">
+        <p className="text-[11px] text-muted-foreground truncate mt-0.5">
           {agent.department || '通用助手'}
         </p>
 
@@ -271,8 +319,8 @@ function AgentCard({
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
-                <MoreVertical className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                <MoreVertical className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
