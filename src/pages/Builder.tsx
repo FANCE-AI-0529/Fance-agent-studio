@@ -951,6 +951,12 @@ const Builder = () => {
         })),
       },
       knowledge: knowledgeManifest,
+      knowledgeBases: knowledgeManifest.enabled ? knowledgeManifest.bases.map(b => ({
+        id: b.id,
+        name: b.name,
+        retrieval_mode: b.retrieval_mode,
+        top_k: b.top_k,
+      })) : [],
       mplp: {
         policy: "default",
         context: {
