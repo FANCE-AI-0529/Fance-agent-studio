@@ -12,13 +12,13 @@ import {
   MoreVertical,
   Eye,
   Settings,
-  RefreshCw,
   Loader2,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +40,7 @@ import { EditKnowledgeBaseDialog } from "@/components/knowledge/EditKnowledgeBas
 import { KnowledgeBaseDetail } from "@/components/knowledge/KnowledgeBaseDetail";
 import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Knowledge() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,154 +70,100 @@ export default function Knowledge() {
     }
   };
 
+  const totalDocs = knowledgeBases.reduce((sum, kb) => sum + (kb.documents_count || 0), 0);
+  const totalChunks = knowledgeBases.reduce((sum, kb) => sum + (kb.chunks_count || 0), 0);
+
   return (
     <div className="h-full flex overflow-hidden bg-background">
       {/* Left Panel - Knowledge Base List */}
-      <div className="w-80 border-r border-border flex flex-col bg-card">
+      <div className="w-80 border-r border-border flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <h1 className="font-semibold">知识库</h1>
+              <BookOpen className="h-4 w-4 text-primary" />
+              <h1 className="font-semibold text-sm">知识库</h1>
             </div>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)} className="gap-1.5">
-              <Plus className="h-4 w-4" />
+            <Button size="sm" variant="default" onClick={() => setShowCreateDialog(true)} className="gap-1 h-7 text-xs">
+              <Plus className="h-3 w-3" />
               新建
             </Button>
           </div>
           
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="搜索知识库..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-8 h-8 text-sm"
             />
           </div>
         </div>
 
         {/* Knowledge Base List */}
-        <div className="flex-1 overflow-auto p-2 scrollbar-thin">
+        <div className="flex-1 overflow-auto p-2 scrollbar-thin space-y-1.5">
           {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredKBs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center">
-              <Database className="h-12 w-12 text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? "未找到匹配的知识库" : "暂无知识库"}
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-3"
-                onClick={() => setShowCreateDialog(true)}
-              >
-                创建第一个知识库
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredKBs.map((kb, index) => (
-                <motion.div
-                  key={kb.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Card 
-                    className={cn(
-                      "cursor-pointer transition-all hover:border-primary/50",
-                      selectedKBId === kb.id && "border-primary bg-primary/5"
-                    )}
-                    onClick={() => setSelectedKBId(kb.id)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-sm truncate">{kb.name}</h3>
-                            <Badge 
-                              variant="outline" 
-                              className={cn(
-                                "text-[10px] h-5",
-                                kb.index_status === 'ready' && "border-status-executing text-status-executing",
-                                kb.index_status === 'indexing' && "border-status-planning text-status-planning",
-                                kb.index_status === 'pending' && "border-muted-foreground text-muted-foreground"
-                              )}
-                            >
-                              {kb.index_status === 'ready' ? '已索引' : 
-                               kb.index_status === 'indexing' ? '处理中' : '待处理'}
-                            </Badge>
-                          </div>
-                          {kb.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">{kb.description}</p>
-                          )}
-                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {kb.documents_count || 0} 文档
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Database className="h-3 w-3" />
-                              {kb.chunks_count || 0} 分片
-                            </span>
-                          </div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setSelectedKBId(kb.id)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              查看详情
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => {
-                              e.stopPropagation();
-                              setEditTarget(kb);
-                            }}>
-                              <Settings className="h-4 w-4 mr-2" />
-                              配置
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteTarget(kb);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              删除
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+            <div className="space-y-2 p-1">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-3 rounded-lg border border-border">
+                  <Skeleton className="h-4 w-28 mb-2" />
+                  <Skeleton className="h-3 w-20 mb-2" />
+                  <Skeleton className="h-1.5 w-full rounded-full" />
+                </div>
               ))}
             </div>
+          ) : filteredKBs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-center px-4">
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+                <FolderOpen className="h-6 w-6 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">
+                {searchQuery ? "未找到匹配的知识库" : "暂无知识库"}
+              </p>
+              <p className="text-xs text-muted-foreground/70 mb-3">
+                {searchQuery ? "试试其他关键词" : "创建知识库开始管理文档"}
+              </p>
+              {!searchQuery && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 text-xs"
+                  onClick={() => setShowCreateDialog(true)}
+                >
+                  创建第一个知识库
+                </Button>
+              )}
+            </div>
+          ) : (
+            filteredKBs.map((kb, index) => (
+              <KnowledgeBaseCard
+                key={kb.id}
+                kb={kb}
+                index={index}
+                isSelected={selectedKBId === kb.id}
+                onSelect={() => setSelectedKBId(kb.id)}
+                onEdit={() => setEditTarget(kb)}
+                onDelete={() => setDeleteTarget(kb)}
+              />
+            ))
           )}
         </div>
 
         {/* Stats Footer */}
-        <div className="p-3 border-t border-border bg-muted/30">
-          <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="p-3 border-t border-border">
+          <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-lg font-semibold text-foreground">{knowledgeBases.length}</div>
+              <div className="text-sm font-semibold">{knowledgeBases.length}</div>
               <div className="text-[10px] text-muted-foreground">知识库</div>
             </div>
             <div>
-              <div className="text-lg font-semibold text-foreground">
-                {knowledgeBases.reduce((sum, kb) => sum + (kb.documents_count || 0), 0)}
-              </div>
-              <div className="text-[10px] text-muted-foreground">总文档数</div>
+              <div className="text-sm font-semibold">{totalDocs}</div>
+              <div className="text-[10px] text-muted-foreground">文档</div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{totalChunks}</div>
+              <div className="text-[10px] text-muted-foreground">分片</div>
             </div>
           </div>
         </div>
@@ -227,35 +174,7 @@ export default function Knowledge() {
         {selectedKB ? (
           <KnowledgeBaseDetail knowledgeBase={selectedKB} />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-muted/20">
-            <div className="text-center max-w-md px-6">
-              <div className="w-20 h-20 rounded-2xl bg-cognitive/10 flex items-center justify-center mx-auto mb-6">
-                <BookOpen className="h-10 w-10 text-cognitive" />
-              </div>
-              <h2 className="text-xl font-semibold mb-2">知识库管理</h2>
-              <p className="text-muted-foreground mb-6">
-                上传文档，构建语义图谱，为你的智能体提供长期记忆与知识检索能力。
-              </p>
-              
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <Card className="p-4 text-left">
-                  <Upload className="h-5 w-5 text-primary mb-2" />
-                  <h3 className="font-medium text-sm mb-1">文档上传</h3>
-                  <p className="text-xs text-muted-foreground">支持 PDF、Markdown、TXT 格式</p>
-                </Card>
-                <Card className="p-4 text-left">
-                  <Network className="h-5 w-5 text-cognitive mb-2" />
-                  <h3 className="font-medium text-sm mb-1">语义图谱</h3>
-                  <p className="text-xs text-muted-foreground">自动提取实体与关系</p>
-                </Card>
-              </div>
-
-              <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                创建知识库
-              </Button>
-            </div>
-          </div>
+          <KnowledgeEmptyState onCreateClick={() => setShowCreateDialog(true)} />
         )}
       </div>
 
@@ -298,6 +217,169 @@ export default function Knowledge() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/** Card-ified knowledge base list item */
+function KnowledgeBaseCard({
+  kb, index, isSelected, onSelect, onEdit, onDelete,
+}: {
+  kb: KnowledgeBase;
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const statusConfig = {
+    ready: { label: "已索引", className: "border-status-executing/30 text-status-executing bg-status-executing/10" },
+    indexing: { label: "处理中", className: "border-status-planning/30 text-status-planning bg-status-planning/10" },
+    failed: { label: "失败", className: "border-destructive/30 text-destructive bg-destructive/10" },
+    pending: { label: "待处理", className: "border-muted-foreground/30 text-muted-foreground bg-muted" },
+  };
+  const status = statusConfig[kb.index_status] || statusConfig.pending;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+    >
+      <div
+        onClick={onSelect}
+        className={cn(
+          "group relative p-3 rounded-lg cursor-pointer transition-all",
+          "border hover:-translate-y-[1px]",
+          isSelected
+            ? "border-primary/40 bg-primary/5 shadow-sm"
+            : "border-border hover:border-primary/20 hover:bg-accent/30"
+        )}
+      >
+        {/* Selected indicator */}
+        {isSelected && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-primary rounded-r-full" />
+        )}
+
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-medium text-sm truncate">{kb.name}</h3>
+              <Badge variant="outline" className={cn("text-[10px] h-4 px-1.5 border", status.className)}>
+                {kb.index_status === 'indexing' && <Loader2 className="h-2.5 w-2.5 animate-spin mr-0.5" />}
+                {status.label}
+              </Badge>
+            </div>
+            {kb.description && (
+              <p className="text-[11px] text-muted-foreground line-clamp-1 mb-2">{kb.description}</p>
+            )}
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" 
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSelect()}>
+                <Eye className="h-4 w-4 mr-2" />
+                查看详情
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                setTimeout(() => onEdit(), 0);
+              }}>
+                <Settings className="h-4 w-4 mr-2" />
+                配置
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Stats row with mini progress */}
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <FileText className="h-3 w-3" />
+            {kb.documents_count || 0} 文档
+          </span>
+          <span className="flex items-center gap-1">
+            <Database className="h-3 w-3" />
+            {kb.chunks_count || 0} 分片
+          </span>
+          {kb.graph_enabled && (
+            <span className="flex items-center gap-1">
+              <Network className="h-3 w-3" />
+              图谱
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Redesigned empty state with drag-drop visual */
+function KnowledgeEmptyState({ onCreateClick }: { onCreateClick: () => void }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center max-w-lg"
+      >
+        {/* Hero icon */}
+        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <BookOpen className="h-10 w-10 text-primary" />
+        </div>
+
+        <h2 className="text-lg font-semibold mb-2">知识库管理</h2>
+        <p className="text-sm text-muted-foreground mb-8">
+          上传文档，构建语义索引，为你的智能体提供长期记忆与知识检索能力
+        </p>
+
+        {/* Feature cards grid */}
+        <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card text-left">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Upload className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium text-sm mb-0.5">文档上传</h3>
+              <p className="text-xs text-muted-foreground">支持 PDF、MD、TXT</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card text-left">
+            <div className="w-8 h-8 rounded-lg bg-cognitive/10 flex items-center justify-center flex-shrink-0">
+              <Network className="h-4 w-4 text-cognitive" />
+            </div>
+            <div>
+              <h3 className="font-medium text-sm mb-0.5">语义图谱</h3>
+              <p className="text-xs text-muted-foreground">自动提取实体关系</p>
+            </div>
+          </div>
+        </div>
+
+        <Button onClick={onCreateClick} className="gap-2">
+          <Plus className="h-4 w-4" />
+          创建知识库
+        </Button>
+      </motion.div>
     </div>
   );
 }
