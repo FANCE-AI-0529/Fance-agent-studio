@@ -69,6 +69,8 @@ import { TaskSchedulerPanel } from "@/components/runtime/TaskSchedulerPanel";
 import { ExecutionHistoryContent } from "@/components/runtime/ExecutionHistoryContent";
 import { useDevToolsState } from "@/hooks/useDevToolsState";
 import { useManusKernel } from "@/hooks/useManusKernel";
+import { useNanoClawExecutor } from "@/hooks/useNanoClawExecutor";
+import { useRuntimeStore } from "@/stores/runtimeStore";
 import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "@/hooks/useScenarios";
 import { useMemoryContext } from "@/hooks/useMemory";
 import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
@@ -406,6 +408,10 @@ const Runtime = () => {
   
   // DevTools state
   const devToolsState = useDevToolsState();
+
+  // NanoClaw executor
+  const nanoClawExecutor = useNanoClawExecutor();
+  const runtimeStore = useRuntimeStore();
   
   // File upload hook
   const { files: pendingFiles, isUploading, addFiles, removeFile, clearFiles } = useFileUpload();
@@ -650,8 +656,64 @@ const Runtime = () => {
     addTraceEvent("execution_started", { skillName: scenario.skillName });
 
     addThinkingLog("Skill:" + scenario.skillName, "Executing skill...", "info");
+
+    // ── NanoClaw 真实执行分支 ──
+    if (nanoClawExecutor.isReady) {
+      addThinkingLog("NanoClaw:Executor", `Routing to NanoClaw container...`, "info");
+
+      // Derive a command from the user message (use the raw message as command)
+      const command = userMessage || scenario.skillName;
+      const result = await nanoClawExecutor.execute(command);
+
+      addThinkingLog(
+        "NanoClaw:Executor",
+        result.success ? `Exit code 0 (${result.durationMs}ms)` : `Failed: exit ${result.exitCode}`,
+        result.success ? "success" : "error",
+      );
+
+      setCurrentPhase("trace");
+      addTraceEvent("execution_completed", {
+        skillName: scenario.skillName,
+        result: result.success ? "success" : "failed",
+      });
+
+      const events = [...currentEventsRef.current];
+      const thinkingLogs = [...currentThinkingLogs];
+
+      const outputContent = result.output
+        ? `\`\`\`\n${result.output}\n\`\`\``
+        : '（无输出）';
+
+      const response: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: `⚡ **NanoClaw 执行结果** — \`${command}\`\n\n${outputContent}\n\n退出码: ${result.exitCode} | 耗时: ${result.durationMs}ms`,
+        timestamp: new Date(),
+        skill: scenario.skillName,
+        status: "idle",
+        traceEvents: events,
+        isNew: true,
+      };
+
+      setLocalMessages(prev => [...prev,
+        { id: `msg-thinking-${Date.now()}`, role: "system" as const, content: "", timestamp: new Date(), thinkingLogs },
+        response,
+      ]);
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setCurrentPhase("idle");
+      setActiveSkill(null);
+      endTraceSession(result.success ? "completed" : "failed");
+      updateContextMemory(scenario, userMessage);
+
+      if (chatSession) {
+        await addMessage({ role: "assistant", content: response.content }, scenario.skillName);
+      }
+      return;
+    }
+
+    // ── 演示模式回退 ──
     await new Promise(resolve => setTimeout(resolve, 800));
-    
     addThinkingLog("Skill:" + scenario.skillName, "Processing complete", "success");
     await new Promise(resolve => setTimeout(resolve, 300));
 
@@ -1290,6 +1352,34 @@ const Runtime = () => {
                         </Button>
                       </TooltipProvider>
                     </div>
+                  </div>
+                )}
+
+                {/* NanoClaw 未连接提示 Banner */}
+                {runtimeStore.mode === 'nanoclaw' && runtimeStore.connectionStatus !== 'connected' && (
+                  <div className="px-4 py-2 bg-destructive/10 border-b border-destructive/20 flex items-center justify-between text-xs">
+                    <span className="text-destructive font-medium">
+                      ⚠ NanoClaw 未连接 — 当前操作将使用演示模式
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs text-destructive hover:text-destructive"
+                      onClick={() => {
+                        // Navigate to HIVE settings
+                        window.location.href = '/hive?tab=settings';
+                      }}
+                    >
+                      前往设置 →
+                    </Button>
+                  </div>
+                )}
+
+                {/* NanoClaw 已连接状态 */}
+                {runtimeStore.mode === 'nanoclaw' && runtimeStore.connectionStatus === 'connected' && (
+                  <div className="px-4 py-1.5 bg-primary/5 border-b border-primary/10 flex items-center gap-2 text-xs text-primary">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    NanoClaw 已连接 {runtimeStore.nanoclawVersion ? `(v${runtimeStore.nanoclawVersion})` : ''} — 命令将在真实容器中执行
                   </div>
                 )}
 
