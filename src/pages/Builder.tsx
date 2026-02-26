@@ -117,6 +117,7 @@ import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
 import { CanvasHighlightControls } from "@/components/builder/CanvasHighlightControls";
 import { NodeDataSnapshotPanel } from "@/components/builder/snapshot/NodeDataSnapshotPanel";
 import { useCanvasHighlight } from "@/hooks/useCanvasHighlight";
+import NodeConfigDrawer from "@/components/builder/config-panels/NodeConfigDrawer";
 import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
 import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
 import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
@@ -234,6 +235,7 @@ const Builder = () => {
   const [showVerificationPanel, setShowVerificationPanel] = useState(false);
   const [showMonitoringPanel, setShowMonitoringPanel] = useState(false);
   const [showEvaluationPanel, setShowEvaluationPanel] = useState(false);
+  const [configDrawerNode, setConfigDrawerNode] = useState<Node | null>(null);
   
   // Inspiration auto-generation state
   const [inspirationDescription, setInspirationDescription] = useState<string | null>(null);
@@ -723,6 +725,19 @@ const Builder = () => {
     setSelectedEdge(edge);
     setSelectedEdgeId(edge.id);
   }, [setSelectedEdgeId]);
+
+  // Handle node click to open config drawer
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    const configurableTypes = ["llm", "code", "httpRequest", "condition", "template", "parameterExtractor", "iterator", "knowledge", "variableAggregator", "trigger"];
+    if (configurableTypes.includes(node.type || "")) {
+      setConfigDrawerNode(node);
+    }
+  }, []);
+
+  // Handle node config update from drawer
+  const handleNodeConfigUpdate = useCallback((nodeId: string, data: Record<string, unknown>) => {
+    setNodes((nds) => nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n));
+  }, [setNodes]);
 
   const handleCloseEdgeMapping = useCallback(() => {
     setSelectedEdge(null);
@@ -1635,6 +1650,7 @@ const Builder = () => {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onEdgeClick={onEdgeClick}
+              onNodeClick={onNodeClick}
               onInit={setReactFlowInstance}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
@@ -2111,6 +2127,14 @@ const Builder = () => {
             />
           </DialogContent>
         </Dialog>
+
+        {/* Node Config Drawer */}
+        <NodeConfigDrawer
+          selectedNode={configDrawerNode}
+          onClose={() => setConfigDrawerNode(null)}
+          onUpdateNodeData={handleNodeConfigUpdate}
+          nodes={nodes}
+        />
       </div>
     </TooltipProvider>
   );
