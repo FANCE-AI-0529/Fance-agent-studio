@@ -8,7 +8,7 @@ import {
   LogOut,
   User,
   Users,
-  Lock,
+  Plus,
   Sparkles,
   Hexagon,
   Loader2,
@@ -109,15 +109,12 @@ export function AppSidebar() {
             </div>
           </div>
 
-          {/* MPLP Protocol Status */}
+          {/* System Status Indicator */}
           {!collapsed && (
-            <div className="px-4 py-3 border-b border-sidebar-border">
-              <div className="protocol-badge w-full justify-center">
-                <Lock className="h-3 w-3" />
-                <span>MPLP v1.0.0</span>
-                <Badge variant="outline" className="h-4 text-[9px] px-1.5 border-primary/30 text-primary">
-                  已锁定
-                </Badge>
+            <div className="px-4 py-2.5 border-b border-sidebar-border">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span>系统就绪</span>
               </div>
             </div>
           )}
@@ -247,31 +244,16 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Protocol Runtime Status */}
+            {/* Quick Create Button */}
             {!collapsed && (
-              <div className="mx-4 mt-2 p-3 rounded-lg bg-card/50 border border-border flex-shrink-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-status-executing animate-pulse" />
-                  <span className="text-xs font-medium text-foreground">治理引擎</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-port-data" />
-                    <span className="text-muted-foreground">数据流</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-port-control" />
-                    <span className="text-muted-foreground">控制流</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-port-perception" />
-                    <span className="text-muted-foreground">感知流</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-status-planning" />
-                    <span className="text-muted-foreground">规划中</span>
-                  </div>
-                </div>
+              <div className="mx-4 mt-2 flex-shrink-0">
+                <button
+                  onClick={() => navigate('/hive?tab=builder')}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  新建智能体
+                </button>
               </div>
             )}
           </SidebarContent>

@@ -8,6 +8,7 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +38,6 @@ import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
 import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
 import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
 import { DailyInspiration } from "@/components/dashboard/DailyInspiration";
-import { TrendingAgents } from "@/components/dashboard/TrendingAgents";
-import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase";
-import { CommunityStats } from "@/components/dashboard/CommunityStats";
 import { WorkflowCapabilitiesCard } from "@/components/dashboard/WorkflowCapabilitiesCard";
 import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
 
@@ -54,7 +52,6 @@ const Index = () => {
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Log activity when user visits dashboard
   useEffect(() => {
     if (user) {
       logActivity();
@@ -69,7 +66,6 @@ const Index = () => {
 
   const handleDeleteAgent = async () => {
     if (!agentToDelete) return;
-    
     try {
       await deleteAgent.mutateAsync(agentToDelete.id);
       toast({
@@ -109,50 +105,26 @@ const Index = () => {
       </div>
 
       <div className="p-6 space-y-8">
-        {/* Daily Inspiration - New Section */}
-        <DailyInspiration />
-
-        {/* Workflow Capabilities Card - New Section */}
-        <WorkflowCapabilitiesCard />
-
-        {/* Quick Start Guide */}
-        <QuickStartGuide 
-          hasAgents={hasAgents} 
-          onStartWizard={handleStartWizard}
-        />
-
-        {/* Trending Agents - New Section */}
-        <TrendingAgents />
-
-        {/* Achievement Showcase - New Section (logged in users only) */}
-        {user && <AchievementShowcase />}
-
-        {/* User Stats */}
+        {/* Row 1: Stats + Daily Inspiration side by side */}
         {user && (
-          <div>
-            <h2 className="text-lg font-semibold mb-4">使用统计</h2>
-            <UserStatsCards 
-              conversationsToday={userStats?.conversationsToday ?? 0}
-              timeSavedMinutes={userStats?.timeSavedMinutes ?? 0}
-              tasksCompleted={userStats?.tasksCompleted ?? 0}
-              weeklyGrowth={userStats?.weeklyGrowth ?? 0}
-              isLoading={statsLoading}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-3">
+              <h2 className="text-lg font-semibold mb-4">使用统计</h2>
+              <UserStatsCards 
+                conversationsToday={userStats?.conversationsToday ?? 0}
+                timeSavedMinutes={userStats?.timeSavedMinutes ?? 0}
+                tasksCompleted={userStats?.tasksCompleted ?? 0}
+                weeklyGrowth={userStats?.weeklyGrowth ?? 0}
+                isLoading={statsLoading}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <DailyInspiration />
+            </div>
           </div>
         )}
 
-        {/* Scenario Entry Points */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">我想创建...</h2>
-              <p className="text-sm text-muted-foreground">选择一个场景，快速开始</p>
-            </div>
-          </div>
-          <ScenarioCards />
-        </div>
-
-        {/* My Assistants */}
+        {/* Row 2: My Agents - Horizontal scroll */}
         {user && hasAgents && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -169,96 +141,62 @@ const Index = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {myAgents.slice(0, 3).map((agent, index) => {
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+                {myAgents.slice(0, 8).map((agent, index) => {
                   const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
-                  
                   return (
-                    <motion.div
+                    <AgentCard
                       key={agent.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <div className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
-                        <Link
-                          to={agent.status === 'deployed' ? `/hive?tab=runtime&agentId=${agent.id}` : `/hive?tab=builder&agentId=${agent.id}`}
-                          className="flex items-center gap-4 flex-1 min-w-0"
-                        >
-                          <div className="w-12 h-12 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
-                            <AgentAvatarDisplay 
-                              avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
-                              size="lg" 
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                                {agent.name}
-                              </h3>
-                              <Badge 
-                                variant={agent.status === 'deployed' ? 'default' : 'secondary'}
-                                className="text-[10px]"
-                              >
-                                {agent.status === 'deployed' ? '已部署' : '草稿'}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {agent.department || '通用助手'}
-                            </p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                        </Link>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/hive?tab=builder&agentId=${agent.id}`)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              编辑
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                setAgentToDelete(agent);
-                                setShowDeleteConfirm(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              删除
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </motion.div>
+                      agent={agent}
+                      avatar={avatar}
+                      index={index}
+                      onEdit={() => navigate(`/hive?tab=builder&agentId=${agent.id}`)}
+                      onDelete={() => {
+                        setAgentToDelete(agent);
+                        setShowDeleteConfirm(true);
+                      }}
+                    />
                   );
                 })}
-                {myAgents.length > 3 && (
-                  <Link
-                    to="/hive?tab=builder"
-                    className="flex items-center justify-center p-4 rounded-xl border border-dashed border-border hover:border-primary/50 transition-colors"
+                {/* Create new card */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex-shrink-0"
+                >
+                  <button
+                    onClick={handleStartWizard}
+                    className="w-48 h-full min-h-[120px] flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
                   >
-                    <span className="text-sm text-muted-foreground">
-                      +{myAgents.length - 3} 个助手
-                    </span>
-                  </Link>
-                )}
+                    <Plus className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">新建助手</span>
+                  </button>
+                </motion.div>
               </div>
             )}
           </div>
         )}
 
-        {/* Community Stats - Now using real data */}
-        <CommunityStats />
+        {/* Workflow Capabilities */}
+        <WorkflowCapabilitiesCard />
+
+        {/* Quick Start Guide */}
+        <QuickStartGuide 
+          hasAgents={hasAgents} 
+          onStartWizard={handleStartWizard}
+        />
+
+        {/* Scenario Entry Points */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">我想创建...</h2>
+              <p className="text-sm text-muted-foreground">选择一个场景，快速开始</p>
+            </div>
+          </div>
+          <ScenarioCards />
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -285,5 +223,77 @@ const Index = () => {
     </div>
   );
 };
+
+/** Compact horizontal-scroll agent card */
+function AgentCard({ 
+  agent, avatar, index, onEdit, onDelete 
+}: { 
+  agent: Agent; 
+  avatar?: AgentAvatar; 
+  index: number;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const navigate = useNavigate();
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="flex-shrink-0 w-48"
+    >
+      <div className="group relative p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+        onClick={() => navigate(agent.status === 'deployed' ? `/hive?tab=runtime&agentId=${agent.id}` : `/hive?tab=builder&agentId=${agent.id}`)}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
+            <AgentAvatarDisplay 
+              avatar={avatar || { iconId: 'bot', colorId: 'primary' }} 
+              size="md" 
+            />
+          </div>
+          <Badge 
+            variant={agent.status === 'deployed' ? 'default' : 'secondary'}
+            className="text-[10px] h-5"
+          >
+            {agent.status === 'deployed' ? '运行中' : '草稿'}
+          </Badge>
+        </div>
+        <h3 className="font-medium text-sm truncate mb-1 group-hover:text-primary transition-colors">
+          {agent.name}
+        </h3>
+        <p className="text-xs text-muted-foreground truncate">
+          {agent.department || '通用助手'}
+        </p>
+
+        {/* Hover actions */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                <Pencil className="h-4 w-4 mr-2" />
+                编辑
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default Index;
