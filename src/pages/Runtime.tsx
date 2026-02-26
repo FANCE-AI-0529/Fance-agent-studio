@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { 
   Send, 
   Bot, 
@@ -50,6 +50,7 @@ import { TypingIndicator } from "@/components/runtime/TypingIndicator";
 import VoiceInputButton from "@/components/runtime/VoiceInputButton";
 import WelcomeGuide from "@/components/runtime/WelcomeGuide";
 import { EnhancedWelcomeCard } from "@/components/runtime/EnhancedWelcomeCard";
+import { extractAgentCapabilities } from "@/utils/capabilityExtractor";
 import OnboardingTour, { useOnboardingTour } from "@/components/runtime/OnboardingTour";
 import { QuickCommandMenu, MessageTemplates } from "@/components/runtime/QuickCommandMenu";
 import { FileUploadButton } from "@/components/runtime/FileUploadButton";
@@ -505,22 +506,43 @@ const Runtime = () => {
     }
   }, [persistedMessages]);
 
+  // Track previous agent id to detect agent switches
+  const prevAgentIdRef = useRef<string | null | undefined>(undefined);
+
   // Initialize with welcome message if no session
   useEffect(() => {
+    const currentAgentId = selectedAgent?.id ?? null;
+    
+    // Skip if agent hasn't changed and messages already exist
+    if (prevAgentIdRef.current === currentAgentId && localMessages.length > 0) {
+      return;
+    }
+    
     if (!chatSession && !isLoadingSession && localMessages.length === 0) {
-      const agentName = selectedAgent?.name || "Fance 智能助手";
-      const isDefaultAgent = !selectedAgent;
+      prevAgentIdRef.current = currentAgentId;
       
-      // Different welcome messages for default Fance guide vs custom agents
-      const welcomeContent = user
-        ? isDefaultAgent
-          ? `您好！我是 **${agentName}**，您的专属平台向导。\n\n我可以帮您：\n- 了解如何快速创建您的第一个智能体\n- 探索平台上的各种技能和能力包\n- 解答关于 Fance OS 的任何问题\n- 推荐适合您需求的智能体模板\n\n请问有什么我可以帮您的吗？`
-          : `您好！我是 **${agentName}**，很高兴为您服务。\n\n请告诉我您需要什么帮助，我会尽力协助您完成任务。`
-        : `您好！我是 **${agentName}**。请先登录以保存对话历史。`;
+      let welcomeContent: string;
+      
+      if (!user) {
+        const agentName = selectedAgent?.name || "Fance 智能助手";
+        welcomeContent = `您好！我是 **${agentName}**。请先登录以保存对话历史。`;
+      } else if (!selectedAgent) {
+        // Default Fance platform guide
+        welcomeContent = `您好！我是 **Fance 智能助手**，您的专属平台向导。\n\n我可以帮您：\n- 了解如何快速创建您的第一个智能体\n- 探索平台上的各种技能和能力包\n- 解答关于 Fance OS 的任何问题\n- 推荐适合您需求的智能体模板\n\n请问有什么我可以帮您的吗？`;
+      } else {
+        // Use capability extractor for personalized greeting
+        const manifest = selectedAgent.manifest as any;
+        const capabilities = extractAgentCapabilities(
+          selectedAgent.name,
+          manifest?.systemPrompt || "",
+          manifest
+        );
+        welcomeContent = capabilities.greeting;
+      }
       
       setLocalMessages([
         {
-          id: "welcome",
+          id: `welcome-${currentAgentId || "default"}`,
           role: "assistant",
           content: welcomeContent,
           timestamp: new Date(),
@@ -545,6 +567,9 @@ const Runtime = () => {
   const handleAgentChange = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
     
+    // Always clear messages first so welcome effect re-triggers with correct agent
+    setLocalMessages([]);
+    
     // Clear temporary state
     trace.clearSessions();
     setContextMemory([]);
@@ -552,14 +577,8 @@ const Runtime = () => {
     
     // Find or create session for this agent (preserves chat history)
     if (user) {
-      const session = await findOrCreateSessionForAgent(agent?.id ?? null);
-      if (!session) {
-        // If no session, just clear messages for welcome screen
-        setLocalMessages([]);
-      }
-      // If session loaded, persistedMessages will update via useEffect
-    } else {
-      setLocalMessages([]);
+      await findOrCreateSessionForAgent(agent?.id ?? null);
+      // If session loaded with messages, persistedMessages will update via useEffect
     }
   }, [trace, user, findOrCreateSessionForAgent]);
 
