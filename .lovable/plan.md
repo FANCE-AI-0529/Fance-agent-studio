@@ -8,12 +8,16 @@
 
 | 层级 | 组件 | 状态 |
 |------|------|------|
-| UI 展示层 | `SwarmNode.tsx` (画布节点) | 已完成 |
-| UI 展示层 | `SwarmStatusPanel.tsx` (运行时面板) | 已完成 |
-| 类型定义 | `types/swarms.ts` (全部类型) | 已完成 |
-| 编译层 | `swarmCompiler.ts` (画布→YAML) | 已完成 |
-| **状态管理** | **swarmStore** (Swarm 运行时状态) | **缺失** |
-| **编排引擎** | **useSwarmRunner** (成员→容器映射 + 调度) | **缺失** |
+| UI 展示层 | `SwarmNode.tsx` (画布节点) | ✅ 已完成 |
+| UI 展示层 | `SwarmStatusPanel.tsx` (运行时面板) | ✅ 已完成 |
+| 类型定义 | `types/swarms.ts` (全部类型) | ✅ 已完成 |
+| 编译层 | `swarmCompiler.ts` (画布→YAML) | ✅ 已完成 |
+| **状态管理** | **swarmStore** (Swarm 运行时状态) | ✅ **已实现** |
+| **编排引擎** | **useSwarmRunner** (成员→容器映射 + 调度) | ✅ **已实现** |
+| **消息路由** | **SwarmMessage IPC 转发** | ✅ **已实现 (via useSwarmRunner)** |
+| **Kernel API** | **Swarm 批量编排端点** | ✅ **已实现 (swarm-routes.ts)** |
+| **Gateway 代理** | **nanoclaw-gateway 新 action** | ✅ **已实现** |
+| **Runtime 集成** | **DevToolsPanel Swarm Tab** | ✅ **已实现** |
 | **消息路由** | **SwarmMessage IPC 转发** | **缺失** |
 | **Kernel API** | **Swarm 批量编排端点** | **缺失** |
 | **Gateway 代理** | **nanoclaw-gateway 新 action** | **缺失** |

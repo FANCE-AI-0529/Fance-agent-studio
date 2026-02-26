@@ -293,6 +293,52 @@ serve(async (req) => {
         break;
       }
 
+      // ── Swarm 批量编排 ──
+
+      case 'swarm_create': {
+        const response = await fetch(`${nanoclawEndpoint}/swarm/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({ definition: params.definition }),
+          signal: AbortSignal.timeout(30000),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'swarm_dispatch': {
+        const response = await fetch(`${nanoclawEndpoint}/swarm/dispatch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({
+            swarmId: params.swarmId,
+            memberId: params.memberId,
+            command: params.command,
+          }),
+          signal: AbortSignal.timeout(60000),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'swarm_status': {
+        const queryStr = params.swarmId ? `?swarmId=${encodeURIComponent(params.swarmId)}` : '';
+        const response = await fetch(`${nanoclawEndpoint}/swarm/status${queryStr}`, {
+          headers: baseHeaders,
+        });
+        result = await response.json();
+        break;
+      }
+
+      case 'swarm_destroy': {
+        const response = await fetch(`${nanoclawEndpoint}/swarm/${params.swarmId}`, {
+          method: 'DELETE',
+          headers: baseHeaders,
+        });
+        result = await response.json();
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),

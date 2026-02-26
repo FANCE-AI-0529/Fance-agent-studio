@@ -12,7 +12,8 @@ export type DevToolsTab =
   | 'manus'
   | 'scheduler'
   | 'intent'
-  | 'debug';
+  | 'debug'
+  | 'swarm';
 
 interface DevToolsState {
   // 面板状态
@@ -96,4 +97,5 @@ export const DEVTOOLS_TABS = [
   { id: 'scheduler' as const, label: '调度器', icon: 'Timer' },
   { id: 'intent' as const, label: '意图分析', icon: 'Target' },
   { id: 'debug' as const, label: '调试', icon: 'Bug' },
+  { id: 'swarm' as const, label: 'Swarm', icon: 'Users' },
 ] as const;
