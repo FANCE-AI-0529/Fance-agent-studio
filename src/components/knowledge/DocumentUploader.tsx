@@ -127,14 +127,26 @@ export function DocumentUploader({ knowledgeBaseId }: DocumentUploaderProps) {
         ]);
 
         try {
-          // Simulate upload progress
-          for (let i = 0; i <= 100; i += 20) {
-            setUploadingFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileId ? { ...f, progress: i } : f
-              )
-            );
-            await new Promise((r) => setTimeout(r, 100));
+          // 阶段1: 上传文件到 Storage
+          setUploadingFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId ? { ...f, progress: 10, status: "上传中" } : f
+            )
+          );
+
+          // 检查重复文档
+          const { data: existingDocs } = await supabase
+            .from("knowledge_documents")
+            .select("id")
+            .eq("knowledge_base_id", knowledgeBaseId)
+            .eq("name", file.name);
+          
+          if (existingDocs && existingDocs.length > 0) {
+            toast.warning(`文件 "${file.name}" 已存在，将覆盖旧文档`);
+            // 删除旧文档记录（CASCADE 会删除 chunks）
+            for (const doc of existingDocs) {
+              await supabase.from("knowledge_documents").delete().eq("id", doc.id);
+            }
           }
 
           // Read file content for text files
@@ -146,12 +158,18 @@ export function DocumentUploader({ knowledgeBaseId }: DocumentUploaderProps) {
 
           setUploadingFiles((prev) =>
             prev.map((f) =>
-              f.id === fileId ? { ...f, status: "创建文档" } : f
+              f.id === fileId ? { ...f, progress: 40, status: "上传文件" } : f
             )
           );
 
           // Upload file to storage first (for PDFs and other binary files)
           const filePath = await uploadFileToStorage(file);
+
+          setUploadingFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId ? { ...f, progress: 60, status: "创建文档" } : f
+            )
+          );
           
           // Create document record
           const doc = await createDocument.mutateAsync({

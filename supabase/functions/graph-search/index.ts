@@ -100,13 +100,17 @@ serve(async (req) => {
     );
 
     // Step 4: Also search nodes by name/description keyword matching
-    const { data: keywordNodes } = await supabase
-      .from("knowledge_nodes")
-      .select("id, name, node_type, description, importance_score")
-      .eq("knowledge_base_id", knowledgeBaseId)
-      .eq("user_id", user.id)
-      .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-      .limit(5);
+    // Sanitize query to prevent PostgREST filter injection
+    const sanitizedQuery = query.replace(/[%,.()\[\]]/g, '').trim();
+    const { data: keywordNodes } = sanitizedQuery.length > 0
+      ? await supabase
+          .from("knowledge_nodes")
+          .select("id, name, node_type, description, importance_score")
+          .eq("knowledge_base_id", knowledgeBaseId)
+          .eq("user_id", user.id)
+          .or(`name.ilike.%${sanitizedQuery}%,description.ilike.%${sanitizedQuery}%`)
+          .limit(5)
+      : { data: [] };
 
     // Combine matched and keyword nodes
     const anchorNodeIds = new Set<string>();

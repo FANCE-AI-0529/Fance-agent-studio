@@ -203,6 +203,20 @@ export function useDeleteDocument() {
 
   return useMutation({
     mutationFn: async ({ id, knowledgeBaseId }: { id: string; knowledgeBaseId: string }) => {
+      // [查询]：获取文档信息以清理 Storage 文件
+      const { data: doc } = await supabase
+        .from("knowledge_documents")
+        .select("file_path")
+        .eq("id", id)
+        .single();
+
+      // [清理]：删除 Storage 中的文件
+      if (doc?.file_path) {
+        await supabase.storage
+          .from("knowledge-documents")
+          .remove([doc.file_path]);
+      }
+
       // [删除]：执行删除操作
       const { error } = await supabase
         .from("knowledge_documents")
