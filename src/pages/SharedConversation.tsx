@@ -122,8 +122,8 @@ export default function SharedConversation() {
               {message.role === "assistant" ? (
                 info.agentAvatar ? (
                   <AgentAvatarAnimated
-                    iconId={(info.agentAvatar as any)?.iconId || "bot"}
-                    colorId={(info.agentAvatar as any)?.colorId || "blue"}
+                    iconId={(info.agentAvatar as AgentManifestRuntime)?.iconId || "bot"}
+                    colorId={(info.agentAvatar as AgentManifestRuntime)?.colorId || "blue"}
                     size="sm"
                     state="idle"
                     showGlow={false}

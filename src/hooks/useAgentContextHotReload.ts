@@ -122,7 +122,7 @@ export function useAgentContextHotReload({
       // Force update from store
       const freshConfig = useGlobalAgentStore.getState().agentConfig;
       if (freshConfig) {
-        const manifest = freshConfig.manifest as any;
+        const manifest = parseManifest(freshConfig.manifest);
         const newEffectiveConfig: EffectiveAgentConfig = {
           name: freshConfig.name,
           systemPrompt: manifest?.systemPrompt || `你是${freshConfig.name}，一个专业的AI助手。`,

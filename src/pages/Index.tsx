@@ -156,7 +156,7 @@ const Index = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {myAgents.slice(0, 3).map((agent, index) => {
-                  const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
+                  const avatar = parseManifest(agent.manifest)?.avatar;
 
                   return (
                     <motion.div
