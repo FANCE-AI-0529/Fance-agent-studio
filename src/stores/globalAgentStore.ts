@@ -620,7 +620,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             edges: state.edges.filter(e => e.edge_id !== deletedEdge.edge_id),
             lastSyncedAt: new Date(),
           }));
-          get()._addSyncEvent({ type: 'edge_removed', source: 'remote', data: deleif (import.meta.env.DEV) console.debu;
+          get()._addSyncEvent({ type: 'edge_removed', source: 'remote', data: deletedEdge });
         }
       },
 
