@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       .from("circuit_breaker_state")
       .select("*")
       .eq("agent_id", agentId)
-     Ieq("userId", user.id)
+     .eq("user_id", userId)
       .single();
 
     if (fetchError && fetchError.code === "PGRST116") {
