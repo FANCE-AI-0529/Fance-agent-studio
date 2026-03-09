@@ -625,7 +625,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       },
 
       _handleAgentChange: (payload) => {
-        console.log(`[GlobalAgentStore] Agent change:`, payload);
+        if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Agent change:', payload);
         
         const oldAgent = payload.old as AgentConfig | null;
         const updatedAgent = payload.new as AgentConfig;

@@ -193,8 +193,8 @@ export function useDreaming(agentId?: string) {
 
     // 设置新的定时器
     idleTimerRef.current = setTimeout(() => {
-      ifif (import.meta.env.DEV) console.debueam()) {
-        console.log('Idle dreaming triggered');
+      if (shouldDream()) {
+        if (import.meta.env.DEV) console.debug('Idle dreaming triggered');
         dream();
       }
     }, memoryStore.config.dreamingIdleThreshold);
