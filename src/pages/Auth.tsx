@@ -1,3 +1,9 @@
+/**
+ * @file Auth.tsx
+ * @description 用户认证页面 - 登录、注册与密码重置 - Authentication Page
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";

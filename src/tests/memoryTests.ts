@@ -223,7 +223,7 @@ Carol 是财务分析师，负责所有项目的预算审核。
       userMemories: [
         {
           key: 'user_name',
-          value: 'Lovable',
+          value: 'Alice',
           type: 'fact',
         },
       ],
@@ -233,7 +233,7 @@ Carol 是财务分析师，负责所有项目的预算审核。
       {
         check: 'Agent 正确回答用户名',
         matcher: 'contains',
-        value: 'Lovable',
+        value: 'Alice',
       },
       {
         check: '从长期记忆中检索',

@@ -1,3 +1,9 @@
+/**
+ * @file Landing.tsx
+ * @description 产品着陆页 - Product Landing Page
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ParticleField } from "@/components/landing/ParticleField";

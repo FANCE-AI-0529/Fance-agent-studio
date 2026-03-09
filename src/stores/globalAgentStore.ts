@@ -1,3 +1,9 @@
+/**
+ * @file globalAgentStore.ts
+ * @description 全局智能体状态管理 - 含实时同步、图数据与协作事件 - Global Agent State Store
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
@@ -523,7 +529,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             (payload) => get()._handleAgentChange(payload)
           )
           .subscribe((status) => {
-            console.log(`[GlobalAgentStore] Realtime subscription status:`, status);
+            if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Realtime subscription status:', status);
           });
         
         set({ isSubscribed: true, channel });
@@ -542,8 +548,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       _handleNodeChange: (payload) => {
         const { nodes } = get();
         const eventType = payload.eventType;
-        
-        console.log(`[GlobalAgentStore] Node change:`, eventType, payload);
+        if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Node change:', eventType, payload);
         
         if (eventType === 'INSERT') {
           const newNode = payload.new as GraphNode;
@@ -595,8 +600,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       _handleEdgeChange: (payload) => {
         const { edges } = get();
         const eventType = payload.eventType;
-        
-        console.log(`[GlobalAgentStore] Edge change:`, eventType, payload);
+        if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Edge change:', eventType, payload);
         
         if (eventType === 'INSERT') {
           const newEdge = payload.new as GraphEdge;
@@ -627,7 +631,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       },
 
       _handleAgentChange: (payload) => {
-        console.log(`[GlobalAgentStore] Agent change:`, payload);
+        if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Agent change:', payload);
         
         const oldAgent = payload.old as AgentConfig | null;
         const updatedAgent = payload.new as AgentConfig;

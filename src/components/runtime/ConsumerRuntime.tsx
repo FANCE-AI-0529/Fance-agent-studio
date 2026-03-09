@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { parseManifest } from "@/types/agent";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -164,7 +165,9 @@ export function ConsumerRuntime() {
       model: newConfig.model,
       agentId: newConfig.agentId,
     });
-    console.log('[ConsumerRuntime] Hot-reloaded agent config:', newConfig.name);
+    if (import.meta.env.DEV) {
+      console.debug('[ConsumerRuntime] Hot-reloaded agent config:', newConfig.name);
+    }
   }, []);
 
   // Handle personality change with animation
@@ -183,7 +186,7 @@ export function ConsumerRuntime() {
     agentId,
     onSystemMessage: handleSystemMessage,
     onContextRefresh: (storeConfig) => {
-      const manifest = storeConfig.manifest as any;
+      const manifest = parseManifest(storeConfig.manifest);
       handleConfigUpdate({
         name: storeConfig.name,
         systemPrompt: manifest?.systemPrompt || `你是${storeConfig.name}，一个专业的AI助手。`,
@@ -265,7 +268,7 @@ export function ConsumerRuntime() {
   // Load agent config when agent data is available
   useEffect(() => {
     if (agent) {
-      const manifest = agent.manifest as any;
+      const manifest = parseManifest(agent.manifest);
       setAgentConfig({
         name: agent.name,
         systemPrompt: manifest?.systemPrompt || `你是${agent.name}，一个专业的AI助手。`,
@@ -394,7 +397,9 @@ export function ConsumerRuntime() {
           extractAndSaveMemories(messageContent, fullResponse);
         },
         onThinking: (module, message, level) => {
-          console.log(`[${module}] ${message} (${level})`);
+          if (import.meta.env.DEV) {
+            console.debug(`[${module}] ${message} (${level})`);
+          }
         },
       });
     } catch (error) {

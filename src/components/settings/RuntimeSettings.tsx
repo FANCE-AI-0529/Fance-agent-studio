@@ -135,7 +135,7 @@ export function RuntimeSettings() {
             <ModeCard
               icon={<Cloud className="h-5 w-5" />}
               title="Cloud Runtime"
-              description="使用 Lovable Cloud 的 Edge Functions 执行（默认）"
+              description="使用 Fance Cloud 的 Edge Functions 执行（默认）"
               active={store.mode === 'cloud'}
               onClick={() => handleModeSwitch('cloud')}
             />

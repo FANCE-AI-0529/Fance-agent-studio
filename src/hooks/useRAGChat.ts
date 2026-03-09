@@ -110,9 +110,10 @@ export function useRAGChat() {
             },
           });
 
-          console.log(`[useRAGChat] 🔍 Searching Collection: "${kbId}" (${knowledgeBaseName})`);
-          console.log(`[useRAGChat]    Query: "${query.slice(0, 50)}..."`);
-
+          if (import.meta.env.DEV) {
+            console.debug(`[useRAGChat] Searching Collection: "${kbId}" (${knowledgeBaseName})`);
+            console.debug(`[useRAGChat]    Query: "${query.slice(0, 50)}..."`);
+          }
           const { data, error } = await supabase.functions.invoke<GraphSearchResponse>(
             "graph-search",
             {
@@ -148,7 +149,7 @@ export function useRAGChat() {
           }
 
           const matchCount = data.vectorResults?.length || 0;
-          console.log(`[useRAGChat]    ➜ Matches: ${matchCount} (${searchDuration}ms)`);
+          if (import.meta.env.DEV) console.debug(`[useRAGChat] Matches: ${matchCount} (${searchDuration}ms)`);
 
           // 🆕 空结果警告
           if (matchCount === 0) {

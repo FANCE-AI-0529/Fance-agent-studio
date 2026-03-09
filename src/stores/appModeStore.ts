@@ -1,3 +1,9 @@
+/**
+ * @file appModeStore.ts
+ * @description 应用模式状态管理 - Consumer/Studio 模式切换 - App Mode Store
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 

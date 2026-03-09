@@ -35,6 +35,7 @@ import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase"
 import { CommunityStats } from "@/components/dashboard/CommunityStats";
 import { WorkflowCapabilitiesCard } from "@/components/dashboard/WorkflowCapabilitiesCard";
 import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { parseManifest } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -156,7 +157,7 @@ const Index = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {myAgents.slice(0, 3).map((agent, index) => {
-                  const avatar = (agent.manifest as any)?.avatar as AgentAvatar | undefined;
+                  const avatar = parseManifest(agent.manifest)?.avatar;
 
                   return (
                     <motion.div

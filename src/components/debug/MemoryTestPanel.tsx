@@ -161,8 +161,8 @@ export function MemoryTestPanel({ agentId, className }: MemoryTestPanelProps) {
         });
         
         for (const memory of recalled) {
-          if (memory.content.toLowerCase().includes('lovable')) {
-            response = `根据我的记忆，您的名字是 Lovable。`;
+          if (memory.content.toLowerCase().includes('alice')) {
+            response = `根据我的记忆，您的名字是 Alice。`;
             memoryHits.push({
               key: 'user_name',
               value: memory.content,
@@ -173,7 +173,7 @@ export function MemoryTestPanel({ agentId, className }: MemoryTestPanelProps) {
         
         // Fallback: check core memories
         if (!response) {
-          response = '根据我的记忆，您的名字是 Lovable。';
+          response = '根据我的记忆，您的名字是 Alice。';
         }
       }
       

@@ -360,7 +360,7 @@ export function GenerationVerificationPanel() {
     setIsRunning(false);
 
     const passedCount = Object.values(results).filter(Boolean).length;
-    console.log(`验证完成: ${passedCount}/4 阶段通过`, results);
+    if (import.meta.env.DEV) console.debug(`验证完成: ${passedCount}/4 阶段通过`, results);
   };
 
   const getStatusIcon = (status: TestResult['status']) => {

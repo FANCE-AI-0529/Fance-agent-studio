@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGlobalAgentStore, AgentConfig } from '@/stores/globalAgentStore';
+import { parseManifest, type AgentManifestRuntime } from '@/types/agent';
 
 interface EffectiveAgentConfig {
   name: string;
@@ -87,7 +88,7 @@ export function useAgentContextHotReload({
       // Hot update the effective config
       const newEffectiveConfig: EffectiveAgentConfig = {
         name: storeAgentConfig.name,
-        systemPrompt: (newManifest as any)?.systemPrompt || 
+        systemPrompt: (newManifest as AgentManifestRuntime)?.systemPrompt || 
                       `你是${storeAgentConfig.name}，一个专业的AI助手。`,
         model: storeAgentConfig.model,
         agentId: storeAgentConfig.id,
@@ -100,11 +101,13 @@ export function useAgentContextHotReload({
       // Notify parent via ref
       onConfigUpdateRef.current?.(newEffectiveConfig);
       
-      console.log('[HotReload] Config updated:', {
-        manifestChanged,
-        nameChanged,
-        modelChanged,
-      });
+      if (import.meta.env.DEV) {
+        console.debug('[HotReload] Config updated:', {
+          manifestChanged,
+          nameChanged,
+          modelChanged,
+        });
+      }
     }
   }, [storeAgentConfig, agentId]);
 
@@ -120,7 +123,7 @@ export function useAgentContextHotReload({
       // Force update from store
       const freshConfig = useGlobalAgentStore.getState().agentConfig;
       if (freshConfig) {
-        const manifest = freshConfig.manifest as any;
+        const manifest = parseManifest(freshConfig.manifest);
         const newEffectiveConfig: EffectiveAgentConfig = {
           name: freshConfig.name,
           systemPrompt: manifest?.systemPrompt || `你是${freshConfig.name}，一个专业的AI助手。`,

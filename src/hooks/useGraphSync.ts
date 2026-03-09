@@ -76,7 +76,7 @@ export async function syncBuilderGraphToDatabase(
       }
     }
 
-    console.log(`[GraphSync] Synced ${graphNodes.length} nodes and ${graphEdges.length} edges for agent ${agentId}`);
+    if (import.meta.env.DEV) console.debug(`[GraphSync] Synced ${graphNodes.length} nodes and ${graphEdges.length} edges for agent ${agentId}`);
     return true;
   } catch (error) {
     console.error('[GraphSync] Unexpected error:', error);

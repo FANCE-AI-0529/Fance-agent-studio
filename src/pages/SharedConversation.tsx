@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { type AgentManifestRuntime } from "@/types/agent";
 import { motion } from "framer-motion";
 import { Bot, User, ArrowLeft, Eye, MessageSquare, Calendar, Play, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,8 +65,8 @@ export default function SharedConversation() {
             <div className="flex items-center gap-3">
               {info.agentAvatar ? (
                 <AgentAvatarAnimated
-                  iconId={(info.agentAvatar as any)?.iconId || "bot"}
-                  colorId={(info.agentAvatar as any)?.colorId || "blue"}
+                  iconId={(info.agentAvatar as AgentManifestRuntime)?.iconId || "bot"}
+                  colorId={(info.agentAvatar as AgentManifestRuntime)?.colorId || "blue"}
                   size="md"
                   state="idle"
                 />
@@ -122,8 +123,8 @@ export default function SharedConversation() {
               {message.role === "assistant" ? (
                 info.agentAvatar ? (
                   <AgentAvatarAnimated
-                    iconId={(info.agentAvatar as any)?.iconId || "bot"}
-                    colorId={(info.agentAvatar as any)?.colorId || "blue"}
+                    iconId={(info.agentAvatar as AgentManifestRuntime)?.iconId || "bot"}
+                    colorId={(info.agentAvatar as AgentManifestRuntime)?.colorId || "blue"}
                     size="sm"
                     state="idle"
                     showGlow={false}

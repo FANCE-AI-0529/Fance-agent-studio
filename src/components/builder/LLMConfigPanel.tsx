@@ -226,7 +226,7 @@ export function LLMConfigPanel({
   };
 
   const providerIcons: Record<string, any> = {
-    lovable: Sparkles,
+    fance: Sparkles,
     openai: Cpu,
     anthropic: Zap,
     google: Globe,
@@ -291,7 +291,7 @@ export function LLMConfigPanel({
                         添加 AI 模型供应商以便在智能体中使用不同的大模型
                       </p>
                       <p className="text-xs text-muted-foreground mb-4">
-                        默认使用 Lovable AI Gateway（无需配置）
+                        默认使用 Fance AI Gateway（无需配置）
                       </p>
                       <Button
                         onClick={() => {
@@ -414,7 +414,7 @@ export function LLMConfigPanel({
               <ScrollArea className="h-full">
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground mb-4">
-                    为每个功能模块指定专用的 AI 模型。未配置的模块将使用默认供应商或 Lovable AI。
+                    为每个功能模块指定专用的 AI 模型。未配置的模块将使用默认供应商或 Fance AI。
                   </p>
                   
                   {MODULE_TYPES.map((module) => {

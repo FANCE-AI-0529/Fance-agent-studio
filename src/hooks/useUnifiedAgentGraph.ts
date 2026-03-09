@@ -89,7 +89,7 @@ export function useUnifiedAgentGraph(agentId: string | null) {
     // Write reconstructed graph to database (fire and forget)
     syncBuilderGraphToDatabase(agentId, nodes, edges).then((ok) => {
       if (ok) {
-        console.log('[UnifiedGraph] Reconstructed graph from skills and synced to DB');
+        if (import.meta.env.DEV) console.debug('[UnifiedGraph] Reconstructed graph from skills and synced to DB');
         // Reload from store to pick up the new data via Realtime
         useGlobalAgentStore.getState().loadAgent(agentId);
       }

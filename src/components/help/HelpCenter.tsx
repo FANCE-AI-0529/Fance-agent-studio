@@ -157,7 +157,7 @@ export function HelpCenter() {
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 p-4"
-              onClick={() => window.open("https://docs.lovable.dev", "_blank")}
+              onClick={() => window.open("https://github.com/fance-studio/fance-studio/wiki", "_blank")}
             >
               <Video className="h-5 w-5 text-primary" />
               <span className="text-sm">视频教程</span>
@@ -229,7 +229,7 @@ export function HelpCenter() {
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => window.open("https://docs.lovable.dev", "_blank")}
+                onClick={() => window.open("https://github.com/fance-studio/fance-studio/wiki", "_blank")}
               >
                 <ExternalLink className="h-4 w-4" />
                 查看完整文档

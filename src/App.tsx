@@ -1,3 +1,9 @@
+/**
+ * @file App.tsx
+ * @description 应用根组件 - 路由、上下文与全局布局 - Application Root Component
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,7 +36,6 @@ import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
 import SharedConversation from "./pages/SharedConversation";
 import ApiHub from "./pages/ApiHub";
-import OpenCodeTestPage from "./pages/OpenCodeTestPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import WaitingListAdmin from "./pages/WaitingListAdmin";
 import { Loader2 } from "lucide-react";
@@ -121,7 +126,6 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><MainLayout><Profile /></MainLayout></ProtectedRoute>} />
       <Route path="/achievements" element={<ProtectedRoute><MainLayout><Achievements /></MainLayout></ProtectedRoute>} />
       <Route path="/inspiration/:id" element={<ProtectedRoute><InspirationDetail /></ProtectedRoute>} />
-      <Route path="/opencode-test" element={<ProtectedRoute><OpenCodeTestPage /></ProtectedRoute>} />
       <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/admin/waiting-list" element={<ProtectedRoute><WaitingListAdmin /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
