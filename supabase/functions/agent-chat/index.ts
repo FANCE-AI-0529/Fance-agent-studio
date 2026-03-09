@@ -400,7 +400,7 @@ const fanceGuideSystemPrompt = `你是 Fance Studio 智能助手，Fance Studio 
 ${PRIVACY_PROTECTION_INSTRUCTIONS}
 ${TERMINAL_STYLE_INSTRUCTIONS}
 ${ROLE_META_INSTRUCTIONS}
-请记住：你的目标是帮助用户快速上手 Agent Studio 平台，让他们能够轻松构建自己的智能体。`;
+请记住：你的目标是帮助用户快速上手 Fance Studio 平台，让他们能够轻松构建自己的智能体。`;
 
 /**
  * 构建联网能力提示词
