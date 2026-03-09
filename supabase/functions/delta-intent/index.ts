@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
           .insert({
             agent_id: agentId,
             session_id: sessionId,
-            user_id: user.id,
+            user_id: userId,
             original_intent: originalIntent,
             current_intent: currentMessage,
             delta_score: combinedDelta,
