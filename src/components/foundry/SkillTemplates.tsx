@@ -504,7 +504,7 @@ security:
 name: "text-summarization"
 version: "1.0.0"
 description: "使用 AI 模型对长文本进行智能摘要"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - ai_inference
 inputs:
