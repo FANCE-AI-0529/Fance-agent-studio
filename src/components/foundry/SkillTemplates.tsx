@@ -2997,7 +2997,7 @@ dependencies:
 name: "brand-guidelines"
 version: "1.0.0"
 description: "应用品牌视觉规范到设计作品"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - file_read
   - file_write
