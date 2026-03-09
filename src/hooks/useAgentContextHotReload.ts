@@ -87,7 +87,7 @@ export function useAgentContextHotReload({
       // Hot update the effective config
       const newEffectiveConfig: EffectiveAgentConfig = {
         name: storeAgentConfig.name,
-        systemPrompt: (newManifest as any)?.systemPrompt || 
+        systemPrompt: (newManifest as AgentManifestRuntime)?.systemPrompt || 
                       `你是${storeAgentConfig.name}，一个专业的AI助手。`,
         model: storeAgentConfig.model,
         agentId: storeAgentConfig.id,
