@@ -117,7 +117,7 @@ serve(async (req) => {
     let entityQuery = supabase
       .from("entities")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .limit(500);
 
     if (agentId) {
