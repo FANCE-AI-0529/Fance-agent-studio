@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { type AgentManifestRuntime } from "@/types/agent";
 import { motion } from "framer-motion";
 import { Bot, User, ArrowLeft, Eye, MessageSquare, Calendar, Play, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";

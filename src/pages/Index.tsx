@@ -35,6 +35,7 @@ import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase"
 import { CommunityStats } from "@/components/dashboard/CommunityStats";
 import { WorkflowCapabilitiesCard } from "@/components/dashboard/WorkflowCapabilitiesCard";
 import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { parseManifest } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();

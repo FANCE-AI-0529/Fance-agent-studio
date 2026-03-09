@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGlobalAgentStore, AgentConfig } from '@/stores/globalAgentStore';
+import { parseManifest, type AgentManifestRuntime } from '@/types/agent';
 
 interface EffectiveAgentConfig {
   name: string;
