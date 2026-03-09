@@ -135,7 +135,7 @@ export async function acceptInvitationOnSignup(
     // [调用]：通过边缘函数安全认领邀请码
     const { data, error: fnError } = await supabase.functions.invoke(
       'claim-invite-code',
-      { body: { invitationId, userId } }
+      { body: { invitationId } }
     );
 
     if (fnError) {
