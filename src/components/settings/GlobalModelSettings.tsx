@@ -173,7 +173,7 @@ export function GlobalModelSettings() {
   };
 
   const providerIcons: Record<string, any> = {
-    lovable: Sparkles,
+    fance: Sparkles,
     openai: Cpu,
     anthropic: Zap,
     google: Globe,
