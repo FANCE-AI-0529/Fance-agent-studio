@@ -2,8 +2,8 @@
  * @file embed-with-gateway.ts
  * @description 共享向量嵌入模块，通过配置的 Embedding API 生成向量
  * @module EdgeFunctions/Shared/Embedding
- * @author Agent Studio Team
- * @copyright 2025 Agent Studio. All rights reserved.
+ * @author Fance Studio Team
+ * @copyright 2025 Fance Studio. All rights reserved.
  * @version 2.0.0 - 开源版本，支持自定义 Embedding 端点
  */
 

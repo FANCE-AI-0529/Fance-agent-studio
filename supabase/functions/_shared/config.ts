@@ -2,8 +2,8 @@
  * @file _shared/config.ts
  * @description 边缘函数共享配置 - 统一环境变量管理
  * @module EdgeFunctions/Shared/Config
- * @author Agent Studio Team
- * @copyright 2025 Agent Studio. All rights reserved.
+ * @author Fance Studio Team
+ * @copyright 2025 Fance Studio. All rights reserved.
  * @version 1.0.0
  */
 

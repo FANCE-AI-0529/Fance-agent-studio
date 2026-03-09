@@ -121,7 +121,7 @@ allowed-tools 可选值：
 name: "text-summarizer"
 version: "1.0.0"
 description: "文本摘要生成技能"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - read
   - compute

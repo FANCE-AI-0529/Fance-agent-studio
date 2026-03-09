@@ -458,7 +458,7 @@ function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean, webSear
     return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}${TERMINAL_STYLE_INSTRUCTIONS}${ROLE_META_INSTRUCTIONS}`;
   }
 
-  return `你是 ${agentName}，运行在 Agent Studio 平台上的智能助手。
+  return `你是 ${agentName}，运行在 Fance Studio 平台上的智能助手。
 
 ## 工作原则
 
