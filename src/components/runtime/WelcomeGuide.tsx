@@ -66,7 +66,7 @@ const quickActions: QuickAction[] = [
   {
     icon: <HelpCircle className="h-4 w-4" />,
     label: "常见问题",
-    command: "Agent Studio 平台有哪些常见问题？",
+    command: "Fance Studio 平台有哪些常见问题？",
     category: "learn",
     description: "平台使用FAQ",
   },
