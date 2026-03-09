@@ -1409,7 +1409,7 @@ security:
 name: "document-parser"
 version: "1.0.0"
 description: "解析多种格式文档，提取文本和结构化数据"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - file_read
 inputs:
