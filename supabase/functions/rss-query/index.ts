@@ -107,7 +107,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`RSS Query for user ${user.id}: "${query.substring(0, 100)}..."`);
+    if (import.meta.env?.DEV) console.debug(`RSS Query for user: "${query.substring(0, 100)}..."`);
 
     // Step 1: Extract keywords from query
     const queryKeywords = extractKeywords(query);
