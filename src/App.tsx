@@ -1,3 +1,9 @@
+/**
+ * @file App.tsx
+ * @description 应用根组件 - 路由、上下文与全局布局 - Application Root Component
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
