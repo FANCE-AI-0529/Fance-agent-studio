@@ -540,9 +540,9 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       // ============= Internal Handlers =============
 
       _handleNodeChange: (payload) => {
-        const if (import.meta.env.DEV) console.debu= get();
-        if (import.meta.env.DEV) console.debutType = payload.eif (import.meta.env.DEV) console.debu        
-        console.log(`[GlobalAgentStore] Node change:`, eventType, payload);
+        const { nodes } = get();
+        const eventType = payload.eventType;
+        if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Node change:', eventType, payload);
         
         if (eventType === 'INSERT') {
           const newNode = payload.new as GraphNode;
