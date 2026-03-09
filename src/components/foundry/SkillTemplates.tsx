@@ -1190,7 +1190,7 @@ security:
 name: "code-executor"
 version: "1.0.0"
 description: "在安全沙箱环境中执行代码片段"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - code_execute
   - sandbox
