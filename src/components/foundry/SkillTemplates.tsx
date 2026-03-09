@@ -1713,7 +1713,7 @@ limits:
 name: "weather-query"
 version: "1.0.0"
 description: "查询城市天气信息，包括实时天气和未来预报"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
 inputs:
