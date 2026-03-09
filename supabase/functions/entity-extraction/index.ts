@@ -225,7 +225,7 @@ For each entity, extract key keywords that can be used for matching.`,
 
     // Insert entities WITHOUT pseudo-embeddings - use keywords for matching instead
     const entitiesToInsert = (extractedData.entities || []).map((entity) => ({
-      user_id: user.id,
+      user_id: userId,
       agent_id: agentId || null,
       name: entity.name,
       entity_type: entity.type,
