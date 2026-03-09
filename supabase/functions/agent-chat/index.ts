@@ -424,7 +424,7 @@ function buildWebSearchSection(webSearchEnabled: boolean): string {
  * 构建系统提示词
  */
 function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean, webSearchEnabled?: boolean): string {
-  const agentName = config?.name || "Agent Studio 助手";
+  const agentName = config?.name || "Fance Studio 助手";
   const skills = config?.skills || [];
   const mplpPolicy = config?.mplpPolicy || "standard";
   const webSearchSection = buildWebSearchSection(webSearchEnabled ?? true);
