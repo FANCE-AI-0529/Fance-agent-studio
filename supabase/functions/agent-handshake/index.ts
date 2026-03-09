@@ -232,7 +232,7 @@ serve(async (req) => {
           .from("agent_collaborations")
           .update({ last_heartbeat: new Date().toISOString() })
           .eq("id", collaborationId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("status", "connected");
 
         if (updateError) {
