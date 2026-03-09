@@ -267,7 +267,8 @@ export function ConsumerRuntime() {
   // Load agent config when agent data is available
   useEffect(() => {
     if (agent) {
-      const manparseManifest = parseManifest(agent.manifest)setAgentConfig({
+      const manifest = parseManifest(agent.manifest);
+      setAgentConfig({
         name: agent.name,
         systemPrompt: manifest?.systemPrompt || `你是${agent.name}，一个专业的AI助手。`,
         model: agent.model || 'gpt-4',
