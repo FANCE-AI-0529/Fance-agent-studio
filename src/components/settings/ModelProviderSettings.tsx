@@ -378,11 +378,11 @@ export function ModelProviderSettings() {
             </div>
 
             <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-              <RadioGroupItem value="lovable" id="lovable" />
-              <Label htmlFor="lovable" className="flex-1 cursor-pointer">
+              <RadioGroupItem value="fance" id="fance" />
+              <Label htmlFor="fance" className="flex-1 cursor-pointer">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">💜</span>
-                  <span>Lovable AI</span>
+                  <span>Fance AI</span>
                   <Badge className="text-xs bg-primary/10 text-primary hover:bg-primary/20">免费额度</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
