@@ -809,7 +809,7 @@ serve(async (req) => {
 
     const model = getValidModel(validatedConfig?.model);
 
-    console.log(`[agent-chat] User ${user.id} starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}, RAG: ${ragContext.length > 0 ? 'yes' : 'no'}`);
+    if (import.meta.env?.DEV) console.debug(`[agent-chat] Starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}, RAG: ${ragContext.length > 0 ? 'yes' : 'no'}`);
 
     // [构建]：消息数组
     const apiMessages: ChatMessage[] = [
