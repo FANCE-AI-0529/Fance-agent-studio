@@ -727,17 +727,17 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
 
-    if (userError || !user) {
-      console.error("[agent-chat] Invalid auth token:", userError?.message);
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("[agent-chat] Invalid auth token");
       return new Response(
         JSON.stringify({ error: "无效的认证令牌", code: "INVALID_TOKEN" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[agent-chat] Authenticated user: ${user.id}`);
+    const userId = claimsData.claims.sub as string;
 
     // [安全]：检查请求体大小（限制 1MB）
     const contentLength = req.headers.get('content-length');
