@@ -523,7 +523,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             (payload) => get()._handleAgentChange(payload)
           )
           .subscribe((status) => {
-            if (import.meta.env.DEV) console.debu.meta.env.DEV) console.debu.meta.env.DEV) console.debu.meta.env.DEV) console.debug(`[GlobalAgentStore] Realtime subscription status:`, status);
+            if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Realtime subscription status:', status);
           });
         
         set({ isSubscribed: true, channel });
