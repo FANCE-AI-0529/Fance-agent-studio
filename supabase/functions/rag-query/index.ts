@@ -63,7 +63,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[rag-query] Query: "${query.substring(0, 50)}..." for user: ${user.id}`);
+    console.debug(`[rag-query] Query for user: ${userId.slice(0, 8)}...`);
 
     // [向量化]：使用真实 Embedding API 生成查询向量
     if (!LOVABLE_API_KEY) {
