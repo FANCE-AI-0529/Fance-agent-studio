@@ -2560,7 +2560,7 @@ limits:
 name: "data-visualization"
 version: "1.0.0"
 description: "根据数据生成柱状图、折线图、饼图等可视化图表"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - file_write
 inputs:
