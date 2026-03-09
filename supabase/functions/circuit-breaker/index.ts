@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
         .from("circuit_breaker_state")
         .insert({
           agent_id: agentId,
-          userId: user.id,
+          user_id: userId,
           state: "closed",
           failure_count: 0,
           success_count: 0,
