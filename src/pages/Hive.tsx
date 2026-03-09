@@ -1,3 +1,9 @@
+/**
+ * @file Hive.tsx
+ * @description HIVE 聚合模块 - 构建器、知识库、铸造与运行时入口 - HIVE Module Hub
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { useSearchParams } from "react-router-dom";
 import { Bot, BookOpen, Hammer, Play } from "lucide-react";
 import { cn } from "@/lib/utils";

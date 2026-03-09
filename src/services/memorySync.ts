@@ -1,4 +1,9 @@
-// 记忆同步服务 (Memory Sync Service)
+/**
+ * @file memorySync.ts
+ * @description 记忆同步服务 - Memory Synchronization Service
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 
 import { supabase } from '@/integrations/supabase/client';
 

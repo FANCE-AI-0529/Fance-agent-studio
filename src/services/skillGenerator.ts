@@ -1,4 +1,9 @@
-// 动态 Skill 生成器 (Dynamic Skill Generator - Vibe Coding)
+/**
+ * @file skillGenerator.ts
+ * @description 动态技能生成器 - Dynamic Skill Generator
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 
 import { supabase } from '@/integrations/supabase/client';
 
