@@ -149,7 +149,7 @@ export function useRAGChat() {
           }
 
           const matchCount = data.vectorResults?.length || 0;
-          console.log(`[useRAGChat]    ➜ Matches: ${matchCount} (${searchDuration}ms)`);
+          if (import.meta.env.DEV) console.debug(`[useRAGChat] Matches: ${matchCount} (${searchDuration}ms)`);
 
           // 🆕 空结果警告
           if (matchCount === 0) {

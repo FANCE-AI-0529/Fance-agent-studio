@@ -94,7 +94,7 @@ export function useStreamingGenerator(options: UseStreamingGeneratorOptions = {}
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Streaming aborted');
+        if (import.meta.env.DEV) console.debug('Streaming aborted');
         return;
       }
       

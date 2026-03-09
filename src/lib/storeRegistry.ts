@@ -325,7 +325,7 @@ export function enableStoreDevTools() {
     (window as unknown as { __STORE_REGISTRY__: StoreRegistry }).__STORE_REGISTRY__ = storeRegistry;
     (window as unknown as { __STORE_EVENT_BUS__: StoreEventBus }).__STORE_EVENT_BUS__ = storeEventBus;
     
-    console.log('[StoreRegistry] DevTools enabled. Access via window.__STORE_REGISTRY__');
+    console.debug('[StoreRegistry] DevTools enabled. Access via window.__STORE_REGISTRY__');
   }
 }
 

@@ -501,13 +501,15 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       
       await Promise.all(edgePromises);
       
-      console.log('[InvisibleBuilder] Graph data written to database:', {
-        agentId: newAgentId,
-        manusNode: manusNode?.node_id,
-        skillNodes: skillNodes.length,
-        kbNodes: kbNodes.length,
-        mcpNodes: mcpNodes.length,
-      });
+      if (import.meta.env.DEV) {
+        console.debug('[InvisibleBuilder] Graph data written to database:', {
+          agentId: newAgentId,
+          manusNode: manusNode?.node_id,
+          skillNodes: skillNodes.length,
+          kbNodes: kbNodes.length,
+          mcpNodes: mcpNodes.length,
+        });
+      }
 
       // Step 5: Complete
       await advanceToStep(4, `${agentName} 已就绪 ✨`);

@@ -57,7 +57,7 @@ function StreamingCanvasInner({
     reset,
   } = useStreamingGenerator({
     onComplete: (summaryData) => {
-      console.log('Streaming complete:', summaryData);
+      if (import.meta.env.DEV) console.debug('Streaming complete:', summaryData);
     },
     onError: (err) => {
       console.error('Streaming error:', err);

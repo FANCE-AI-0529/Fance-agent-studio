@@ -202,7 +202,7 @@ export function useWorkflowGenerator(): UseWorkflowGeneratorReturn {
 
       // 🆕 处理澄清状态 - 自动跳过知识库并重试
       if (data?.status === 'clarification_needed') {
-        console.log('[WorkflowGenerator] Clarification needed, auto-retrying with skipKnowledge=true');
+        if (import.meta.env.DEV) console.debug('[WorkflowGenerator] Clarification needed, auto-retrying with skipKnowledge=true');
         
         // 如果是知识库相关的澄清，自动跳过知识库
         if (data.reason === 'no_match' || data.reason === 'multiple_candidates') {

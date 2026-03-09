@@ -100,11 +100,13 @@ export function useAgentContextHotReload({
       // Notify parent via ref
       onConfigUpdateRef.current?.(newEffectiveConfig);
       
-      console.log('[HotReload] Config updated:', {
-        manifestChanged,
-        nameChanged,
-        modelChanged,
-      });
+      if (import.meta.env.DEV) {
+        console.debug('[HotReload] Config updated:', {
+          manifestChanged,
+          nameChanged,
+          modelChanged,
+        });
+      }
     }
   }, [storeAgentConfig, agentId]);
 

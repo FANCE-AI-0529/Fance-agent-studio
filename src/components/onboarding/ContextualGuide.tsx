@@ -54,7 +54,7 @@ const contextualTips: GuideTip[] = [
     type: 'warning',
     action: {
       label: '查看模板库',
-      onClick: () => console.log('Open template library'),
+      onClick: () => { /* TODO: Open template library */ },
     },
   },
   {

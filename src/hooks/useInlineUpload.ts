@@ -379,7 +379,7 @@ async function waitForIndexingComplete(
     }
     
     if (data?.index_status === 'ready') {
-      console.log('[waitForIndexingComplete] Indexing completed successfully');
+      if (import.meta.env.DEV) console.debug('[waitForIndexingComplete] Indexing completed successfully');
       return true;
     }
     

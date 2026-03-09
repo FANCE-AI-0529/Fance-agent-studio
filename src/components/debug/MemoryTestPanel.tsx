@@ -173,7 +173,7 @@ export function MemoryTestPanel({ agentId, className }: MemoryTestPanelProps) {
         
         // Fallback: check core memories
         if (!response) {
-          response = '根据我的记忆，您的名字是 Lovable。';
+          response = '根据我的记忆，您的名字是 Alice。';
         }
       }
       
