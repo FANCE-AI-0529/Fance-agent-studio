@@ -338,7 +338,7 @@ export function ModelProviderSettings() {
         <CardContent>
           <RadioGroup
             value={defaultChoice}
-            onValueChange={(v) => setDefaultChoice(v as "personal" | "global"fance")}fanc
+            onValueChange={(v) => setDefaultChoice(v as "personal" | "global" | "fance")}
             className="space-y-3"
           >
             <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
