@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
         if (severity === "critical" || severity === "high") {
           await supabase.from("drift_logs").insert({
             agent_id: agentId,
-            user_id: user.id,
+            user_id: userId,
             drift_type: "intent_drift",
             severity,
             baseline_value: { 
