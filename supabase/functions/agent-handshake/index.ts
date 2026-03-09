@@ -263,7 +263,7 @@ serve(async (req) => {
           .from("agent_collaborations")
           .update({ status: "disconnected" })
           .eq("id", collaborationId)
-          .eq("user_id", user.id);
+          .eq("user_id", userId);
 
         if (updateError) {
           return new Response(JSON.stringify({ error: "Failed to disconnect" }), {

@@ -163,7 +163,7 @@ serve(async (req) => {
     if (driftsDetected.length > 0) {
       const driftLogs = driftsDetected.map((drift) => ({
         agent_id: agentId,
-        user_id: user.id,
+        user_id: userId,
         drift_type: drift.type,
         severity: drift.severity,
         baseline_value: drift.baselineValue,
