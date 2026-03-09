@@ -129,19 +129,19 @@ export async function generateBatchEmbeddings(
     throw new Error("All texts are empty after trimming");
   }
 
-  // 优先使用 Lovable AI Gateway
-  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-  const effectiveApiKey = lovableApiKey || apiKey || EMBEDDING_CONFIG.API_KEY;
-  const effectiveModel = lovableApiKey ? "text-embedding-3-small" : (model || EMBEDDING_CONFIG.DEFAULT_MODEL);
-  const effectiveEndpoint = lovableApiKey 
+  // Use FANCE_API_KEY with LOVABLE_API_KEY fallback
+  const gatewayApiKey = Deno.env.get("FANCE_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
+  const effectiveApiKey = gatewayApiKey || apiKey || EMBEDDING_CONFIG.API_KEY;
+  const effectiveModel = gatewayApiKey ? "text-embedding-3-small" : (model || EMBEDDING_CONFIG.DEFAULT_MODEL);
+  const effectiveEndpoint = gatewayApiKey 
     ? "https://ai.gateway.lovable.dev/v1/embeddings" 
     : EMBEDDING_CONFIG.ENDPOINT;
 
   if (!effectiveApiKey) {
-    throw new Error("Embedding API key not configured. Set LOVABLE_API_KEY, AI_EMBEDDING_KEY or AI_API_KEY environment variable.");
+    throw new Error("Embedding API key not configured. Set FANCE_API_KEY, AI_EMBEDDING_KEY or AI_API_KEY environment variable.");
   }
 
-  console.log(`[embed-with-gateway] Batch embedding ${cleanedTexts.length} texts via ${lovableApiKey ? 'Lovable Gateway' : 'custom endpoint'}`);
+  console.debug(`[embed-with-gateway] Batch embedding ${cleanedTexts.length} texts via ${gatewayApiKey ? 'AI Gateway' : 'custom endpoint'}`);
 
   // [请求]：调用 Embedding API (批量模式)
   const response = await fetch(effectiveEndpoint, {
