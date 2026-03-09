@@ -479,7 +479,7 @@ export function ConsumerRuntime() {
             <div className="flex items-center gap-2">
               {agentConfig ? (
                 <>
-                  <img src={logoIcon} alt="Agent Studio" className="w-7 h-7 rounded-lg object-cover" />
+                  <img src={logoIcon} alt="Fance Studio" className="w-7 h-7 rounded-lg object-cover" />
                   <span className="font-semibold text-sm">{agentConfig.name}</span>
                   {memoryContext && (
                     <Tooltip>
