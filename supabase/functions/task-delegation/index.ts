@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
 
 // Key entity extracted from conversation
 interface KeyEntity {
@@ -100,49 +96,57 @@ interface DelegateTaskRequest {
   description?: string;
   priority?: "low" | "normal" | "high" | "urgent";
   taskType?: "general" | "analysis" | "generation" | "query" | "validation";
-  handoffContext?: HandoffContext;
+  handoffContext?: Record<string, unknown>;
   result?: unknown;
   errorMessage?: string;
   deadline?: string;
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from auth header
+    // Mandatory auth via getClaims
     const authHeader = req.headers.get("Authorization");
-    let userId: string | null = null;
-    
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await supabase.auth.getUser(token);
-      userId = user?.id || null;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const userId = claimsData.claims.sub as string;
 
     const body: DelegateTaskRequest = await req.json();
     const { action } = body;
-
-    console.log(`[task-delegation] Action: ${action}, User: ${userId}`);
 
     switch (action) {
       case "delegate": {
         const { sourceAgentId, targetAgentId, collaborationId, title, description, priority, taskType, handoffContext, deadline } = body;
 
-        if (!sourceAgentId || !targetAgentId || !title || !userId) {
+        if (!sourceAgentId || !targetAgentId || !title) {
           return new Response(
             JSON.stringify({ error: "Missing required fields" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        // Create the delegated task
         const { data: task, error: taskError } = await supabase
           .from("delegated_tasks")
           .insert({
@@ -161,57 +165,37 @@ Deno.serve(async (req) => {
           .select()
           .single();
 
-        if (taskError) {
-          console.error("[task-delegation] Create error:", taskError);
-          throw taskError;
-        }
+        if (taskError) throw taskError;
 
-        // If there's a collaboration, send a message
         if (collaborationId) {
           await supabase.from("collaboration_messages").insert({
             collaboration_id: collaborationId,
             sender_agent_id: sourceAgentId,
             receiver_agent_id: targetAgentId,
             message_type: "task_delegation",
-            payload: {
-              task_id: task.id,
-              title,
-              priority,
-              task_type: taskType,
-              handoff_summary: handoffContext?.conversationSummary || handoffContext?.goal || "No context provided",
-            },
+            payload: { task_id: task.id, title, priority, task_type: taskType },
           });
         }
 
-        console.log(`[task-delegation] Task created: ${task.id}`);
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       case "accept": {
         const { taskId } = body;
-        if (!taskId) {
-          return new Response(
-            JSON.stringify({ error: "Task ID required" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        if (!taskId) return new Response(JSON.stringify({ error: "Task ID required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         const { data: task, error } = await supabase
           .from("delegated_tasks")
-          .update({
-            status: "accepted",
-            accepted_at: new Date().toISOString(),
-          })
+          .update({ status: "accepted", accepted_at: new Date().toISOString() })
           .eq("id", taskId)
+          .eq("user_id", userId)
           .select(`*, collaboration:agent_collaborations(*)`)
           .single();
 
         if (error) throw error;
 
-        // Send acceptance message
         if (task.collaboration_id) {
           await supabase.from("collaboration_messages").insert({
             collaboration_id: task.collaboration_id,
@@ -222,35 +206,23 @@ Deno.serve(async (req) => {
           });
         }
 
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "reject": {
         const { taskId, errorMessage } = body;
-        if (!taskId) {
-          return new Response(
-            JSON.stringify({ error: "Task ID required" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        if (!taskId) return new Response(JSON.stringify({ error: "Task ID required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         const { data: task, error } = await supabase
           .from("delegated_tasks")
-          .update({
-            status: "rejected",
-            error_message: errorMessage || "Task rejected by target agent",
-            completed_at: new Date().toISOString(),
-          })
+          .update({ status: "rejected", error_message: errorMessage || "Task rejected", completed_at: new Date().toISOString() })
           .eq("id", taskId)
+          .eq("user_id", userId)
           .select()
           .single();
 
         if (error) throw error;
 
-        // Send rejection message
         if (task.collaboration_id) {
           await supabase.from("collaboration_messages").insert({
             collaboration_id: task.collaboration_id,
@@ -261,117 +233,70 @@ Deno.serve(async (req) => {
           });
         }
 
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "start": {
         const { taskId } = body;
-        if (!taskId) {
-          return new Response(
-            JSON.stringify({ error: "Task ID required" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        if (!taskId) return new Response(JSON.stringify({ error: "Task ID required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         const { data: task, error } = await supabase
           .from("delegated_tasks")
-          .update({
-            status: "in_progress",
-            started_at: new Date().toISOString(),
-          })
+          .update({ status: "in_progress", started_at: new Date().toISOString() })
           .eq("id", taskId)
+          .eq("user_id", userId)
           .select()
           .single();
 
         if (error) throw error;
-
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "complete": {
         const { taskId, result } = body;
-        if (!taskId) {
-          return new Response(
-            JSON.stringify({ error: "Task ID required" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        if (!taskId) return new Response(JSON.stringify({ error: "Task ID required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-        // Get task to calculate duration
-        const { data: existingTask } = await supabase
-          .from("delegated_tasks")
-          .select("started_at")
-          .eq("id", taskId)
-          .single();
-
+        const { data: existingTask } = await supabase.from("delegated_tasks").select("started_at").eq("id", taskId).eq("user_id", userId).single();
         const startedAt = existingTask?.started_at ? new Date(existingTask.started_at) : new Date();
         const actualDuration = Date.now() - startedAt.getTime();
 
         const { data: task, error } = await supabase
           .from("delegated_tasks")
-          .update({
-            status: "completed",
-            result: result || {},
-            completed_at: new Date().toISOString(),
-            actual_duration_ms: actualDuration,
-          })
+          .update({ status: "completed", result: result || {}, completed_at: new Date().toISOString(), actual_duration_ms: actualDuration })
           .eq("id", taskId)
+          .eq("user_id", userId)
           .select()
           .single();
 
         if (error) throw error;
 
-        // Send completion message
         if (task.collaboration_id) {
           await supabase.from("collaboration_messages").insert({
             collaboration_id: task.collaboration_id,
             sender_agent_id: task.target_agent_id,
             receiver_agent_id: task.source_agent_id,
             message_type: "task_completed",
-            payload: {
-              task_id: taskId,
-              title: task.title,
-              duration_ms: actualDuration,
-              result_summary: typeof result === "object" ? "Result attached" : result,
-            },
+            payload: { task_id: taskId, title: task.title, duration_ms: actualDuration },
           });
         }
 
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "fail": {
         const { taskId, errorMessage } = body;
-        if (!taskId) {
-          return new Response(
-            JSON.stringify({ error: "Task ID required" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        if (!taskId) return new Response(JSON.stringify({ error: "Task ID required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         const { data: task, error } = await supabase
           .from("delegated_tasks")
-          .update({
-            status: "failed",
-            error_message: errorMessage || "Task execution failed",
-            completed_at: new Date().toISOString(),
-          })
+          .update({ status: "failed", error_message: errorMessage || "Task execution failed", completed_at: new Date().toISOString() })
           .eq("id", taskId)
+          .eq("user_id", userId)
           .select()
           .single();
 
         if (error) throw error;
 
-        // Send failure message
         if (task.collaboration_id) {
           await supabase.from("collaboration_messages").insert({
             collaboration_id: task.collaboration_id,
@@ -382,37 +307,23 @@ Deno.serve(async (req) => {
           });
         }
 
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "cancel": {
         const { taskId } = body;
-        if (!taskId) {
-          return new Response(
-            JSON.stringify({ error: "Task ID required" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        if (!taskId) return new Response(JSON.stringify({ error: "Task ID required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         const { data: task, error } = await supabase
           .from("delegated_tasks")
-          .update({
-            status: "cancelled",
-            completed_at: new Date().toISOString(),
-          })
+          .update({ status: "cancelled", completed_at: new Date().toISOString() })
           .eq("id", taskId)
+          .eq("user_id", userId)
           .select()
           .single();
 
         if (error) throw error;
-
-        return new Response(
-          JSON.stringify({ success: true, task }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, task }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "list": {
@@ -420,41 +331,27 @@ Deno.serve(async (req) => {
         
         let query = supabase
           .from("delegated_tasks")
-          .select(`
-            *,
-            source_agent:agents!delegated_tasks_source_agent_id_fkey(id, name, model),
-            target_agent:agents!delegated_tasks_target_agent_id_fkey(id, name, model)
-          `)
+          .select(`*, source_agent:agents!delegated_tasks_source_agent_id_fkey(id, name, model), target_agent:agents!delegated_tasks_target_agent_id_fkey(id, name, model)`)
+          .eq("user_id", userId)
           .order("created_at", { ascending: false });
 
-        if (sourceAgentId) {
-          query = query.eq("source_agent_id", sourceAgentId);
-        }
-        if (targetAgentId) {
-          query = query.eq("target_agent_id", targetAgentId);
-        }
+        if (sourceAgentId) query = query.eq("source_agent_id", sourceAgentId);
+        if (targetAgentId) query = query.eq("target_agent_id", targetAgentId);
 
         const { data: tasks, error } = await query;
-
         if (error) throw error;
 
-        return new Response(
-          JSON.stringify({ success: true, tasks }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ success: true, tasks }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       default:
-        return new Response(
-          JSON.stringify({ error: "Unknown action" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
   } catch (error: unknown) {
-    console.error("[task-delegation] Error:", error);
+    console.error("[task-delegation] Error:", error instanceof Error ? error.message : "Unknown");
     return new Response(
-      JSON.stringify({ error: "An internal error occurred. Please try again later.", code: "TASK_DELEGATION_ERROR" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "An internal error occurred.", code: "TASK_DELEGATION_ERROR" }),
+      { status: 500, headers: { ...getCorsHeaders(req.headers.get("origin")), "Content-Type": "application/json" } }
     );
   }
 });
