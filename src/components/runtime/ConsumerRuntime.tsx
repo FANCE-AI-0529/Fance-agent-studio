@@ -164,7 +164,7 @@ export function ConsumerRuntime() {
       model: newConfig.model,
       agentId: newConfig.agentId,
     });
-    console.log('[ConsumerRuntime] Hot-reloaded agent config:', newConfig.name);
+    if (import.meta.env.DEV) console.debug('[ConsumerRuntime] Hot-reloaded agent config:', newConfig.name);
   }, []);
 
   // Handle personality change with animation
