@@ -167,7 +167,7 @@ export function ModelProviderSettings() {
       
       const { data: provider, error: insertError } = await supabase
         .from("llm_providers")
-        .insert(insertData)
+        .insert(insertData as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Supabase generated types mismatch
         .select()
         .single();
 
