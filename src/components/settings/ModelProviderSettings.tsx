@@ -123,7 +123,7 @@ export function ModelProviderSettings() {
     error?: string;
     models?: string[];
   } | null>(null);
-  const [defaultChoice, setDefaultChoice] = useState<"personal" | "global" | "fance">("fance");e");
+  const [defaultChoice, setDefaultChoice] = useState<"personal" | "global" | "fance">("fance");
 
   // 获取用户的供应商列表
   const { data: providers, isLoading } = useQuery({
