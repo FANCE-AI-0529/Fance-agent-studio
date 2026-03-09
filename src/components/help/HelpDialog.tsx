@@ -155,7 +155,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 p-4"
-              onClick={() => window.open("https://github.com/agent-studio/agent-studio", "_blank")}
+              onClick={() => window.open("https://github.com/fance-studio/fance-studio", "_blank")}
             >
               <Video className="h-5 w-5 text-primary" />
               <span className="text-sm">文档教程</span>
