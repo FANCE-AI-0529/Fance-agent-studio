@@ -123,7 +123,7 @@ export function ModelProviderSettings() {
     error?: string;
     models?: string[];
   } | null>(null);
-  const [defaultChoice, setDefaultChoice] = useState<"personal" | "global" | "fance">("fance");
+  const [defaultChoice, setDefaultChoice] = useState<"personal" | "global" | "fance">("fance");e");
 
   // 获取用户的供应商列表
   const { data: providers, isLoading } = useQuery({
@@ -338,7 +338,7 @@ export function ModelProviderSettings() {
         <CardContent>
           <RadioGroup
             value={defaultChoice}
-            onValueChange={(v) => setDefaultChoice(v as "personal" | "global" | "lovafanc
+            onValueChange={(v) => setDefaultChoice(v as "personal" | "global"fance")}fanc
             className="space-y-3"
           >
             <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
