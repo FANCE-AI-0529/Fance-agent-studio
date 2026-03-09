@@ -1944,7 +1944,7 @@ environment:
 name: "push-notification"
 version: "1.0.0"
 description: "多渠道消息推送，支持邮件、短信、微信、钉钉"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
   - notification
