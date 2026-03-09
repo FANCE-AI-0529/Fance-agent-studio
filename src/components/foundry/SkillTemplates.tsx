@@ -291,7 +291,7 @@ rate_limit:
 name: "database-query"
 version: "1.0.0"
 description: "安全执行数据库查询，支持参数化查询防止 SQL 注入"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - database_read
   - database_write
