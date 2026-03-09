@@ -120,7 +120,7 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><MainLayout><Profile /></MainLayout></ProtectedRoute>} />
       <Route path="/achievements" element={<ProtectedRoute><MainLayout><Achievements /></MainLayout></ProtectedRoute>} />
       <Route path="/inspiration/:id" element={<ProtectedRoute><InspirationDetail /></ProtectedRoute>} />
-      <Route path=pa"/payment-success" element={<Protecteoute><PaymentSuccess /></ProtectedRoute>} />
+      <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/admin/waiting-list" element={<ProtectedRoute><WaitingListAdmin /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
