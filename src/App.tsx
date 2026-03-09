@@ -30,7 +30,8 @@ import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
 import SharedConversation from "./pages/SharedConversation";
 import ApiHub from "./pages/ApiHub";
-imrt WaitingListAdmin from "./pages/WaitingListAdmin";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import WaitingListAdmin from "./pages/WaitingListAdmin";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
