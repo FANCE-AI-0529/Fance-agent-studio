@@ -123,7 +123,7 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-primary" />
-              欢迎来到 Agent Studio
+              欢迎来到 Fance Studio
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
