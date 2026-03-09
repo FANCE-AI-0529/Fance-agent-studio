@@ -2092,7 +2092,7 @@ mplp:
 name: "payment-stripe"
 version: "1.0.0"
 description: "Stripe 支付集成，支持创建支付意图、确认支付、退款"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - payment
   - internet_access
