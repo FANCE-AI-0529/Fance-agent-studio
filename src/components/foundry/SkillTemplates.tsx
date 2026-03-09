@@ -2343,7 +2343,7 @@ environment:
 name: "speech-to-text"
 version: "1.0.0"
 description: "使用 AI 模型将语音转换为文字"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - ai_inference
   - file_read
