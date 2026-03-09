@@ -100,7 +100,7 @@ function getAgentAvatar(agent: Agent | null): AgentAvatar {
 }
 
 const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) => {
-  const agentName = agent?.name || "Agent Studio 助手";
+  const agentName = agent?.name || "Fance Studio 助手";
   const agentDepartment = agent?.department || "平台向导";
   const avatar = getAgentAvatar(agent);
 
