@@ -3,7 +3,7 @@
 // Model Mapping - Translate UI model names to Gateway models
 // =====================================================
 
-// Lovable AI Gateway 支持的模型
+// Fance AI Gateway 支持的模型
 export const VALID_GATEWAY_MODELS = [
   'google/gemini-2.5-pro',
   'google/gemini-2.5-flash',
