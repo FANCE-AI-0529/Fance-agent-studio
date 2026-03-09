@@ -157,7 +157,7 @@ export function HelpCenter() {
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 p-4"
-              onClick={() => window.open("https://docs.lovable.dev", "_blank")}
+              onClick={() => window.open("https://github.com/fance-studio/fance-studio/wiki", "_blank")}
             >
               <Video className="h-5 w-5 text-primary" />
               <span className="text-sm">视频教程</span>
