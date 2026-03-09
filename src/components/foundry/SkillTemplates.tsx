@@ -128,7 +128,7 @@ export const skillTemplates: SkillTemplate[] = [
 name: "web-search"
 version: "1.0.0"
 description: "通过搜索引擎检索网页信息，返回相关结果摘要"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
   - read
