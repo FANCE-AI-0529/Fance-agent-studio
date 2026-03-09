@@ -725,7 +725,7 @@ limits:
 name: "email-sender"
 version: "1.0.0"
 description: "发送格式化邮件，支持 HTML 模板和附件"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - email_send
   - network
