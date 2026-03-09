@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢您对 Agent Studio 的关注！我们欢迎各种形式的贡献。
+感谢您对 Fance Studio 的关注！我们欢迎各种形式的贡献。
 
 ## 行为准则
 
@@ -10,7 +10,7 @@
 
 ### 报告 Bug
 
-1. 在 [Issues](https://github.com/agent-studio/agent-studio/issues) 中搜索是否已存在相同问题
+1. 在 [Issues](https://github.com/fance-studio/fance-studio/issues) 中搜索是否已存在相同问题
 2. 如果没有，创建新的 Issue，使用 Bug 报告模板
 3. 提供详细的复现步骤、预期行为和实际行为
 
@@ -26,11 +26,11 @@
 
 ```bash
 # Fork 仓库后克隆到本地
-git clone https://github.com/YOUR_USERNAME/agent-studio.git
-cd agent-studio
+git clone https://github.com/YOUR_USERNAME/fance-studio.git
+cd fance-studio
 
 # 添加上游仓库
-git remote add upstream https://github.com/agent-studio/agent-studio.git
+git remote add upstream https://github.com/fance-studio/fance-studio.git
 ```
 
 #### 2. 创建分支
@@ -120,7 +120,7 @@ PR 会经过以下检查：
 
 ## 需要帮助？
 
-- 查看 [Discussions](https://github.com/agent-studio/agent-studio/discussions) 获取帮助
+- 查看 [Discussions](https://github.com/fance-studio/fance-studio/discussions) 获取帮助
 - 加入我们的社区聊天
 
 再次感谢您的贡献！🎉

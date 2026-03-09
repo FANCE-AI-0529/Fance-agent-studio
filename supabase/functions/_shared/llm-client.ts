@@ -2,8 +2,8 @@
  * @file _shared/llm-client.ts
  * @description 统一 LLM 调用客户端，通过 llm-gateway 路由请求到用户配置的供应商
  * @module EdgeFunctions/Shared/LLMClient
- * @author Agent Studio Team
- * @copyright 2025 Agent Studio. All rights reserved.
+ * @author Fance Studio Team
+ * @copyright 2025 Fance Studio. All rights reserved.
  * @version 2.0.0 - 开源版本，移除平台特定依赖
  */
 

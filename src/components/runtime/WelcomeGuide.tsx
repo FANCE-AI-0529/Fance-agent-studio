@@ -66,7 +66,7 @@ const quickActions: QuickAction[] = [
   {
     icon: <HelpCircle className="h-4 w-4" />,
     label: "常见问题",
-    command: "Agent Studio 平台有哪些常见问题？",
+    command: "Fance Studio 平台有哪些常见问题？",
     category: "learn",
     description: "平台使用FAQ",
   },
@@ -100,7 +100,7 @@ function getAgentAvatar(agent: Agent | null): AgentAvatar {
 }
 
 const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) => {
-  const agentName = agent?.name || "Agent Studio 助手";
+  const agentName = agent?.name || "Fance Studio 助手";
   const agentDepartment = agent?.department || "平台向导";
   const avatar = getAgentAvatar(agent);
 
@@ -123,7 +123,7 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-primary" />
-              欢迎来到 Agent Studio
+              欢迎来到 Fance Studio
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
@@ -204,7 +204,7 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
 
         {/* Start Prompt */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>有任何关于 Agent Studio 的问题，都可以问我！</p>
+          <p>有任何关于 Fance Studio 的问题，都可以问我！</p>
         </div>
       </div>
     </div>

@@ -128,7 +128,7 @@ export const skillTemplates: SkillTemplate[] = [
 name: "web-search"
 version: "1.0.0"
 description: "通过搜索引擎检索网页信息，返回相关结果摘要"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
   - read
@@ -291,7 +291,7 @@ rate_limit:
 name: "database-query"
 version: "1.0.0"
 description: "安全执行数据库查询，支持参数化查询防止 SQL 注入"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - database_read
   - database_write
@@ -504,7 +504,7 @@ security:
 name: "text-summarization"
 version: "1.0.0"
 description: "使用 AI 模型对长文本进行智能摘要"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - ai_inference
 inputs:
@@ -725,7 +725,7 @@ limits:
 name: "email-sender"
 version: "1.0.0"
 description: "发送格式化邮件，支持 HTML 模板和附件"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - email_send
   - network
@@ -959,7 +959,7 @@ security:
 name: "calendar-manager"
 version: "1.0.0"
 description: "管理日历事件，支持创建、查询、更新和删除"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - calendar_read
   - calendar_write
@@ -1190,7 +1190,7 @@ security:
 name: "code-executor"
 version: "1.0.0"
 description: "在安全沙箱环境中执行代码片段"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - code_execute
   - sandbox
@@ -1409,7 +1409,7 @@ security:
 name: "document-parser"
 version: "1.0.0"
 description: "解析多种格式文档，提取文本和结构化数据"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - file_read
 inputs:
@@ -1713,7 +1713,7 @@ limits:
 name: "weather-query"
 version: "1.0.0"
 description: "查询城市天气信息，包括实时天气和未来预报"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
 inputs:
@@ -1944,7 +1944,7 @@ environment:
 name: "push-notification"
 version: "1.0.0"
 description: "多渠道消息推送，支持邮件、短信、微信、钉钉"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
   - notification
@@ -2092,7 +2092,7 @@ mplp:
 name: "payment-stripe"
 version: "1.0.0"
 description: "Stripe 支付集成，支持创建支付意图、确认支付、退款"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - payment
   - internet_access
@@ -2343,7 +2343,7 @@ environment:
 name: "speech-to-text"
 version: "1.0.0"
 description: "使用 AI 模型将语音转换为文字"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - ai_inference
   - file_read
@@ -2560,7 +2560,7 @@ limits:
 name: "data-visualization"
 version: "1.0.0"
 description: "根据数据生成柱状图、折线图、饼图等可视化图表"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - file_write
 inputs:
@@ -2801,7 +2801,7 @@ environment:
 name: "webhook-trigger"
 version: "1.0.0"
 description: "发送 Webhook 请求到指定端点"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
 inputs:
@@ -2997,7 +2997,7 @@ dependencies:
 name: "brand-guidelines"
 version: "1.0.0"
 description: "应用品牌视觉规范到设计作品"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - file_read
   - file_write

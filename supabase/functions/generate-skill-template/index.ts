@@ -98,7 +98,7 @@ allowed-tools 可选值：
 1. **name** (必填): 技能名称，kebab-case 格式，如 "web-search"
 2. **version** (必填): 语义化版本号，如 "1.0.0"
 3. **description** (必填): 技能描述，简明扼要说明功能
-4. **author** (必填): 作者名称，默认使用 "Agent Studio"
+4. **author** (必填): 作者名称，默认使用 "Fance Studio"
 5. **permissions** (必填): 权限声明数组，必须包含以下一项或多项：
    - read: 读取数据权限
    - write: 写入数据权限
@@ -121,7 +121,7 @@ allowed-tools 可选值：
 name: "text-summarizer"
 version: "1.0.0"
 description: "文本摘要生成技能"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - read
   - compute

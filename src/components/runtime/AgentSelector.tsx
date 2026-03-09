@@ -96,7 +96,7 @@ export function AgentSelector({
             >
               <AgentAvatarDisplay avatar={defaultAgent.avatar} size="sm" />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">Agent Studio 助手</div>
+                <div className="font-medium text-sm">Fance Studio 助手</div>
                 <div className="text-xs text-muted-foreground">平台向导 · 智能体构建顾问</div>
                 <div className="text-[10px] text-muted-foreground mt-1">
                   帮助您了解平台功能、构建智能体

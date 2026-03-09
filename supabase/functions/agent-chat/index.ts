@@ -354,10 +354,10 @@ const ROLE_META_INSTRUCTIONS = `
 /**
  * Fance 智能助手专属系统提示词
  */
-const fanceGuideSystemPrompt = `你是 Agent Studio 智能助手，Agent Studio 平台的官方向导。
+const fanceGuideSystemPrompt = `你是 Fance Studio 智能助手，Fance Studio 平台的官方向导。
 
 ## 你的角色
-你是一位友好、专业的平台顾问，帮助用户了解和使用 Agent Studio 智能体平台。
+你是一位友好、专业的平台顾问，帮助用户了解和使用 Fance Studio 智能体平台。
 
 ## 核心职责
 1. 构建指导: 详细解释如何创建智能体，包括配置、技能选择、系统提示词编写
@@ -400,7 +400,7 @@ const fanceGuideSystemPrompt = `你是 Agent Studio 智能助手，Agent Studio 
 ${PRIVACY_PROTECTION_INSTRUCTIONS}
 ${TERMINAL_STYLE_INSTRUCTIONS}
 ${ROLE_META_INSTRUCTIONS}
-请记住：你的目标是帮助用户快速上手 Agent Studio 平台，让他们能够轻松构建自己的智能体。`;
+请记住：你的目标是帮助用户快速上手 Fance Studio 平台，让他们能够轻松构建自己的智能体。`;
 
 /**
  * 构建联网能力提示词
@@ -424,7 +424,7 @@ function buildWebSearchSection(webSearchEnabled: boolean): string {
  * 构建系统提示词
  */
 function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean, webSearchEnabled?: boolean): string {
-  const agentName = config?.name || "Agent Studio 助手";
+  const agentName = config?.name || "Fance Studio 助手";
   const skills = config?.skills || [];
   const mplpPolicy = config?.mplpPolicy || "standard";
   const webSearchSection = buildWebSearchSection(webSearchEnabled ?? true);
@@ -458,7 +458,7 @@ function buildSystemPrompt(config?: AgentConfig, isMultimodal?: boolean, webSear
     return `${config.systemPrompt}${skillsSection}${webSearchSection}${multimodalInstructions}${PRIVACY_PROTECTION_INSTRUCTIONS}${TERMINAL_STYLE_INSTRUCTIONS}${ROLE_META_INSTRUCTIONS}`;
   }
 
-  return `你是 ${agentName}，运行在 Agent Studio 平台上的智能助手。
+  return `你是 ${agentName}，运行在 Fance Studio 平台上的智能助手。
 
 ## 工作原则
 
