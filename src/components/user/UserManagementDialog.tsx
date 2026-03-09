@@ -20,6 +20,7 @@ import {
   useInvitationStats,
   useAcceptInvitation 
 } from "@/hooks/useInvite";
+import { useIsAdmin } from "@/hooks/useAdminInvite";
 import { AdminInvitePanel } from "@/components/invite/AdminInvitePanel";
 import { format } from "date-fns";
 
