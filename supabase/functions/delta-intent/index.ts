@@ -337,7 +337,7 @@ Deno.serve(async (req) => {
           .from("intent_history")
           .select("*")
           .eq("agent_id", agentId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(50);
 

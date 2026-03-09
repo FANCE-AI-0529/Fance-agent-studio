@@ -276,7 +276,7 @@ For each entity, extract key keywords that can be used for matching.`,
 
       if (sourceId && targetId) {
         relationsToInsert.push({
-          user_id: user.id,
+          user_id: userId,
           source_entity_id: sourceId,
           target_entity_id: targetId,
           relation_type: relation.relationType,

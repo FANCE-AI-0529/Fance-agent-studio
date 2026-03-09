@@ -951,7 +951,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[agent-chat] Streaming response started for user ${user.id} with model: ${model}, multimodal: ${isMultimodal}, RAG: ${ragContext.length > 0}`);
+    if (import.meta.env?.DEV) console.debug(`[agent-chat] Streaming response started with model: ${model}`);
     
     // [返回]：流式响应
     return new Response(response.body, {
