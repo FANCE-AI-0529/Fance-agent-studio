@@ -229,7 +229,7 @@ export function HelpCenter() {
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => window.open("https://docs.lovable.dev", "_blank")}
+                onClick={() => window.open("https://github.com/fance-studio/fance-studio/wiki", "_blank")}
               >
                 <ExternalLink className="h-4 w-4" />
                 查看完整文档

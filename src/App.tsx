@@ -30,9 +30,7 @@ import NotFound from "./pages/NotFound";
 import SharedPrompt from "./pages/SharedPrompt";
 import SharedConversation from "./pages/SharedConversation";
 import ApiHub from "./pages/ApiHub";
-
-import PaymentSuccess from "./pages/PaymentSuccess";
-import WaitingListAdmin from "./pages/WaitingListAdmin";
+port WaitingListAdmin from "./pages/WaitingListAdmin";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -121,8 +119,7 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><MainLayout><Profile /></MainLayout></ProtectedRoute>} />
       <Route path="/achievements" element={<ProtectedRoute><MainLayout><Achievements /></MainLayout></ProtectedRoute>} />
       <Route path="/inspiration/:id" element={<ProtectedRoute><InspirationDetail /></ProtectedRoute>} />
-      <Route path="/opencode-test" element={<ProtectedRoute><OpenCodeTestPage /></ProtectedRoute>} />
-      <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+      <Route path="/opencode-test" element={<ProtectedRoute><OdRoute><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/admin/waiting-list" element={<ProtectedRoute><WaitingListAdmin /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

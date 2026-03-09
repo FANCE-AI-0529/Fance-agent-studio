@@ -43,12 +43,12 @@ export interface LLMModelConfig {
 // Predefined provider templates
 export const PROVIDER_TEMPLATES = [
   {
-    id: 'lovable',
-    name: 'Lovable AI',
-    provider_type: 'lovable',
-    display_name: 'Lovable AI Gateway',
-    api_endpoint: 'https://ai.gateway.lovable.dev/v1/chat/completions',
-    api_key_name: 'LOVABLE_API_KEY',
+    id: 'fance',
+    name: 'Fance AI',
+    provider_type: 'fance',
+    display_name: 'Fance AI Gateway',
+    api_endpoint: '/api/v1/chat/completions',
+    api_key_name: 'FANCE_API_KEY',
     available_models: [
       { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: '平衡性能与成本' },
       { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: '最强推理能力' },
