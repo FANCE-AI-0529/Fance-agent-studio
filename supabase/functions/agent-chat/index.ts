@@ -860,7 +860,7 @@ serve(async (req) => {
             console.log(`[agent-chat][MCP] Found ${mcpCalls.length} MCP tool calls, executing...`);
             
             // 执行 MCP 工具
-            const toolResults = await executeMCPToolCalls(supabase, user.id, toolCalls);
+            const toolResults = await executeMCPToolCalls(supabase, userId, toolCalls);
             
             // 构建包含工具结果的消息
             const messagesWithToolResults: ChatMessage[] = [
