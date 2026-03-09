@@ -63,9 +63,7 @@ serve(async (req) => {
       );
     }
 
-    console.debug(`[rag-query] Query for user: ${userId.slice(0, 8)}...`);
-
-    // [向量化]：使用真实 Embedding API 生成查询向量
+    console.debug(`[rag-query] Query for user: ${userId.slice(0, 8)}...量化]：使用真实 Embedding API 生成查询向量
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured - cannot generate query embedding");
     }
@@ -85,7 +83,7 @@ serve(async (req) => {
         p_knowledge_base_id: knowledgeBaseId || null,
         p_user_id: user.id,
       }
-    );
+   I;
 
     if (searchError) {
       console.error("[rag-query] Search error:", searchError);
