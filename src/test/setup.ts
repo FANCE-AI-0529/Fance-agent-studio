@@ -32,7 +32,7 @@ class IntersectionObserverMock {
   disconnect = vi.fn();
 }
 
-global.IntersectionObserver = IntersectionObserverMock as any;
+global.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
 
 // Mock clipboard API
 Object.assign(navigator, {
