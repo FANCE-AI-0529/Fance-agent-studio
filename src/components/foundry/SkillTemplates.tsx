@@ -2801,7 +2801,7 @@ environment:
 name: "webhook-trigger"
 version: "1.0.0"
 description: "发送 Webhook 请求到指定端点"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - internet_access
 inputs:
