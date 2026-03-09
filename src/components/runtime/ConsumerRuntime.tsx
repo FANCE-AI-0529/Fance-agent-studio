@@ -185,7 +185,7 @@ export function ConsumerRuntime() {
     agentId,
     onSystemMessage: handleSystemMessage,
     onContextRefresh: (storeConfig) => {
-      const manifest = storeConfig.manifest as any;
+      const manifest = parseManifest(storeConfig.manifest);
       handleConfigUpdate({
         name: storeConfig.name,
         systemPrompt: manifest?.systemPrompt || `你是${storeConfig.name}，一个专业的AI助手。`,
