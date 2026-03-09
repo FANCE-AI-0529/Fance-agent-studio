@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Authorization required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -56,26 +56,28 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     
-    if (userError || !user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const userId = claimsData.claims.sub as string;
+
     const body: CircuitBreakerRequest = await req.json();
     const { action, agentId, config } = body;
 
-    console.log(`[circuit-breaker] Action: ${action}, Agent: ${agentId}, User: ${user.id}`);
+    if (import.meta.env?.DEV) console.debug(`[circuit-breaker] Action: ${action}, Agent: ${agentI: ${agentI: ${agentId}`);
 
     // Get or create circuit breaker state
     let { data: cbState, error: fetchError } = await supabase
       .from("circuit_breaker_state")
       .select("*")
       .eq("agent_id", agentId)
-      .eq("user_id", user.id)
+     .eq("user_id", userId)
       .single();
 
     if (fetchError && fetchError.code === "PGRST116") {
@@ -84,7 +86,7 @@ Deno.serve(async (req) => {
         .from("circuit_breaker_state")
         .insert({
           agent_id: agentId,
-          user_id: user.id,
+          user_id: userId,
           state: "closed",
           failure_count: 0,
           success_count: 0,

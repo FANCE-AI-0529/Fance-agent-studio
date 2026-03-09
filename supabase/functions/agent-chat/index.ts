@@ -727,17 +727,17 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
 
-    if (userError || !user) {
-      console.error("[agent-chat] Invalid auth token:", userError?.message);
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("[agent-chat] Invalid auth token");
       return new Response(
         JSON.stringify({ error: "无效的认证令牌", code: "INVALID_TOKEN" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[agent-chat] Authenticated user: ${user.id}`);
+    const userId = claimsData.claims.sub as string;
 
     // [安全]：检查请求体大小（限制 1MB）
     const contentLength = req.headers.get('content-length');
@@ -793,7 +793,7 @@ serve(async (req) => {
       console.log(`[agent-chat] RAG enabled with ${knowledgeBases.length} knowledge bases`);
       ragContext = await performRAGQuery(
         supabase,
-        user.id,
+        userId,
         knowledgeBases,
         latestUserMessage,
         LOVABLE_API_KEY
@@ -809,7 +809,7 @@ serve(async (req) => {
 
     const model = getValidModel(validatedConfig?.model);
 
-    console.log(`[agent-chat] User ${user.id} starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}, RAG: ${ragContext.length > 0 ? 'yes' : 'no'}`);
+    if (import.meta.env?.DEV) console.debug(`[agent-chat] Starting ${isMultimodal ? 'multimodal' : 'text'} chat with model: ${model}, agent: ${validatedConfig?.name || 'default'}, RAG: ${ragContext.length > 0 ? 'yes' : 'no'}`);
 
     // [构建]：消息数组
     const apiMessages: ChatMessage[] = [
@@ -860,7 +860,7 @@ serve(async (req) => {
             console.log(`[agent-chat][MCP] Found ${mcpCalls.length} MCP tool calls, executing...`);
             
             // 执行 MCP 工具
-            const toolResults = await executeMCPToolCalls(supabase, user.id, toolCalls);
+            const toolResults = await executeMCPToolCalls(supabase, userId, toolCalls);
             
             // 构建包含工具结果的消息
             const messagesWithToolResults: ChatMessage[] = [
@@ -951,7 +951,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[agent-chat] Streaming response started for user ${user.id} with model: ${model}, multimodal: ${isMultimodal}, RAG: ${ragContext.length > 0}`);
+    if (import.meta.env?.DEV) console.debug(`[agent-chat] Streaming response started with model: ${model}`);
     
     // [返回]：流式响应
     return new Response(response.body, {

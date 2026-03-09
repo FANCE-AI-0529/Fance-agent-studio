@@ -115,14 +115,16 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     
-    if (userError || !user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const userId = claimsData.claims.sub as string;
 
     const body: DeltaIntentRequest = await req.json();
     const { action, agentId, sessionId, originalIntent, currentMessage, responseContent, turnNumber } = body;
@@ -162,7 +164,7 @@ Deno.serve(async (req) => {
           .insert({
             agent_id: agentId,
             session_id: sessionId,
-            user_id: user.id,
+            user_id: userId,
             original_intent: originalIntent,
             current_intent: currentMessage,
             delta_score: combinedDelta,
@@ -183,7 +185,7 @@ Deno.serve(async (req) => {
         if (severity === "critical" || severity === "high") {
           await supabase.from("drift_logs").insert({
             agent_id: agentId,
-            user_id: user.id,
+            user_id: userId,
             drift_type: "intent_drift",
             severity,
             baseline_value: { 
@@ -265,7 +267,7 @@ Deno.serve(async (req) => {
           .from("intent_history")
           .select("*")
           .eq("agent_id", agentId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(20);
 
@@ -335,7 +337,7 @@ Deno.serve(async (req) => {
           .from("intent_history")
           .select("*")
           .eq("agent_id", agentId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(50);
 

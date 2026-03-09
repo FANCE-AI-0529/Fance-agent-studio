@@ -66,27 +66,31 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "No authorization header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
     
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     
-    if (userError || !user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
 
     const { 
       query, 
@@ -103,7 +107,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`RSS Query for user ${user.id}: "${query.substring(0, 100)}..."`);
+    if (import.meta.env?.DEV) console.debug(`RSS Query for user: "${query.substring(0, 100)}..."`);
 
     // Step 1: Extract keywords from query
     const queryKeywords = extractKeywords(query);
@@ -113,7 +117,7 @@ serve(async (req) => {
     let entityQuery = supabase
       .from("entities")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .limit(500);
 
     if (agentId) {
@@ -211,7 +215,7 @@ serve(async (req) => {
       let relQuery = supabase
         .from("entity_relations")
         .select("*")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       // Filter by source or target in current level
       relQuery = relQuery.or(
