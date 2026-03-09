@@ -382,7 +382,7 @@ export function GlobalModelSettings() {
         <AlertTitle>API 密钥配置说明</AlertTitle>
         <AlertDescription className="text-xs space-y-1">
           <p>1. 在下方添加供应商时，填写密钥引用名称（如 OPENAI_API_KEY）</p>
-          <p>2. 实际密钥需要在 Lovable 项目设置 → Secrets 中添加</p>
+          <p>2. 实际密钥需要在 Fance 项目设置 → Secrets 中添加</p>
           <p className="text-muted-foreground">
             常用密钥名：OPENAI_API_KEY、ANTHROPIC_API_KEY、GOOGLE_API_KEY
           </p>

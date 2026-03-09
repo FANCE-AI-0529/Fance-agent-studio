@@ -414,7 +414,7 @@ export function LLMConfigPanel({
               <ScrollArea className="h-full">
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground mb-4">
-                    为每个功能模块指定专用的 AI 模型。未配置的模块将使用默认供应商或 Lovable AI。
+                    为每个功能模块指定专用的 AI 模型。未配置的模块将使用默认供应商或 Fance AI。
                   </p>
                   
                   {MODULE_TYPES.map((module) => {

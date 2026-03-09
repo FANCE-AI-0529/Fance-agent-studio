@@ -167,7 +167,7 @@ export function ModelProviderSettings() {
       
       const { data: provider, error: insertError } = await supabase
         .from("llm_providers")
-        .insert(insertData as any)
+        .insert(insertData)
         .select()
         .single();
 
