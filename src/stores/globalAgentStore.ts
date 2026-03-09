@@ -523,7 +523,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             (payload) => get()._handleAgentChange(payload)
           )
           .subscribe((status) => {
-            if (import.meta.env.DEV) console.debu.meta.env.DEV) console.debug(`[GlobalAgentStore] Realtime subscription status:`, status);
+            if (import.meta.env.DEV) console.debu.meta.env.DEV) console.debu.meta.env.DEV) console.debug(`[GlobalAgentStore] Realtime subscription status:`, status);
           });
         
         set({ isSubscribed: true, channel });
@@ -541,7 +541,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
 
       _handleNodeChange: (payload) => {
         const { nodes } = get();
-        const eventType = payload.eif (import.meta.env.DEV) console.debu        
+        if (import.meta.env.DEV) console.debutType = payload.eif (import.meta.env.DEV) console.debu        
         console.log(`[GlobalAgentStore] Node change:`, eventType, payload);
         
         if (eventType === 'INSERT') {
@@ -593,7 +593,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
 
       _handleEdgeChange: (payload) => {
         const { edges } = get();
-        const eventType = payload.eventType;
+        if (import.meta.env.DEV) console.debutType = payload.eventType;
         
         console.log(`[GlobalAgentStore] Edge change:`, eventType, payload);
         
