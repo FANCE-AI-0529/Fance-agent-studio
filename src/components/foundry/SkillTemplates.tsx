@@ -959,7 +959,7 @@ security:
 name: "calendar-manager"
 version: "1.0.0"
 description: "管理日历事件，支持创建、查询、更新和删除"
-author: "Agent Studio"
+author: "Fance Studio"
 permissions:
   - calendar_read
   - calendar_write
