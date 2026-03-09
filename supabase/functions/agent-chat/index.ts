@@ -793,7 +793,7 @@ serve(async (req) => {
       console.log(`[agent-chat] RAG enabled with ${knowledgeBases.length} knowledge bases`);
       ragContext = await performRAGQuery(
         supabase,
-        user.id,
+        userId,
         knowledgeBases,
         latestUserMessage,
         LOVABLE_API_KEY
