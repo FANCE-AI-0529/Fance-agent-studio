@@ -339,7 +339,7 @@ export function ThemeEditor() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "agent-studio-theme.json";
+    a.download = "fance-studio-theme.json";
     a.click();
     URL.revokeObjectURL(url);
     toast.success("主题已导出");

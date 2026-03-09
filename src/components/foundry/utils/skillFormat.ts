@@ -158,7 +158,7 @@ function migrateAndValidateFrontmatter(content: string): string {
       parsed.description = '自动生成的技能';
     }
     if (!parsed.author) {
-      parsed.author = 'Agent Studio';
+      parsed.author = 'Fance Studio';
     }
     if (!parsed.permissions || !Array.isArray(parsed.permissions) || parsed.permissions.length === 0) {
       parsed.permissions = ['compute'];

@@ -120,7 +120,7 @@ PR 会经过以下检查：
 
 ## 需要帮助？
 
-- 查看 [Discussions](https://github.com/agent-studio/agent-studio/discussions) 获取帮助
+- 查看 [Discussions](https://github.com/fance-studio/fance-studio/discussions) 获取帮助
 - 加入我们的社区聊天
 
 再次感谢您的贡献！🎉

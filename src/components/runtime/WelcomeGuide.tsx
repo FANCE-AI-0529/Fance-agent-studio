@@ -204,7 +204,7 @@ const WelcomeGuide: React.FC<WelcomeGuideProps> = ({ agent, onCommandClick }) =>
 
         {/* Start Prompt */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>有任何关于 Agent Studio 的问题，都可以问我！</p>
+          <p>有任何关于 Fance Studio 的问题，都可以问我！</p>
         </div>
       </div>
     </div>

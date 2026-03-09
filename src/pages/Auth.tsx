@@ -504,7 +504,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src={logoFull} alt="Agent Studio" className="h-14 w-14 rounded-xl object-cover mx-auto mb-4" />
+          <img src={logoFull} alt="Fance Studio" className="h-14 w-14 rounded-xl object-cover mx-auto mb-4" />
           <p className="text-muted-foreground text-sm mt-1 flex items-center justify-center gap-1">
             <Sparkles className="h-3 w-3" />
             技能驱动，智能无限

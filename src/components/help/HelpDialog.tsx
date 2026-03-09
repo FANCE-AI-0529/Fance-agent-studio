@@ -225,7 +225,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => window.open("https://github.com/agent-studio/agent-studio", "_blank")}
+                onClick={() => window.open("https://github.com/fance-studio/fance-studio", "_blank")}
               >
                 <ExternalLink className="h-4 w-4" />
                 查看完整文档
