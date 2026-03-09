@@ -165,7 +165,7 @@ export function useDreaming(agentId?: string) {
       memoryStore.setDreamingStatus('completed');
       memoryStore.setLastDreamingAt(new Date());
 
-      console.log('Dreaming completed successfully');
+      if (import.meta.env.DEV) console.debug('Dreaming completed successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
