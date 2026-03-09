@@ -74,7 +74,7 @@ serve(async (req) => {
     const { data: docRecord, error: docError } = await supabase
       .from("document_processing")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         agent_id: agentId || null,
         document_name: documentName,
         document_content: documentContent.substring(0, 50000), // Limit stored content
