@@ -111,6 +111,36 @@ serve(async (req) => {
       );
     }
 
+    // --- Rate Limiting (sliding window) ---
+    const rateLimit = apiKeyData.rate_limit || 60; // default 60 req/min
+    const windowStart = new Date(Date.now() - 60 * 1000).toISOString();
+
+    const { count: recentCallCount, error: countError } = await supabase
+      .from("agent_api_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("api_key_id", apiKeyData.id)
+      .gte("created_at", windowStart);
+
+    if (!countError && recentCallCount !== null && recentCallCount >= rateLimit) {
+      return new Response(
+        JSON.stringify({
+          error: "Rate limit exceeded",
+          message: `Maximum ${rateLimit} requests per minute. Please try again later.`,
+          retry_after: 60,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": "60",
+            "X-RateLimit-Limit": String(rateLimit),
+            "X-RateLimit-Remaining": "0",
+          },
+        }
+      );
+    }
+
     // Check if agent is deployed
     const agent = apiKeyData.agents as any;
     if (!agent || agent.status !== "deployed") {
