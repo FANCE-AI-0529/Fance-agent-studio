@@ -165,7 +165,7 @@ export function useDreaming(agentId?: string) {
       memoryStore.setDreamingStatus('completed');
       memoryStore.setLastDreamingAt(new Date());
 
-      if (import.meta.env.DEV) console.debug('Dreaming completed successfully');
+      if (import.meta.env.DEV) console.debu.meta.env.DEV) console.debug('Dreaming completed successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -193,7 +193,7 @@ export function useDreaming(agentId?: string) {
 
     // 设置新的定时器
     idleTimerRef.current = setTimeout(() => {
-      if (shouldDream()) {
+      ifif (import.meta.env.DEV) console.debueam()) {
         console.log('Idle dreaming triggered');
         dream();
       }

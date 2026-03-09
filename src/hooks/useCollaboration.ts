@@ -124,12 +124,12 @@ export function useCollaboration({
       setCollaborators(collaboratorList);
     });
 
-    channel.on("presence", { event: "join" }, ({ key, newPresences }) => {
-      console.log("User joined:", key);
+    channel.on("presence", { event: "join" }, ({ key }) => {
+      if (import.meta.env.DEV) console.debug("User joined:", key);
     });
 
-    channel.on("presence", { event: "leave" }, ({ key, leftPresences }) => {
-      console.log("User left:", key);
+    channel.on("presence", { event: "leave" }, ({ key }) => {
+      if (import.meta.env.DEV) console.debug("User left:", key);
     });
 
     // Listen for broadcast events

@@ -523,7 +523,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             (payload) => get()._handleAgentChange(payload)
           )
           .subscribe((status) => {
-            if (import.meta.env.DEV) console.debu.meta.env.DEV) console.debu.meta.env.DEV) console.debug(`[GlobalAgentStore] Realtime subscription status:`, status);
+            if (import.meta.env.DEV) console.debu.meta.env.DEV) console.debu.meta.env.DEV) console.debu.meta.env.DEV) console.debug(`[GlobalAgentStore] Realtime subscription status:`, status);
           });
         
         set({ isSubscribed: true, channel });
@@ -540,7 +540,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
       // ============= Internal Handlers =============
 
       _handleNodeChange: (payload) => {
-        const { nodes } = get();
+        const if (import.meta.env.DEV) console.debu= get();
         if (import.meta.env.DEV) console.debutType = payload.eif (import.meta.env.DEV) console.debu        
         console.log(`[GlobalAgentStore] Node change:`, eventType, payload);
         
@@ -591,7 +591,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
         }
       },
 
-      _handleEdgeChange: (payload) => {
+      _handleEdgeChange: (pif (import.meta.env.DEV) console.debu {
         const { edges } = get();
         if (import.meta.env.DEV) console.debutType = payload.eventType;
         
@@ -621,7 +621,7 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
             edges: state.edges.filter(e => e.edge_id !== deletedEdge.edge_id),
             lastSyncedAt: new Date(),
           }));
-          get()._addSyncEvent({ type: 'edge_removed', source: 'remote', data: deletedEdge });
+          get()._addSyncEvent({ type: 'edge_removed', source: 'remote', data: deleif (import.meta.env.DEV) console.debu;
         }
       },
 
