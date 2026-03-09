@@ -10,7 +10,7 @@
 
 ### 报告 Bug
 
-1. 在 [Issues](https://github.com/agent-studio/agent-studio/issues) 中搜索是否已存在相同问题
+1. 在 [Issues](https://github.com/fance-studio/fance-studio/issues) 中搜索是否已存在相同问题
 2. 如果没有，创建新的 Issue，使用 Bug 报告模板
 3. 提供详细的复现步骤、预期行为和实际行为
 
