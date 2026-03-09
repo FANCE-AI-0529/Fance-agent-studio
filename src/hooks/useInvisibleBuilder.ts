@@ -278,7 +278,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          console.log(`[InvisibleBuilder] Calling agent-config-generator (attempt ${attempt}/${maxRetries})`);
+          if (import.meta.env.DEV) console.debug(`[InvisibleBuilder] Calling agent-config-generator (attempt ${attempt}/${maxRetries})`);
           
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
