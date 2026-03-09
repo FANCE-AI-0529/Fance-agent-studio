@@ -223,7 +223,7 @@ Carol 是财务分析师，负责所有项目的预算审核。
       userMemories: [
         {
           key: 'user_name',
-          value: 'Lovable',
+          value: 'Alice',
           type: 'fact',
         },
       ],
