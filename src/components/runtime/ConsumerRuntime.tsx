@@ -395,8 +395,10 @@ export function ConsumerRuntime() {
           // Extract and save memories from this conversation turn
           extractAndSaveMemories(messageContent, fullResponse);
         },
-        onThinking: (module, messif (import.meta.env.DEV) console.debu) => {
-          console.log(`[${module}] ${message} (${level})`);
+        onThinking: (module, message, level) => {
+          if (import.meta.env.DEV) {
+            console.debug(`[${module}] ${message} (${level})`);
+          }
         },
       });
     } catch (error) {
