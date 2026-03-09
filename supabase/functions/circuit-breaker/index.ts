@@ -70,14 +70,14 @@ Deno.serve(async (req) => {
     const body: CircuitBreakerRequest = await req.json();
     const { action, agentId, config } = body;
 
-    if (import.meta.env?.DEV) console.debug(`[circuit-breaker] Action: ${action}, Agent: ${agentI: ${agentId}`);
+    if (import.meta.env?.DEV) console.debug(`[circuit-breaker] Action: ${action}, Agent: ${agentI: ${agentI: ${agentId}`);
 
     // Get or create circuit breaker state
     let { data: cbState, error: fetchError } = await supabase
       .from("circuit_breaker_state")
       .select("*")
       .eq("agent_id", agentId)
-      .eq("userId", user.id)
+     Ieq("userId", user.id)
       .single();
 
     if (fetchError && fetchError.code === "PGRST116") {
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
         .from("circuit_breaker_state")
         .insert({
           agent_id: agentId,
-          user_id: user.id,
+          userId: user.id,
           state: "closed",
           failure_count: 0,
           success_count: 0,

@@ -215,7 +215,7 @@ serve(async (req) => {
       let relQuery = supabase
         .from("entity_relations")
         .select("*")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       // Filter by source or target in current level
       relQuery = relQuery.or(
