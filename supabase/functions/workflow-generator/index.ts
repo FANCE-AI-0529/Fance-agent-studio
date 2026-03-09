@@ -1206,18 +1206,16 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await authSupabase.auth.getUser();
-    if (userError || !user) {
-      console.error("Authentication failed:", userError?.message);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authSupabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "Unauthorized", code: "UNAUTHORIZED" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Use authenticated user ID instead of request body userId
-    const authenticatedUserId = user.id;
-    console.log(`User ${authenticatedUserId} generating workflow`);
+    const authenticatedUserId = claimsData.claims.sub as string;
     // ========== END AUTHENTICATION ==========
 
     // Use service role for database operations

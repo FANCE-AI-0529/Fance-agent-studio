@@ -232,13 +232,13 @@ export async function extractTextWithAI(
     throw new Error(`File too large for AI parsing: ${fileSizeMB}MB exceeds 10MB limit`);
   }
 
-    // 优先使用 LOVABLE_API_KEY 通过 Lovable AI Gateway
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    const effectiveApiKey = lovableApiKey || apiKey || AI_CONFIG.API_KEY;
-    const gatewayUrl = lovableApiKey 
+    // Use FANCE_API_KEY with LOVABLE_API_KEY fallback
+    const gatewayApiKey = Deno.env.get("FANCE_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
+    const effectiveApiKey = gatewayApiKey || apiKey || AI_CONFIG.API_KEY;
+    const gatewayUrl = gatewayApiKey 
       ? "https://ai.gateway.lovable.dev/v1/chat/completions" 
-      : AI_CONFIG.GATEWAY_URL;
-    const model = lovableApiKey 
+      : (AI_CONFIG.GATEWAY_URL || "https://ai.gateway.lovable.dev/v1/chat/completions");
+    const model = gatewayApiKey 
       ? "google/gemini-2.5-flash" 
       : AI_CONFIG.DEFAULT_MODEL;
   
