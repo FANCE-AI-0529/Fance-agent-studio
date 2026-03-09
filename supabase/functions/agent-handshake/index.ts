@@ -188,7 +188,7 @@ serve(async (req) => {
           .from("agent_collaborations")
           .update({ status: "rejected" })
           .eq("id", collaborationId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .select()
           .single();
 
