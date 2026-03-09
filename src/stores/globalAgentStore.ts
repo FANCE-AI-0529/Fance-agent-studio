@@ -591,11 +591,10 @@ export const useGlobalAgentStore = create<GlobalAgentState>()(
         }
       },
 
-      _handleEdgeChange: (pif (import.meta.env.DEV) console.debu {
+      _handleEdgeChange: (payload) => {
         const { edges } = get();
-        if (import.meta.env.DEV) console.debutType = payload.eventType;
-        
-        console.log(`[GlobalAgentStore] Edge change:`, eventType, payload);
+        const eventType = payload.eventType;
+        if (import.meta.env.DEV) console.debug('[GlobalAgentStore] Edge change:', eventType, payload);
         
         if (eventType === 'INSERT') {
           const newEdge = payload.new as GraphEdge;
