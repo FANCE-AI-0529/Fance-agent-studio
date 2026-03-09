@@ -68,7 +68,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Processing document: ${documentName} for user: ${user.id}`);
+    if (import.meta.env?.DEV) console.debug(`Processing document: ${documentName}`);
 
     // Create document processing record
     const { data: docRecord, error: docError } = await supabase
