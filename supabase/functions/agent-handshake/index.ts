@@ -81,7 +81,7 @@ serve(async (req) => {
           .insert({
             initiator_agent_id: initiatorAgentId,
             target_agent_id: targetAgentId,
-            user_id: user.id,
+            user_id: userId,
             status: "pending",
             handshake_token: handshakeToken,
             capabilities: capabilities || [],
