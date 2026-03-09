@@ -26,11 +26,11 @@
 
 ```bash
 # Fork 仓库后克隆到本地
-git clone https://github.com/YOUR_USERNAME/agent-studio.git
-cd agent-studio
+git clone https://github.com/YOUR_USERNAME/fance-studio.git
+cd fance-studio
 
 # 添加上游仓库
-git remote add upstream https://github.com/agent-studio/agent-studio.git
+git remote add upstream https://github.com/fance-studio/fance-studio.git
 ```
 
 #### 2. 创建分支
