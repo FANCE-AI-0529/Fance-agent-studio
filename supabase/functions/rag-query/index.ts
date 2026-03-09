@@ -10,28 +10,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { generateEmbedding } from "../_shared/embed-with-gateway.ts";
-
-/**
- * CORS 响应头配置
- */
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
 
 /**
  * 主服务入口
  */
 serve(async (req) => {
-  // [CORS]：处理预检请求
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // [认证]：验证用户身份
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -40,21 +33,20 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    // [客户端]：创建带用户认证的 Supabase 客户端
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // [用户验证]：获取当前用户
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const userId = claimsData.claims.sub as string;
 
     // [参数解析]：获取查询参数
     const { 
@@ -71,9 +63,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[rag-query] Query: "${query.substring(0, 50)}..." for user: ${user.id}`);
-
-    // [向量化]：使用真实 Embedding API 生成查询向量
+    console.debug(`[rag-query] Query for user: ${userId.slice(0, 8)}...量化]：使用真实 Embedding API 生成查询向量
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured - cannot generate query embedding");
     }
@@ -93,7 +83,7 @@ serve(async (req) => {
         p_knowledge_base_id: knowledgeBaseId || null,
         p_user_id: user.id,
       }
-    );
+   I;
 
     if (searchError) {
       console.error("[rag-query] Search error:", searchError);

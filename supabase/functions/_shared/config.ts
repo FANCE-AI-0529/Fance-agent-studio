@@ -14,7 +14,7 @@
  */
 export const AI_CONFIG = {
   /** AI Gateway URL (兼容 OpenAI Chat Completions API) */
-  GATEWAY_URL: Deno.env.get('AI_GATEWAY_URL') || 'https://api.openai.com/v1/chat/completions',
+  GATEWAY_URL: Deno.env.get('AI_GATEWAY_URL') || '',
   
   /** AI API 密钥 */
   API_KEY: Deno.env.get('AI_API_KEY') || '',

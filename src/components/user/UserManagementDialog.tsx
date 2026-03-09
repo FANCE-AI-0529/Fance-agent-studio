@@ -20,6 +20,7 @@ import {
   useInvitationStats,
   useAcceptInvitation 
 } from "@/hooks/useInvite";
+import { useIsAdmin } from "@/hooks/useAdminInvite";
 import { AdminInvitePanel } from "@/components/invite/AdminInvitePanel";
 import { format } from "date-fns";
 
@@ -64,8 +65,8 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
     setFriendCode("");
   };
 
-  // Check if user is admin
-  const isAdmin = user?.user_metadata?.is_admin === true;
+  // Check admin via user_roles table (not user_metadata which can be tampered)
+  const { data: isAdmin } = useIsAdmin();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

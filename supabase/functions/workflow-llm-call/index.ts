@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
 
 interface LLMCallRequest {
   model?: string;
@@ -21,25 +18,52 @@ interface LLMCallRequest {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const requestData: LLMCallRequest = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // Mandatory auth
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const requestData: LLMCallRequest = await req.json();
+    const AI_API_KEY = Deno.env.get("FANCE_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
+
+    if (!AI_API_KEY) {
+      throw new Error("AI API key is not configured");
     }
 
     const model = requestData.model || "google/gemini-3-flash-preview";
     const messages = [...(requestData.messages || [])];
 
-    // Prepend system prompt if provided
     if (requestData.systemPrompt) {
       messages.unshift({ role: "system", content: requestData.systemPrompt });
     }
+
+    const aiGatewayUrl = Deno.env.get("AI_GATEWAY_URL") || "https://ai.gateway.lovable.dev/v1/chat/completions";
 
     const body: Record<string, unknown> = {
       model,
@@ -50,7 +74,6 @@ serve(async (req) => {
       stream: requestData.stream ?? false,
     };
 
-    // Add structured output using tool calling if enabled
     if (requestData.structuredOutput?.enabled && requestData.structuredOutput?.schema) {
       body.tools = [
         {
@@ -65,10 +88,10 @@ serve(async (req) => {
       body.tool_choice = { type: "function", function: { name: "structured_output" } };
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(aiGatewayUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -88,24 +111,21 @@ serve(async (req) => {
         );
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI gateway error:", response.status);
       return new Response(
         JSON.stringify({ error: "AI gateway error", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Handle streaming response
     if (requestData.stream) {
       return new Response(response.body, {
         headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 
-    // Handle regular response
     const data = await response.json();
     
-    // Extract structured output if using tool calling
     let structuredOutput = null;
     if (requestData.structuredOutput?.enabled) {
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -134,13 +154,13 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("workflow-llm-call error:", error);
+    console.error("workflow-llm-call error:", error instanceof Error ? error.message : "Unknown");
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : "Unknown error",
         success: false 
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req.headers.get("origin")), "Content-Type": "application/json" } }
     );
   }
 });

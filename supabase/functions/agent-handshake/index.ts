@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
 
 interface HandshakeRequest {
   action: "initiate" | "accept" | "reject" | "heartbeat" | "disconnect";
@@ -22,16 +18,18 @@ function generateToken(): string {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "No authorization header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -41,18 +39,17 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     
-    if (userError || !user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub as string;
 
     const { action, targetAgentId, initiatorAgentId, collaborationId, capabilities }: HandshakeRequest = await req.json();
-
-    console.log(`Handshake action: ${action} by user: ${user.id}`);
 
     switch (action) {
       case "initiate": {
@@ -84,7 +81,7 @@ serve(async (req) => {
           .insert({
             initiator_agent_id: initiatorAgentId,
             target_agent_id: targetAgentId,
-            user_id: user.id,
+            user_id: userId,
             status: "pending",
             handshake_token: handshakeToken,
             capabilities: capabilities || [],
@@ -143,7 +140,7 @@ serve(async (req) => {
             trust_level: 0.7, // Initial trust after acceptance
           })
           .eq("id", collaborationId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .select()
           .single();
 
@@ -191,7 +188,7 @@ serve(async (req) => {
           .from("agent_collaborations")
           .update({ status: "rejected" })
           .eq("id", collaborationId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .select()
           .single();
 
@@ -235,7 +232,7 @@ serve(async (req) => {
           .from("agent_collaborations")
           .update({ last_heartbeat: new Date().toISOString() })
           .eq("id", collaborationId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("status", "connected");
 
         if (updateError) {
@@ -266,7 +263,7 @@ serve(async (req) => {
           .from("agent_collaborations")
           .update({ status: "disconnected" })
           .eq("id", collaborationId)
-          .eq("user_id", user.id);
+          .eq("user_id", userId);
 
         if (updateError) {
           return new Response(JSON.stringify({ error: "Failed to disconnect" }), {
