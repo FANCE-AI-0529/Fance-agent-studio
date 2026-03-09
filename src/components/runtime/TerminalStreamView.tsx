@@ -45,10 +45,11 @@ function escapeHtml(text: string): string {
 }
 
 // ANSI escape code to styled spans (basic subset)
-// HTML entities are escaped FIRST to prevent XSS from terminal output
+// HTML entities are escaped FIRST, then ANSI codes are converted to safe spans.
+// Final output is sanitized with DOMPurify to prevent any bypass.
 function parseAnsiToHtml(text: string): string {
   const escaped = escapeHtml(text);
-  return escaped
+  const html = escaped
     .replace(/\x1b\[31m/g, '<span class="text-red-400">')
     .replace(/\x1b\[32m/g, '<span class="text-emerald-400">')
     .replace(/\x1b\[33m/g, '<span class="text-yellow-400">')
@@ -58,6 +59,12 @@ function parseAnsiToHtml(text: string): string {
     .replace(/\x1b\[1m/g, '<span class="font-bold">')
     .replace(/\x1b\[0m/g, '</span>')
     .replace(/\x1b\[\d+m/g, ''); // Strip unhandled codes
+
+  // DOMPurify sanitization — only allow safe span tags with class attributes
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['span'],
+    ALLOWED_ATTR: ['class'],
+  });
 }
 
 function StatusBadge({ streamState }: { streamState: TerminalStreamState }) {
