@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     const body: CircuitBreakerRequest = await req.json();
     const { action, agentId, config } = body;
 
-    console.log(`[circuit-breaker] Action: ${action}, Agent: ${agentId}, User: ${user.id}`);
+    if (import.meta.env?.DEV) console.debug(`[circuit-breaker] Action: ${action}, Agent: ${agentId}`);
 
     // Get or create circuit breaker state
     let { data: cbState, error: fetchError } = await supabase
