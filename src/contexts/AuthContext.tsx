@@ -1,3 +1,9 @@
+/**
+ * @file AuthContext.tsx
+ * @description 用户认证上下文 - Authentication Context Provider
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";

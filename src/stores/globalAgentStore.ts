@@ -1,3 +1,9 @@
+/**
+ * @file globalAgentStore.ts
+ * @description 全局智能体状态管理 - 含实时同步、图数据与协作事件 - Global Agent State Store
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';

@@ -1,7 +1,9 @@
-// =====================================================
-// 模型映射工具
-// Model Mapping - Translate UI model names to Gateway models
-// =====================================================
+/**
+ * @file modelMapping.ts
+ * @description 模型映射工具 - 将 UI 模型名称映射为 Gateway 支持的模型 - Model Mapping Utility
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 
 // FancAI Gateway 支持的模型
 export const VALID_GATEWAY_MODELS = [

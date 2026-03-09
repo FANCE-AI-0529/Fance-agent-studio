@@ -1,3 +1,9 @@
+/**
+ * @file useLLMProviders.ts
+ * @description 大模型供应商管理 - LLM Provider Configuration Hooks
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";

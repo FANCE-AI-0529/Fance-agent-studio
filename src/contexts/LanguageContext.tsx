@@ -1,3 +1,9 @@
+/**
+ * @file LanguageContext.tsx
+ * @description 多语言国际化上下文 - Internationalization Context Provider
+ * @author Fance Studio
+ * @copyright Copyright (c) 2025 Fance Studio. MIT License.
+ */
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type Language = "zh" | "en";
