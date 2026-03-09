@@ -185,8 +185,7 @@ export function ConsumerRuntime() {
     agentId,
     onSystemMessage: handleSystemMessage,
     onContextRefresh: (storeConfig) => {
-      const manifest = parseManifest(storeConfig.manifest);
-      handleConfigUpdate({
+      const manifest = parseManifest(storeConfig.manifest)handleConfigUpdate({
         name: storeConfig.name,
         systemPrompt: manifest?.systemPrompt || `你是${storeConfig.name}，一个专业的AI助手。`,
         model: storeConfig.model,
@@ -267,8 +266,7 @@ export function ConsumerRuntime() {
   // Load agent config when agent data is available
   useEffect(() => {
     if (agent) {
-      const manparseManifest(agent.manifest)t as any;
-      setAgentConfig({
+      const manparseManifest = parseManifest(agent.manifest)setAgentConfig({
         name: agent.name,
         systemPrompt: manifest?.systemPrompt || `你是${agent.name}，一个专业的AI助手。`,
         model: agent.model || 'gpt-4',
