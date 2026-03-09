@@ -226,7 +226,7 @@ export function LLMConfigPanel({
   };
 
   const providerIcons: Record<string, any> = {
-    lovable: Sparkles,
+    fance: Sparkles,
     openai: Cpu,
     anthropic: Zap,
     google: Globe,
