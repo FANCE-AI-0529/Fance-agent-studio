@@ -291,7 +291,7 @@ export function LLMConfigPanel({
                         添加 AI 模型供应商以便在智能体中使用不同的大模型
                       </p>
                       <p className="text-xs text-muted-foreground mb-4">
-                        默认使用 Lovable AI Gateway（无需配置）
+                        默认使用 Fance AI Gateway（无需配置）
                       </p>
                       <Button
                         onClick={() => {
