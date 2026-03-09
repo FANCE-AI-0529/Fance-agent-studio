@@ -140,7 +140,7 @@ serve(async (req) => {
             trust_level: 0.7, // Initial trust after acceptance
           })
           .eq("id", collaborationId)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .select()
           .single();
 
