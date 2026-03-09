@@ -13,21 +13,39 @@ serve(async (req) => {
   }
 
   try {
-    const { invitationId, userId } = await req.json();
+    // === Authentication: verify the caller's identity ===
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: '未授权访问' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ success: false, error: '无效的认证令牌' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub as string;
+
+    const { invitationId } = await req.json();
 
     // 输入验证
     if (!invitationId || typeof invitationId !== 'string') {
       console.log('[claim-invite-code] Missing or invalid invitationId');
       return new Response(
         JSON.stringify({ success: false, error: '邀请ID不能为空' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!userId || typeof userId !== 'string') {
-      console.log('[claim-invite-code] Missing or invalid userId');
-      return new Response(
-        JSON.stringify({ success: false, error: '用户ID不能为空' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -33,9 +33,21 @@ interface TerminalStreamViewProps {
   defaultExpanded?: boolean;
 }
 
-// ANSI escape code to styled spans (basic subset)
-function parseAnsiToHtml(text: string): string {
+// Escape HTML entities to prevent XSS
+function escapeHtml(text: string): string {
   return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// ANSI escape code to styled spans (basic subset)
+// HTML entities are escaped FIRST to prevent XSS from terminal output
+function parseAnsiToHtml(text: string): string {
+  const escaped = escapeHtml(text);
+  return escaped
     .replace(/\x1b\[31m/g, '<span class="text-red-400">')
     .replace(/\x1b\[32m/g, '<span class="text-emerald-400">')
     .replace(/\x1b\[33m/g, '<span class="text-yellow-400">')

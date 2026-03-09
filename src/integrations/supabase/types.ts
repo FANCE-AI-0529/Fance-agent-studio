@@ -17,7 +17,6 @@ export type Database = {
       agent_api_keys: {
         Row: {
           agent_id: string
-          api_key: string
           api_key_hash: string | null
           api_key_prefix: string | null
           created_at: string
@@ -33,7 +32,6 @@ export type Database = {
         }
         Insert: {
           agent_id: string
-          api_key: string
           api_key_hash?: string | null
           api_key_prefix?: string | null
           created_at?: string
@@ -49,7 +47,6 @@ export type Database = {
         }
         Update: {
           agent_id?: string
-          api_key?: string
           api_key_hash?: string | null
           api_key_prefix?: string | null
           created_at?: string
