@@ -8,6 +8,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "../integrations/supabase/client.ts";
 import { useAuth } from "../contexts/AuthContext.tsx";
 import { toast } from "./use-toast.ts";
@@ -136,7 +137,7 @@ export function useAgent(agentId: string | null) {
       if (skillsError) throw skillsError;
 
       // [处理]：提取技能ID列表
-      const skillIds = agentSkills.map((as) => as.skill_id);
+      const skillIds = useMemo(() => agentSkills.map((as) => as.skill_id), [agentSkills]);
 
       // [优化]：无关联技能时直接返回，避免空查询
       if (skillIds.length === 0) {

@@ -176,7 +176,7 @@ export function useNanoClawExecutor(): UseNanoClawExecutorReturn {
               containerId,
               commandId,
             });
-          } catch (err: any) {
+          } catch (err: Error) {
             setIsExecuting(false);
             activeCommandIdRef.current = null;
             resolve({

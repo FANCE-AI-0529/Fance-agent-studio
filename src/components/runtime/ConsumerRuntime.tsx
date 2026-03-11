@@ -314,7 +314,7 @@ export function ConsumerRuntime() {
     if ((!messageContent && attachments.length === 0) || isLoading || isAiLoading) return;
 
     // Upload attachments first if any
-    let uploadedAttachments: Array<{ type: 'image' | 'document'; url: string; name: string }> = [];
+    const uploadedAttachments: Array<{ type: 'image' | 'document'; url: string; name: string }> = [];
     if (attachments.length > 0 && user) {
       for (const attachment of attachments) {
         const url = await uploadToStorage(attachment, user.id);

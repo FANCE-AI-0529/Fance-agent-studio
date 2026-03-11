@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../integrations/supabase/client.ts";
 import { useAuth } from "../contexts/AuthContext.tsx";
+import { z } from "zod";
 
 export interface Scenario {
   id: string;
@@ -213,27 +214,43 @@ export function useCreateScenario() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  const scenarioSchema = z.object({
+    name: z.string().min(1),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    sceneBackground: z.record(z.unknown()).optional(),
+    agentRole: z.string().optional(),
+    userRole: z.string().optional(),
+    openingLines: z.array(z.string()).optional(),
+    suggestedPrompts: z.array(z.string()).optional(),
+    isMultiAgent: z.boolean().optional(),
+    isPublic: z.boolean().optional(),
+  });
+
   return useMutation({
     mutationFn: async (scenario: Omit<Scenario, "id" | "createdAt" | "authorId" | "downloadsCount">) => {
       if (!user) throw new Error("Must be logged in");
 
+      // validate input
+      const parsed = scenarioSchema.parse(scenario);
+
       const insertData: Record<string, unknown> = {
-        name: scenario.name,
-        description: scenario.description,
-        category: scenario.category,
-        scene_background: scenario.sceneBackground as object | null,
-        agent_role: scenario.agentRole,
-        user_role: scenario.userRole,
-        opening_lines: scenario.openingLines,
-        suggested_prompts: scenario.suggestedPrompts,
-        is_multi_agent: scenario.isMultiAgent,
-        is_public: scenario.isPublic ?? true,
+        name: parsed.name,
+        description: parsed.description,
+        category: parsed.category,
+        scene_background: parsed.sceneBackground as object | null,
+        agent_role: parsed.agentRole,
+        user_role: parsed.userRole,
+        opening_lines: parsed.openingLines,
+        suggested_prompts: parsed.suggestedPrompts,
+        is_multi_agent: parsed.isMultiAgent,
+        is_public: parsed.isPublic ?? true,
         author_id: user.id,
       };
 
       const { data, error } = await supabase
         .from("conversation_scenarios")
-        .insert(insertData as any)
+        .insert(insertData)
         .select()
         .single();
 
@@ -291,17 +308,19 @@ export function useActiveScenario(sessionId?: string) {
 
 export function useSetSessionScenario() {
   const queryClient = useQueryClient();
+  const schema = z.object({
+    sessionId: z.string().uuid(),
+    scenarioId: z.string().nullable(),
+    sceneConfig: z.record(z.unknown()).optional(),
+  });
 
   return useMutation({
-    mutationFn: async ({ 
-      sessionId, 
-      scenarioId, 
-      sceneConfig,
-    }: { 
+    mutationFn: async (input: { 
       sessionId: string; 
       scenarioId: string | null;
       sceneConfig?: Record<string, unknown>;
     }) => {
+      const { sessionId, scenarioId, sceneConfig } = schema.parse(input);
       const updateData: Record<string, unknown> = {
         scenario_id: scenarioId,
         scene_config: sceneConfig as object | null,
@@ -310,7 +329,7 @@ export function useSetSessionScenario() {
 
       const { error } = await supabase
         .from("sessions")
-        .update(updateData as any)
+        .update(updateData)
         .eq("id", sessionId);
 
       if (error) throw error;

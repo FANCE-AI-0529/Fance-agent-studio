@@ -136,7 +136,7 @@ export function useGraphCommandExecutor() {
             timestamp: new Date(),
           };
       }
-    } catch (error: any) {
+    } catch (error: Error) {
       return {
         success: false,
         operation: command.action,

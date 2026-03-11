@@ -1,52 +1,52 @@
 project_id = "izkiwlbxkeczzttryhbi"
 
 [functions.streaming-generator]
-verify_jwt = false
+verify_jwt = true
 
 [functions.agent-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.task-scheduler]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-skill-template]
-verify_jwt = false
+verify_jwt = true
 
 [functions.entity-extraction]
-verify_jwt = false
+verify_jwt = true
 
 [functions.rss-query]
-verify_jwt = false
+verify_jwt = true
 
 [functions.agent-handshake]
-verify_jwt = false
+verify_jwt = true
 
 [functions.drift-detection]
-verify_jwt = false
+verify_jwt = true
 
 [functions.task-delegation]
-verify_jwt = false
+verify_jwt = true
 
 [functions.task-executor]
-verify_jwt = false
+verify_jwt = true
 
 [functions.circuit-breaker]
-verify_jwt = false
+verify_jwt = true
 
 [functions.delta-intent]
-verify_jwt = false
+verify_jwt = true
 
 [functions.task-chain-executor]
-verify_jwt = false
+verify_jwt = true
 
 [functions.agent-api]
-verify_jwt = false
+verify_jwt = true
 
 [functions.agent-mcp]
-verify_jwt = false
+verify_jwt = true
 
 [functions.webhook-trigger]
-verify_jwt = false
+verify_jwt = true
 
 [functions.api-alert-check]
 verify_jwt = false

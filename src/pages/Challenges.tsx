@@ -1,4 +1,6 @@
+import React from "react";
 import { MainLayout } from "../components/layout/MainLayout.tsx";
+import { LazyImage } from "../components/ui/LazyImage.tsx";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
 import { Button } from "../components/ui/button.tsx";
 import { Badge } from "../components/ui/badge.tsx";
@@ -10,7 +12,17 @@ import { Link } from "react-router-dom";
 import { formatDistanceToNow, format, isPast, isFuture } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
-function ChallengeCard({ challenge }: { challenge: any }) {
+interface Challenge {
+  id: string;
+  title: string;
+  description?: string;
+  banner_url?: string;
+  start_at: string;
+  end_at: string;
+  participants_count?: number;
+}
+
+const ChallengeCard = React.memo(function ChallengeCard({ challenge }: { challenge: Challenge }) {
   const now = new Date();
   const startDate = new Date(challenge.start_at);
   const endDate = new Date(challenge.end_at);
@@ -36,20 +48,14 @@ function ChallengeCard({ challenge }: { challenge: any }) {
   };
 
   return (
-    <Card className="group hover:border-primary/50 transition-all">
+    <Card role="article" aria-labelledby={`challenge-${challenge.id}-title`} className="group hover:border-primary/50 transition-all">
       {challenge.banner_url && (
-        <div className="h-40 overflow-hidden rounded-t-lg">
-          <img 
-            src={challenge.banner_url} 
-            alt={challenge.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-          />
-        </div>
+        <LazyImage src={challenge.banner_url} alt={challenge.title || ""} className="w-full h-32 object-cover rounded-t" />
       )}
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
-            <CardTitle className="text-lg group-hover:text-primary transition-colors">
+            <CardTitle id={`challenge-${challenge.id}-title`} className="text-lg group-hover:text-primary transition-colors">
               {challenge.title}
             </CardTitle>
             <CardDescription className="line-clamp-2 mt-1">
@@ -87,7 +93,7 @@ function ChallengeCard({ challenge }: { challenge: any }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 export default function Challenges() {
   const { data: allChallenges = [], isLoading } = useChallenges();

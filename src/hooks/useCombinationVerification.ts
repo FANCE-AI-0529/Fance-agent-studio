@@ -139,10 +139,13 @@ export function useCombinationVerification(): UseCombinationVerificationReturn {
   /**
    * 运行所有验证场景
    */
+  // make sure the scenarios array is stable between renders
+  const stableScenarios = React.useMemo(() => scenarios, [scenarios]);
+
   const runAllVerifications = useCallback(async (): Promise<VerificationResult[]> => {
     const results: VerificationResult[] = [];
 
-    for (const scenario of scenarios) {
+    for (const scenario of stableScenarios) {
       await runVerification(scenario.id);
       if (result) {
         results.push(result);
@@ -150,7 +153,7 @@ export function useCombinationVerification(): UseCombinationVerificationReturn {
     }
 
     return results;
-  }, [scenarios, runVerification]);
+  }, [stableScenarios, runVerification, result]);
 
   /**
    * 重置状态

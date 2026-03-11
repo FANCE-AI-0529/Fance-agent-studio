@@ -249,7 +249,7 @@ export function WorkflowTemplateMarket({
 
   // Filter and sort templates
   const filteredTemplates = useMemo(() => {
-    let filtered = workflowTemplates.filter((template) => {
+    const filtered = workflowTemplates.filter((template) => {
       const matchesSearch =
         template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||

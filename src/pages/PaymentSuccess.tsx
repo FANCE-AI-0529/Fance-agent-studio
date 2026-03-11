@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2, XCircle, Coins, ArrowRight, Home } from "lucide-
 import { useTokenWallet } from "../hooks/useTokenWallet.ts";
 import { useAuth } from "../contexts/AuthContext.tsx";
 import { supabase } from "../integrations/supabase/client.ts";
+import type { ApiError } from "../types/common.ts";
 
 type PaymentStatus = "loading" | "success" | "error";
 
@@ -45,8 +46,7 @@ export default function PaymentSuccess() {
           setTokensAdded(data.tokensAdded || 0);
           setStatus("success");
           refresh();
-        } catch (err: any) {
-          console.error("Payment verification error:", err);
+        } catch (err: Error | ApiError) {
           setStatus("error");
           setErrorMessage(err.message || "支付验证失败");
         }
@@ -67,8 +67,7 @@ export default function PaymentSuccess() {
           setTokensAdded(data.tokensAdded || 0);
           setStatus("success");
           refresh();
-        } catch (err: any) {
-          console.error("Session verification error:", err);
+        } catch (err: Error | ApiError) {
           setStatus("error");
           setErrorMessage(err.message || "支付验证失败");
         }

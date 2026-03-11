@@ -126,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // If no invite codes provided, generate them
-    let codesToUse = inviteCodes || [];
+    const codesToUse = inviteCodes || [];
     if (codesToUse.length === 0) {
       // Generate new codes for each email
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

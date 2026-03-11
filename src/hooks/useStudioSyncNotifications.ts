@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useGlobalAgentStore, SyncEvent, AgentConfig } from '../stores/globalAgentStore.ts';
 import type { SystemMessage, SystemMessageType } from '../components/consumer/SystemBubble.tsx';
 import { MCP_CAPABILITY_MAP } from './useCapabilityGuide.ts';
+import type { AnyObject } from '../types/common.ts';
 
 interface UseStudioSyncNotificationsOptions {
   agentId: string | null;
@@ -12,7 +13,7 @@ interface UseStudioSyncNotificationsOptions {
 }
 
 // Extract skill/node name from event data
-function extractNodeName(data: any): string {
+function extractNodeName(data: AnyObject | null): string {
   if (!data) return '未知技能';
   
   // Check various possible name fields
@@ -50,17 +51,19 @@ function getSystemMessageType(event: SyncEvent): SystemMessageType | null {
       }
       return 'skill_removed';
       
-    case 'agent_updated':
+    case 'agent_updated': {
       // Check if manifest/personality changed
       const changedFields = data?.changedFields || [];
       if (changedFields.includes('manifest') || changedFields.includes('personality_config')) {
         return 'personality_updated';
       }
       return 'config_updated';
+    }
     
     // 🆕 新增：智能体创建事件
-    case 'agent_created':
+    case 'agent_created': {
       return 'config_updated';
+    }
       
     default:
       return null;
@@ -68,7 +71,7 @@ function getSystemMessageType(event: SyncEvent): SystemMessageType | null {
 }
 
 // Generate intelligent MCP capability description
-function generateMcpDescription(nodeData: any): { 
+function generateMcpDescription(nodeData: AnyObject): { 
   description: string; 
   suggestion: string;
 } {

@@ -248,7 +248,7 @@ export function useSwarmRunner(): SwarmRunnerReturn {
       };
 
       store.getState().setSwarmResult(swarmId, result);
-    } catch (error: any) {
+    } catch (error: Error) {
       if (error.message !== 'Cancelled') {
         store.getState().setSwarmError(swarmId, error.message || 'Unknown error');
       }

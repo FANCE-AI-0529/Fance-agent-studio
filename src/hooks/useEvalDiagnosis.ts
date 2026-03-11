@@ -161,7 +161,7 @@ export function useEvalDiagnosis() {
     agentConfig: { name: string; systemPrompt?: string; department?: string; model?: string },
     callbacks: {
       onPatchPrompt: (patchedPrompt: string) => void;
-      onRegenerate: () => Promise<any>;
+      onRegenerate: () => Promise<void>;
       onRetest: () => Promise<EvaluationResult | null>;
       onComplete: () => void;
       onEscalated: (finalDiagnosis: DiagnosisResult | null) => void;

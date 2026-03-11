@@ -152,7 +152,7 @@ export function useTerminalStream(options: UseTerminalStreamOptions): UseTermina
                   progress: parsed.progress ?? null,
                 }));
                 break;
-              case 'exit':
+              case 'exit': {
                 const exitCode = parsed.exitCode ?? 0;
                 const durationMs = parsed.durationMs ?? 0;
                 onComplete?.(commandId, exitCode, durationMs);
@@ -161,13 +161,14 @@ export function useTerminalStream(options: UseTerminalStreamOptions): UseTermina
                   lastExitCode: exitCode,
                 }));
                 break;
+              }
             }
           } catch {
             // Ignore malformed JSON
           }
         }
       }
-    } catch (error: any) {
+    } catch (error: Error) {
       if (error.name !== 'AbortError') {
         onError?.(commandId, error.message || 'Stream failed');
       }

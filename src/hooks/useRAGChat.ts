@@ -88,7 +88,7 @@ export function useRAGChat() {
       const traceEvents: { type: TraceEventType; data: TraceEventData }[] = [];
       let allCitations: Citation[] = [];
       let combinedContext = "";
-      let totalStats = { chunksFound: 0, entitiesMatched: 0, edgesTraversed: 0 };
+      const totalStats = { chunksFound: 0, entitiesMatched: 0, edgesTraversed: 0 };
 
       try {
         // Search each knowledge base

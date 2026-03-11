@@ -21,6 +21,11 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      // TODO: Gradually replace 'any' types with specific types - phase out as part of type safety initiative
+      // See: docs/REFACTORING.md - Type Safety Roadmap
+      "@typescript-eslint/no-explicit-any": ["warn", { ignoreRestArgs: true }],
+      "react-hooks/exhaustive-deps": "warn",
+      "no-empty": ["error", { allowEmptyCatch: true }],
     },
   },
 );

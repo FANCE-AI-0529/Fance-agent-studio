@@ -273,7 +273,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       }
       
       // Call AI to generate config with timeout and retry
-      let configData: any = null;
+      let configData: AnyObject | null = null;
       const maxRetries = 2;
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -309,7 +309,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
           configData = data;
           break; // 成功，退出重试循环
           
-        } catch (err: any) {
+        } catch (err: Error) {
           if (err.name === 'AbortError') {
             console.warn(`[InvisibleBuilder] Request timeout on attempt ${attempt}`);
             if (attempt === maxRetries) {
@@ -531,7 +531,7 @@ export function useInvisibleBuilder(): UseInvisibleBuilderReturn {
       };
 
       return result;
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message || '构建失败');
       throw err;
     } finally {

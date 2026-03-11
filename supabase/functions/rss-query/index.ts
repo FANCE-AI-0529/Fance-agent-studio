@@ -182,7 +182,7 @@ serve(async (req) => {
     // Step 4: Get relations for anchor entities and traverse
     const anchorIds = anchorEntities.map(e => e.entity_id);
     
-    let subgraph: Array<{
+    const subgraph: Array<{
       entity_id: string;
       entity_name: string;
       entity_type: string;

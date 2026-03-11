@@ -85,7 +85,7 @@ export function DataExportForm() {
         email: user.email,
       };
 
-      let progressStep = 100 / selectedOptions.length;
+      const progressStep = 100 / selectedOptions.length;
       let currentProgress = 0;
 
       // Export agents

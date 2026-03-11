@@ -362,7 +362,7 @@ serve(async (req: Request) => {
       ...((mc?.settings as Record<string, unknown>) || {}),
     };
 
-    let finalMessages = [...messages];
+    const finalMessages = [...messages];
     const effectiveSystemPrompt = system_prompt || (mc?.system_prompt_override as string | undefined);
     if (effectiveSystemPrompt) {
       const hasSystemMessage = finalMessages.some(m => m.role === 'system');

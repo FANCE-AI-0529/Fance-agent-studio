@@ -688,7 +688,16 @@ const Foundry = () => {
     setIsDeveloperMode(true);
   };
 
-  const handleLowCodeSave = async (config: any, generatedFiles: { skillMd: string; handlerPy: string; configYaml: string }) => {
+  interface LowCodeConfig {
+    name: string;
+    description?: string;
+    permissions?: string[];
+    category?: string;
+    inputs?: unknown[];
+    outputs?: unknown[];
+  }
+
+  const handleLowCodeSave = async (config: LowCodeConfig, generatedFiles: { skillMd: string; handlerPy: string; configYaml: string }) => {
     setContents({
       "file-skill": generatedFiles.skillMd,
       "file-handler": generatedFiles.handlerPy,

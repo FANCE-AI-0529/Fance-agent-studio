@@ -127,7 +127,7 @@ export function convertDSLToGraph(
   const edges: GeneratedEdge[] = [];
   const variableMappings: GeneratedVariableMapping[] = [];
 
-  let currentX = layoutConfig.startX;
+  const currentX = layoutConfig.startX;
   let currentY = layoutConfig.startY;
 
   // 1. 创建触发器节点

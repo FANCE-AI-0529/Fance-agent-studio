@@ -101,7 +101,7 @@ serve(async (req) => {
     }
 
     // 4. Calculate charge amount
-    let chargeAmount = pricing.price_per_call || 0;
+    const chargeAmount = pricing.price_per_call || 0;
 
     // Check for trial calls
     if (pricing.trial_calls && pricing.trial_calls > 0) {

@@ -150,7 +150,7 @@ export function useStreamingGenerator(options: UseStreamingGeneratorOptions = {}
         // 配置事件 - 可以扩展处理
         break;
 
-      case 'progress':
+      case 'progress': {
         store.updateProgress(event.progress, event.step, event.estimatedRemaining);
         
         // 根据步骤更新阶段
@@ -167,6 +167,7 @@ export function useStreamingGenerator(options: UseStreamingGeneratorOptions = {}
           store.setPhase(newPhase);
         }
         break;
+      }
 
       case 'complete':
         store.complete(event.agentConfig, event.summary);

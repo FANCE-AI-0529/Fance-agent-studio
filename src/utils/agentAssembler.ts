@@ -293,7 +293,7 @@ export function assembleAgent(input: AssemblyInput): AssemblyOutput {
   // 首先使用新的智能逻辑节点选择器
   const logicNodeCandidate = selectLogicNode(userDescription);
   let logicNodeId: string | null = null;
-  let logicBranchNodes: string[] = [];
+  const logicBranchNodes: string[] = [];
   
   if (logicNodeCandidate) {
     logicNodeId = createNodeId();

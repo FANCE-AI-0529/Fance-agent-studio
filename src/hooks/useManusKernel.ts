@@ -74,18 +74,21 @@ export function useManusKernel(agentId: string | null) {
       
       for (const file of existingFiles) {
         switch (file.file_path) {
-          case MANUS_FILE_PATHS.TASK_PLAN:
+          case MANUS_FILE_PATHS.TASK_PLAN: {
             store.updateTaskPlan(file.content);
             const phases = parseTaskPlanPhases(file.content);
             store.setPhaseProgress(phases.activePhase, phases.phases.length, phases.progress);
             break;
-          case MANUS_FILE_PATHS.FINDINGS:
+          }
+          case MANUS_FILE_PATHS.FINDINGS: {
             store.updateFindings(file.content);
             store.setFindingsCount(parseFindingsCount(file.content));
             break;
-          case MANUS_FILE_PATHS.PROGRESS:
+          }
+          case MANUS_FILE_PATHS.PROGRESS: {
             store.updateProgress(file.content);
             break;
+          }
         }
       }
       
@@ -141,18 +144,21 @@ export function useManusKernel(agentId: string | null) {
       
       // 更新 store
       switch (filePath) {
-        case MANUS_FILE_PATHS.TASK_PLAN:
+        case MANUS_FILE_PATHS.TASK_PLAN: {
           store.updateTaskPlan(content);
           const phases = parseTaskPlanPhases(content);
           store.setPhaseProgress(phases.activePhase, phases.phases.length, phases.progress);
           break;
-        case MANUS_FILE_PATHS.FINDINGS:
+        }
+        case MANUS_FILE_PATHS.FINDINGS: {
           store.updateFindings(content);
           store.setFindingsCount(parseFindingsCount(content));
           break;
-        case MANUS_FILE_PATHS.PROGRESS:
+        }
+        case MANUS_FILE_PATHS.PROGRESS: {
           store.updateProgress(content);
           break;
+        }
       }
       
       return true;

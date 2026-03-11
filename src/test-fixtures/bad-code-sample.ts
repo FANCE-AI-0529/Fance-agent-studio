@@ -11,7 +11,7 @@ function processUser(user: any): string {
   // Violation: no-else (line 14)
   if (user.isActive) {
     // Violation: no-let (line 15), single-word (userName)
-    let userName = user.name;
+    const userName = user.name;
     result = `Welcome, ${userName}!`;
   } else {
     result = "User is inactive";

@@ -52,7 +52,7 @@ export function useTrendingAgents(sortBy: SortBy = "usage", limit: number = 10) 
       }
 
       // Sort based on sortBy parameter
-      let sortedAgents = [...(agents || [])];
+      const sortedAgents = [...(agents || [])];
       switch (sortBy) {
         case "likes":
           sortedAgents.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));

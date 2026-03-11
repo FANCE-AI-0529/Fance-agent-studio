@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MainLayout } from "../components/layout/MainLayout.tsx";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
@@ -32,7 +32,16 @@ import {
   SelectValue,
 } from "../components/ui/select.tsx";
 
-function EntryCard({ entry, challengeActive }: { entry: any; challengeActive: boolean }) {
+interface Entry {
+  id: string;
+  title?: string;
+  description?: string;
+  agent_id?: string;
+  votes_count?: number;
+  rank?: number;
+}
+
+const EntryCard = React.memo(function EntryCard({ entry, challengeActive }: { entry: Entry; challengeActive: boolean }) {
   const { user } = useAuth();
   const { data: hasVoted = false } = useHasVoted(entry.id);
   const voteEntry = useVoteEntry();
@@ -84,7 +93,7 @@ function EntryCard({ entry, challengeActive }: { entry: any; challengeActive: bo
       </CardContent>
     </Card>
   );
-}
+});
 
 function SubmitEntryDialog({ challengeId, onSuccess }: { challengeId: string; onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);

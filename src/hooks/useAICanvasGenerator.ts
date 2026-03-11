@@ -176,7 +176,7 @@ export function useAICanvasGenerator(): UseAICanvasGeneratorReturn {
         description: `已生成 ${result.nodes.length} 个节点和 ${result.edges.length} 条连线`,
       });
 
-    } catch (err: any) {
+    } catch (err: Error) {
       console.error("AI generation failed:", err);
       toast({
         title: "生成失败",

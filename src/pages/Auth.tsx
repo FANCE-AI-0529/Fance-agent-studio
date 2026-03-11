@@ -30,7 +30,7 @@ const strongPasswordSchema = z.string()
   .regex(/[A-Z]/, "密码必须包含大写字母")
   .regex(/[a-z]/, "密码必须包含小写字母")
   .regex(/[0-9]/, "密码必须包含数字")
-  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "密码必须包含特殊字符");
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/, "密码必须包含特殊字符");
 const inviteCodeSchema = z.string().min(4, "邀请码至少4位").max(20, "邀请码最多20位");
 // 登录时使用简单密码验证
 const loginPasswordSchema = z.string().min(1, "请输入密码");

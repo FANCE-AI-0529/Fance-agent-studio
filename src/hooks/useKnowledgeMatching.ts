@@ -266,19 +266,15 @@ export function useKnowledgeMatching() {
    * @returns {Promise<unknown>} - 画像结果
    */
   const triggerAutoProfile = useCallback(async (knowledgeBaseId: string) => {
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke('kb-auto-profile', {
-        body: { knowledgeBaseId },
-      });
+    const { data, error: fnError } = await supabase.functions.invoke('kb-auto-profile', {
+      body: { knowledgeBaseId },
+    });
 
-      if (fnError) {
-        throw new Error(fnError.message);
-      }
-
-      return data;
-    } catch (err) {
-      throw err;
+    if (fnError) {
+      throw new Error(fnError.message);
     }
+
+    return data;
   }, []);
 
   return {

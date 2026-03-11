@@ -161,7 +161,7 @@ export function useCreatorLeaderboard(
       });
       
       // [转换排序]：按指定维度排序
-      let entries = Array.from(authorStats.values());
+      const entries = Array.from(authorStats.values());
       
       switch (type) {
         case "usage":

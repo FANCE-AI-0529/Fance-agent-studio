@@ -1641,7 +1641,7 @@ const Builder = () => {
             toast({ title: "工作流已生成", description: `已创建 ${generatedNodes.length} 个节点` });
             if (autoGenerateFromInspiration && user) {
               setTimeout(async () => {
-                try { await handleSave(); setShowDeployConfirmDialog(true); } catch {}
+                try { await handleSave(); setShowDeployConfirmDialog(true); } catch (e) { console.debug('Failed to save after inspiration generation:', e); }
                 setInspirationDescription(null);
                 setAutoGenerateFromInspiration(false);
                 setInspirationTitle(null);
