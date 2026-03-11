@@ -9,7 +9,7 @@ import type {
   TerminalCommand, 
   FileDiff, 
   OpenCodeRuntimeState 
-} from '@/types/openCode';
+} from '../types/openCode.ts';
 
 interface UseOpenCodeRuntimeOptions {
   initialMode?: OpenCodeMode;

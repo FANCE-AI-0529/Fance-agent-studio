@@ -11,12 +11,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+} from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
 import {
   Dialog,
   DialogContent,
@@ -24,14 +24,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,13 +41,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+} from "../ui/alert-dialog.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { useToast } from "../../hooks/use-toast.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { cn } from "../../lib/utils.ts";
 import {
   Plus,
   Server,

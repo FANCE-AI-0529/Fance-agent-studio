@@ -1,24 +1,24 @@
 import { useState } from "react";
 import { Settings, Rocket, Shield, Trash2, Code2, Sliders, Plus, Variable, ChevronDown, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Skill } from "./SkillMarketplace";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Label } from "../ui/label.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Skill } from "./SkillMarketplace.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 
 export interface EnvVariable {
   key: string;

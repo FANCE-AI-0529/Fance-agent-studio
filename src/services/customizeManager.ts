@@ -3,7 +3,7 @@
  * 确保 customize session 与标准技能安装之间的隔离性
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 
 export interface CustomizeSession {
   name: string;

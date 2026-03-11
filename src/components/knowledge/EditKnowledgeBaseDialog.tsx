@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Settings2, Loader2, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Alert, AlertDescription } from "../ui/alert.tsx";
 import {
   Dialog,
   DialogContent,
@@ -14,15 +14,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useUpdateKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
+} from "../ui/select.tsx";
+import { useUpdateKnowledgeBase, type KnowledgeBase } from "../../hooks/useKnowledgeBases.ts";
 
 interface EditKnowledgeBaseDialogProps {
   knowledgeBase: KnowledgeBase | null;

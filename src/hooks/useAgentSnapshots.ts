@@ -8,8 +8,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { toast } from 'sonner';
 import type { 
   AgentSnapshot, 
@@ -20,7 +20,7 @@ import type {
   ChangeStats,
   GraphData,
   SnapshotSkillRef,
-} from '@/types/gitops';
+} from '../types/gitops.ts';
 
 /**
  * 将数据库快照记录映射为应用层快照对象

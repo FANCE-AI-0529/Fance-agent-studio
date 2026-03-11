@@ -16,13 +16,13 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Clock, Activity } from "lucide-react";
 import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface AlertLog {
   id: string;

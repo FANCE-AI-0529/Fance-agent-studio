@@ -1,16 +1,16 @@
 import { motion } from "framer-motion";
 import { Terminal, MessageCircle, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAppModeStore } from "@/stores/appModeStore";
+import { Button } from "../ui/button.tsx";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
 import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ConsumerSyncBadge } from "@/components/consumer/ConsumerSyncBadge";
+import { ThemeToggle } from "../ThemeToggle.tsx";
+import { ConsumerSyncBadge } from "./ConsumerSyncBadge.tsx";
 import logoIcon from "@/assets/logo-icon.png";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 
 export function ConsumerHeader() {
   const { toggleMode } = useAppModeStore();

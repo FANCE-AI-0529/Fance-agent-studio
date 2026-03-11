@@ -4,11 +4,11 @@
  */
 
 import { AlertTriangle, RefreshCw, XCircle, Info, AlertCircle, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AppError, ErrorSeverity } from '@/lib/errorTypes';
-import { cn } from '@/lib/utils';
+import { Button } from './button.tsx';
+import { Alert, AlertDescription, AlertTitle } from './alert.tsx';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './card.tsx';
+import { AppError, ErrorSeverity } from '../../lib/errorTypes.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface ErrorDisplayProps {
   error: AppError;

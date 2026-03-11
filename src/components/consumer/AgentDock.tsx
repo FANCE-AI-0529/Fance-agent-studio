@@ -2,10 +2,10 @@ import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from
 import { useRef } from "react";
 import { Plus, Bot, MessageCircle, Trash2, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMyAgents, useDeleteAgent } from "@/hooks/useAgents";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { useMyAgents, useDeleteAgent } from "../../hooks/useAgents.ts";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "../ui/context-menu.tsx";
 import { toast } from "sonner";
-import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { AgentAvatarDisplay, AgentAvatar } from "../builder/AgentAvatarPicker.tsx";
 interface DockItemProps {
   agent?: {
     id: string;

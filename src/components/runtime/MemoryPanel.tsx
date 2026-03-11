@@ -12,41 +12,41 @@ import {
   ChevronUp,
   Star,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from "../ui/sheet.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+} from "../ui/dialog.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Label } from "../ui/label.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
-import { useUserMemories, useAddMemory, useUpdateMemory, useDeleteMemory, Memory } from "@/hooks/useMemory";
+} from "../ui/select.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useUserMemories, useAddMemory, useUpdateMemory, useDeleteMemory, Memory } from "../../hooks/useMemory.ts";
 import { toast } from "sonner";
 
 const memoryTypeConfig: Record<string, { 

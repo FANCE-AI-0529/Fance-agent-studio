@@ -33,12 +33,12 @@ import {
   ArrowRight,
   Brain,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { extractAgentCapabilities, StructuredCapabilities, CapabilityItem } from "@/utils/capabilityExtractor";
-import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
-import { Agent } from "@/hooks/useAgents";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { cn } from "../../lib/utils.ts";
+import { extractAgentCapabilities, StructuredCapabilities, CapabilityItem } from "../../utils/capabilityExtractor.ts";
+import { AgentAvatarDisplay, AgentAvatar } from "../builder/AgentAvatarPicker.tsx";
+import { Agent } from "../../hooks/useAgents.ts";
 
 // Icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {

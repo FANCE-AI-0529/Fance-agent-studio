@@ -15,14 +15,14 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "../../lib/utils.ts";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { 
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 import { useState } from "react";
 
 // MCP Action drag item type

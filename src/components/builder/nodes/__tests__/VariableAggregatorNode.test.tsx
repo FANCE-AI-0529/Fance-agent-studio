@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@/test/utils/renderWithProviders";
-import VariableAggregatorNode from "@/components/builder/nodes/VariableAggregatorNode";
-import { createMockVariableAggregatorNodeData } from "@/test/utils/mockNodeData";
-import { createNodeProps } from "@/test/utils/nodePropsHelper";
+import { render, screen, fireEvent } from "../../../../test/utils/renderWithProviders.tsx";
+import VariableAggregatorNode from "../VariableAggregatorNode.tsx";
+import { createMockVariableAggregatorNodeData } from "../../../../test/utils/mockNodeData.ts";
+import { createNodeProps } from "../../../../test/utils/nodePropsHelper.ts";
 
 describe("VariableAggregatorNode", () => {
   describe("Rendering", () => {

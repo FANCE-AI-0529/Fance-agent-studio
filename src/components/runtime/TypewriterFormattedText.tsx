@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
+import { cn } from "../../lib/utils.ts";
+import { TERMINAL_CLASSES } from "../../constants/terminalStyleGuide.ts";
 import { AlertCircle } from "lucide-react";
 
 interface TypewriterFormattedTextProps {

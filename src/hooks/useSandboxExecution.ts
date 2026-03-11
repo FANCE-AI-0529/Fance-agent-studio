@@ -1,15 +1,15 @@
 // 沙箱执行 Hook (Sandbox Execution Hook)
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useSandboxStore } from '@/stores/sandboxStore';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useToast } from './use-toast.ts';
+import { useSandboxStore } from '../stores/sandboxStore.ts';
 import type { 
   SandboxConfig, 
   SandboxExecutionResult, 
   SandboxExecuteRequest,
   ExecutionMetrics,
-} from '@/types/sandbox';
+} from '../types/sandbox.ts';
 
 interface UseSandboxExecutionOptions {
   onSuccess?: (result: SandboxExecutionResult) => void;

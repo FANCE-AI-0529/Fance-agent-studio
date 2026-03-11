@@ -19,18 +19,18 @@ import {
   FileJson,
   RefreshCw
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible.tsx";
+import { cn } from "../../lib/utils.ts";
 import { 
   META_BUILDER_TEST_CASES, 
   validateTestResult, 
   generateTestReport,
   type TestCase,
   type TestResult 
-} from "@/tests/metaBuilderTests";
+} from "../../tests/metaBuilderTests.ts";
 
 interface MetaBuilderTestPanelProps {
   isOpen: boolean;

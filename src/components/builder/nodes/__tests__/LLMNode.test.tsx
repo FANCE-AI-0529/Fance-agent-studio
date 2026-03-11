@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@/test/utils/renderWithProviders";
-import LLMNode from "@/components/builder/nodes/LLMNode";
-import { createMockLLMNodeData } from "@/test/utils/mockNodeData";
+import { render, screen } from "../../../../test/utils/renderWithProviders.tsx";
+import LLMNode from "../LLMNode.tsx";
+import { createMockLLMNodeData } from "../../../../test/utils/mockNodeData.ts";
 
 describe("LLMNode", () => {
   const defaultProps = {
@@ -60,7 +60,7 @@ describe("LLMNode", () => {
 
   describe("Selection State", () => {
     it("applies selected styles when selected", () => {
-      const { container } = render(<LLMNode {...defaultProps} selected={true} />);
+      const { container } = render(<LLMNode {...defaultProps} selected />);
       const nodeElement = container.firstChild as HTMLElement;
       expect(nodeElement.className).toContain("border-blue-500");
     });

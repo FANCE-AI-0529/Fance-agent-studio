@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Moon, Sun, Check, Palette, Monitor, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import { motion } from "framer-motion";
 
 interface ContrastCheck {
@@ -256,7 +256,7 @@ export function DarkModeOptimizer({ className }: DarkModeOptimizerProps) {
   // Auto switch based on system preference
   useEffect(() => {
     if (autoSwitch) {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const mediaQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = (e: MediaQueryListEvent) => {
         setTheme(e.matches ? "dark" : "light");
       };

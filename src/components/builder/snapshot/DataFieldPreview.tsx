@@ -4,10 +4,10 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Beaker, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import type { DataFieldSnapshot } from '@/types/dataSnapshotTypes';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { cn } from '../../../lib/utils.ts';
+import type { DataFieldSnapshot } from '../../../types/dataSnapshotTypes.ts';
 
 interface DataFieldPreviewProps {
   field: DataFieldSnapshot;

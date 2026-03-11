@@ -5,30 +5,30 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../ui/sheet.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "../ui/dialog.tsx";
+import { Label } from "../ui/label.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Input } from "../ui/input.tsx";
+import { Textarea } from "../ui/textarea.tsx";
 import {
   Users,
   Handshake,
@@ -67,7 +67,7 @@ import {
   driftTypeLabels,
   type CollaborationMessage,
   type DriftLog,
-} from "@/hooks/useAgentCollaboration";
+} from "../../hooks/useAgentCollaboration.ts";
 import {
   useDelegatedTasks,
   useDelegateTask,
@@ -85,10 +85,10 @@ import {
   useRealtimeTaskUpdates,
   type DelegatedTask,
   type HandoffContext,
-} from "@/hooks/useTaskDelegation";
-import { useDeployedAgents } from "@/hooks/useAgents";
-import { CollaborationDashboard } from "./CollaborationDashboard";
-import { HandoffPacketEditor } from "./HandoffPacketEditor";
+} from "../../hooks/useTaskDelegation.ts";
+import { useDeployedAgents } from "../../hooks/useAgents.ts";
+import { CollaborationDashboard } from "./CollaborationDashboard.tsx";
+import { HandoffPacketEditor } from "./HandoffPacketEditor.tsx";
 
 interface AgentCollaborationPanelProps {
   currentAgentId?: string;

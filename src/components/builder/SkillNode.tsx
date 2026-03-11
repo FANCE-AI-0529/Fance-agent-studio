@@ -1,11 +1,11 @@
 import { memo } from "react";
 import { Position } from "@xyflow/react";
 import { Sparkles, X, Database, Image, MessageSquare, FileCode, Wrench, AlertCircle, Settings } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import MultiPortHandle from "./ports/MultiPortHandle";
-import { standardPorts, PortConfig } from "./ports/portTypes";
+import { Badge } from "../ui/badge.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { cn } from "../../lib/utils.ts";
+import MultiPortHandle from "./ports/MultiPortHandle.tsx";
+import { standardPorts, PortConfig } from "./ports/portTypes.ts";
 
 const categoryIcons: Record<string, React.ElementType> = {
   analysis: Database,

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { useTimeTravel } from "@/hooks/useTimeTravel";
-import { cn } from "@/lib/utils";
+import { Calendar } from "../ui/calendar.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { useTimeTravel } from "../../hooks/useTimeTravel.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface SnapshotCalendarPickerProps {
   agentId: string | null;

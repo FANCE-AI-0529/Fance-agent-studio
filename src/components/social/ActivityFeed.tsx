@@ -1,12 +1,12 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { Bot, Heart, Copy, Award, UserPlus, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { Activity } from "@/hooks/useActivities";
-import { formatActivityText } from "@/hooks/useActivities";
+import type { Activity } from "../../hooks/useActivities.ts";
+import { formatActivityText } from "../../hooks/useActivities.ts";
 
 interface ActivityFeedProps {
   activities: Activity[];

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@/test/utils/renderWithProviders";
-import DocExtractorNode from "@/components/builder/nodes/DocExtractorNode";
-import { createMockDocExtractorNodeData } from "@/test/utils/mockNodeData";
-import { createNodeProps } from "@/test/utils/nodePropsHelper";
+import { render, screen, fireEvent } from "../../../../test/utils/renderWithProviders.tsx";
+import DocExtractorNode from "../DocExtractorNode.tsx";
+import { createMockDocExtractorNodeData } from "../../../../test/utils/mockNodeData.ts";
+import { createNodeProps } from "../../../../test/utils/nodePropsHelper.ts";
 
 describe("DocExtractorNode", () => {
   describe("Rendering", () => {

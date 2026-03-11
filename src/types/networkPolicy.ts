@@ -1,6 +1,6 @@
 // 网络策略类型定义 (Network Policy Types)
 
-import type { ResourceLimits, NetworkPolicy, DomainRule } from './sandbox';
+import type { ResourceLimits, NetworkPolicy, DomainRule } from './sandbox.ts';
 
 /**
  * MPLP 权限到网络域名的预定义映射

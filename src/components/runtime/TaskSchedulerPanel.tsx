@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Clock, Zap, AlertTriangle, CheckCircle, Loader2, Play, Pause, RotateCcw, Timer } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PRIORITY_CONFIG, type TaskPriority, type TaskResult, type QueuedTask } from "@/hooks/useTaskScheduler";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { PRIORITY_CONFIG, type TaskPriority, type TaskResult, type QueuedTask } from "../../hooks/useTaskScheduler.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface TaskItem {
   id: string;

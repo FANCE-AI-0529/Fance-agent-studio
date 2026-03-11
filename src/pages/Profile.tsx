@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Button } from "../components/ui/button.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Switch } from "../components/ui/switch.tsx";
+import { Label } from "../components/ui/label.tsx";
 import {
   User,
   Settings,
@@ -24,14 +24,14 @@ import {
   FileText,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
-import { PricingPlans } from "@/components/pricing/PricingPlans";
-import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
-import { SecurityAuditDashboard } from "@/components/profile/SecurityAuditDashboard";
-import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { LanguageSwitcher } from "../components/settings/LanguageSwitcher.tsx";
+import { PricingPlans } from "../components/pricing/PricingPlans.tsx";
+import { EditProfileDialog } from "../components/profile/EditProfileDialog.tsx";
+import { SecurityAuditDashboard } from "../components/profile/SecurityAuditDashboard.tsx";
+import { useNotificationPreferences, useUpdateNotificationPreferences } from "../hooks/useNotificationPreferences.ts";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "../integrations/supabase/client.ts";
+import { toast } from "../hooks/use-toast.ts";
 
 export default function Profile() {
   const { user, signOut } = useAuth();

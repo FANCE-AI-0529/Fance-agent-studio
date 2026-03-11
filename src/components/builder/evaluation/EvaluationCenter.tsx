@@ -18,17 +18,17 @@ import {
   FileText,
   AlertTriangle,
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAgentEvals } from '@/hooks/useAgentEvals';
-import { TestSetManager } from './TestSetManager';
-import { EvaluationRunner } from './EvaluationRunner';
-import { EvaluationReport } from './EvaluationReport';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card.tsx';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { Progress } from '../../ui/progress.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
+import { useAgentEvals } from '../../../hooks/useAgentEvals.ts';
+import { TestSetManager } from './TestSetManager.tsx';
+import { EvaluationRunner } from './EvaluationRunner.tsx';
+import { EvaluationReport } from './EvaluationReport.tsx';
+import { cn } from '../../../lib/utils.ts';
 
 interface EvaluationCenterProps {
   agentId: string;

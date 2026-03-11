@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Separator } from "../ui/separator.tsx";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "../ui/alert-dialog.tsx";
 import { 
   Shield, 
   Smartphone, 
@@ -35,9 +35,9 @@ import {
   Trash2,
   QrCode,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useToast } from "../../hooks/use-toast.ts";
 import { QRCodeSVG } from "qrcode.react";
 
 type MFAStatus = "idle" | "loading" | "enrolling" | "verifying" | "enabled" | "error";
@@ -87,7 +87,7 @@ export function TwoFactorAuthForm() {
       const verifiedFactors = data.totp.filter(f => f.status === "verified");
       setFactors(verifiedFactors);
       setStatus(verifiedFactors.length > 0 ? "enabled" : "idle");
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("Failed to fetch MFA factors:", error);
       setStatus("error");
     }
@@ -111,7 +111,7 @@ export function TwoFactorAuthForm() {
         secret: data.totp.secret,
         uri: data.totp.uri,
       });
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("MFA enrollment error:", error);
       toast({
         title: "启用失败",
@@ -137,7 +137,7 @@ export function TwoFactorAuthForm() {
       if (challengeError) throw challengeError;
 
       // Then verify with the code
-      const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+      const { error: verifyError } = await supabase.auth.mfa.verify({
         factorId: enrollmentData.id,
         challengeId: challengeData.id,
         code: verifyCode,
@@ -162,7 +162,7 @@ export function TwoFactorAuthForm() {
       setShowEnrollDialog(false);
       setEnrollmentData(null);
       setVerifyCode("");
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("MFA verification error:", error);
       toast({
         title: "验证失败",
@@ -190,7 +190,7 @@ export function TwoFactorAuthForm() {
       await fetchFactors();
       setShowDisableDialog(false);
       setFactorToDelete(null);
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("MFA unenroll error:", error);
       toast({
         title: "禁用失败",

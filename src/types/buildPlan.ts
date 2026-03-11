@@ -3,7 +3,7 @@
 // Build Plan Types - Builder's Self-Planning System
 // =====================================================
 
-import type { AgentScore, RedTeamResults, TestRunResult } from './agentEvals';
+import type { AgentScore, RedTeamResults, TestRunResult } from './agentEvals.ts';
 
 // 构建计划阶段状态
 export type BuildPhaseStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';

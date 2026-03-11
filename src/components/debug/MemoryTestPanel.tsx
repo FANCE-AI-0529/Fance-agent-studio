@@ -21,14 +21,14 @@ import {
   Link2,
   BookOpen,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Separator } from '../ui/separator.tsx';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible.tsx';
+import { supabase } from '../../integrations/supabase/client.ts';
 import { 
   MEMORY_TEST_CASES, 
   MemoryTestCase, 
@@ -38,9 +38,9 @@ import {
   formatCitationForDisplay,
   formatGraphTraceForDisplay,
   validateGraphTrace,
-} from '@/tests/memoryTests';
-import { useTieredMemory } from '@/hooks/useTieredMemory';
-import { cn } from '@/lib/utils';
+} from '../../tests/memoryTests.ts';
+import { useTieredMemory } from '../../hooks/useTieredMemory.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface MemoryTestPanelProps {
   agentId: string | null;

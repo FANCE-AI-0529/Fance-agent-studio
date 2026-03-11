@@ -4,8 +4,8 @@
 // =====================================================
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useCanvasHighlightStore } from '@/stores/canvasHighlightStore';
-import type { DataFlowPath } from '@/types/verificationTypes';
+import { useCanvasHighlightStore } from '../stores/canvasHighlightStore.ts';
+import type { DataFlowPath } from '../types/verificationTypes.ts';
 
 export function useCanvasHighlight() {
   const store = useCanvasHighlightStore();

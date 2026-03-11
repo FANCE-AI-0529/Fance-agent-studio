@@ -5,7 +5,7 @@
  * @copyright Copyright (c) 2025 Fance Studio. MIT License.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 
 /**
  * 记忆片段类型

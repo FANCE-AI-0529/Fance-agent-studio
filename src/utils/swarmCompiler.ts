@@ -9,7 +9,7 @@ import type {
   SwarmCompileResult,
   SwarmCompileError,
   CanvasToSwarmMapping,
-} from '@/types/swarms';
+} from '../types/swarms.ts';
 
 /**
  * 节点类型到 Swarm 角色的映射

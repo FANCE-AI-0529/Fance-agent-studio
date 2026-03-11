@@ -21,37 +21,37 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from "../ui/sheet.tsx";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable";
+} from "../ui/resizable.tsx";
 import {
   Plus,
   Save,
@@ -77,17 +77,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import TaskStepNode, { type TaskStepNodeData } from "./TaskStepNode";
-import ConditionalNode, { type ConditionalNodeData, type ConditionRule } from "./ConditionalNode";
-import LoopNode, { type LoopNodeData } from "./LoopNode";
-import BreakNode, { type BreakNodeData } from "./BreakNode";
-import ContinueNode, { type ContinueNodeData } from "./ContinueNode";
-import DebugControlPanel from "./DebugControlPanel";
-import { useTaskChainDebug } from "@/hooks/useTaskChainDebug";
-import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from "@/hooks/useTaskChains";
-import { useDeployedAgents } from "@/hooks/useAgents";
-import { taskTypeLabels } from "@/hooks/useTaskDelegation";
-import { cn } from "@/lib/utils";
+import TaskStepNode, { type TaskStepNodeData } from "./TaskStepNode.tsx";
+import ConditionalNode, { type ConditionalNodeData, type ConditionRule } from "./ConditionalNode.tsx";
+import LoopNode, { type LoopNodeData } from "./LoopNode.tsx";
+import BreakNode, { type BreakNodeData } from "./BreakNode.tsx";
+import ContinueNode, { type ContinueNodeData } from "./ContinueNode.tsx";
+import DebugControlPanel from "./DebugControlPanel.tsx";
+import { useTaskChainDebug } from "../../hooks/useTaskChainDebug.ts";
+import { useCreateChain, useExecuteChain, type TaskChain, type ChainStep } from "../../hooks/useTaskChains.ts";
+import { useDeployedAgents } from "../../hooks/useAgents.ts";
+import { taskTypeLabels } from "../../hooks/useTaskDelegation.ts";
+import { cn } from "../../lib/utils.ts";
 
 // Custom animated edge component
 function AnimatedEdge({

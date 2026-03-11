@@ -10,7 +10,7 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command";
+} from "./command.tsx";
 import {
   Bot,
   MessageSquare,
@@ -35,10 +35,10 @@ import {
   FolderOpen,
   HelpCircle,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import { useTheme } from "next-themes";
-import { useDeployedAgents } from "@/hooks/useAgents";
-import { cn } from "@/lib/utils";
+import { useDeployedAgents } from "../../hooks/useAgents.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface CommandItem {
   id: string;

@@ -4,13 +4,13 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { useGlobalAgentStore } from '@/stores/globalAgentStore';
+import { useGlobalAgentStore } from '../stores/globalAgentStore.ts';
 import { toast } from 'sonner';
 import type { 
   GraphCommand, 
   BatchGraphCommand,
   GraphOperationResult,
-} from '@/types/graphCommandTypes';
+} from '../types/graphCommandTypes.ts';
 
 interface ExecutionState {
   isExecuting: boolean;

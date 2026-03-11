@@ -6,7 +6,7 @@
  */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 
 interface AuthContextType {
   user: User | null;
@@ -33,7 +33,7 @@ const logSecurityEvent = async (
       user_agent: navigator.userAgent,
       metadata: {
         timestamp: new Date().toISOString(),
-        url: window.location.href,
+        url: globalThis.location.href,
       },
       success,
       error_message: errorMessage,
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${globalThis.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
       email,

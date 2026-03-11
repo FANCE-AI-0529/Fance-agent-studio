@@ -1,5 +1,5 @@
 import { AlertTriangle, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface IntentDriftIndicatorProps {
   severity: "none" | "low" | "medium" | "high" | "critical";

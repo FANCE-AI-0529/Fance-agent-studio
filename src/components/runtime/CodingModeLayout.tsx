@@ -9,15 +9,15 @@ import {
   ResizableHandle, 
   ResizablePanel, 
   ResizablePanelGroup 
-} from '@/components/ui/resizable';
-import { OpenCodeStatusBar } from './OpenCodeStatusBar';
-import { TerminalStreamView } from './TerminalStreamView';
-import { CodeDiffViewer, InlineDiffPreview } from './CodeDiffViewer';
-import { VibeLoopIndicator } from './VibeLoopIndicator';
-import { cn } from '@/lib/utils';
-import type { OpenCodeMode, TerminalCommand, FileDiff } from '@/types/openCode';
-import type { TerminalStreamState } from '@/hooks/useTerminalStream';
-import type { VibeLoopPhase, VibeLoopAttempt } from '@/services/vibeLoopEngine';
+} from '../ui/resizable.tsx';
+import { OpenCodeStatusBar } from './OpenCodeStatusBar.tsx';
+import { TerminalStreamView } from './TerminalStreamView.tsx';
+import { CodeDiffViewer, InlineDiffPreview } from './CodeDiffViewer.tsx';
+import { VibeLoopIndicator } from './VibeLoopIndicator.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { OpenCodeMode, TerminalCommand, FileDiff } from '../../types/openCode.ts';
+import type { TerminalStreamState } from '../../hooks/useTerminalStream.ts';
+import type { VibeLoopPhase, VibeLoopAttempt } from '../../services/vibeLoopEngine.ts';
 
 interface CodingModeLayoutProps {
   // Mode and state
@@ -172,7 +172,7 @@ export function CodingModeLayout({
                       onClose={() => setShowTerminal(false)}
                       onSendCommand={onSendCommand}
                       className="flex-1"
-                      defaultExpanded={true}
+                      defaultExpanded
                     />
                     {/* Vibe Loop Indicator */}
                     {vibeLoopPhase && (

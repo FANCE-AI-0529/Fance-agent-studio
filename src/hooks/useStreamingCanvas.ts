@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { Node, Edge, useReactFlow } from '@xyflow/react';
-import { useStreamingNodes, useStreamingEdges, useStreamingPhase } from '@/stores/streamingStore';
-import { StreamingNode, StreamingEdge } from '@/types/streaming';
+import { useStreamingNodes, useStreamingEdges, useStreamingPhase } from '../stores/streamingStore.ts';
+import { StreamingNode, StreamingEdge } from '../types/streaming.ts';
 
 export interface UseStreamingCanvasOptions {
   autoFitView?: boolean;

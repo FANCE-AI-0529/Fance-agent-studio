@@ -3,17 +3,17 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 import { toast } from 'sonner';
 import type {
   HellTestScenario,
   VerificationResult,
-} from '@/types/verificationTypes';
-import { HELL_TEST_SCENARIOS } from '@/types/verificationTypes';
-import { verifyTopology } from '@/utils/topologyVerifier';
-import { verifyManusCompliance } from '@/utils/manusComplianceVerifier';
-import { verifyWiring } from '@/utils/wiringVerifier';
-import { analyzeDataFlow } from '@/utils/dataFlowAnalyzer';
+} from '../types/verificationTypes.ts';
+import { HELL_TEST_SCENARIOS } from '../types/verificationTypes.ts';
+import { verifyTopology } from '../utils/topologyVerifier.ts';
+import { verifyManusCompliance } from '../utils/manusComplianceVerifier.ts';
+import { verifyWiring } from '../utils/wiringVerifier.ts';
+import { analyzeDataFlow } from '../utils/dataFlowAnalyzer.ts';
 
 interface UseCombinationVerificationReturn {
   scenarios: typeof HELL_TEST_SCENARIOS;

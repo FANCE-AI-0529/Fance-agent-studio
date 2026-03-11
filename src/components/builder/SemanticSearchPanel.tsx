@@ -16,13 +16,13 @@ import {
   Plus,
   Sparkles,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { useSemanticAssetSearch } from "@/hooks/useSemanticAssetSearch";
-import type { SemanticAsset, AssetSearchResult } from "@/types/workflowDSL";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useSemanticAssetSearch } from "../../hooks/useSemanticAssetSearch.ts";
+import type { SemanticAsset, AssetSearchResult } from "../../types/workflowDSL.ts";
 
 // ========== 类型定义 ==========
 

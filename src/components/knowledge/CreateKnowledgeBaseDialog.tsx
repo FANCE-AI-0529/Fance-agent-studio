@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Database, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { Switch } from "../ui/switch.tsx";
 import {
   Dialog,
   DialogContent,
@@ -13,16 +13,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useCreateKnowledgeBase } from "@/hooks/useKnowledgeBases";
-import { useKnowledgeStore } from "@/stores/knowledgeStore";
+} from "../ui/select.tsx";
+import { useCreateKnowledgeBase } from "../../hooks/useKnowledgeBases.ts";
+import { useKnowledgeStore } from "../../stores/knowledgeStore.ts";
 
 interface CreateKnowledgeBaseDialogProps {
   open: boolean;

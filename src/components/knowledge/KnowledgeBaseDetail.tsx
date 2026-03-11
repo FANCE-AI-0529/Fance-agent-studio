@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Settings2, Trash2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,15 +15,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useDeleteKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
-import { useKnowledgeStore } from "@/stores/knowledgeStore";
-import { DocumentUploader } from "./DocumentUploader";
-import { DocumentList } from "./DocumentList";
-import { ChunkPreview } from "./ChunkPreview";
-import { RetrievalTest } from "./RetrievalTest";
-import { EntityExtractionToggle } from "./EntityExtractionToggle";
-import { KnowledgeGraphPanel } from "./KnowledgeGraphPanel";
+} from "../ui/alert-dialog.tsx";
+import { useDeleteKnowledgeBase, type KnowledgeBase } from "../../hooks/useKnowledgeBases.ts";
+import { useKnowledgeStore } from "../../stores/knowledgeStore.ts";
+import { DocumentUploader } from "./DocumentUploader.tsx";
+import { DocumentList } from "./DocumentList.tsx";
+import { ChunkPreview } from "./ChunkPreview.tsx";
+import { RetrievalTest } from "./RetrievalTest.tsx";
+import { EntityExtractionToggle } from "./EntityExtractionToggle.tsx";
+import { KnowledgeGraphPanel } from "./KnowledgeGraphPanel.tsx";
 
 interface KnowledgeBaseDetailProps {
   knowledgeBase: KnowledgeBase;

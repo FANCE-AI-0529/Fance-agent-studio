@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { BookOpen, Search } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "../../ui/label.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Slider } from "../../ui/slider.tsx";
+import { Switch } from "../../ui/switch.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select.tsx";
+import { Separator } from "../../ui/separator.tsx";
 
 interface Props {
   node: Node;

@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import { LucideIcon, Bot, Cpu, Sparkles, MousePointer2 } from "lucide-react";
-import { Button } from "./button";
+import { Button } from "./button.tsx";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface EmptyStateProps {

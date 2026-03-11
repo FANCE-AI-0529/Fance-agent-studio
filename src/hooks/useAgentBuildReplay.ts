@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
-import { useAgent, AgentWithSkills } from './useAgents';
-import { useBuildPlanStore } from '@/stores/buildPlanStore';
-import { MANUS_KERNEL } from '@/data/manusKernel';
-import { BuildPlan } from '@/types/buildPlan';
+import { useAgent, AgentWithSkills } from './useAgents.ts';
+import { useBuildPlanStore } from '../stores/buildPlanStore.ts';
+import { MANUS_KERNEL } from '../data/manusKernel.ts';
+import { BuildPlan } from '../types/buildPlan.ts';
 
 // Phase key type from BuildPlan
 type PhaseKey = keyof BuildPlan['phases'];

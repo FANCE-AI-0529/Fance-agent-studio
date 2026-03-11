@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
 import { 
   Headphones, 
   BarChart3, 

@@ -12,11 +12,11 @@ import {
   Box,
   GitBranch,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import type { TopologyCheckResult as TopologyCheckResultType } from '@/types/verificationTypes';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { Progress } from '../../ui/progress.tsx';
+import { cn } from '../../../lib/utils.ts';
+import type { TopologyCheckResult as TopologyCheckResultType } from '../../../types/verificationTypes.ts';
 
 interface TopologyCheckResultProps {
   result: TopologyCheckResultType;

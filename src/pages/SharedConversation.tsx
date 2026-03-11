@@ -1,14 +1,14 @@
 import { useParams, Link } from "react-router-dom";
-import { type AgentManifestRuntime } from "@/types/agent";
+import { type AgentManifestRuntime } from "../types/agent.ts";
 import { motion } from "framer-motion";
 import { Bot, User, ArrowLeft, Eye, MessageSquare, Calendar, Play, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useSharedConversation } from "@/hooks/useSharedConversation";
-import { AgentAvatarAnimated } from "@/components/runtime/AgentAvatarAnimated";
-import { FormattedText } from "@/components/runtime/FormattedText";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { ScrollArea } from "../components/ui/scroll-area.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
+import { useSharedConversation } from "../hooks/useSharedConversation.ts";
+import { AgentAvatarAnimated } from "../components/runtime/AgentAvatarAnimated.tsx";
+import { FormattedText } from "../components/runtime/FormattedText.tsx";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 

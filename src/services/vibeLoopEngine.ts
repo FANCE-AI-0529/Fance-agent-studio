@@ -4,7 +4,7 @@
  * with circuit breaker integration and MPLP escalation.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 
 export interface VibeLoopConfig {
   maxRetries: number;

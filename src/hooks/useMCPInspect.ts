@@ -8,8 +8,8 @@
  */
 
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { MCPConfig } from "@/components/foundry/MCPConfigEditor";
+import { supabase } from "../integrations/supabase/client.ts";
+import type { MCPConfig } from "../components/foundry/MCPConfigEditor.tsx";
 
 /**
  * MCP探测结果接口

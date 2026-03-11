@@ -4,40 +4,40 @@
  * @author Fance Studio
  * @copyright Copyright (c) 2025 Fance Studio. MIT License.
  */
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/toaster.tsx";
+import { Toaster as Sonner } from "./components/ui/sonner.tsx";
+import { TooltipProvider } from "./components/ui/tooltip.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { ModeAwareLayout } from "@/components/layout/ModeAwareLayout";
-import { StudioOnlyRoute } from "@/components/layout/StudioOnlyRoute";
-import { HackerTransition } from "@/components/consumer/HackerTransition";
-import { EjectTransition } from "@/components/consumer/EjectTransition";
-import { CommandPalette } from "@/components/ui/command-palette";
-import { useAppModeStore } from "@/stores/appModeStore";
-import Index from "./pages/Index";
-import Landing from "./pages/Landing";
-import Hive from "./pages/Hive";
-import Profile from "./pages/Profile";
-import Creator from "./pages/Creator";
-import Leaderboard from "./pages/Leaderboard";
-import Invite from "./pages/Invite";
-import Challenges from "./pages/Challenges";
-import ChallengeDetail from "./pages/ChallengeDetail";
-import InspirationDetail from "./pages/InspirationDetail";
-import Achievements from "./pages/Achievements";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import SharedPrompt from "./pages/SharedPrompt";
-import SharedConversation from "./pages/SharedConversation";
-import ApiHub from "./pages/ApiHub";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import WaitingListAdmin from "./pages/WaitingListAdmin";
+import { AuthProvider, useAuth } from "./contexts/AuthContext.tsx";
+import { LanguageProvider } from "./contexts/LanguageContext.tsx";
+import { OnboardingProvider } from "./components/onboarding/OnboardingProvider.tsx";
+import { MainLayout } from "./components/layout/MainLayout.tsx";
+import { ModeAwareLayout } from "./components/layout/ModeAwareLayout.tsx";
+import { StudioOnlyRoute } from "./components/layout/StudioOnlyRoute.tsx";
+import { HackerTransition } from "./components/consumer/HackerTransition.tsx";
+import { EjectTransition } from "./components/consumer/EjectTransition.tsx";
+import { CommandPalette } from "./components/ui/command-palette.tsx";
+import { useAppModeStore } from "./stores/appModeStore.ts";
+import Index from "./pages/Index.tsx";
+import Landing from "./pages/Landing.tsx";
+import Hive from "./pages/Hive.tsx";
+import Profile from "./pages/Profile.tsx";
+import Creator from "./pages/Creator.tsx";
+import Leaderboard from "./pages/Leaderboard.tsx";
+import Invite from "./pages/Invite.tsx";
+import Challenges from "./pages/Challenges.tsx";
+import ChallengeDetail from "./pages/ChallengeDetail.tsx";
+import InspirationDetail from "./pages/InspirationDetail.tsx";
+import Achievements from "./pages/Achievements.tsx";
+import Auth from "./pages/Auth.tsx";
+import NotFound from "./pages/NotFound.tsx";
+import SharedPrompt from "./pages/SharedPrompt.tsx";
+import SharedConversation from "./pages/SharedConversation.tsx";
+import ApiHub from "./pages/ApiHub.tsx";
+import PaymentSuccess from "./pages/PaymentSuccess.tsx";
+import WaitingListAdmin from "./pages/WaitingListAdmin.tsx";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -133,7 +133,7 @@ function AppRoutes() {
   );
 }
 
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 
 const App = () => (
   <ErrorBoundary>

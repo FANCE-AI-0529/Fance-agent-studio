@@ -9,8 +9,8 @@ import {
   WiringConnection,
   ManusLoggerNodeSpec,
   IODataType,
-} from '@/types/wiringTypes';
-import { NodeSpec } from '@/types/workflowDSL';
+} from '../types/wiringTypes.ts';
+import { NodeSpec } from '../types/workflowDSL.ts';
 
 // ========== Manus 强制连线规则 ==========
 

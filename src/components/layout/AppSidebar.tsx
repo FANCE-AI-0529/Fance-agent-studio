@@ -14,15 +14,15 @@ import {
   Loader2,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
-import { useAppModeStore } from "@/stores/appModeStore";
-import { NavLink } from "@/components/NavLink";
-import { useAuth } from "@/contexts/AuthContext";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { UserManagementDialog } from "@/components/user/UserManagementDialog";
-import { SettingsDialog } from "@/components/settings/SettingsDialog";
-import { HelpDialog } from "@/components/help/HelpDialog";
-import { useMyAgents } from "@/hooks/useAgents";
-import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
+import { NavLink } from "../NavLink.tsx";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { ThemeToggle } from "../ThemeToggle.tsx";
+import { UserManagementDialog } from "../user/UserManagementDialog.tsx";
+import { SettingsDialog } from "../settings/SettingsDialog.tsx";
+import { HelpDialog } from "../help/HelpDialog.tsx";
+import { useMyAgents } from "../../hooks/useAgents.ts";
+import { AgentAvatarDisplay, type AgentAvatar } from "../builder/AgentAvatarPicker.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -34,17 +34,17 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "../ui/sidebar.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../ui/dropdown-menu.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 
 const mainNavItems = [
   { title: "工作台", url: "/", icon: LayoutDashboard },

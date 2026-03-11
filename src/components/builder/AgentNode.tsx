@@ -1,10 +1,10 @@
 import { memo } from "react";
 import { Position } from "@xyflow/react";
 import { Bot, Settings } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import MultiPortHandle from "./ports/MultiPortHandle";
-import { standardPorts } from "./ports/portTypes";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
+import MultiPortHandle from "./ports/MultiPortHandle.tsx";
+import { standardPorts } from "./ports/portTypes.ts";
 
 export interface AgentNodeData {
   name: string;

@@ -5,21 +5,21 @@
 
 import { useState } from "react";
 import { ExternalLink, Github, Copy, FileText, Loader2, Tag, Cpu, Download, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { toast } from "../../hooks/use-toast.ts";
+import { cn } from "../../lib/utils.ts";
 import {
   AwesomeLLMAgent,
   AGENT_CATEGORIES,
   getAgentGitHubUrl,
-} from "@/data/awesomeLLMAgents";
-import { useAgentReadme } from "@/hooks/useGitHubContent";
-import { useCreateSkill } from "@/hooks/useSkills";
-import { useAuth } from "@/contexts/AuthContext";
+} from "../../data/awesomeLLMAgents.ts";
+import { useAgentReadme } from "../../hooks/useGitHubContent.ts";
+import { useCreateSkill } from "../../hooks/useSkills.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 
 interface AgentPlazaDetailProps {
   agent: AwesomeLLMAgent;
@@ -49,7 +49,7 @@ export function AgentPlazaDetail({
   };
 
   const handleOpenGitHub = () => {
-    window.open(githubUrl, "_blank", "noopener,noreferrer");
+    globalThis.open(githubUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleClone = () => {

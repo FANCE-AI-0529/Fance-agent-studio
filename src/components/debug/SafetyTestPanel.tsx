@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
 import { 
   Shield, 
   ShieldAlert, 
@@ -22,7 +22,7 @@ import {
   DANGEROUS_KEYWORDS,
   DRIFT_PATTERNS,
   calculateSafetyScore 
-} from '@/tests/safetyTests';
+} from '../../tests/safetyTests.ts';
 
 interface TestResult {
   testId: string;

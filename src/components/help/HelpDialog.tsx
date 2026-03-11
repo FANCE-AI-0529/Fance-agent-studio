@@ -4,15 +4,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "../ui/accordion.tsx";
 import {
   HelpCircle,
   Search,
@@ -22,7 +22,7 @@ import {
   ExternalLink,
   Mail,
 } from "lucide-react";
-import { useOnboarding } from "@/components/onboarding/OnboardingProvider";
+import { useOnboarding } from "../onboarding/OnboardingProvider.tsx";
 
 const faqItems = [
   {
@@ -155,7 +155,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 p-4"
-              onClick={() => window.open("https://github.com/fance-studio/fance-studio", "_blank")}
+              onClick={() => globalThis.open("https://github.com/fance-studio/fance-studio", "_blank")}
             >
               <Video className="h-5 w-5 text-primary" />
               <span className="text-sm">文档教程</span>
@@ -207,7 +207,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <Button 
                 variant="outline" 
                 className="w-full justify-start gap-2"
-                onClick={() => window.open("https://crisp.chat/", "_blank")}
+                onClick={() => globalThis.open("https://crisp.chat/", "_blank")}
               >
                 <MessageSquare className="h-4 w-4" />
                 在线客服
@@ -216,7 +216,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 variant="outline" 
                 className="w-full justify-start gap-2"
                 onClick={() => {
-                  window.location.href = "mailto:support@example.com?subject=平台反馈&body=您好，我想反馈以下问题：%0A%0A";
+                  globalThis.location.href = "mailto:support@example.com?subject=平台反馈&body=您好，我想反馈以下问题：%0A%0A";
                 }}
               >
                 <Mail className="h-4 w-4" />
@@ -225,7 +225,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => window.open("https://github.com/fance-studio/fance-studio", "_blank")}
+                onClick={() => globalThis.open("https://github.com/fance-studio/fance-studio", "_blank")}
               >
                 <ExternalLink className="h-4 w-4" />
                 查看完整文档

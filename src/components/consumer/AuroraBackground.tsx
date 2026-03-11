@@ -19,8 +19,8 @@ export function AuroraBackground({ children }: AuroraBackgroundProps) {
       containerRef.current.style.setProperty('--mouse-y', `${y}px`);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    globalThis.addEventListener('mousemove', handleMouseMove);
+    return () => globalThis.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   return (

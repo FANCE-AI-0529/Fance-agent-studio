@@ -19,10 +19,10 @@ import {
   Send,
   Zap,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { TerminalCommand } from '@/types/openCode';
-import type { TerminalStreamState } from '@/hooks/useTerminalStream';
+import { Button } from '../ui/button.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { TerminalCommand } from '../../types/openCode.ts';
+import type { TerminalStreamState } from '../../hooks/useTerminalStream.ts';
 
 interface TerminalStreamViewProps {
   commands: TerminalCommand[];

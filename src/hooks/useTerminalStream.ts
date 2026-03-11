@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import type { TerminalCommand } from '@/types/openCode';
+import type { TerminalCommand } from '../types/openCode.ts';
 
 export type StreamEventType = 'stdout' | 'stderr' | 'status' | 'exit';
 

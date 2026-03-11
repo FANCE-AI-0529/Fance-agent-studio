@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useGlobalAgentStore, SyncEvent, AgentConfig } from '@/stores/globalAgentStore';
-import type { SystemMessage, SystemMessageType } from '@/components/consumer/SystemBubble';
-import { MCP_CAPABILITY_MAP } from '@/hooks/useCapabilityGuide';
+import { useGlobalAgentStore, SyncEvent, AgentConfig } from '../stores/globalAgentStore.ts';
+import type { SystemMessage, SystemMessageType } from '../components/consumer/SystemBubble.tsx';
+import { MCP_CAPABILITY_MAP } from './useCapabilityGuide.ts';
 
 interface UseStudioSyncNotificationsOptions {
   agentId: string | null;

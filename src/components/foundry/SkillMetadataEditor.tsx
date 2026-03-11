@@ -1,23 +1,23 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 import {
   FileText,
   Plus,
@@ -30,8 +30,8 @@ import {
   Wand2,
   Check,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { parseSkillMd, SkillMetadata } from "@/components/foundry/SkillValidator";
+import { cn } from "../../lib/utils.ts";
+import { parseSkillMd, SkillMetadata } from "./SkillValidator.tsx";
 
 // Available permission options
 const permissionOptions = [

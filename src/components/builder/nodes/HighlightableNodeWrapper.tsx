@@ -6,8 +6,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Check, Circle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useCanvasHighlight } from '@/hooks/useCanvasHighlight';
+import { cn } from '../../../lib/utils.ts';
+import { useCanvasHighlight } from '../../../hooks/useCanvasHighlight.ts';
 
 interface HighlightableNodeWrapperProps {
   nodeId: string;

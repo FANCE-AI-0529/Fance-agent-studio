@@ -1,16 +1,16 @@
 import { memo, useState } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { RefreshCcw, Settings2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { cn } from "../../../lib/utils.ts";
+import { Badge } from "../../ui/badge.tsx";
+import { Button } from "../../ui/button.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Textarea } from "../../ui/textarea.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../../ui/collapsible.tsx";
 
 export interface LoopNodeData {
   label?: string;

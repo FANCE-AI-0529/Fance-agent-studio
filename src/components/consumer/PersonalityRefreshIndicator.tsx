@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface PersonalityRefreshIndicatorProps {
   isRefreshing: boolean;

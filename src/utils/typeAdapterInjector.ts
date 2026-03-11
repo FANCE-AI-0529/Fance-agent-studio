@@ -8,7 +8,7 @@ import {
   TypeConversionRule,
   AdapterNodeSpec,
   ConverterType,
-} from '@/types/wiringTypes';
+} from '../types/wiringTypes.ts';
 
 // ========== 类型兼容性矩阵 ==========
 

@@ -5,9 +5,9 @@
  */
 
 import { useEffect, useMemo, useRef } from 'react';
-import { useGlobalAgentStore } from '@/stores/globalAgentStore';
-import { useAgent } from '@/hooks/useAgents';
-import { syncBuilderGraphToDatabase } from '@/hooks/useGraphSync';
+import { useGlobalAgentStore } from '../stores/globalAgentStore.ts';
+import { useAgent } from './useAgents.ts';
+import { syncBuilderGraphToDatabase } from './useGraphSync.ts';
 import type { Node, Edge } from '@xyflow/react';
 
 /**

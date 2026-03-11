@@ -1,7 +1,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Brain, Wrench, BookOpen, Zap, Database, MessageSquare, GitBranch, UserCheck, Puzzle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils.ts';
 
 interface MiniNodeData {
   label?: string;

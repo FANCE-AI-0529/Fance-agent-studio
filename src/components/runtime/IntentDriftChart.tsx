@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { TrendingDown, AlertTriangle, CheckCircle, Target } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import {
   LineChart,
   Line,
@@ -15,7 +15,7 @@ import {
   Area,
   ComposedChart,
 } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface IntentDriftDataPoint {
   turn: number;

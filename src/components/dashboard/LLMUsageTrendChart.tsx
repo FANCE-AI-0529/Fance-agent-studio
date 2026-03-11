@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Brain, TrendingUp, Zap, DollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import {
   AreaChart,
   Area,
@@ -12,7 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useLLMUsageStats } from "@/hooks/useLLMUsageStats";
+import { useLLMUsageStats } from "../../hooks/useLLMUsageStats.ts";
 
 interface LLMUsageTrendChartProps {
   days?: number;

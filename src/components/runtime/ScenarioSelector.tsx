@@ -11,25 +11,25 @@ import {
   Sparkles,
   Check,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { useScenarios, Scenario } from "@/hooks/useScenarios";
+} from "../ui/tabs.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useScenarios, Scenario } from "../../hooks/useScenarios.ts";
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   interview: Briefcase,

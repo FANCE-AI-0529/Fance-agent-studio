@@ -10,14 +10,14 @@ import {
   X,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import VoiceInputButton from "@/components/runtime/VoiceInputButton";
-import PersonalityConfigurator from "./PersonalityConfigurator";
-import { PersonalityConfig, getDefaultPersonalityConfig, personalityPresets } from "@/utils/personalityToPrompt";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
+import { supabase } from "../../integrations/supabase/client.ts";
+import VoiceInputButton from "../runtime/VoiceInputButton.tsx";
+import PersonalityConfigurator from "./PersonalityConfigurator.tsx";
+import { PersonalityConfig, getDefaultPersonalityConfig, personalityPresets } from "../../utils/personalityToPrompt.ts";
 import { toast } from "sonner";
 
 interface Message {

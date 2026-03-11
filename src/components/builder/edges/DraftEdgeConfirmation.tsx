@@ -14,18 +14,18 @@ import {
   ArrowRight,
   Info,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { Switch } from '../../ui/switch.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import type { EdgeConfirmationData } from '@/stores/edgeConfirmationStore';
+} from '../../ui/tooltip.tsx';
+import { cn } from '../../../lib/utils.ts';
+import type { EdgeConfirmationData } from '../../../stores/edgeConfirmationStore.ts';
 
 // ========== 类型定义 ==========
 

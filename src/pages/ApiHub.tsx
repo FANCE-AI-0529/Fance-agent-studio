@@ -21,14 +21,14 @@ import {
   RefreshCw,
   Play
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { Input } from "../components/ui/input.tsx";
+import { Label } from "../components/ui/label.tsx";
+import { Textarea } from "../components/ui/textarea.tsx";
+import { ScrollArea } from "../components/ui/scroll-area.tsx";
 import {
   Dialog,
   DialogContent,
@@ -36,22 +36,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../components/ui/dropdown-menu.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+} from "../components/ui/select.tsx";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { supabase } from "../integrations/supabase/client.ts";
 import { useQuery } from "@tanstack/react-query";
 import { 
   useAgentApiKeys, 
@@ -59,7 +59,7 @@ import {
   useUpdateAgentApiKey,
   useDeleteAgentApiKey,
   useAgentApiStats 
-} from "@/hooks/useAgentApi";
+} from "../hooks/useAgentApi.ts";
 import { toast } from "sonner";
 import { format } from "date-fns";
 

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Brain, Search, Moon, Loader2, Plus, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTieredMemory } from '@/hooks/useTieredMemory';
-import { useDreaming } from '@/hooks/useDreaming';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Button } from '../ui/button.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
+import { useTieredMemory } from '../../hooks/useTieredMemory.ts';
+import { useDreaming } from '../../hooks/useDreaming.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface TieredMemoryPanelProps {
   agentId: string;

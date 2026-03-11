@@ -1,20 +1,20 @@
 import { Bot, User, CheckCircle2, Copy, RefreshCw, Check, Pencil, X, ThumbsUp, ThumbsDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { FormattedText } from "./FormattedText";
-import { TypewriterFormattedText } from "./TypewriterFormattedText";
-import { SmartChatBubble } from "./SmartChatBubble";
-import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated";
-import { MCPToolCard, MCPToolCall } from "./MCPToolCard";
-import { CitationCard, Citation } from "./CitationCard";
-import { MessageTimestamp } from "@/components/ui/message-timestamp";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { FormattedText } from "./FormattedText.tsx";
+import { TypewriterFormattedText } from "./TypewriterFormattedText.tsx";
+import { SmartChatBubble } from "./SmartChatBubble.tsx";
+import { AgentAvatarAnimated, AvatarState } from "./AgentAvatarAnimated.tsx";
+import { MCPToolCard, MCPToolCall } from "./MCPToolCard.tsx";
+import { CitationCard, Citation } from "./CitationCard.tsx";
+import { MessageTimestamp } from "../ui/message-timestamp.tsx";
+import { cn } from "../../lib/utils.ts";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { useMessageFeedback } from "@/hooks/useMessageFeedback";
-import { type AgentMeta, parseAgentMeta } from "@/constants/agentRoleThemes";
+import { useMessageFeedback } from "../../hooks/useMessageFeedback.ts";
+import { type AgentMeta, parseAgentMeta } from "../../constants/agentRoleThemes.ts";
 
 interface MessageAttachment {
   id: string;
@@ -280,7 +280,7 @@ export function MessageBubble({
                           src={attachment.url}
                           alt={attachment.name}
                           className="max-w-[200px] max-h-[150px] rounded-lg object-cover cursor-pointer hover:opacity-90"
-                          onClick={() => window.open(attachment.url, '_blank')}
+                          onClick={() => globalThis.open(attachment.url, '_blank')}
                         />
                       ) : (
                         <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs">
@@ -350,7 +350,7 @@ export function MessageBubble({
                 {skill}
               </Badge>
             )}
-            <MessageTimestamp timestamp={timestamp} showRelative={true} size="xs" />
+            <MessageTimestamp timestamp={timestamp} showRelative size="xs" />
             
             {/* Action buttons - show on hover */}
             <motion.div

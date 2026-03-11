@@ -7,11 +7,11 @@ import {
   Sparkles,
   ListChecks
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import MultiPortHandle from "../ports/MultiPortHandle";
-import { PortConfig, standardPorts } from "../ports/portTypes";
+import { cn } from "../../../lib/utils.ts";
+import { Badge } from "../../ui/badge.tsx";
+import { Button } from "../../ui/button.tsx";
+import MultiPortHandle from "../ports/MultiPortHandle.tsx";
+import { PortConfig, standardPorts } from "../ports/portTypes.ts";
 
 export interface ParameterSchema {
   name: string;

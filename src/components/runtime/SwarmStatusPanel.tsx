@@ -2,13 +2,13 @@
 
 import { motion } from 'framer-motion';
 import { Users, MessageSquare, Clock, Play, Pause, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { SwarmRuntimeState, SwarmMemberState, SwarmMemberStatus, SwarmMessage } from '@/types/swarms';
+import { cn } from '../../lib/utils.ts';
+import { Badge } from '../ui/badge.tsx';
+import { Button } from '../ui/button.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import type { SwarmRuntimeState, SwarmMemberState, SwarmMemberStatus, SwarmMessage } from '../../types/swarms.ts';
 
 interface SwarmStatusPanelProps {
   state: SwarmRuntimeState;

@@ -14,17 +14,17 @@ import {
   ArrowRight,
   Zap,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { useAICanvasGenerator, GeneratedCanvasResult } from "@/hooks/useAICanvasGenerator";
-import { aiAgentScenarios, AIAgentScenario } from "@/data/aiAgentScenarios";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useAICanvasGenerator, GeneratedCanvasResult } from "../../hooks/useAICanvasGenerator.ts";
+import { aiAgentScenarios, AIAgentScenario } from "../../data/aiAgentScenarios.ts";
 import type { Node, Edge } from "@xyflow/react";
-import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
-import type { MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
+import type { SimpleAgentConfig } from "./SimplifiedConfigPanel.tsx";
+import type { MountedKnowledgeBase } from "../../hooks/useBuilderKnowledge.ts";
 
 interface AIAgentGeneratorProps {
   isOpen: boolean;

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ThinkingEvent, ThinkingCategory } from '@/types/streaming';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { TypewriterFormattedText } from '@/components/runtime/TypewriterFormattedText';
+import { cn } from '../../lib/utils.ts';
+import { ThinkingEvent, ThinkingCategory } from '../../types/streaming.ts';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible.tsx';
+import { TypewriterFormattedText } from '../runtime/TypewriterFormattedText.tsx';
 
 interface ThinkingBubbleProps {
   thoughts: ThinkingEvent[];
@@ -95,7 +95,7 @@ export function ThinkingBubble({
                       <TypewriterFormattedText 
                         content={currentThought} 
                         speed={25}
-                        enabled={true}
+                        enabled
                       />
                     ) : (
                       <span>{currentThought || thoughts[thoughts.length - 1]?.thought || '准备中...'}</span>

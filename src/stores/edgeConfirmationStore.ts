@@ -4,7 +4,7 @@
 // =====================================================
 
 import { create } from 'zustand';
-import type { InputMapping } from '@/types/workflowDSL';
+import type { InputMapping } from '../types/workflowDSL.ts';
 
 // ========== 类型定义 ==========
 

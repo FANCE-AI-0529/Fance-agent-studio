@@ -12,16 +12,16 @@ import {
   ChevronRight,
   Layers
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNodeDataSnapshot } from '@/hooks/useNodeDataSnapshot';
-import { useCanvasHighlightStore } from '@/stores/canvasHighlightStore';
-import { DataFieldPreview } from './DataFieldPreview';
-import { DataTransformIndicator } from './DataTransformIndicator';
-import { cn } from '@/lib/utils';
+import { Card, CardHeader, CardTitle, CardContent } from '../../ui/card.tsx';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs.tsx';
+import { useNodeDataSnapshot } from '../../../hooks/useNodeDataSnapshot.ts';
+import { useCanvasHighlightStore } from '../../../stores/canvasHighlightStore.ts';
+import { DataFieldPreview } from './DataFieldPreview.tsx';
+import { DataTransformIndicator } from './DataTransformIndicator.tsx';
+import { cn } from '../../../lib/utils.ts';
 
 export function NodeDataSnapshotPanel() {
   const { 

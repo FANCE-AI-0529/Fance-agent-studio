@@ -15,10 +15,10 @@ import {
   ExternalLink,
   X,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useGlobalAgentStore, SyncEvent } from "@/stores/globalAgentStore";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { useGlobalAgentStore, SyncEvent } from "../../stores/globalAgentStore.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface GraphChangeToastProps {
   className?: string;

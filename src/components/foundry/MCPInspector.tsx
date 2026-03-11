@@ -10,21 +10,21 @@ import {
   Radio,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { useMCPInspect, MCPInspectResult } from "@/hooks/useMCPInspect";
-import { MCPTestResults } from "./MCPTestResults";
-import type { MCPConfig } from "./MCPConfigEditor";
+} from "../ui/select.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useMCPInspect, MCPInspectResult } from "../../hooks/useMCPInspect.ts";
+import { MCPTestResults } from "./MCPTestResults.tsx";
+import type { MCPConfig } from "./MCPConfigEditor.tsx";
 
 interface MCPInspectorProps {
   config: MCPConfig;

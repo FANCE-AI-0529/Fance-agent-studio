@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 import { toast } from "sonner";
-import type { TemplateStep } from "@/components/runtime/TaskChainTemplates";
-import { Json } from "@/integrations/supabase/types";
+import type { TemplateStep } from "../components/runtime/TaskChainTemplates.tsx";
+import { Json } from "../integrations/supabase/types.ts";
 
 export interface CustomTemplate {
   id: string;

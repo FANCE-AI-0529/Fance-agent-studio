@@ -8,8 +8,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import type {
   FunctionalAtom,
   SlotMatchResult,
@@ -18,7 +18,7 @@ import type {
   CompatiblePair,
   IOSpec,
   SlotType,
-} from '@/types/functionalAtom';
+} from '../types/functionalAtom.ts';
 
 /**
  * 混合资产检索返回值接口

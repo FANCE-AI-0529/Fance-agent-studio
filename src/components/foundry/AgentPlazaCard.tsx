@@ -4,15 +4,15 @@
  */
 
 import { Github, Tag, Cpu, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/card.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   AwesomeLLMAgent,
   AGENT_CATEGORIES,
   getAgentGitHubUrl,
-} from "@/data/awesomeLLMAgents";
+} from "../../data/awesomeLLMAgents.ts";
 
 interface AgentPlazaCardProps {
   agent: AwesomeLLMAgent;
@@ -34,7 +34,7 @@ export function AgentPlazaCard({
 
   const handleOpenGitHub = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(githubUrl, "_blank", "noopener,noreferrer");
+    globalThis.open(githubUrl, "_blank", "noopener,noreferrer");
   };
 
   return (

@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { findTemplateById, AgentTemplate } from "@/data/agentTemplates";
-import { usePublishedSkills } from "@/hooks/useSkills";
+import { findTemplateById, AgentTemplate } from "../data/agentTemplates.ts";
+import { usePublishedSkills } from "./useSkills.ts";
 
 interface AgentConfig {
   name: string;

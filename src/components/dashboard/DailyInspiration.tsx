@@ -2,11 +2,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Lightbulb, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useDailyInspiration, useIncrementInspirationView, type DailyInspiration as InspirationData } from "@/hooks/useDailyInspiration";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { useDailyInspiration, useIncrementInspirationView, type DailyInspiration as InspirationData } from "../../hooks/useDailyInspiration.ts";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { supabase } from "../../integrations/supabase/client.ts";
 import { toast } from "sonner";
 import {
   Carousel,
@@ -14,7 +14,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
+} from "../ui/carousel.tsx";
 
 const categoryColors: Record<string, string> = {
   "效率提升": "bg-primary/10 text-primary",

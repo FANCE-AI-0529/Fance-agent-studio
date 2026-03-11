@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { useGlobalAgentStore } from '@/stores/globalAgentStore';
-import { supabase } from '@/integrations/supabase/client';
+import { useGlobalAgentStore } from '../stores/globalAgentStore.ts';
+import { supabase } from '../integrations/supabase/client.ts';
 import { toast } from 'sonner';
-import type { GraphCommand, GraphNodeType } from '@/types/graphCommandTypes';
+import type { GraphCommand, GraphNodeType } from '../types/graphCommandTypes.ts';
 
 // ============= Types =============
 

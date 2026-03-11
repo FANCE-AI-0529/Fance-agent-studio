@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
-import { useStreamingStore } from '@/stores/streamingStore';
-import { StreamEvent, parseSSEEvent, GenerationPhase } from '@/types/streaming';
+import { useStreamingStore } from '../stores/streamingStore.ts';
+import { StreamEvent, parseSSEEvent, GenerationPhase } from '../types/streaming.ts';
 
 const STREAMING_GENERATOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/streaming-generator`;
 

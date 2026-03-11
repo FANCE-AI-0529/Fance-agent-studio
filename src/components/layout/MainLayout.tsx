@@ -1,15 +1,15 @@
 import { ReactNode } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "./AppSidebar";
-import { MobileBottomNav } from "./MobileBottomNav";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { SidebarProvider } from "../ui/sidebar.tsx";
+import { AppSidebar } from "./AppSidebar.tsx";
+import { MobileBottomNav } from "./MobileBottomNav.tsx";
+import { useIsMobile } from "../../hooks/use-mobile.tsx";
 import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
-import { HelpCenter } from "@/components/help/HelpCenter";
-import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "../ui/button.tsx";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet.tsx";
+import { OnboardingOverlay } from "../onboarding/OnboardingOverlay.tsx";
+import { HelpCenter } from "../help/HelpCenter.tsx";
+import { LanguageSwitcher } from "../settings/LanguageSwitcher.tsx";
+import { ThemeToggle } from "../ThemeToggle.tsx";
 import logoIcon from "@/assets/logo-icon.png";
 
 interface MainLayoutProps {
@@ -41,7 +41,7 @@ function MobileLayout({ children }: { children: ReactNode }) {
             </Button>
           </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64">
-          <SidebarProvider defaultOpen={true}>
+          <SidebarProvider defaultOpen>
             <AppSidebar />
           </SidebarProvider>
         </SheetContent>
@@ -82,7 +82,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen>
       <DesktopLayout>{children}</DesktopLayout>
     </SidebarProvider>
   );

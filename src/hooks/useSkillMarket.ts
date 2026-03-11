@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
-import type { MCPTool, MCPResource } from "@/components/foundry/MCPToolsList";
+import { supabase } from "../integrations/supabase/client.ts";
+import type { Tables } from "../integrations/supabase/types.ts";
+import type { MCPTool, MCPResource } from "../components/foundry/MCPToolsList.tsx";
 
 export type MarketSkill = Tables<"skills"> & {
   author?: { display_name: string | null } | null;

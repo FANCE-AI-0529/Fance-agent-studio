@@ -1,9 +1,9 @@
 import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Cpu, Zap, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '../../../lib/utils.ts';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
 
 interface PerformanceMetrics {
   nodeCount: number;

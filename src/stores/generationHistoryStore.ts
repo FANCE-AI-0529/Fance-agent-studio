@@ -12,7 +12,7 @@ import type {
   InjectedIntervention,
   GenerationWarning,
   RiskLevel 
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 
 // ========== 类型定义 ==========
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
 import { 
   Wrench, 
   Key, 
@@ -12,10 +12,10 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
-import { MCPBadge, MCPInfoBadges } from "@/components/foundry/MCPBadge";
-import { MCPEnvVarsEditor } from "./MCPEnvVarsEditor";
-import { MCPToolSelectorDialog, type MCPSkillData, type MCPTool } from "./MCPToolSelectorDialog";
-import { permissionMeta, type MPLPPermission } from "@/data/mcpPermissionMapping";
+import { MCPBadge, MCPInfoBadges } from "../foundry/MCPBadge.tsx";
+import { MCPEnvVarsEditor } from "./MCPEnvVarsEditor.tsx";
+import { MCPToolSelectorDialog, type MCPSkillData, type MCPTool } from "./MCPToolSelectorDialog.tsx";
+import { permissionMeta, type MPLPPermission } from "../../data/mcpPermissionMapping.ts";
 
 interface MCPSkillConfigCardProps {
   skill: MCPSkillData & {

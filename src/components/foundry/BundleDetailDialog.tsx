@@ -7,11 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
 import { 
   Package, 
   Download, 
@@ -22,12 +22,12 @@ import {
   Check,
   ShoppingCart
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
-import { useIsBundlePurchased, useBundleCheckout, useVerifyPurchase } from "@/hooks/useBundlePurchase";
-import { useAuth } from "@/contexts/AuthContext";
-import type { SkillBundle } from "@/hooks/useSkillBundles";
-import { cn } from "@/lib/utils";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useInstallBundle } from "../../hooks/useSkillBundleInstall.ts";
+import { useIsBundlePurchased, useBundleCheckout, useVerifyPurchase } from "../../hooks/useBundlePurchase.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import type { SkillBundle } from "../../hooks/useSkillBundles.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface BundleDetailDialogProps {
   bundle: SkillBundle | null;
@@ -124,7 +124,7 @@ export function BundleDetailDialog({
 
   const handlePurchase = () => {
     if (!user) {
-      window.location.href = "/auth";
+      globalThis.location.href = "/auth";
       return;
     }
 

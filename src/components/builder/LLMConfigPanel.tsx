@@ -27,25 +27,25 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,8 +55,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+} from "../ui/alert-dialog.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   useLLMProviders,
   useCreateLLMProvider,
@@ -67,7 +67,7 @@ import {
   useDeleteLLMModelConfig,
   PROVIDER_TEMPLATES,
   MODULE_TYPES,
-} from "@/hooks/useLLMProviders";
+} from "../../hooks/useLLMProviders.ts";
 
 interface LLMConfigPanelProps {
   agentId?: string | null;

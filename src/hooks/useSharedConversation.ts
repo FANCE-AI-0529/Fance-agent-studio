@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
 
 export interface SharedConversation {
   id: string;
@@ -201,7 +201,7 @@ export function useCreateSharedConversation() {
 
       return {
         ...data,
-        shareUrl: `${window.location.origin}/conversation/${shareToken}`,
+        shareUrl: `${globalThis.location.origin}/conversation/${shareToken}`,
       };
     },
     onSuccess: () => {

@@ -1,6 +1,6 @@
 import { X, Copy, Check, Download } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 
 // AgentManifest 结构遵循开发逻辑文档 6.4 规范
 export interface AgentManifest {

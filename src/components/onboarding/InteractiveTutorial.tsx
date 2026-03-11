@@ -18,11 +18,11 @@ import {
   BookOpen,
   Trophy,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { Card, CardContent } from '../ui/card.tsx';
+import { cn } from '../../lib/utils.ts';
 
 interface TutorialStep {
   id: string;

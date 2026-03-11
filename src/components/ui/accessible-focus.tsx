@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils.ts';
 
 // ========== 焦点陷阱 ==========
 
@@ -281,7 +281,7 @@ export function usePrefersReducedMotion(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false);
 
   React.useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mediaQuery = globalThis.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
 
     const handler = (e: MediaQueryListEvent) => {
@@ -323,7 +323,7 @@ export function usePrefersHighContrast(): boolean {
   const [prefersHighContrast, setPrefersHighContrast] = React.useState(false);
 
   React.useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-contrast: more)');
+    const mediaQuery = globalThis.matchMedia('(prefers-contrast: more)');
     setPrefersHighContrast(mediaQuery.matches);
 
     const handler = (e: MediaQueryListEvent) => {

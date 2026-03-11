@@ -1,7 +1,7 @@
 // P3-03: AI Emotion Avatar - Display avatar expressions based on message sentiment
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export type EmotionType = 
   | "neutral" 

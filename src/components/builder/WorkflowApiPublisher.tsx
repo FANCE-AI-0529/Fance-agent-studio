@@ -3,15 +3,15 @@ import {
   Globe, Copy, CheckCircle, Power, PowerOff, BarChart3,
   Clock, Zap, Shield, ExternalLink, Code2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { usePublishedApis, usePublishWorkflowApi, useToggleApiStatus } from "@/hooks/usePublishedApis";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { usePublishedApis, usePublishWorkflowApi, useToggleApiStatus } from "../../hooks/usePublishedApis.ts";
 import type { Node, Edge } from "@xyflow/react";
 import { toast } from "sonner";
 

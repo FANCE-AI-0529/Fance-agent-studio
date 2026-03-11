@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Node, Edge } from "@xyflow/react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 import { 
   convertToReactFlowNodes, 
   convertToReactFlowEdges,
@@ -9,12 +9,12 @@ import {
   distributeSkillsAroundAgent,
   distributeKnowledgeAroundAgent,
   getManusPosition,
-} from "@/utils/canvasLayoutEngine";
-import { toast } from "@/hooks/use-toast";
-import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
-import type { Skill } from "@/components/builder/SkillMarketplace";
-import type { MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
-import { MANUS_KERNEL } from "@/data/manusKernel";
+} from "../utils/canvasLayoutEngine.ts";
+import { toast } from "./use-toast.ts";
+import type { SimpleAgentConfig } from "../components/builder/SimplifiedConfigPanel.tsx";
+import type { Skill } from "../components/builder/SkillMarketplace.tsx";
+import type { MountedKnowledgeBase } from "./useBuilderKnowledge.ts";
+import { MANUS_KERNEL } from "../data/manusKernel.ts";
 
 export interface GeneratedCanvasResult {
   nodes: Node[];

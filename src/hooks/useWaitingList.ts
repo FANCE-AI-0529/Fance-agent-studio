@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "@/hooks/useAdminInvite";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useIsAdmin } from "./useAdminInvite.ts";
+import { toast } from "./use-toast.ts";
 
 export interface WaitingListEntry {
   id: string;

@@ -8,7 +8,7 @@ import {
   CompletionSummary,
   createInitialStreamingState,
   generateStreamingId,
-} from '@/types/streaming';
+} from '../types/streaming.ts';
 
 interface StreamingActions {
   // 会话管理

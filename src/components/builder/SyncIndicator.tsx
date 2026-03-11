@@ -11,10 +11,10 @@ import {
   Tooltip, 
   TooltipContent, 
   TooltipTrigger 
-} from '@/components/ui/tooltip';
+} from '../ui/tooltip.tsx';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils.ts';
 
 interface SyncIndicatorProps {
   isSubscribed: boolean;

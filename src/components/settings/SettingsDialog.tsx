@@ -4,33 +4,33 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
+} from "../ui/dialog.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { useToast } from "../../hooks/use-toast.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useLanguage } from "../../contexts/LanguageContext.tsx";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useUpdateProfile, useUploadAvatar } from "@/hooks/useProfileUpdate";
-import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useNotificationPreferences";
-import { useIsAdmin } from "@/hooks/useAdminInvite";
-import { GlobalModelSettings } from "./GlobalModelSettings";
-import { MCPServerManager } from "./MCPServerManager";
-import { ModelProviderSettings } from "./ModelProviderSettings";
-import { ChangePasswordForm } from "./ChangePasswordForm";
-import { TwoFactorAuthForm } from "./TwoFactorAuthForm";
-import { DataExportForm } from "./DataExportForm";
-import { cn } from "@/lib/utils";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useUpdateProfile, useUploadAvatar } from "../../hooks/useProfileUpdate.ts";
+import { useNotificationPreferences, useUpdateNotificationPreferences } from "../../hooks/useNotificationPreferences.ts";
+import { useIsAdmin } from "../../hooks/useAdminInvite.ts";
+import { GlobalModelSettings } from "./GlobalModelSettings.tsx";
+import { MCPServerManager } from "./MCPServerManager.tsx";
+import { ModelProviderSettings } from "./ModelProviderSettings.tsx";
+import { ChangePasswordForm } from "./ChangePasswordForm.tsx";
+import { TwoFactorAuthForm } from "./TwoFactorAuthForm.tsx";
+import { DataExportForm } from "./DataExportForm.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   Settings,
   User,

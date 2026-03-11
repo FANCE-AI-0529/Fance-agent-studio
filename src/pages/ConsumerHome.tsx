@@ -1,23 +1,23 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { AuroraBackground } from "@/components/consumer/AuroraBackground";
-import { ConsumerHeader } from "@/components/consumer/ConsumerHeader";
-import { HeroInput } from "@/components/consumer/HeroInput";
-import { InspirationCapsules } from "@/components/consumer/InspirationCapsules";
-import { AgentDock } from "@/components/consumer/AgentDock";
-import { AgentGridList } from "@/components/consumer/AgentGridList";
-import { MagicLoader } from "@/components/consumer/MagicLoader";
-import { BuildCompletionCard } from "@/components/consumer/BuildCompletionCard";
-import { ClarificationCard } from "@/components/consumer/ClarificationCard";
-import { UploadGuideCard } from "@/components/consumer/UploadGuideCard";
-import { MiniStudioPreview } from "@/components/consumer/MiniStudioPreview";
-import { PoweredByBadge } from "@/components/consumer/PoweredByBadge";
-import { useInvisibleBuilder, type InvisibleBuildResult } from "@/hooks/useInvisibleBuilder";
-import { useInlineUpload } from "@/hooks/useInlineUpload";
-import { useAppModeStore } from "@/stores/appModeStore";
+import { AuroraBackground } from "../components/consumer/AuroraBackground.tsx";
+import { ConsumerHeader } from "../components/consumer/ConsumerHeader.tsx";
+import { HeroInput } from "../components/consumer/HeroInput.tsx";
+import { InspirationCapsules } from "../components/consumer/InspirationCapsules.tsx";
+import { AgentDock } from "../components/consumer/AgentDock.tsx";
+import { AgentGridList } from "../components/consumer/AgentGridList.tsx";
+import { MagicLoader } from "../components/consumer/MagicLoader.tsx";
+import { BuildCompletionCard } from "../components/consumer/BuildCompletionCard.tsx";
+import { ClarificationCard } from "../components/consumer/ClarificationCard.tsx";
+import { UploadGuideCard } from "../components/consumer/UploadGuideCard.tsx";
+import { MiniStudioPreview } from "../components/consumer/MiniStudioPreview.tsx";
+import { PoweredByBadge } from "../components/consumer/PoweredByBadge.tsx";
+import { useInvisibleBuilder, type InvisibleBuildResult } from "../hooks/useInvisibleBuilder.ts";
+import { useInlineUpload } from "../hooks/useInlineUpload.ts";
+import { useAppModeStore } from "../stores/appModeStore.ts";
 import { Sparkles } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "../hooks/use-toast.ts";
 type HomeViewState = "input" | "building" | "complete";
 export default function ConsumerHome() {
   const navigate = useNavigate();
@@ -60,8 +60,8 @@ export default function ConsumerHome() {
         toggleMode();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [toggleMode]);
 
   // Handle errors
@@ -256,7 +256,7 @@ export default function ConsumerHome() {
               <MagicLoader steps={steps} currentStepIndex={currentStepIndex} agentName={buildResult?.agentName} isPaused={isPaused} clarificationComponent={renderClarificationComponent()} />
               
               {/* Mini Studio Preview during build */}
-              {buildResult?.agentId && <MiniStudioPreview agentId={buildResult.agentId} latestAgentMessage={steps[currentStepIndex]?.text || null} defaultExpanded={true} className="!bottom-20" />}
+              {buildResult?.agentId && <MiniStudioPreview agentId={buildResult.agentId} latestAgentMessage={steps[currentStepIndex]?.text || null} defaultExpanded className="!bottom-20" />}
             </motion.div>}
 
           {/* Complete View */}

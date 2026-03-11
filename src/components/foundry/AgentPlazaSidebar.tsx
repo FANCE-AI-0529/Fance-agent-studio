@@ -5,22 +5,22 @@
 
 import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+} from "../ui/collapsible.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   AwesomeLLMAgent,
   AgentCategory,
   AGENT_CATEGORIES,
   getAgentsByCategory,
   searchAgents,
-} from "@/data/awesomeLLMAgents";
+} from "../../data/awesomeLLMAgents.ts";
 
 interface AgentPlazaSidebarProps {
   selectedAgentId: string | null;

@@ -1,7 +1,7 @@
 // P3-05: Achievement tracking hook with database integration
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
 
 // Re-export types for backward compatibility
 export type AchievementCategory = 

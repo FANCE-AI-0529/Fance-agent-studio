@@ -15,19 +15,19 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card.tsx';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { Input } from '../../ui/input.tsx';
+import { Textarea } from '../../ui/textarea.tsx';
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from '../../ui/select.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
 import { 
   Dialog,
   DialogContent,
@@ -36,9 +36,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import type { TestCase, GenerateTestCasesRequest } from '@/types/agentEvals';
-import { cn } from '@/lib/utils';
+} from '../../ui/dialog.tsx';
+import type { TestCase, GenerateTestCasesRequest } from '../../../types/agentEvals.ts';
+import { cn } from '../../../lib/utils.ts';
 
 interface TestSetManagerProps {
   agentId: string;

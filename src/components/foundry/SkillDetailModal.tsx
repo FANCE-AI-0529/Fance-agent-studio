@@ -4,12 +4,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Separator } from "../ui/separator.tsx";
 import {
   Star,
   Download,
@@ -22,14 +22,14 @@ import {
   ExternalLink,
   Wrench,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSkillRatings, useMySkillRating, useSubmitRating } from "@/hooks/useSkillRating";
-import { useInstallSkill, useIsSkillInstalled } from "@/hooks/useSkillInstall";
-import { useAuth } from "@/contexts/AuthContext";
-import type { MarketSkill } from "@/hooks/useSkillMarket";
+import { cn } from "../../lib/utils.ts";
+import { useSkillRatings, useMySkillRating, useSubmitRating } from "../../hooks/useSkillRating.ts";
+import { useInstallSkill, useIsSkillInstalled } from "../../hooks/useSkillInstall.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import type { MarketSkill } from "../../hooks/useSkillMarket.ts";
 import { format } from "date-fns";
-import { MCPBadge, MCPInfoBadges } from "@/components/foundry/MCPBadge";
-import { MCPToolsList, MCPResourcesList, type MCPTool, type MCPResource } from "@/components/foundry/MCPToolsList";
+import { MCPBadge, MCPInfoBadges } from "./MCPBadge.tsx";
+import { MCPToolsList, MCPResourcesList, type MCPTool, type MCPResource } from "./MCPToolsList.tsx";
 
 interface SkillDetailModalProps {
   skill: MarketSkill | null;
@@ -132,7 +132,7 @@ export function SkillDetailModal({ skill, open, onOpenChange }: SkillDetailModal
                     variant="link"
                     size="sm"
                     className="h-auto p-0 text-muted-foreground hover:text-primary"
-                    onClick={() => window.open(skill.transport_url!, "_blank")}
+                    onClick={() => globalThis.open(skill.transport_url!, "_blank")}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
                     GitHub

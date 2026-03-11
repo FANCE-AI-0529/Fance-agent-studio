@@ -3,7 +3,7 @@
 // Combination Verification Types
 // =====================================================
 
-import type { WiringConnection } from './wiringTypes';
+import type { WiringConnection } from './wiringTypes.ts';
 
 // ========== 槽位类型 ==========
 

@@ -10,17 +10,17 @@ import {
   FileBox,
   Key,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import type { MCPConfig } from "./MCPConfigEditor";
-import type { MCPInspectResult } from "@/hooks/useMCPInspect";
-import { calculateMCPPermissions } from "@/data/mcpPermissionMapping";
-import { mcpCategories } from "@/data/mcpCategories";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Label } from "../ui/label.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { toast } from "../../hooks/use-toast.ts";
+import type { MCPConfig } from "./MCPConfigEditor.tsx";
+import type { MCPInspectResult } from "../../hooks/useMCPInspect.ts";
+import { calculateMCPPermissions } from "../../data/mcpPermissionMapping.ts";
+import { mcpCategories } from "../../data/mcpCategories.ts";
 
 interface MCPSkillMdGeneratorProps {
   config: MCPConfig;

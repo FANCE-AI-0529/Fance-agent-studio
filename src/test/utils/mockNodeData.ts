@@ -2,7 +2,7 @@
  * Mock Data Factory for Workflow Node Testing
  */
 
-import type { LLMNodeData } from "@/components/builder/nodes/LLMNode";
+import type { LLMNodeData } from "../../components/builder/nodes/LLMNode.tsx";
 
 // =====================================================
 // LLM Node Mock Data

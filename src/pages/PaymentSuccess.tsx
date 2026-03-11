@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "../components/ui/button.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
 import { CheckCircle2, Loader2, XCircle, Coins, ArrowRight, Home } from "lucide-react";
-import { useTokenWallet } from "@/hooks/useTokenWallet";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useTokenWallet } from "../hooks/useTokenWallet.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { supabase } from "../integrations/supabase/client.ts";
 
 type PaymentStatus = "loading" | "success" | "error";
 

@@ -1,16 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCreatorProfile, useCreatorAgents, useCreatorStats } from "@/hooks/useCreatorProfile";
-import { useUserActivities } from "@/hooks/useActivities";
-import { useIsFollowing } from "@/hooks/useFollow";
-import { FollowButton } from "@/components/social/FollowButton";
-import { ActivityFeed } from "@/components/social/ActivityFeed";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { useCreatorProfile, useCreatorAgents, useCreatorStats } from "../hooks/useCreatorProfile.ts";
+import { useUserActivities } from "../hooks/useActivities.ts";
+import { useIsFollowing } from "../hooks/useFollow.ts";
+import { FollowButton } from "../components/social/FollowButton.tsx";
+import { ActivityFeed } from "../components/social/ActivityFeed.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
 import { 
   CheckCircle, 
   Users, 

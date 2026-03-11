@@ -10,11 +10,11 @@ import {
   GitBranch,
   Sparkles,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { BuildReplayState } from "@/hooks/useAgentBuildReplay";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { BuildReplayState } from "../../hooks/useAgentBuildReplay.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface BuildReplayOverlayProps {
   state: BuildReplayState;

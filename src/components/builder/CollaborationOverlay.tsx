@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Users, Circle, MessageSquare, Wifi, WifiOff } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "../ui/avatar.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { Input } from "../ui/input.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover.tsx";
+import { cn } from "../../lib/utils.ts";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCollaboration, CollaboratorPresence, CollaborationEvent } from "@/hooks/useCollaboration";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCollaboration, CollaboratorPresence, CollaborationEvent } from "../../hooks/useCollaboration.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 
 interface CollaborationOverlayProps {
   agentId: string;

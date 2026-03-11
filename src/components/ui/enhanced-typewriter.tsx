@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface EnhancedTypewriterProps {

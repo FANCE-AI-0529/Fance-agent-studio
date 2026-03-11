@@ -23,76 +23,76 @@ import {
   Sparkles,
   Brain,
 } from "lucide-react";
-import { useAppModeStore } from "@/stores/appModeStore";
-import { ConsumerRuntime } from "@/components/runtime/ConsumerRuntime";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
-import { Badge } from "@/components/ui/badge";
-import { EnhancedConfirmCard as ConfirmCard, ConfirmAction, getMCPRiskLevel, getMCPToolPermissions } from "@/components/runtime/EnhancedConfirmCard";
-import { QuickShareButton } from "@/components/runtime/ShareDialog";
-import { QuickCommandPalette } from "@/components/runtime/QuickCommandPalette";
-import { AgentQuickSwitcher, QuickAgent } from "@/components/runtime/AgentQuickSwitcher";
-import { TraceTree } from "@/components/runtime/TraceTree";
-import { useTrace, TraceEventType, TraceSession, TraceEvent } from "@/components/runtime/trace";
-import { AgentSelector } from "@/components/runtime/AgentSelector";
-import { MPLPStepper, MPLPPhase } from "@/components/runtime/MPLPStepper";
-import { ThinkingProcess, LogEntry, createLogEntry } from "@/components/runtime/ThinkingProcess";
-import { ModelSelector, availableModels } from "@/components/runtime/ModelSelector";
-import { SystemPromptEditor } from "@/components/runtime/SystemPromptEditor";
-import { ModelRoutingConfig } from "@/components/runtime/ModelRoutingConfig";
-import { FormattedText } from "@/components/runtime/FormattedText";
-import { TypewriterFormattedText } from "@/components/runtime/TypewriterFormattedText";
-import { MessageBubble } from "@/components/runtime/MessageBubble";
-import { TypingIndicator } from "@/components/runtime/TypingIndicator";
-import VoiceInputButton from "@/components/runtime/VoiceInputButton";
-import WelcomeGuide from "@/components/runtime/WelcomeGuide";
-import { EnhancedWelcomeCard } from "@/components/runtime/EnhancedWelcomeCard";
-import { extractAgentCapabilities } from "@/utils/capabilityExtractor";
-import OnboardingTour, { useOnboardingTour } from "@/components/runtime/OnboardingTour";
-import { QuickCommandMenu, MessageTemplates } from "@/components/runtime/QuickCommandMenu";
-import { FileUploadButton } from "@/components/runtime/FileUploadButton";
-import { AttachmentPreview } from "@/components/runtime/AttachmentPreview";
-import { DevToolsPanel } from "@/components/runtime/DevToolsPanel";
-import { CircuitBreakerContent } from "@/components/runtime/CircuitBreakerContent";
-import { ContextPanelContent } from "@/components/runtime/ContextPanelContent";
-import { AgentAvatarAnimated, AvatarState } from "@/components/runtime/AgentAvatarAnimated";
-import { SceneBackground, scenePresets } from "@/components/runtime/SceneBackground";
-import { ScenarioSelector } from "@/components/runtime/ScenarioSelector";
-import { ScenarioPrompts } from "@/components/runtime/ScenarioPrompts";
-import { MemoryPanel } from "@/components/runtime/MemoryPanel";
-import { ManusMemoryPanel } from "@/components/runtime/ManusMemoryPanel";
-import { ManusStatusBadge } from "@/components/runtime/ManusStatusIndicator";
-import { ImmersiveHeader } from "@/components/runtime/ImmersiveHeader";
-import { TaskSchedulerPanel } from "@/components/runtime/TaskSchedulerPanel";
-import { ExecutionHistoryContent } from "@/components/runtime/ExecutionHistoryContent";
-import { SwarmStatusPanel } from "@/components/runtime/SwarmStatusPanel";
-import { useSwarmStore } from "@/stores/swarmStore";
-import { useSwarmRunner } from "@/hooks/useSwarmRunner";
-import { useDevToolsState } from "@/hooks/useDevToolsState";
-import { useManusKernel } from "@/hooks/useManusKernel";
-import { useNanoClawExecutor } from "@/hooks/useNanoClawExecutor";
-import { useRuntimeStore } from "@/stores/runtimeStore";
-import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "@/hooks/useScenarios";
-import { useMemoryContext } from "@/hooks/useMemory";
-import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
-import { useManusSessionFiles } from "@/hooks/useManusSessionFiles";
-import { useAgentChat, createMultimodalContent, type ChatMessage } from "@/hooks/useAgentChat";
-import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
-import { useChatSession } from "@/hooks/useChatSession";
-import { useDeployedAgents, Agent } from "@/hooks/useAgents";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAppModeStore } from "../stores/appModeStore.ts";
+import { ConsumerRuntime } from "../components/runtime/ConsumerRuntime.tsx";
+import { Switch } from "../components/ui/switch.tsx";
+import { Label } from "../components/ui/label.tsx";
+import { TooltipProvider } from "../components/ui/tooltip.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { AutoResizeTextarea } from "../components/ui/auto-resize-textarea.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { EnhancedConfirmCard as ConfirmCard, ConfirmAction, getMCPRiskLevel, getMCPToolPermissions } from "../components/runtime/EnhancedConfirmCard.tsx";
+import { QuickShareButton } from "../components/runtime/ShareDialog.tsx";
+import { QuickCommandPalette } from "../components/runtime/QuickCommandPalette.tsx";
+import { AgentQuickSwitcher, QuickAgent } from "../components/runtime/AgentQuickSwitcher.tsx";
+import { TraceTree } from "../components/runtime/TraceTree.tsx";
+import { useTrace, TraceEventType, TraceSession, TraceEvent } from "../components/runtime/trace/index.ts";
+import { AgentSelector } from "../components/runtime/AgentSelector.tsx";
+import { MPLPStepper, MPLPPhase } from "../components/runtime/MPLPStepper.tsx";
+import { ThinkingProcess, LogEntry, createLogEntry } from "../components/runtime/ThinkingProcess.tsx";
+import { ModelSelector, availableModels } from "../components/runtime/ModelSelector.tsx";
+import { SystemPromptEditor } from "../components/runtime/SystemPromptEditor.tsx";
+import { ModelRoutingConfig } from "../components/runtime/ModelRoutingConfig.tsx";
+import { FormattedText } from "../components/runtime/FormattedText.tsx";
+import { TypewriterFormattedText } from "../components/runtime/TypewriterFormattedText.tsx";
+import { MessageBubble } from "../components/runtime/MessageBubble.tsx";
+import { TypingIndicator } from "../components/runtime/TypingIndicator.tsx";
+import VoiceInputButton from "../components/runtime/VoiceInputButton.tsx";
+import WelcomeGuide from "../components/runtime/WelcomeGuide.tsx";
+import { EnhancedWelcomeCard } from "../components/runtime/EnhancedWelcomeCard.tsx";
+import { extractAgentCapabilities } from "../utils/capabilityExtractor.ts";
+import OnboardingTour, { useOnboardingTour } from "../components/runtime/OnboardingTour.tsx";
+import { QuickCommandMenu, MessageTemplates } from "../components/runtime/QuickCommandMenu.tsx";
+import { FileUploadButton } from "../components/runtime/FileUploadButton.tsx";
+import { AttachmentPreview } from "../components/runtime/AttachmentPreview.tsx";
+import { DevToolsPanel } from "../components/runtime/DevToolsPanel.tsx";
+import { CircuitBreakerContent } from "../components/runtime/CircuitBreakerContent.tsx";
+import { ContextPanelContent } from "../components/runtime/ContextPanelContent.tsx";
+import { AgentAvatarAnimated, AvatarState } from "../components/runtime/AgentAvatarAnimated.tsx";
+import { SceneBackground, scenePresets } from "../components/runtime/SceneBackground.tsx";
+import { ScenarioSelector } from "../components/runtime/ScenarioSelector.tsx";
+import { ScenarioPrompts } from "../components/runtime/ScenarioPrompts.tsx";
+import { MemoryPanel } from "../components/runtime/MemoryPanel.tsx";
+import { ManusMemoryPanel } from "../components/runtime/ManusMemoryPanel.tsx";
+import { ManusStatusBadge } from "../components/runtime/ManusStatusIndicator.tsx";
+import { ImmersiveHeader } from "../components/runtime/ImmersiveHeader.tsx";
+import { TaskSchedulerPanel } from "../components/runtime/TaskSchedulerPanel.tsx";
+import { ExecutionHistoryContent } from "../components/runtime/ExecutionHistoryContent.tsx";
+import { SwarmStatusPanel } from "../components/runtime/SwarmStatusPanel.tsx";
+import { useSwarmStore } from "../stores/swarmStore.ts";
+import { useSwarmRunner } from "../hooks/useSwarmRunner.ts";
+import { useDevToolsState } from "../hooks/useDevToolsState.ts";
+import { useManusKernel } from "../hooks/useManusKernel.ts";
+import { useNanoClawExecutor } from "../hooks/useNanoClawExecutor.ts";
+import { useRuntimeStore } from "../stores/runtimeStore.ts";
+import { useScenarios, Scenario, useSetSessionScenario, useActiveScenario } from "../hooks/useScenarios.ts";
+import { useMemoryContext } from "../hooks/useMemory.ts";
+import { useAutoMemoryExtraction } from "../hooks/useAutoMemoryExtraction.ts";
+import { useManusSessionFiles } from "../hooks/useManusSessionFiles.ts";
+import { useAgentChat, createMultimodalContent, type ChatMessage } from "../hooks/useAgentChat.ts";
+import { useFileUpload, type UploadedFile } from "../hooks/useFileUpload.ts";
+import { useChatSession } from "../hooks/useChatSession.ts";
+import { useDeployedAgents, Agent } from "../hooks/useAgents.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../components/ui/scroll-area.tsx";
 import {
   ResizablePanelGroup,
   ResizablePanel,
-} from "@/components/ui/resizable";
+} from "../components/ui/resizable.tsx";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils.ts";
 
 // Attachment info stored with messages
 interface MessageAttachment {
@@ -359,7 +359,7 @@ function createMCPConfirmAction(
 const Runtime = () => {
   const { user } = useAuth();
   const { mode } = useAppModeStore();
-  const [urlSearchParams] = useState(() => new URLSearchParams(window.location.search));
+  const [urlSearchParams] = useState(() => new URLSearchParams(globalThis.location.search));
   const agentIdFromUrl = urlSearchParams.get('agentId');
   
   const { data: deployedAgents = [], isLoading: isLoadingAgents } = useDeployedAgents();
@@ -451,8 +451,8 @@ const Runtime = () => {
         setIsDeveloperMode(prev => !prev);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Get current agent config for AI
@@ -1392,7 +1392,7 @@ const Runtime = () => {
                       className="h-6 text-xs text-destructive hover:text-destructive"
                       onClick={() => {
                         // Navigate to HIVE settings
-                        window.location.href = '/hive?tab=settings';
+                        globalThis.location.href = '/hive?tab=settings';
                       }}
                     >
                       前往设置 →
@@ -1511,7 +1511,7 @@ const Runtime = () => {
                             colorId={(selectedAgent?.manifest as any)?.colorId || "blue"}
                             state="thinking"
                             size="sm"
-                            showGlow={true}
+                            showGlow
                           />
                           <div className="flex-1">
                             <TypingIndicator phase={

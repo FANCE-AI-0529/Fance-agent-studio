@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 import { toast } from "sonner";
-import type { PricingModel, BulkDiscount } from "@/types/economy";
+import type { PricingModel, BulkDiscount } from "../types/economy.ts";
 
 export function useSkillPricing(skillId: string | null) {
   const queryClient = useQueryClient();

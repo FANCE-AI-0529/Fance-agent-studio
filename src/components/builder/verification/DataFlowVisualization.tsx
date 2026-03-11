@@ -16,18 +16,18 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card.tsx';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
-import type { DataFlowPath, NodeSpec } from '@/types/verificationTypes';
+} from '../../ui/tooltip.tsx';
+import { cn } from '../../../lib/utils.ts';
+import { toast } from '../../../hooks/use-toast.ts';
+import type { DataFlowPath, NodeSpec } from '../../../types/verificationTypes.ts';
 
 interface DataFlowVisualizationProps {
   paths: DataFlowPath[];

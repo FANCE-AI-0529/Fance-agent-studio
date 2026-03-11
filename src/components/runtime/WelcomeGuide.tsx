@@ -12,12 +12,12 @@ import {
   Wand2,
   HelpCircle
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Agent } from "@/hooks/useAgents";
-import { cn } from "@/lib/utils";
-import { AgentAvatarDisplay, AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Agent } from "../../hooks/useAgents.ts";
+import { cn } from "../../lib/utils.ts";
+import { AgentAvatarDisplay, AgentAvatar } from "../builder/AgentAvatarPicker.tsx";
 
 interface QuickAction {
   icon: React.ReactNode;

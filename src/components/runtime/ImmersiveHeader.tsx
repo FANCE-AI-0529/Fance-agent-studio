@@ -1,13 +1,13 @@
 import { History, Code2, MessageCircle, Theater, Brain, Share2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AgentSelector } from "./AgentSelector";
-import { ScenarioSelector } from "./ScenarioSelector";
-import { MemoryPanel } from "./MemoryPanel";
-import { ShareDialog } from "./ShareDialog";
-import { Scenario } from "@/hooks/useScenarios";
-import { Agent } from "@/hooks/useAgents";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { AgentSelector } from "./AgentSelector.tsx";
+import { ScenarioSelector } from "./ScenarioSelector.tsx";
+import { MemoryPanel } from "./MemoryPanel.tsx";
+import { ShareDialog } from "./ShareDialog.tsx";
+import { Scenario } from "../../hooks/useScenarios.ts";
+import { Agent } from "../../hooks/useAgents.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface HeaderMessage {
   id: string;

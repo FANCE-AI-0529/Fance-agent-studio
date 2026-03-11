@@ -6,9 +6,9 @@ import {
 } from "@xyflow/react";
 import type { EdgeProps } from "@xyflow/react";
 import { Circle } from "lucide-react";
-import { PortType, portColors } from "../ports/portTypes";
-import type { EdgeMapping } from "../variables/variableTypes";
-import { cn } from "@/lib/utils";
+import { PortType, portColors } from "../ports/portTypes.ts";
+import type { EdgeMapping } from "../variables/variableTypes.ts";
+import { cn } from "../../../lib/utils.ts";
 
 export type EdgeDebugStatus = "idle" | "active" | "completed";
 

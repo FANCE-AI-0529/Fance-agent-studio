@@ -18,22 +18,22 @@ import {
   Target,
   List,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+} from "../ui/tooltip.tsx";
+import { cn } from "../../lib/utils.ts";
 import { toast } from "sonner";
 
 export interface ConversationMessage {
@@ -124,7 +124,7 @@ export function ConversationSummary({
       setSummary(result);
       setIsExpanded(true);
       toast.success("对话摘要已生成");
-    } catch (error) {
+    } catch (_error) {
       toast.error("摘要生成失败，请重试");
     } finally {
       setIsGenerating(false);

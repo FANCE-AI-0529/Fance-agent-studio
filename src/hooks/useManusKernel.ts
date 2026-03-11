@@ -1,15 +1,15 @@
 import { useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useManusMemoryStore } from '@/stores/manusMemoryStore';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useManusMemoryStore } from '../stores/manusMemoryStore.ts';
 import { 
   MANUS_KERNEL, 
   MANUS_FILE_PATHS, 
   generateDefaultContent,
   parseTaskPlanPhases,
   parseFindingsCount
-} from '@/data/manusKernel';
-import { toast } from '@/hooks/use-toast';
+} from '../data/manusKernel.ts';
+import { toast } from './use-toast.ts';
 
 export interface ManusMemoryFile {
   id: string;

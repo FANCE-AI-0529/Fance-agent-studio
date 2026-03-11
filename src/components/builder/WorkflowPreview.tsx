@@ -21,10 +21,10 @@ import {
   XCircle,
   Shield,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   WorkflowDSL,
   StageSpec,
@@ -33,9 +33,9 @@ import {
   GenerationWarning,
   RiskLevel,
   ComplianceReport,
-} from "@/types/workflowDSL";
-import { ComplianceReportPanel, PermissionBadges } from "./ComplianceReportPanel";
-import { PERMISSION_METADATA } from "@/utils/policyInjector";
+} from "../../types/workflowDSL.ts";
+import { ComplianceReportPanel, PermissionBadges } from "./ComplianceReportPanel.tsx";
+import { PERMISSION_METADATA } from "../../utils/policyInjector.ts";
 
 // ========== 类型定义 ==========
 

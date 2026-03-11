@@ -14,14 +14,14 @@ import {
   Clock,
   Zap,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Textarea } from '../ui/textarea.tsx';
+import { Label } from '../ui/label.tsx';
+import { Input } from '../ui/input.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { cn } from '../../lib/utils.ts';
 
 interface PromptABTestProps {
   currentPrompt: string;

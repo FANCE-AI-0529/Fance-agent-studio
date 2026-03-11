@@ -32,18 +32,18 @@ import {
   FileOutput,
   Boxes,
 } from "lucide-react";
-import { MCPActionsPanel, MCPActionDragItem, InterventionDragItem } from "./MCPActionsPanel";
-import { NodeCategoryPanel, type NodeCategory, type NodeCategoryItem } from "./NodeCategoryPanel";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
-import { usePublishedSkills, type Skill as DbSkill } from "@/hooks/useSkills";
-import { useKnowledgeBases } from "@/hooks/useKnowledgeBases";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { LanguageSwitcher } from "@/components/settings/LanguageSwitcher";
-import { mcpCategories, getMCPCategoryById, runtimeEnvConfig, scopeConfig } from "@/data/mcpCategories";
-import { cn } from "@/lib/utils";
+import { MCPActionsPanel, MCPActionDragItem, InterventionDragItem } from "./MCPActionsPanel.tsx";
+import { NodeCategoryPanel, type NodeCategory, type NodeCategoryItem } from "./NodeCategoryPanel.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { EmptyState } from "../ui/empty-state.tsx";
+import { usePublishedSkills, type Skill as DbSkill } from "../../hooks/useSkills.ts";
+import { useKnowledgeBases } from "../../hooks/useKnowledgeBases.ts";
+import { useLanguage } from "../../contexts/LanguageContext.tsx";
+import { LanguageSwitcher } from "../settings/LanguageSwitcher.tsx";
+import { mcpCategories, getMCPCategoryById, runtimeEnvConfig, scopeConfig } from "../../data/mcpCategories.ts";
+import { cn } from "../../lib/utils.ts";
 
 const categoryIcons: Record<string, React.ElementType> = {
   analysis: Database,
@@ -644,7 +644,7 @@ export function SkillMarketplace({
                 description={language === 'zh' ? "前往 Foundry 创建你的第一个知识库" : "Go to Foundry to create your first knowledge base"}
                 action={{
                   label: language === 'zh' ? "前往创建" : "Create Now",
-                  onClick: () => window.location.href = "/foundry",
+                  onClick: () => globalThis.location.href = "/foundry",
                 }}
               />
             ) : filteredKnowledgeBases.length === 0 ? (
@@ -760,7 +760,7 @@ export function SkillMarketplace({
             description={t("skill.market.empty_desc")}
             action={{
               label: t("skill.market.create"),
-              onClick: () => window.location.href = "/foundry",
+              onClick: () => globalThis.location.href = "/foundry",
             }}
           />
         ) : filteredSkills.length === 0 ? (

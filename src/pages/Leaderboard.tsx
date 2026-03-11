@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LeaderboardCard } from "@/components/social/LeaderboardCard";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
+import { LeaderboardCard } from "../components/social/LeaderboardCard.tsx";
 import { 
   useCreatorLeaderboard, 
   useAgentLeaderboard,
   type LeaderboardPeriod,
   type LeaderboardType 
-} from "@/hooks/useLeaderboard";
+} from "../hooks/useLeaderboard.ts";
 import { Trophy, TrendingUp, Users, Bot, Heart, Flame } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils.ts";
 
 const periodOptions: { value: LeaderboardPeriod; label: string }[] = [
   { value: "daily", label: "日榜" },

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { supabase } from "../integrations/supabase/client.ts";
 import { subDays, format } from "date-fns";
 
 export interface DailyDownload {

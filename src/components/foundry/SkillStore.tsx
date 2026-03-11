@@ -20,27 +20,27 @@ import {
   Wrench,
   ExternalLink,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/card.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   useFeaturedSkills,
   useNewSkills,
   useMarketSkills,
   type SkillOriginFilter,
-} from "@/hooks/useSkillMarket";
-import { useMyInstalledSkills, useInstallSkill } from "@/hooks/useSkillInstall";
-import { useAuth } from "@/contexts/AuthContext";
-import type { MarketSkill } from "@/hooks/useSkillMarket";
-import { MCPSourceFilter, type SkillOrigin } from "@/components/foundry/MCPSourceFilter";
-import { MCPBadge, MCPInfoBadges } from "@/components/foundry/MCPBadge";
-import { MCPToolsPreview } from "@/components/foundry/MCPToolsList";
-import type { MCPTool, MCPResource } from "@/components/foundry/MCPToolsList";
+} from "../../hooks/useSkillMarket.ts";
+import { useMyInstalledSkills, useInstallSkill } from "../../hooks/useSkillInstall.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import type { MarketSkill } from "../../hooks/useSkillMarket.ts";
+import { MCPSourceFilter, type SkillOrigin } from "./MCPSourceFilter.tsx";
+import { MCPBadge, MCPInfoBadges } from "./MCPBadge.tsx";
+import { MCPToolsPreview } from "./MCPToolsList.tsx";
+import type { MCPTool, MCPResource } from "./MCPToolsList.tsx";
 
 const categories = [
   { id: "all", label: "全部", icon: <Sparkles className="h-4 w-4" /> },
@@ -355,7 +355,7 @@ export function SkillStore({ onInstall, onCreateNew }: SkillStoreProps) {
                     <SkillCard
                       key={install.id}
                       skill={install.skill}
-                      isInstalled={true}
+                      isInstalled
                       onInstall={handleInstall}
                       formatDownloads={formatDownloads}
                       formatPrice={formatPrice}
@@ -481,7 +481,7 @@ function SkillCard({
                 size="sm"
                 variant="ghost"
                 className="h-8 w-8 p-0"
-                onClick={() => window.open(skill.transport_url!, "_blank")}
+                onClick={() => globalThis.open(skill.transport_url!, "_blank")}
               >
                 <ExternalLink className="h-3.5 w-3.5" />
               </Button>

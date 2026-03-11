@@ -5,20 +5,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "../../ui/dialog.tsx";
+import { Button } from "../../ui/button.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Label } from "../../ui/label.tsx";
+import { Textarea } from "../../ui/textarea.tsx";
+import { Checkbox } from "../../ui/checkbox.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { GlobalVariable, VariableType } from "./variableTypes";
+} from "../../ui/select.tsx";
+import type { GlobalVariable, VariableType } from "./variableTypes.ts";
 
 interface GlobalVariableDialogProps {
   open: boolean;

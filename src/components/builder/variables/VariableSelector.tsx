@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Node } from "@xyflow/react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { nodeOutputSchemas } from "./variableTypes";
+import { cn } from "../../../lib/utils.ts";
+import { Badge } from "../../ui/badge.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover.tsx";
+import { Input } from "../../ui/input.tsx";
+import { ScrollArea } from "../../ui/scroll-area.tsx";
+import { nodeOutputSchemas } from "./variableTypes.ts";
 
 interface VariableOption {
   nodeId: string;

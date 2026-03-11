@@ -1,17 +1,17 @@
 import React, { useRef } from 'react';
 import { Paperclip, Image, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button.tsx';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '../ui/tooltip.tsx';
 
 interface FileUploadButtonProps {
   onFilesSelected: (files: FileList) => void;

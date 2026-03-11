@@ -14,11 +14,11 @@ import {
   Loader2,
   FileWarning
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { cn } from "../../lib/utils.ts";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface DocumentPreviewProps {

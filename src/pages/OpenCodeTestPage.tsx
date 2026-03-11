@@ -20,23 +20,23 @@ import {
   BookOpen,
   Hammer
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "../components/ui/button.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { ScrollArea } from "../components/ui/scroll-area.tsx";
+import { Progress } from "../components/ui/progress.tsx";
 import { 
   checkOpenCodeStyle, 
   getStyleRulesConfig, 
   refactorToCompliant,
   type StyleCheckResult
-} from "@/utils/openCodeStyleChecker";
-import { BAD_CODE_SAMPLE, EXPECTED_COMPLIANT_CODE } from "@/test-fixtures/bad-code-sample";
-import { CodeDiffViewer } from "@/components/runtime/CodeDiffViewer";
-import { OpenCodeStatusBar, CompactModeIndicator } from "@/components/runtime/OpenCodeStatusBar";
+} from "../utils/openCodeStyleChecker.ts";
+import { BAD_CODE_SAMPLE, EXPECTED_COMPLIANT_CODE } from "../test-fixtures/bad-code-sample.ts";
+import { CodeDiffViewer } from "../components/runtime/CodeDiffViewer.tsx";
+import { OpenCodeStatusBar, CompactModeIndicator } from "../components/runtime/OpenCodeStatusBar.tsx";
 import { toast } from "sonner";
-import type { FileDiff } from "@/types/openCode";
+import type { FileDiff } from "../types/openCode.ts";
 
 type TestPhase = 'idle' | 'plan' | 'confirm' | 'build' | 'complete';
 

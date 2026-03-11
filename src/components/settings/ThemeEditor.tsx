@@ -2,15 +2,15 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Palette, RotateCcw, Download, Upload, Check, Eye, Moon, Sun, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { Label } from "../ui/label.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { Input } from "../ui/input.tsx";
+import { Switch } from "../ui/switch.tsx";
 import { toast } from "sonner";
-import { scaleVariants, staggerContainer, staggerItem } from "@/lib/animations";
+import { scaleVariants, staggerContainer, staggerItem } from "../../lib/animations.ts";
 
 interface HSLColor {
   h: number;

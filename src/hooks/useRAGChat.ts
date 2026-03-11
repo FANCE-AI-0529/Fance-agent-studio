@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { Citation } from "@/components/runtime/CitationCard";
-import type { TraceEventType, TraceEventData } from "@/components/runtime/trace/traceTypes";
+import { supabase } from "../integrations/supabase/client.ts";
+import type { Citation } from "../components/runtime/CitationCard.tsx";
+import type { TraceEventType, TraceEventData } from "../components/runtime/trace/traceTypes.ts";
 
 export type RAGRetrievalMode = "vector" | "graph" | "hybrid";
 

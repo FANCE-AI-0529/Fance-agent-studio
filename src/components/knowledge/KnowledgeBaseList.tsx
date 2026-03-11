@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Database, FileText, Loader2, MoreVertical, Eye, Settings2, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "../../lib/utils.ts";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { KnowledgeBase } from "@/hooks/useKnowledgeBases";
+} from "../ui/dropdown-menu.tsx";
+import type { KnowledgeBase } from "../../hooks/useKnowledgeBases.ts";
 
 interface KnowledgeBaseListProps {
   knowledgeBases: KnowledgeBase[];

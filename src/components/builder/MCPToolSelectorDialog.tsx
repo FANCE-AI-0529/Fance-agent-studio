@@ -6,15 +6,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Input } from "../ui/input.tsx";
 import { Wrench, Search, Shield, CheckCircle2 } from "lucide-react";
-import { MCPBadge, MCPInfoBadges } from "@/components/foundry/MCPBadge";
-import { calculateMCPPermissions, permissionMeta, type MPLPPermission } from "@/data/mcpPermissionMapping";
+import { MCPBadge, MCPInfoBadges } from "../foundry/MCPBadge.tsx";
+import { calculateMCPPermissions, permissionMeta, type MPLPPermission } from "../../data/mcpPermissionMapping.ts";
 
 export interface MCPTool {
   name: string;

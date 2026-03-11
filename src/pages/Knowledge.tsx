@@ -15,16 +15,16 @@ import {
   Loader2,
   FolderOpen,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "../components/ui/button.tsx";
+import { Input } from "../components/ui/input.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Progress } from "../components/ui/progress.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../components/ui/dropdown-menu.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,13 +34,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { CreateKnowledgeBaseDialog } from "@/components/knowledge/CreateKnowledgeBaseDialog";
-import { EditKnowledgeBaseDialog } from "@/components/knowledge/EditKnowledgeBaseDialog";
-import { KnowledgeBaseDetail } from "@/components/knowledge/KnowledgeBaseDetail";
-import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "../components/ui/alert-dialog.tsx";
+import { CreateKnowledgeBaseDialog } from "../components/knowledge/CreateKnowledgeBaseDialog.tsx";
+import { EditKnowledgeBaseDialog } from "../components/knowledge/EditKnowledgeBaseDialog.tsx";
+import { KnowledgeBaseDetail } from "../components/knowledge/KnowledgeBaseDetail.tsx";
+import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "../hooks/useKnowledgeBases.ts";
+import { cn } from "../lib/utils.ts";
+import { Skeleton } from "../components/ui/skeleton.tsx";
 
 export default function Knowledge() {
   const [searchQuery, setSearchQuery] = useState("");

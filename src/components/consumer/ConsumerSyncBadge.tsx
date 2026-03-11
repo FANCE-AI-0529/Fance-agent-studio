@@ -12,17 +12,17 @@ import {
   Circle,
   Wrench,
 } from "lucide-react";
-import { useGlobalAgentStore, SyncEvent } from "@/stores/globalAgentStore";
+import { useGlobalAgentStore, SyncEvent } from "../../stores/globalAgentStore.ts";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+} from "../ui/popover.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { cn } from "../../lib/utils.ts";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 

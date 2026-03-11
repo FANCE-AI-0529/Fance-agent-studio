@@ -1,14 +1,14 @@
 import { motion } from "framer-motion";
 import { Trophy, ChevronLeft, Lock, Check, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "../components/ui/button.tsx";
+import { Progress } from "../components/ui/progress.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
 import { useNavigate } from "react-router-dom";
 import { 
   useUserAchievements, 
   useAchievementProgress, 
   ACHIEVEMENT_DEFINITIONS,
-} from "@/hooks/useAchievements";
+} from "../hooks/useAchievements.ts";
 
 const Achievements = () => {
   const navigate = useNavigate();

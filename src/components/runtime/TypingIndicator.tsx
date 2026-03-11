@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import { Bot, Sparkles } from "lucide-react";
 
 interface TypingIndicatorProps {

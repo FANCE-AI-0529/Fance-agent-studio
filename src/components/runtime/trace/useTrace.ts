@@ -9,8 +9,8 @@ import {
   initialTraceState,
   createTraceEvent,
   generateSessionId,
-} from "./traceReducer";
-import type { TraceEventType, TraceEventData, TraceSessionStatus } from "./traceTypes";
+} from "./traceReducer.ts";
+import type { TraceEventType, TraceEventData, TraceSessionStatus } from "./traceTypes.ts";
 
 export function useTrace() {
   const [state, dispatch] = useReducer(traceReducer, initialTraceState);
@@ -106,5 +106,5 @@ export function useTrace() {
 }
 
 // Re-export types for convenience
-export type { TraceEventType, TraceEventData, TraceSessionStatus } from "./traceTypes";
-export type { TraceSession, TraceEvent } from "./traceTypes";
+export type { TraceEventType, TraceEventData, TraceSessionStatus } from "./traceTypes.ts";
+export type { TraceSession, TraceEvent } from "./traceTypes.ts";

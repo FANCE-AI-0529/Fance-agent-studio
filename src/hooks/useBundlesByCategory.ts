@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { SkillBundle } from "./useSkillBundles";
+import { supabase } from "../integrations/supabase/client.ts";
+import type { SkillBundle } from "./useSkillBundles.ts";
 
 export function useBundlesByCategory(category: string | null, searchQuery?: string) {
   return useQuery({

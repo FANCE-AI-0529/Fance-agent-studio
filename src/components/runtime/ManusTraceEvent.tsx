@@ -10,9 +10,9 @@ import {
   XCircle,
   HelpCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { TraceEvent } from "./trace/traceTypes";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "../../lib/utils.ts";
+import { TraceEvent } from "./trace/traceTypes.ts";
+import { Badge } from "../ui/badge.tsx";
 
 interface ManusTraceEventProps {
   event: TraceEvent;

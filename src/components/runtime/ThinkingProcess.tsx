@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, Terminal, AlertCircle, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "../../lib/utils.ts";
+import { Badge } from "../ui/badge.tsx";
 
 export interface LogEntry {
   id: string;

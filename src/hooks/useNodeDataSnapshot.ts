@@ -3,9 +3,9 @@
 // =====================================================
 
 import { useCallback, useMemo } from 'react';
-import { useCanvasHighlightStore } from '@/stores/canvasHighlightStore';
-import { generateNodeSnapshot, extractOutputData } from '@/utils/mockDataGenerator';
-import type { NodeDataSnapshot, PathDataSnapshots } from '@/types/dataSnapshotTypes';
+import { useCanvasHighlightStore } from '../stores/canvasHighlightStore.ts';
+import { generateNodeSnapshot, extractOutputData } from '../utils/mockDataGenerator.ts';
+import type { NodeDataSnapshot, PathDataSnapshots } from '../types/dataSnapshotTypes.ts';
 import type { Node } from '@xyflow/react';
 
 interface NodeSpec {

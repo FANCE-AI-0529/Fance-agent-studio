@@ -19,10 +19,10 @@ import {
   CheckCircle,
   Lightbulb,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { cn } from '../../lib/utils.ts';
 
 // ========== 类型定义 ==========
 

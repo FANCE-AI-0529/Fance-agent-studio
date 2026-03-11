@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Database, GitBranch, Layers, Search, Settings2, BarChart3 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { Switch } from "../ui/switch.tsx";
+import { Label } from "../ui/label.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { cn } from "../../lib/utils.ts";
 
 export type RAGRetrievalMode = "vector" | "graph" | "hybrid";
 

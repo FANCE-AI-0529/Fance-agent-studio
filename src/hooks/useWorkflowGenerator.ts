@@ -6,8 +6,8 @@
 
 import { useState, useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { 
   WorkflowDSL, 
   MPLPPolicy,
@@ -15,17 +15,17 @@ import {
   InjectedIntervention,
   RiskLevel,
   ComplianceReport,
-} from '@/types/workflowDSL';
-import { convertDSLToGraph, convertToReactFlowFormat } from '@/utils/dslToGraph';
+} from '../types/workflowDSL.ts';
+import { convertDSLToGraph, convertToReactFlowFormat } from '../utils/dslToGraph.ts';
 import { 
   validateAndInjectPolicies, 
   assessWorkflowRisk,
   generateComplianceReport,
   extractRequiredPermissions,
   PERMISSION_METADATA,
-} from '@/utils/policyInjector';
-import { useBuildPlanStore } from '@/stores/buildPlanStore';
-import type { GeneratedSkillSpec, AssetMatch } from '@/types/buildPlan';
+} from '../utils/policyInjector.ts';
+import { useBuildPlanStore } from '../stores/buildPlanStore.ts';
+import type { GeneratedSkillSpec, AssetMatch } from '../types/buildPlan.ts';
 
 // ========== 类型定义 ==========
 

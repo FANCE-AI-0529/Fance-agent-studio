@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, FileText, Image as ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { UploadedFile } from '@/hooks/useFileUpload';
+import { Button } from '../ui/button.tsx';
+import type { UploadedFile } from '../../hooks/useFileUpload.ts';
 
 interface AttachmentPreviewProps {
   files: UploadedFile[];

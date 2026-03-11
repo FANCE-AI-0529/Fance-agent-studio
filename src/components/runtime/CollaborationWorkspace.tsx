@@ -20,18 +20,18 @@ import {
   Zap,
   Link,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Avatar, AvatarFallback } from '../ui/avatar.tsx';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
+} from '../ui/collapsible.tsx';
+import { cn } from '../../lib/utils.ts';
 
 interface Agent {
   id: string;

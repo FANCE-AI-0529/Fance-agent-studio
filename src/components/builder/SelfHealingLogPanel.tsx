@@ -21,18 +21,18 @@ import {
   FileCode,
   RotateCcw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Progress } from "../ui/progress.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import type { HealingResult, ErrorAnalysis } from "@/hooks/useSelfHealing";
+} from "../ui/collapsible.tsx";
+import { cn } from "../../lib/utils.ts";
+import type { HealingResult, ErrorAnalysis } from "../../hooks/useSelfHealing.ts";
 
 interface HealingLogEntry {
   id: string;

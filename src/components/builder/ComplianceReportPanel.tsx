@@ -22,17 +22,17 @@ import {
   Info,
   Wrench,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import type { RiskLevel } from "@/types/workflowDSL";
-import type { ComplianceReport, PermissionMeta } from "@/utils/policyInjector";
+} from "../ui/collapsible.tsx";
+import { cn } from "../../lib/utils.ts";
+import type { RiskLevel } from "../../types/workflowDSL.ts";
+import type { ComplianceReport, PermissionMeta } from "../../utils/policyInjector.ts";
 
 // ========== 类型定义 ==========
 

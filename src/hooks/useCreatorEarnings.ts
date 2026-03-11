@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import type { Tables } from "@/integrations/supabase/types";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import type { Tables } from "../integrations/supabase/types.ts";
 
 export type CreatorEarning = Tables<"creator_earnings">;
 

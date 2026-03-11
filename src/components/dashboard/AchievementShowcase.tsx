@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Trophy, ChevronRight, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "../ui/button.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   useUserAchievements, 
@@ -10,13 +10,13 @@ import {
   getNextAchievement,
   ACHIEVEMENT_DEFINITIONS,
   Achievement
-} from "@/hooks/useAchievements";
+} from "../../hooks/useAchievements.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 
 export function AchievementShowcase() {
   const navigate = useNavigate();

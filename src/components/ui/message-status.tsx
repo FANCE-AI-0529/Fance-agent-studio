@@ -1,5 +1,5 @@
 import { Loader2, Check, CheckCheck, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export type MessageStatus = "sending" | "sent" | "delivered" | "error";
 

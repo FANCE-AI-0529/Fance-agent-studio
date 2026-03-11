@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { cn } from "../../lib/utils.ts";
 import { Sparkles, Puzzle, LayoutGrid } from "lucide-react";
 
 export type SkillOrigin = "all" | "native" | "mcp";

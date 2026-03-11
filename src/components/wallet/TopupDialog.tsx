@@ -5,13 +5,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useTokenWallet } from "@/hooks/useTokenWallet";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { useTokenWallet } from "../../hooks/useTokenWallet.ts";
 import { Coins, Sparkles, Zap, Crown, Check, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface TopupDialogProps {
   open: boolean;
@@ -80,7 +80,7 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
       
       // Redirect to payment if URL provided
       if (result.paymentUrl) {
-        window.location.href = result.paymentUrl;
+        globalThis.location.href = result.paymentUrl;
       } else {
         onOpenChange(false);
       }

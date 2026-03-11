@@ -13,16 +13,16 @@ import {
   FileCode,
   ClipboardList
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { 
   checkOpenCodeStyle, 
   refactorToCompliant,
   getDetailedAnalysis
-} from "@/utils/openCodeStyleChecker";
-import { BAD_CODE_SAMPLE, EXPECTED_COMPLIANT_CODE } from "@/test-fixtures/bad-code-sample";
+} from "../../utils/openCodeStyleChecker.ts";
+import { BAD_CODE_SAMPLE, EXPECTED_COMPLIANT_CODE } from "../../test-fixtures/bad-code-sample.ts";
 
 interface TestCase {
   id: string;

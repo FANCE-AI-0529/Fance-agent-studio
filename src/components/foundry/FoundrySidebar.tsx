@@ -23,26 +23,26 @@ import {
   Server,
   Store,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import { SkillMode } from "@/components/foundry/SkillModeSwitch";
-import { AgentPlazaSidebar } from "@/components/foundry/AgentPlazaSidebar";
-import { AwesomeLLMAgent } from "@/data/awesomeLLMAgents";
+} from "../ui/collapsible.tsx";
+import { cn } from "../../lib/utils.ts";
+import { SkillMode } from "./SkillModeSwitch.tsx";
+import { AgentPlazaSidebar } from "./AgentPlazaSidebar.tsx";
+import { AwesomeLLMAgent } from "../../data/awesomeLLMAgents.ts";
 
 export interface FileItem {
   id: string;

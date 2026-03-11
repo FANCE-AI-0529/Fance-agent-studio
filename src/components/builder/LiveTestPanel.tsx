@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Badge } from "../ui/badge.tsx";
 import { 
   MessageSquare, 
   Send, 
@@ -15,10 +15,10 @@ import {
   Loader2,
   Sparkles
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import VoiceInputButton from "@/components/runtime/VoiceInputButton";
-import { supabase } from "@/integrations/supabase/client";
-import { mergePersonalityWithPrompt, PersonalityConfig } from "@/utils/personalityToPrompt";
+import { cn } from "../../lib/utils.ts";
+import VoiceInputButton from "../runtime/VoiceInputButton.tsx";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { mergePersonalityWithPrompt, PersonalityConfig } from "../../utils/personalityToPrompt.ts";
 
 interface Message {
   id: string;

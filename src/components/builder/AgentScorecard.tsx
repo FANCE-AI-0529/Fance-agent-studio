@@ -20,17 +20,17 @@ import {
   ArrowUp,
   CircleDot
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import { EvaluationResult, AgentScore, TestRunResult, SpeedGrade, TestCategory } from '@/types/agentEvals';
-import RedTeamResultsPanel from './RedTeamResultsPanel';
-import EvalHistoryPanel from './EvalHistoryPanel';
-import type { DiagnosisResult, AutoFixProgress } from '@/hooks/useEvalDiagnosis';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { cn } from '../../lib/utils.ts';
+import { EvaluationResult, AgentScore, TestRunResult, SpeedGrade, TestCategory } from '../../types/agentEvals.ts';
+import RedTeamResultsPanel from './RedTeamResultsPanel.tsx';
+import EvalHistoryPanel from './EvalHistoryPanel.tsx';
+import type { DiagnosisResult, AutoFixProgress } from '../../hooks/useEvalDiagnosis.ts';
 
 interface AgentScorecardProps {
   evaluationResult: EvaluationResult;

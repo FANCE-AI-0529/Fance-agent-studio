@@ -2,15 +2,15 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Alert, AlertDescription } from "../ui/alert.tsx";
 import { Loader2, Eye, EyeOff, CheckCircle2, ShieldCheck } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useToast } from "../../hooks/use-toast.ts";
+import { cn } from "../../lib/utils.ts";
 
 // Password strength rules
 const passwordSchema = z.object({
@@ -141,7 +141,7 @@ export function ChangePasswordForm() {
         title: "密码已更新",
         description: "您的密码已成功修改",
       });
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("Password update error:", error);
       toast({
         title: "修改失败",

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MessageCircle, Clock, CheckCircle2, TrendingUp } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "../ui/skeleton.tsx";
 import { useNavigate } from "react-router-dom";
 
 // Static color mapping to prevent Tailwind purging in production

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { FileText, Hash } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useKnowledgeDocument } from "@/hooks/useKnowledgeDocuments";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { Button } from "../ui/button.tsx";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useKnowledgeDocument } from "../../hooks/useKnowledgeDocuments.ts";
 
 interface ChunkPreviewProps {
   documentId: string;

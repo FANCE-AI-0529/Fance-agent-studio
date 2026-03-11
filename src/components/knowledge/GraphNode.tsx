@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { User, Building2, Lightbulb, MapPin, Calendar, Package, Cpu } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   person: User,

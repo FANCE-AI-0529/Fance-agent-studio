@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { PersonalityConfig } from "@/utils/personalityToPrompt";
+import { PersonalityConfig } from "../utils/personalityToPrompt.ts";
 
 interface AdjustmentResult {
   adjustedConfig: Partial<PersonalityConfig>;

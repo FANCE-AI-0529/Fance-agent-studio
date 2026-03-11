@@ -1,12 +1,12 @@
 import React, { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { PortConfig, portColors, portLayout, getPortHandleId } from "./portTypes";
+} from "../../ui/tooltip.tsx";
+import { PortConfig, portColors, portLayout, getPortHandleId } from "./portTypes.ts";
 
 interface MultiPortHandleProps {
   ports: PortConfig[];

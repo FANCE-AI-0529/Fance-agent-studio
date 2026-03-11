@@ -16,14 +16,14 @@ import {
   CheckCircle,
   X
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { staggerContainer, staggerItem } from "@/lib/animations";
-import type { Achievement, AchievementCategory, AchievementTier } from "@/hooks/useAchievements";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { cn } from "../../lib/utils.ts";
+import { staggerContainer, staggerItem } from "../../lib/animations.ts";
+import type { Achievement, AchievementCategory, AchievementTier } from "../../hooks/useAchievements.ts";
 
 interface AchievementSystemProps {
   achievements: Achievement[];

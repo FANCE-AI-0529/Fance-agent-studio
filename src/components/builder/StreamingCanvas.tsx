@@ -10,13 +10,13 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { useStreamingGenerator } from '@/hooks/useStreamingGenerator';
-import { useStreamingCanvas } from '@/hooks/useStreamingCanvas';
-import { GhostNode } from './GhostNode';
-import { ThinkingBubble } from './ThinkingBubble';
-import { StreamingProgress } from './StreamingProgress';
-import { Button } from '@/components/ui/button';
+import { cn } from '../../lib/utils.ts';
+import { useStreamingGenerator } from '../../hooks/useStreamingGenerator.ts';
+import { useStreamingCanvas } from '../../hooks/useStreamingCanvas.ts';
+import { GhostNode } from './GhostNode.tsx';
+import { ThinkingBubble } from './ThinkingBubble.tsx';
+import { StreamingProgress } from './StreamingProgress.tsx';
+import { Button } from '../ui/button.tsx';
 import { Play, Square, RotateCcw, Check } from 'lucide-react';
 
 const nodeTypes = {

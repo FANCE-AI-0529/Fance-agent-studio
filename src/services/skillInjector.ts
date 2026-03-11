@@ -3,13 +3,13 @@
  * 批量注入核心技能到 NanoClaw 容器的 .claude/skills/ 目录
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import { CORE_SKILL_PROMPTS, CORE_SKILL_MAP, type CoreSkillPrompt } from '@/constants/coreSkillPrompts';
+import { supabase } from '../integrations/supabase/client.ts';
+import { CORE_SKILL_PROMPTS, CORE_SKILL_MAP, type CoreSkillPrompt } from '../constants/coreSkillPrompts.ts';
 import type {
   SkillState,
   SkillInjectionResult,
-} from '@/types/nanoclawSkills';
-import { customizeManager } from '@/services/customizeManager';
+} from '../types/nanoclawSkills.ts';
+import { customizeManager } from './customizeManager.ts';
 
 // ── Client-side operation mutex ────────────────────────────────
 const activeOperations = new Map<string, Promise<unknown>>();

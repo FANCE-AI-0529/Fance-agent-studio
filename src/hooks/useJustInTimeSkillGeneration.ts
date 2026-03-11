@@ -4,12 +4,12 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { 
   GeneratedSkillSpec, 
   SkillGenerationSuggestion 
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 
 interface UseJustInTimeSkillGenerationReturn {
   generateSkill: (suggestion: SkillGenerationSuggestion, context: string) => Promise<GeneratedSkillSpec>;

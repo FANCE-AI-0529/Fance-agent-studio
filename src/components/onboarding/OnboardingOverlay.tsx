@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useOnboarding } from "./OnboardingProvider";
-import { Button } from "@/components/ui/button";
+import { useOnboarding } from "./OnboardingProvider.tsx";
+import { Button } from "../ui/button.tsx";
 import { X, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export function OnboardingOverlay() {
   const {

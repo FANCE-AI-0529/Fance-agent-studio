@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
+import { Label } from "../ui/label.tsx";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { Progress } from "../ui/progress.tsx";
 import { 
   Download, 
   FileJson, 
@@ -17,9 +17,9 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useToast } from "../../hooks/use-toast.ts";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
@@ -202,7 +202,7 @@ export function DataExportForm() {
         setProgress(0);
       }, 3000);
 
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("Export error:", error);
       setStatus("error");
       setErrorMessage(error.message || "导出失败");

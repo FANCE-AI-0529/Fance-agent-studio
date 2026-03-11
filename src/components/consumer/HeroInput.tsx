@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
+import { Button } from "../ui/button.tsx";
+import { AutoResizeTextarea } from "../ui/auto-resize-textarea.tsx";
 
 interface HeroInputProps {
   onSubmit: (value: string) => void;

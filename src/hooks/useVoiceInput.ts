@@ -61,10 +61,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
   // Check if running in secure context (HTTPS or localhost)
   const isSecureContext = typeof window !== "undefined" && (
-    window.isSecureContext || 
-    window.location.protocol === "https:" || 
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
+    globalThis.isSecureContext || 
+    globalThis.location.protocol === "https:" || 
+    globalThis.location.hostname === "localhost" ||
+    globalThis.location.hostname === "127.0.0.1"
   );
 
   const [isListening, setIsListening] = useState(false);

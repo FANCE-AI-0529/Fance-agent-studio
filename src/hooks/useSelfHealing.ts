@@ -4,9 +4,9 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import type { SandboxValidationResult } from './useSandboxValidation';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import type { SandboxValidationResult } from './useSandboxValidation.ts';
 
 // 技能规格类型 (支持简化版本用于验证)
 interface SkillSpec {

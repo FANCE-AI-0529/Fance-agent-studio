@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip.tsx";
 import { 
   BookOpen, 
   Wrench, 
@@ -11,8 +11,8 @@ import {
   AlertTriangle,
   Code2
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { OpenCodeModeIndicator, type OpenCodeMode } from "./OpenCodeModeIndicator";
+import { cn } from "../../lib/utils.ts";
+import { OpenCodeModeIndicator, type OpenCodeMode } from "./OpenCodeModeIndicator.tsx";
 
 export type ProgrammingTaskType = 'generation' | 'modification' | 'bugfix' | 'development';
 

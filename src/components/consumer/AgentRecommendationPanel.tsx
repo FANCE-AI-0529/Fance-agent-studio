@@ -8,14 +8,14 @@ import {
   Bot,
   Loader2
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea, ScrollBar } from "../ui/scroll-area.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { cn } from "../../lib/utils.ts";
 import { motion } from "framer-motion";
-import { useAgentRecommendation } from "@/hooks/useAgentRecommendation";
+import { useAgentRecommendation } from "../../hooks/useAgentRecommendation.ts";
 import { useEffect } from "react";
 
 interface AgentRecommendationPanelProps {

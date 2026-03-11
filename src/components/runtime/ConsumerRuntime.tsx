@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { parseManifest } from "@/types/agent";
+import { parseManifest } from "../../types/agent.ts";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -18,36 +18,36 @@ import {
   Globe,
   Paperclip,
 } from "lucide-react";
-import { FileUploadButton } from "./FileUploadButton";
-import { AttachmentPreview } from "./AttachmentPreview";
-import { useFileUpload } from "@/hooks/useFileUpload";
-import { createMultimodalContent } from "@/hooks/useAgentChat";
-import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard";
-import { FormattedText } from "./FormattedText";
-import { TypewriterFormattedText } from "./TypewriterFormattedText";
-import { parseAgentMeta } from "@/constants/agentRoleThemes";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AuroraBackground } from "@/components/consumer/AuroraBackground";
-import { useAppModeStore } from "@/stores/appModeStore";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAgent } from "@/hooks/useAgents";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { useChatSession } from "@/hooks/useChatSession";
-import { useAgentChat, ChatMessage as AgentChatMessage } from "@/hooks/useAgentChat";
-import { useMemoryContext } from "@/hooks/useMemory";
-import { useAutoMemoryExtraction } from "@/hooks/useAutoMemoryExtraction";
-import { useStudioSyncNotifications } from "@/hooks/useStudioSyncNotifications";
-import { useAgentContextHotReload } from "@/hooks/useAgentContextHotReload";
-import { SystemBubble, SystemMessage } from "@/components/consumer/SystemBubble";
-import { PersonalityRefreshIndicator } from "@/components/consumer/PersonalityRefreshIndicator";
-import { CodingModeLayout } from "./CodingModeLayout";
-import { useOpenCodeRuntime } from "@/hooks/useOpenCodeRuntime";
+import { FileUploadButton } from "./FileUploadButton.tsx";
+import { AttachmentPreview } from "./AttachmentPreview.tsx";
+import { useFileUpload } from "../../hooks/useFileUpload.ts";
+import { createMultimodalContent } from "../../hooks/useAgentChat.ts";
+import { EnhancedWelcomeCard } from "./EnhancedWelcomeCard.tsx";
+import { FormattedText } from "./FormattedText.tsx";
+import { TypewriterFormattedText } from "./TypewriterFormattedText.tsx";
+import { parseAgentMeta } from "../../constants/agentRoleThemes.ts";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { AuroraBackground } from "../consumer/AuroraBackground.tsx";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useAgent } from "../../hooks/useAgents.ts";
+import { ThemeToggle } from "../ThemeToggle.tsx";
+import { useChatSession } from "../../hooks/useChatSession.ts";
+import { useAgentChat, ChatMessage as AgentChatMessage } from "../../hooks/useAgentChat.ts";
+import { useMemoryContext } from "../../hooks/useMemory.ts";
+import { useAutoMemoryExtraction } from "../../hooks/useAutoMemoryExtraction.ts";
+import { useStudioSyncNotifications } from "../../hooks/useStudioSyncNotifications.ts";
+import { useAgentContextHotReload } from "../../hooks/useAgentContextHotReload.ts";
+import { SystemBubble, SystemMessage } from "../consumer/SystemBubble.tsx";
+import { PersonalityRefreshIndicator } from "../consumer/PersonalityRefreshIndicator.tsx";
+import { CodingModeLayout } from "./CodingModeLayout.tsx";
+import { useOpenCodeRuntime } from "../../hooks/useOpenCodeRuntime.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 import {
   Sheet,
   SheetContent,
@@ -55,9 +55,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { MiniStudioPreview } from "@/components/consumer/MiniStudioPreview";
+} from "../ui/sheet.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { MiniStudioPreview } from "../consumer/MiniStudioPreview.tsx";
 import logoIcon from "@/assets/logo-icon.png";
 
 // Union type for all message types in the chat
@@ -138,7 +138,7 @@ export function ConsumerRuntime() {
   const openCodeRuntime = useOpenCodeRuntime();
 
   // AI Chat hook - pass webSearchEnabled
-  const { streamChat, isLoading: isAiLoading, error: aiError } = useAgentChat({
+  const { streamChat, isLoading: isAiLoading } = useAgentChat({
     agentConfig: agentConfig ? {
       ...agentConfig,
       agentId: agentId || undefined,
@@ -305,8 +305,8 @@ export function ConsumerRuntime() {
         toggleMode();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    globalThis.addEventListener('keydown', handleKeyDown);
+    return () => globalThis.removeEventListener('keydown', handleKeyDown);
   }, [toggleMode]);
 
   const handleSubmit = useCallback(async (value?: string) => {

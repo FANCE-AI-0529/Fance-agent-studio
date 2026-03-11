@@ -1,27 +1,27 @@
 import { useState } from "react";
 import { Copy, Gift, Link, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+} from "../ui/dialog.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { useToast } from "../../hooks/use-toast.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import { 
   useMyInviteCode, 
   useSentInvitations, 
   usePointsBalance, 
   useInvitationStats,
   useAcceptInvitation 
-} from "@/hooks/useInvite";
-import { useIsAdmin } from "@/hooks/useAdminInvite";
-import { AdminInvitePanel } from "@/components/invite/AdminInvitePanel";
+} from "../../hooks/useInvite.ts";
+import { useIsAdmin } from "../../hooks/useAdminInvite.ts";
+import { AdminInvitePanel } from "../invite/AdminInvitePanel.tsx";
 import { format } from "date-fns";
 
 interface UserManagementDialogProps {
@@ -49,7 +49,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
 
   const copyLink = () => {
     if (inviteCode) {
-      const link = `${window.location.origin}/auth?invite=${inviteCode}`;
+      const link = `${globalThis.location.origin}/auth?invite=${inviteCode}`;
       navigator.clipboard.writeText(link);
       toast({ title: "已复制", description: "邀请链接已复制到剪贴板" });
     }

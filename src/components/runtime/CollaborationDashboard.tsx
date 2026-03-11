@@ -16,12 +16,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+} from "../ui/dialog.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { Progress } from "../ui/progress.tsx";
 import {
   Network,
   Activity,
@@ -38,15 +38,15 @@ import {
   collaborationStatusColors,
   driftSeverityColors,
   type DriftLog,
-} from "@/hooks/useAgentCollaboration";
+} from "../../hooks/useAgentCollaboration.ts";
 import {
   useDelegatedTasks,
   taskStatusColors,
   taskStatusLabels,
   taskPriorityColors,
   type DelegatedTask,
-} from "@/hooks/useTaskDelegation";
-import { useDeployedAgents } from "@/hooks/useAgents";
+} from "../../hooks/useTaskDelegation.ts";
+import { useDeployedAgents } from "../../hooks/useAgents.ts";
 
 interface CollaborationDashboardProps {
   open: boolean;

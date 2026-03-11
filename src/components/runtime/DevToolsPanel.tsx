@@ -13,22 +13,22 @@ import {
   X,
   Search,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+} from "../ui/tooltip.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   useDevToolsState,
   DEVTOOLS_SHORTCUTS,
   DEVTOOLS_TABS,
   type DevToolsTab,
-} from "@/hooks/useDevToolsState";
+} from "../../hooks/useDevToolsState.ts";
 
 import { Brain, Timer, Target } from "lucide-react";
 
@@ -116,8 +116,8 @@ export function DevToolsPanel({
   );
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   // 渲染器映射

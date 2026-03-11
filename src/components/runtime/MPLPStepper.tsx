@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Brain, Shield, Zap, GitBranch } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export type MPLPPhase = "idle" | "planning" | "confirm" | "ipc_intercept" | "executing" | "trace";
 

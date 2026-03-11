@@ -14,7 +14,7 @@ import {
   Clock,
   Download,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 import {
   Dialog,
   DialogContent,
@@ -22,28 +22,28 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+} from "../ui/select.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Switch } from "../ui/switch.tsx";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useCreateSharedConversation } from "@/hooks/useSharedConversation";
-import { ShareCardPreview } from "./ShareCardPreview";
+import { cn } from "../../lib/utils.ts";
+import { useCreateSharedConversation } from "../../hooks/useSharedConversation.ts";
+import { ShareCardPreview } from "./ShareCardPreview.tsx";
 
 interface Message {
   role: "user" | "assistant";
@@ -158,12 +158,12 @@ export function ShareDialog({
     const body = encodeURIComponent(
       `我想和你分享一段有趣的AI对话：\n\n${shareLink || "请先生成分享链接"}\n\n来自 AI Agent Platform`
     );
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    globalThis.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const openShareLink = () => {
     if (shareLink) {
-      window.open(shareLink, "_blank");
+      globalThis.open(shareLink, "_blank");
     }
   };
 

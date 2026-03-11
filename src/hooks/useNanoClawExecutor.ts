@@ -10,9 +10,9 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import { useRuntimeStore } from '@/stores/runtimeStore';
-import { useTerminalStream } from '@/hooks/useTerminalStream';
-import { supabase } from '@/integrations/supabase/client';
+import { useRuntimeStore } from '../stores/runtimeStore.ts';
+import { useTerminalStream } from './useTerminalStream.ts';
+import { supabase } from '../integrations/supabase/client.ts';
 
 export interface ExecutionResult {
   success: boolean;

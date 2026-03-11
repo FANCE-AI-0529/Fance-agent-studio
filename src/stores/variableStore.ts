@@ -4,7 +4,7 @@ import type {
   NodeOutputVariable, 
   EdgeMapping,
   VariableType 
-} from "@/components/builder/variables/variableTypes";
+} from "../components/builder/variables/variableTypes.ts";
 
 interface VariableState {
   // Global variables

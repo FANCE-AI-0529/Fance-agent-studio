@@ -34,7 +34,7 @@ describe("Edge Function Integration", () => {
         ok: true,
         json: () => Promise.resolve(mockLLMResponse),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         model: "google/gemini-2.5-flash",
@@ -84,7 +84,7 @@ describe("Edge Function Integration", () => {
             structured: { name: "John", age: 30 },
           }),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const response = await fetch("/functions/v1/workflow-llm-call", {
         method: "POST",
@@ -107,7 +107,7 @@ describe("Edge Function Integration", () => {
         ok: true,
         json: () => Promise.resolve(mockHTTPResponse),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         method: "GET",
@@ -130,7 +130,7 @@ describe("Edge Function Integration", () => {
         ok: true,
         json: () => Promise.resolve({ ...mockHTTPResponse, status: 201 }),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         method: "POST",
@@ -150,7 +150,7 @@ describe("Edge Function Integration", () => {
 
     it("should handle timeout errors", async () => {
       const mockFetch = vi.fn().mockRejectedValue(new Error("Request timeout"));
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         method: "GET",
@@ -178,7 +178,7 @@ describe("Edge Function Integration", () => {
         ok: true,
         json: () => Promise.resolve(mockCodeResult),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         language: "javascript",
@@ -211,7 +211,7 @@ describe("Edge Function Integration", () => {
             error: "ReferenceError: undefined is not defined",
           }),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         language: "javascript",
@@ -243,7 +243,7 @@ describe("Edge Function Integration", () => {
             error: "Code execution timeout exceeded",
           }),
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       const payload = {
         language: "javascript",

@@ -9,13 +9,13 @@ import {
   MessageSquare,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
+} from "../ui/chart.tsx";
 import {
   Area,
   AreaChart,
@@ -26,8 +26,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import { format, subDays, eachDayOfInterval, startOfDay, subHours, eachHourOfInterval } from "date-fns";
 import { zhCN } from "date-fns/locale";
 

@@ -2,15 +2,15 @@
 
 import { useState, useCallback } from 'react';
 import { Brain, Save, History, Tag, FileText, Eye, Edit3 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { memorySyncService, type MemorySection, type MemoryFragment } from '@/services/memorySync';
+import { cn } from '../../lib/utils.ts';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Textarea } from '../ui/textarea.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { useToast } from '../../hooks/use-toast.ts';
+import { memorySyncService, type MemorySection, type MemoryFragment } from '../../services/memorySync.ts';
 
 interface MemoryEditorProps {
   agentId: string;

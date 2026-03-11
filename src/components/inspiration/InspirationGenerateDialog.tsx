@@ -7,11 +7,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
 import { Wand2, Sparkles, Brain, Loader2, CheckCircle2, Zap } from "lucide-react";
-import { DailyInspiration } from "@/hooks/useDailyInspiration";
+import { DailyInspiration } from "../../hooks/useDailyInspiration.ts";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface InspirationGenerateDialogProps {

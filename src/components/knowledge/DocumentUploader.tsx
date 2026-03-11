@@ -1,15 +1,15 @@
 import { useState, useCallback } from "react";
 import { Upload, FileText, File, Loader2, X, Link, Type } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCreateDocument, useIngestDocument } from "@/hooks/useKnowledgeDocuments";
-import { useKnowledgeStore } from "@/stores/knowledgeStore";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { cn } from "../../lib/utils.ts";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { useCreateDocument, useIngestDocument } from "../../hooks/useKnowledgeDocuments.ts";
+import { useKnowledgeStore } from "../../stores/knowledgeStore.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { supabase } from "../../integrations/supabase/client.ts";
 import { toast } from "sonner";
 
 interface DocumentUploaderProps {

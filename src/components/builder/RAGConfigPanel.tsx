@@ -1,14 +1,14 @@
 import React from "react";
 import { BookOpen, Network, Layers, Database, X, FileText, LinkIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Label } from "../ui/label.tsx";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { cn } from "../../lib/utils.ts";
 
 export interface RAGConfig {
   retrieval_mode: 'vector' | 'graph' | 'hybrid';

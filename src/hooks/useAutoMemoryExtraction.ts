@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useAddMemory, Memory } from "./useMemory";
+import { useAddMemory, Memory } from "./useMemory.ts";
 
 interface ExtractedMemory {
   key: string;

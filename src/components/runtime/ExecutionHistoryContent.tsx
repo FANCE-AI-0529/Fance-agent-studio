@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { History, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ChainExecutionHistory } from "./ChainExecutionHistory";
-import { ExecutionStepTimeline } from "./ExecutionStepTimeline";
-import { type ChainExecution } from "@/hooks/useChainExecutions";
+import { Button } from "../ui/button.tsx";
+import { ChainExecutionHistory } from "./ChainExecutionHistory.tsx";
+import { ExecutionStepTimeline } from "./ExecutionStepTimeline.tsx";
+import { type ChainExecution } from "../../hooks/useChainExecutions.ts";
 
 interface ExecutionHistoryContentProps {
   chainId?: string | null;

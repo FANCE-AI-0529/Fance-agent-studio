@@ -17,12 +17,12 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { slideUpVariants, staggerContainer, staggerItem } from "@/lib/animations";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardHeader } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { cn } from "../../lib/utils.ts";
+import { slideUpVariants, staggerContainer, staggerItem } from "../../lib/animations.ts";
 
 interface Suggestion {
   id: string;

@@ -21,11 +21,11 @@ import {
   ClipboardCheck,
   Shield,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useBuildPlanStore } from '@/stores/buildPlanStore';
-import { BuildPlan, BuildPhaseStatus } from '@/types/buildPlan';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '../../lib/utils.ts';
+import { useBuildPlanStore } from '../../stores/buildPlanStore.ts';
+import { BuildPlan, BuildPhaseStatus } from '../../types/buildPlan.ts';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Badge } from '../ui/badge.tsx';
 
 // 阶段图标映射
 const PHASE_ICONS: Record<keyof BuildPlan['phases'], React.ElementType> = {

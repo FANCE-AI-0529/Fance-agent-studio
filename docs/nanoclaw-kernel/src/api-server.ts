@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import swarmRoutes from './swarm-routes.js';
+import process from "node:process";
 
 const app = express();
 app.use(cors());

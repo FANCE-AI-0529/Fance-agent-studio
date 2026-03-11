@@ -10,7 +10,7 @@ import type {
   NodeSpec,
   WorkflowDSL,
   WorkflowStage,
-} from '@/types/verificationTypes';
+} from '../types/verificationTypes.ts';
 
 /**
  * 验证工作流拓扑是否符合期望

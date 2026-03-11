@@ -6,27 +6,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { Search, Package, Loader2 } from "lucide-react";
-import { useMySkills } from "@/hooks/useSkills";
-import { useUpdateBundle, SkillBundle } from "@/hooks/useSkillBundles";
-import { toast } from "@/hooks/use-toast";
+import { useMySkills } from "../../hooks/useSkills.ts";
+import { useUpdateBundle, SkillBundle } from "../../hooks/useSkillBundles.ts";
+import { toast } from "../../hooks/use-toast.ts";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter";
+} from "../ui/select.tsx";
+import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter.tsx";
 
 interface EditBundleDialogProps {
   bundle: SkillBundle | null;

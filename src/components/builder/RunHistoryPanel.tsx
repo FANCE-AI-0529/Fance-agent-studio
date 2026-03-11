@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { History, Clock, Zap, CheckCircle, XCircle, SkipForward, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useWorkflowRuns, type WorkflowRun } from "@/hooks/useWorkflowRuns";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useWorkflowRuns, type WorkflowRun } from "../../hooks/useWorkflowRuns.ts";
 
 interface RunHistoryPanelProps {
   workflowId: string | null;

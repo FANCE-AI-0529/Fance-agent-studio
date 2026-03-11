@@ -18,10 +18,10 @@ import {
   Shield,
   Loader2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import type { VibeLoopPhase, VibeLoopAttempt } from '@/services/vibeLoopEngine';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { VibeLoopPhase, VibeLoopAttempt } from '../../services/vibeLoopEngine.ts';
 
 interface VibeLoopIndicatorProps {
   phase: VibeLoopPhase;

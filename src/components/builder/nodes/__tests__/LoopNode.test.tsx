@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@/test/utils/renderWithProviders";
-import LoopNode from "@/components/builder/nodes/LoopNode";
-import { createMockLoopNodeData } from "@/test/utils/mockNodeData";
-import { createNodeProps } from "@/test/utils/nodePropsHelper";
+import { render, screen, fireEvent } from "../../../../test/utils/renderWithProviders.tsx";
+import LoopNode from "../LoopNode.tsx";
+import { createMockLoopNodeData } from "../../../../test/utils/mockNodeData.ts";
+import { createNodeProps } from "../../../../test/utils/nodePropsHelper.ts";
 
 describe("LoopNode", () => {
   describe("Rendering", () => {

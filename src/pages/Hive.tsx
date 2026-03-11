@@ -6,16 +6,16 @@
  */
 import { useSearchParams } from "react-router-dom";
 import { Bot, BookOpen, Hammer, Play } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils.ts";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAgent } from "@/hooks/useAgents";
+import { useAgent } from "../hooks/useAgents.ts";
 
-const Builder = lazy(() => import("./Builder"));
-const Knowledge = lazy(() => import("./Knowledge"));
-const Foundry = lazy(() => import("./Foundry"));
-const Runtime = lazy(() => import("./Runtime"));
+const Builder = lazy(() => import("./Builder.tsx"));
+const Knowledge = lazy(() => import("./Knowledge.tsx"));
+const Foundry = lazy(() => import("./Foundry.tsx"));
+const Runtime = lazy(() => import("./Runtime.tsx"));
 
 const hiveTabs = [
   { key: "builder", label: "构建", icon: Bot },

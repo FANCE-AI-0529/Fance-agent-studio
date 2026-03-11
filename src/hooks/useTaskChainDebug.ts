@@ -6,7 +6,7 @@ import type {
   DebugVariable, 
   StepExecutionLog, 
   DebugState 
-} from "@/components/runtime/DebugControlPanel";
+} from "../components/runtime/DebugControlPanel.tsx";
 
 interface UseTaskChainDebugOptions {
   onNodeHighlight?: (nodeId: string | null) => void;
@@ -377,8 +377,8 @@ export function useTaskChainDebug(options: UseTaskChainDebugOptions = {}) {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [isDebugging, isPaused, resumeDebug, pauseDebug, stepOver, stepInto]);
 
   return {

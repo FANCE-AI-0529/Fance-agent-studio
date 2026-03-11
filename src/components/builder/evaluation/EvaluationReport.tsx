@@ -15,14 +15,14 @@ import {
   RefreshCw,
   Save,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { EvaluationResult, TestRunResult, RedTeamAttackResult } from '@/types/agentEvals';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card.tsx';
+import { Button } from '../../ui/button.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { Progress } from '../../ui/progress.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs.tsx';
+import type { EvaluationResult, TestRunResult, RedTeamAttackResult } from '../../../types/agentEvals.ts';
+import { cn } from '../../../lib/utils.ts';
 
 interface EvaluationReportProps {
   result: EvaluationResult;

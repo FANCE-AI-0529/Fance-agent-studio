@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Ticket, Mail, Lock, User, Loader2, CheckCircle2, XCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useInviteValidation, acceptInvitationOnSignup } from "@/hooks/useInviteValidation";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { useInviteValidation, acceptInvitationOnSignup } from "../../hooks/useInviteValidation.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { toast } from "../../hooks/use-toast.ts";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../../integrations/supabase/client.ts";
 import { z } from "zod";
 
 const emailSchema = z.string().email("请输入有效的邮箱地址");

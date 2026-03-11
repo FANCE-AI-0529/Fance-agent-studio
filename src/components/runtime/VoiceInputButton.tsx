@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import { Mic, MicOff, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { Button } from "../ui/button.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { useVoiceInput } from "../../hooks/useVoiceInput.ts";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface VoiceInputButtonProps {
   onTranscript: (text: string) => void;

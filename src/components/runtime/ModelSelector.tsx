@@ -5,10 +5,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from "../ui/select.tsx";
+import { Badge } from "../ui/badge.tsx";
 import { Sparkles, Zap, Brain, Rocket } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export interface AIModel {
   id: string;

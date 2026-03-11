@@ -5,14 +5,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useTokenWallet } from "@/hooks/useTokenWallet";
-import { TopupDialog } from "./TopupDialog";
+} from "../ui/sheet.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { useTokenWallet } from "../../hooks/useTokenWallet.ts";
+import { TopupDialog } from "./TopupDialog.tsx";
 import { 
   Wallet, 
   Coins, 
@@ -23,7 +23,7 @@ import {
   Clock
 } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export function WalletPanel() {
   const { wallet, transactions, isLoading, availableBalance } = useTokenWallet();

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Progress } from "../ui/progress.tsx";
 import {
   Dialog,
   DialogContent,
@@ -12,18 +12,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "../ui/dialog.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useCreatorRevenue } from "@/hooks/useCreatorRevenue";
-import type { PayoutMethod } from "@/types/economy";
+} from "../ui/select.tsx";
+import { useCreatorRevenue } from "../../hooks/useCreatorRevenue.ts";
+import type { PayoutMethod } from "../../types/economy.ts";
 import {
   TrendingUp,
   Wallet,
@@ -38,7 +38,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export function RevenueAnalytics() {
   const { summary, settlements, skillStats, isLoading, requestWithdrawal, canWithdraw } = useCreatorRevenue();

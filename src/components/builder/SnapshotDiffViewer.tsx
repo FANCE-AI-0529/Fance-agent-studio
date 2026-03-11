@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { GitCompare, Plus, Minus, Pencil, ArrowUpDown, Package, Link2, FileJson, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSnapshotDiff } from "@/hooks/useSnapshotDiff";
-import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { useSnapshotDiff } from "../../hooks/useSnapshotDiff.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface SnapshotDiffViewerProps {
   open: boolean;

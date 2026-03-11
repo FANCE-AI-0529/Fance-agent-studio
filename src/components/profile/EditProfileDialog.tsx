@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUpdateProfile, useUploadAvatar } from "@/hooks/useProfileUpdate";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useUpdateProfile, useUploadAvatar } from "../../hooks/useProfileUpdate.ts";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../../integrations/supabase/client.ts";
 import {
   Dialog,
   DialogContent,
@@ -10,12 +10,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
 import { Camera, Loader2 } from "lucide-react";
 
 interface EditProfileDialogProps {
@@ -99,7 +99,7 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
     try {
       const publicUrl = await uploadAvatar.mutateAsync(file);
       setAvatarUrl(publicUrl);
-    } catch (error) {
+    } catch (_error) {
       setAvatarPreview("");
     }
   };

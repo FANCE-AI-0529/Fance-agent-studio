@@ -1,6 +1,6 @@
 // NanoClaw 运行时适配器 (NanoClaw Runtime Adapter)
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 import type {
   NanoClawRuntimeConfig,
   ContainerConfig,
@@ -10,7 +10,7 @@ import type {
   RuntimeExecuteRequest,
   RuntimeExecuteResult,
   RuntimeConnectionStatus,
-} from '@/types/runtime';
+} from '../types/runtime.ts';
 
 type IPCMessageHandler = (message: IPCMessage) => void;
 

@@ -11,9 +11,9 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import type { ModificationIntent, ModificationAction } from '@/hooks/useAgentModification';
+import { Button } from '../ui/button.tsx';
+import { Card } from '../ui/card.tsx';
+import type { ModificationIntent, ModificationAction } from '../../hooks/useAgentModification.ts';
 
 interface ModificationConfirmCardProps {
   intent: ModificationIntent;

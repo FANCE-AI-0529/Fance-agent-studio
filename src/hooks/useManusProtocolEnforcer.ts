@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useManusMemoryStore } from '@/stores/manusMemoryStore';
+import { useManusMemoryStore } from '../stores/manusMemoryStore.ts';
 
 export type ViolationType = 
   | 'missing_progress_update'

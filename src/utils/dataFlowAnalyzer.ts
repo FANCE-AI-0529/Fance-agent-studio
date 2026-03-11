@@ -9,7 +9,7 @@ import type {
   NodeSpec,
   WorkflowDSL,
   WorkflowEdge,
-} from '@/types/verificationTypes';
+} from '../types/verificationTypes.ts';
 
 /**
  * 分析工作流数据流

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAppModeStore } from "@/stores/appModeStore";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
 
 /**
  * Enhanced Hacker Transition Animation

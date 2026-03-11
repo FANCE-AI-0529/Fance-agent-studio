@@ -5,13 +5,13 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { History, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { EvaluationResult } from '@/types/agentEvals';
-import { useAgentEvals } from '@/hooks/useAgentEvals';
+import { Button } from '../ui/button.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Skeleton } from '../ui/skeleton.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { cn } from '../../lib/utils.ts';
+import { EvaluationResult } from '../../types/agentEvals.ts';
+import { useAgentEvals } from '../../hooks/useAgentEvals.ts';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 

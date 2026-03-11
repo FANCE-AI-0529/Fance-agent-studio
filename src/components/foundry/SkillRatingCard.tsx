@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Star, MessageSquare, User, ThumbsUp, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Avatar, AvatarFallback } from "../ui/avatar.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { cn } from "../../lib/utils.ts";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +17,7 @@ import {
   useSubmitRating,
   useDeleteRating,
   type SkillRating 
-} from "@/hooks/useSkillRating";
+} from "../../hooks/useSkillRating.ts";
 
 interface SkillRatingCardProps {
   skillId: string;

@@ -1,9 +1,9 @@
 import { CheckCircle, XCircle, Clock, SkipForward, Play, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { type ChainExecution, type StepLog, stepStatusColors } from "@/hooks/useChainExecutions";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible.tsx";
+import { type ChainExecution, type StepLog, stepStatusColors } from "../../hooks/useChainExecutions.ts";
+import { cn } from "../../lib/utils.ts";
 import { useState } from "react";
 
 interface ExecutionStepTimelineProps {

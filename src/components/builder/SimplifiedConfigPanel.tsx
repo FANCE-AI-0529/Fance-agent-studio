@@ -13,27 +13,27 @@ import {
   Eye,
   Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Skill } from "./SkillMarketplace";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Label } from "../ui/label.tsx";
+import { Skill } from "./SkillMarketplace.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AgentAvatarPicker, AgentAvatar, AgentAvatarDisplay } from "./AgentAvatarPicker";
+} from "../ui/collapsible.tsx";
+import { cn } from "../../lib/utils.ts";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { AgentAvatarPicker, AgentAvatar, AgentAvatarDisplay } from "./AgentAvatarPicker.tsx";
 
 export interface SimpleAgentConfig {
   name: string;

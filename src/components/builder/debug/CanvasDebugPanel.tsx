@@ -10,19 +10,19 @@ import {
   ChevronRight,
   Variable,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "../../ui/scroll-area.tsx";
+import { Badge } from "../../ui/badge.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+} from "../../ui/collapsible.tsx";
+import { cn } from "../../../lib/utils.ts";
 import type {
   ExecutionLogEntry,
   EdgeBreakpoint,
   VariableSnapshot,
-} from "@/stores/canvasDebugStore";
+} from "../../../stores/canvasDebugStore.ts";
 import { useState } from "react";
 
 interface CanvasDebugPanelProps {

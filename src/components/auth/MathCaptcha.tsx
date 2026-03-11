@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Button } from "../ui/button.tsx";
 import { RefreshCw, ShieldCheck, ShieldX } from "lucide-react";
 
 interface MathCaptchaProps {

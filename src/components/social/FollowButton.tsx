@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useIsFollowing, useToggleFollow } from "@/hooks/useFollow";
+import { Button } from "../ui/button.tsx";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useIsFollowing, useToggleFollow } from "../../hooks/useFollow.ts";
 import { UserPlus, UserMinus, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface FollowButtonProps {
   userId: string;

@@ -13,7 +13,7 @@ import {
   GeneratedSkillSpec,
   KnowledgeBaseSuggestion,
   createInitialBuildPlan,
-} from '@/types/buildPlan';
+} from '../types/buildPlan.ts';
 
 interface BuildPlanState {
   // 当前构建计划

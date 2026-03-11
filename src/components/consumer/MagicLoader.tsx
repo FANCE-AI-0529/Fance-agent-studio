@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, Sparkles, Pause } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { TypewriterText } from "@/components/ui/typewriter-text";
-import type { KnowledgeMatchResult } from "@/hooks/useKnowledgeMatching";
+import { cn } from "../../lib/utils.ts";
+import { TypewriterText } from "../ui/typewriter-text.tsx";
+import type { KnowledgeMatchResult } from "../../hooks/useKnowledgeMatching.ts";
 
 // Clarification interaction embedded in a step
 export interface StepClarification {

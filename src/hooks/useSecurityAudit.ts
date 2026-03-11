@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 
 export type SecurityEventType = 
   | 'login_success'
@@ -57,7 +57,7 @@ export function useSecurityAudit() {
           metadata: {
             ...metadata,
             timestamp: new Date().toISOString(),
-            url: window.location.href,
+            url: globalThis.location.href,
           },
           success,
           error_message: errorMessage,

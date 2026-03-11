@@ -161,7 +161,7 @@ export function useBatchUpdates<T>(
   const scheduleFlush = useCallback(() => {
     if (timeoutRef.current !== null) return;
 
-    timeoutRef.current = window.setTimeout(() => {
+    timeoutRef.current = globalThis.setTimeout(() => {
       if (updatesRef.current.length > 0) {
         onFlush([...updatesRef.current]);
         updatesRef.current = [];
@@ -266,7 +266,7 @@ export function useDebouncedViewport(delay = 100) {
         clearTimeout(timeoutRef.current);
       }
 
-      timeoutRef.current = window.setTimeout(() => {
+      timeoutRef.current = globalThis.setTimeout(() => {
         setDebouncedViewport(viewport);
         timeoutRef.current = null;
       }, delay);

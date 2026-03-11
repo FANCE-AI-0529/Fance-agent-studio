@@ -1,10 +1,10 @@
 import React, { memo } from "react";
 import { Position } from "@xyflow/react";
 import { BookOpen, Database, X, Settings, Network, FileText, Layers, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import MultiPortHandle from "./ports/MultiPortHandle";
-import { standardPorts, PortConfig } from "./ports/portTypes";
+import { Button } from "../ui/button.tsx";
+import { cn } from "../../lib/utils.ts";
+import MultiPortHandle from "./ports/MultiPortHandle.tsx";
+import { standardPorts, PortConfig } from "./ports/portTypes.ts";
 
 export interface KnowledgeBaseNodeData {
   [key: string]: unknown;

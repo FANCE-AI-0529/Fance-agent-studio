@@ -4,9 +4,9 @@
  */
 
 import { Loader2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { Progress } from '@/components/ui/progress';
+import { Skeleton } from './skeleton.tsx';
+import { cn } from '../../lib/utils.ts';
+import { Progress } from './progress.tsx';
 
 // ========== 加载旋转器 ==========
 
@@ -354,7 +354,7 @@ export function LoadingWithTimeout({
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <p className="text-muted-foreground mb-4">{timeoutMessage}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => globalThis.location.reload()}
           className="text-primary hover:underline text-sm"
         >
           刷新页面

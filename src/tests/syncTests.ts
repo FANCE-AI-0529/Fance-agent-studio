@@ -3,7 +3,7 @@
 // Campaign 2: Bi-directional Sync Test Cases
 // =====================================================
 
-import type { SyncEvent } from '@/stores/globalAgentStore';
+import type { SyncEvent } from '../stores/globalAgentStore.ts';
 
 export interface SyncTestCase {
   id: string;

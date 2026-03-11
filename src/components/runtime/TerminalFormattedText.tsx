@@ -1,6 +1,6 @@
 import React from "react";
-import { cn } from "@/lib/utils";
-import { TERMINAL_CLASSES, detectResponseMode } from "@/constants/terminalStyleGuide";
+import { cn } from "../../lib/utils.ts";
+import { TERMINAL_CLASSES, detectResponseMode } from "../../constants/terminalStyleGuide.ts";
 
 interface TerminalFormattedTextProps {
   content: string;

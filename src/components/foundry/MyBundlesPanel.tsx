@@ -9,16 +9,16 @@ import {
   Plus,
   Eye
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardHeader } from "../ui/card.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,12 +28,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useMyBundles, useDeleteBundle, SkillBundle } from "@/hooks/useSkillBundles";
-import { CreateBundleDialog } from "./CreateBundleDialog";
-import { EditBundleDialog } from "./EditBundleDialog";
-import { BundleDetailDialog } from "./BundleDetailDialog";
-import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter";
+} from "../ui/alert-dialog.tsx";
+import { useMyBundles, useDeleteBundle, SkillBundle } from "../../hooks/useSkillBundles.ts";
+import { CreateBundleDialog } from "./CreateBundleDialog.tsx";
+import { EditBundleDialog } from "./EditBundleDialog.tsx";
+import { BundleDetailDialog } from "./BundleDetailDialog.tsx";
+import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter.tsx";
 
 export function MyBundlesPanel() {
   const { data: bundles = [], isLoading } = useMyBundles();

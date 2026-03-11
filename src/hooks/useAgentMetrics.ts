@@ -4,11 +4,11 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLLMUsageStats } from './useLLMUsageStats';
-import { useApiAlertRules, useApiAlertLogs } from './useApiAlerts';
-import { useAgentApiStats } from './useAgentApi';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useLLMUsageStats } from './useLLMUsageStats.ts';
+import { useApiAlertRules, useApiAlertLogs } from './useApiAlerts.ts';
+import { useAgentApiStats } from './useAgentApi.ts';
 
 export interface AgentHealthStatus {
   status: 'healthy' | 'warning' | 'critical' | 'unknown';

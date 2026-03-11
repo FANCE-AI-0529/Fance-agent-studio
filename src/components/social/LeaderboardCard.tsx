@@ -1,10 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
+import { Badge } from "../ui/badge.tsx";
 import { CheckCircle, TrendingUp, TrendingDown, Minus, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import type { LeaderboardEntry } from "@/hooks/useLeaderboard";
+import { cn } from "../../lib/utils.ts";
+import type { LeaderboardEntry } from "../../hooks/useLeaderboard.ts";
 
 interface LeaderboardCardProps {
   entry: LeaderboardEntry;

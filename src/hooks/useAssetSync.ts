@@ -4,9 +4,9 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { toast } from './use-toast.ts';
 
 interface SyncResult {
   synced: number;

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { MainLayout } from "../components/layout/MainLayout.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
+import { Textarea } from "../components/ui/textarea.tsx";
+import { Input } from "../components/ui/input.tsx";
+import { Label } from "../components/ui/label.tsx";
 import {
   Dialog,
   DialogContent,
@@ -17,10 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/AuthContext";
-import { useChallenge, useChallengeEntries, useSubmitEntry, useVoteEntry, useHasVoted } from "@/hooks/useChallenges";
-import { useMyAgents } from "@/hooks/useAgents";
+} from "../components/ui/dialog.tsx";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { useChallenge, useChallengeEntries, useSubmitEntry, useVoteEntry, useHasVoted } from "../hooks/useChallenges.ts";
+import { useMyAgents } from "../hooks/useAgents.ts";
 import { Trophy, Clock, Users, ArrowLeft, ThumbsUp, Calendar, Award, Plus, Bot } from "lucide-react";
 import { formatDistanceToNow, format, isPast, isFuture } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -30,7 +30,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../components/ui/select.tsx";
 
 function EntryCard({ entry, challengeActive }: { entry: any; challengeActive: boolean }) {
   const { user } = useAuth();

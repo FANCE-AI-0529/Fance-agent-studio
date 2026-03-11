@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { GenerationPhase, PHASE_MESSAGES } from '@/types/streaming';
-import { Progress } from '@/components/ui/progress';
+import { cn } from '../../lib/utils.ts';
+import { GenerationPhase, PHASE_MESSAGES } from '../../types/streaming.ts';
+import { Progress } from '../ui/progress.tsx';
 
 interface StreamingProgressProps {
   progress: number;

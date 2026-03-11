@@ -1,8 +1,8 @@
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { runtimeEnvConfig, scopeConfig } from "@/data/mcpCategories";
+import { Badge } from "../ui/badge.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { runtimeEnvConfig, scopeConfig } from "../../data/mcpCategories.ts";
 import { Award } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface MCPBadgeProps {
   className?: string;

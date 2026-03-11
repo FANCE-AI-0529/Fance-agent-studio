@@ -1,10 +1,10 @@
 import { useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import {
   MANUS_FILE_PATHS,
   generateDefaultContent,
-} from "@/data/manusKernel";
+} from "../data/manusKernel.ts";
 
 export interface ManusSessionFile {
   id: string;

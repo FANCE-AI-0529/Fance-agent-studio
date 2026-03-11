@@ -1,7 +1,7 @@
 import { Shield, AlertTriangle, Check, X, Clock, FileText, Network, Database } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
 
 export interface ConfirmAction {
   id: string;

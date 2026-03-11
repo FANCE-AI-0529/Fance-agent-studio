@@ -4,7 +4,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { GITHUB_RAW_BASE } from "@/data/awesomeLLMAgents";
+import { GITHUB_RAW_BASE } from "../data/awesomeLLMAgents.ts";
 
 /**
  * 获取 GitHub 仓库中指定路径的文件内容

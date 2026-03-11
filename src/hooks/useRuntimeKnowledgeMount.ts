@@ -4,14 +4,14 @@
 // =====================================================
 
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { toast } from 'sonner';
 import type {
   KnowledgeMountSuggestion,
   KnowledgeMountLogEntry,
   KnowledgeGapDetectionResult,
-} from '@/types/ragDecision';
+} from '../types/ragDecision.ts';
 
 interface UseRuntimeKnowledgeMountOptions {
   agentId: string;

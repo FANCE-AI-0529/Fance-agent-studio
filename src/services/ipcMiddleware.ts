@@ -1,7 +1,7 @@
 // IPC 中间件系统 (IPC Middleware System)
 
-import type { IPCMessage, IPCCommandPayload, IPCAuthRequestPayload } from '@/types/runtime';
-import { DANGEROUS_PATTERNS, type DangerousPattern, classifyCommandRisk } from '@/constants/dangerousPatterns';
+import type { IPCMessage, IPCCommandPayload, IPCAuthRequestPayload } from '../types/runtime.ts';
+import { DANGEROUS_PATTERNS, type DangerousPattern, classifyCommandRisk } from '../constants/dangerousPatterns.ts';
 
 /**
  * IPC 中间件接口

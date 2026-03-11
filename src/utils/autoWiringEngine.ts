@@ -8,12 +8,12 @@ import {
   NodeSpec, 
   InputMapping, 
   GeneratedVariableMapping 
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 import { 
   VariableType, 
   nodeOutputSchemas, 
   isTypeCompatible 
-} from '@/components/builder/variables/variableTypes';
+} from '../components/builder/variables/variableTypes.ts';
 
 // ========== 类型定义 ==========
 
@@ -533,9 +533,9 @@ export { CONFIDENCE_THRESHOLDS };
 // ========== 智能胶水层集成 ==========
 // 重新导出智能连线相关模块供外部使用
 
-export { inferIOPorts, inferAllNodeIOPorts } from '@/utils/ioTypeInference';
-export { needsTypeAdapter, createAdapterNode, TYPE_COMPATIBILITY_MATRIX } from '@/utils/typeAdapterInjector';
-export { injectManusConnections, detectMCPOperationType, needsManusLogging } from '@/utils/manusWiringIntegration';
+export { inferIOPorts, inferAllNodeIOPorts } from './ioTypeInference.ts';
+export { needsTypeAdapter, createAdapterNode, TYPE_COMPATIBILITY_MATRIX } from './typeAdapterInjector.ts';
+export { injectManusConnections, detectMCPOperationType, needsManusLogging } from './manusWiringIntegration.ts';
 export type { 
   IOPort, 
   IODataType, 
@@ -543,4 +543,4 @@ export type {
   AdapterNodeSpec, 
   ManusLoggerNodeSpec,
   IntelligentWiringResult 
-} from '@/types/wiringTypes';
+} from '../types/wiringTypes.ts';

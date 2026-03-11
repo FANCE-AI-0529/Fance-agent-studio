@@ -10,8 +10,8 @@ import {
   Wand2,
   Play,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from "../../lib/utils.ts";
+import { Button } from "../ui/button.tsx";
 
 export type SystemMessageType = 
   | 'skill_added' 

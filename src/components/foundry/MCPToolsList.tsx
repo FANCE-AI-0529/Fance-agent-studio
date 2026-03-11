@@ -1,6 +1,6 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { Wrench, Package, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export interface MCPTool {
   name: string;

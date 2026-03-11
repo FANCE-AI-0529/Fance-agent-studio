@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as yaml from "yaml";
 import { CheckCircle2, AlertTriangle, XCircle, Info } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge.tsx";
 
 export interface SkillMetadata {
   name?: string;

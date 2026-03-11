@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "../integrations/supabase/client.ts";
+import { MainLayout } from "../components/layout/MainLayout.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
 import {
   ArrowLeft,
   Lightbulb,
@@ -19,7 +19,7 @@ import {
   Brain,
   Zap,
 } from "lucide-react";
-import { InspirationGenerateDialog } from "@/components/inspiration/InspirationGenerateDialog";
+import { InspirationGenerateDialog } from "../components/inspiration/InspirationGenerateDialog.tsx";
 
 const categoryColors: Record<string, string> = {
   "效率提升": "bg-primary/10 text-primary",

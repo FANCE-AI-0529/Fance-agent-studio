@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
 import { 
   Gauge, 
   Users, 
@@ -25,7 +25,7 @@ import {
   StressTestResult,
   collectBrowserMetrics,
   simulateConcurrentRequests
-} from '@/tests/stressTests';
+} from '../../tests/stressTests.ts';
 
 interface LiveMetrics {
   fps: number;

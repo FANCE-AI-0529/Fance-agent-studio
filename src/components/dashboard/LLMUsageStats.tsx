@@ -1,8 +1,8 @@
-import { useLLMUsageStats } from "@/hooks/useLLMUsageStats";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { useLLMUsageStats } from "../../hooks/useLLMUsageStats.ts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
 import { 
   Activity, 
   Zap, 

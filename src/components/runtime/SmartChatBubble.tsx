@@ -1,8 +1,8 @@
 import React from "react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { type AgentMeta, ROLE_THEMES, parseAgentMeta } from "@/constants/agentRoleThemes";
-import { FormattedText } from "./FormattedText";
+import { cn } from "../../lib/utils.ts";
+import { Badge } from "../ui/badge.tsx";
+import { type AgentMeta, ROLE_THEMES, parseAgentMeta } from "../../constants/agentRoleThemes.ts";
+import { FormattedText } from "./FormattedText.tsx";
 import { motion } from "framer-motion";
 
 interface SmartChatBubbleProps {
@@ -103,7 +103,7 @@ export function SmartChatBubble({
             theme?.textClass
           )}
           agentRole={agentMeta?.role}
-          useTerminalStyle={true}
+          useTerminalStyle
         />
       </div>
     </motion.div>

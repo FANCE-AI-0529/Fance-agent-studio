@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button.tsx";
 import { Home, ArrowLeft, Search } from "lucide-react";
 
 const NotFound = () => {

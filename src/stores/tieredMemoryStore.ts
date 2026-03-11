@@ -6,7 +6,7 @@ import type {
   MemoryContextConfig,
   DreamingTaskStatus,
   DEFAULT_MEMORY_CONFIG,
-} from '@/types/tieredMemory';
+} from '../types/tieredMemory.ts';
 
 interface TieredMemoryState {
   // 核心记忆 (常驻)

@@ -3,7 +3,7 @@
  * @description Builder 保存后同步画布数据到 agent_graph_nodes/edges 表
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 import type { Node, Edge } from '@xyflow/react';
 
 /**

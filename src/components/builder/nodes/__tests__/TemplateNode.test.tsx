@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@/test/utils/renderWithProviders";
-import TemplateNode from "@/components/builder/nodes/TemplateNode";
-import { createMockTemplateNodeData } from "@/test/utils/mockNodeData";
-import { createNodeProps } from "@/test/utils/nodePropsHelper";
+import { render, screen, fireEvent } from "../../../../test/utils/renderWithProviders.tsx";
+import TemplateNode from "../TemplateNode.tsx";
+import { createMockTemplateNodeData } from "../../../../test/utils/mockNodeData.ts";
+import { createNodeProps } from "../../../../test/utils/nodePropsHelper.ts";
 
 describe("TemplateNode", () => {
   describe("Rendering", () => {

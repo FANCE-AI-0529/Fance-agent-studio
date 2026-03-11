@@ -11,13 +11,13 @@ import {
   Database,
   ChevronRight
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import type { KnowledgeMatchResult, RAGDecision } from '@/hooks/useKnowledgeMatching';
+import { Button } from '../ui/button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { KnowledgeMatchResult, RAGDecision } from '../../hooks/useKnowledgeMatching.ts';
 
 interface KnowledgeDecisionPanelProps {
   matches: KnowledgeMatchResult[];

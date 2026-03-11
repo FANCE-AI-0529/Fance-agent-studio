@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Users, Bot, Sparkles, MessageCircle } from "lucide-react";
-import { useCommunityStats } from "@/hooks/useCommunityStats";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useCommunityStats } from "../../hooks/useCommunityStats.ts";
+import { Skeleton } from "../ui/skeleton.tsx";
 import { useNavigate } from "react-router-dom";
 
 export function CommunityStats() {

@@ -6,25 +6,25 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../ui/sheet.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible.tsx";
 import {
   Route,
   Plus,
@@ -38,7 +38,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import {
   useModelRoutingRules,
   useCreateRoutingRule,
@@ -47,7 +47,7 @@ import {
   routingModels,
   routingTemplates,
   ModelRoutingRule,
-} from "@/hooks/useModelRouting";
+} from "../../hooks/useModelRouting.ts";
 
 interface ModelRoutingConfigProps {
   agentId?: string | null;
@@ -124,7 +124,7 @@ export function ModelRoutingConfig({ agentId, agentName }: ModelRoutingConfigPro
         });
       }
       resetForm();
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation
     }
   };

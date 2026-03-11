@@ -4,8 +4,8 @@
 // =====================================================
 
 import { useState, useCallback, useMemo } from 'react';
-import { useGlobalAgentStore } from '@/stores/globalAgentStore';
-import { supabase } from '@/integrations/supabase/client';
+import { useGlobalAgentStore } from '../stores/globalAgentStore.ts';
+import { supabase } from '../integrations/supabase/client.ts';
 import { toast } from 'sonner';
 import type { 
   GraphCommand, 
@@ -13,7 +13,7 @@ import type {
   GraphNodeType,
   NLParseResult,
   GraphOperationResult,
-} from '@/types/graphCommandTypes';
+} from '../types/graphCommandTypes.ts';
 
 // ============= Quick Pattern Matching =============
 

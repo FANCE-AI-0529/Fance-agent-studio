@@ -3,7 +3,7 @@
  * Uses explicit sessionId for all operations to avoid race conditions
  */
 
-import type { TraceSession, TraceEvent, TraceEventType, TraceEventData, TraceSessionStatus } from "./traceTypes";
+import type { TraceSession, TraceEvent, TraceEventType, TraceEventData, TraceSessionStatus } from "./traceTypes.ts";
 
 export interface TraceState {
   sessions: TraceSession[];

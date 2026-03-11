@@ -5,8 +5,8 @@
  * @copyright Copyright (c) 2025 Fance Studio. MIT License.
  */
 
-import type { AgentAvatar } from "@/components/builder/AgentAvatarPicker";
-import type { Json } from "@/integrations/supabase/types";
+import type { AgentAvatar } from "../components/builder/AgentAvatarPicker.tsx";
+import type { Json } from "../integrations/supabase/types.ts";
 
 // =====================================================
 // 智能体 Manifest 运行时类型

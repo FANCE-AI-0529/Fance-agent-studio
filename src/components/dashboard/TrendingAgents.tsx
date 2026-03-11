@@ -11,14 +11,14 @@ import {
   Star,
   Clock
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useTrendingAgents, useToggleAgentLike, TrendingAgent } from "@/hooks/useTrendingAgents";
-import { useAgentClone } from "@/hooks/useAgentClone";
-import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { useTrendingAgents, useToggleAgentLike, TrendingAgent } from "../../hooks/useTrendingAgents.ts";
+import { useAgentClone } from "../../hooks/useAgentClone.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 

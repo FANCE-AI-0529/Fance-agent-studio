@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,14 +16,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "../ui/alert-dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
 import {
   History,
   RotateCcw,
@@ -38,15 +38,15 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import {
   useTemplateVersions,
   useCreateTemplateVersion,
   useRestoreTemplateVersion,
   useDeleteTemplateVersion,
   type TemplateVersion,
-} from "@/hooks/useTemplateVersions";
-import type { CustomTemplate } from "@/hooks/useCustomTemplates";
+} from "../../hooks/useTemplateVersions.ts";
+import type { CustomTemplate } from "../../hooks/useCustomTemplates.ts";
 
 interface TemplateVersionHistoryProps {
   template: CustomTemplate | null;

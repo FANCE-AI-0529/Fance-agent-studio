@@ -1,9 +1,10 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { Button } from './ui/button.tsx';
 import { AlertTriangle, RefreshCw, Home, Bug, MessageSquare, Copy, Check } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { fromNativeError, AppError } from '@/lib/errorTypes';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card.tsx';
+import { fromNativeError, AppError } from '../lib/errorTypes.ts';
+import process from "node:process";
 
 interface Props {
   children: ReactNode;
@@ -41,11 +42,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRefresh = () => {
-    window.location.reload();
+    globalThis.location.reload();
   };
 
   handleGoHome = () => {
-    window.location.href = '/';
+    globalThis.location.href = '/';
   };
 
   handleRetry = () => {
@@ -85,7 +86,7 @@ ${this.state.error?.message || '未知错误'}
 错误代码：${this.state.appError?.code || 'UNKNOWN'}
 时间：${new Date().toISOString()}
     `);
-    window.open(`mailto:support@example.com?subject=${subject}&body=${body}`);
+    globalThis.open(`mailto:support@example.com?subject=${subject}&body=${body}`);
   };
 
   render() {

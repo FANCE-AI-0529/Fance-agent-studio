@@ -6,35 +6,35 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu.tsx";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "../ui/popover.tsx";
 import { Variable, Sparkles, AlertCircle, Check, Save, FolderOpen, Trash2, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import { toast } from "sonner";
-import type { TaskChainTemplate, TemplateStep } from "./TaskChainTemplates";
+import type { TaskChainTemplate, TemplateStep } from "./TaskChainTemplates.tsx";
 import {
   useVariablePresets,
   useSaveVariablePreset,
   useDeleteVariablePreset,
   type VariablePreset,
-} from "@/hooks/useVariablePresets";
+} from "../../hooks/useVariablePresets.ts";
 
 // Regex to match variables in format {{variableName}} or ${variableName}
 const VARIABLE_REGEX = /\{\{(\w+)\}\}|\$\{(\w+)\}/g;
@@ -294,7 +294,7 @@ export function TemplateVariableDialog({
       toast.success("预设已保存");
       setShowSavePreset(false);
       setPresetName("");
-    } catch (error) {
+    } catch (_error) {
       toast.error("保存预设失败");
     }
   };
@@ -304,7 +304,7 @@ export function TemplateVariableDialog({
     try {
       await deletePreset.mutateAsync(presetId);
       toast.success("预设已删除");
-    } catch (error) {
+    } catch (_error) {
       toast.error("删除预设失败");
     }
   };

@@ -18,23 +18,23 @@ import {
   FileText,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Button } from '../ui/button.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
+} from '../ui/collapsible.tsx';
+import { cn } from '../../lib/utils.ts';
 import {
   WiringConnection,
   AdapterNodeSpec,
   ManusLoggerNodeSpec,
   WiringStatistics,
-} from '@/types/wiringTypes';
+} from '../../types/wiringTypes.ts';
 
 // ========== 类型定义 ==========
 

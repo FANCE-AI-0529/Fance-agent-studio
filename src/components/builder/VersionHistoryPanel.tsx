@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { History, GitBranch, Calendar, GitCompare } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { SnapshotTimelinePanel } from "./SnapshotTimelinePanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { SnapshotTimelinePanel } from "./SnapshotTimelinePanel.tsx";
 
 interface VersionHistoryPanelProps {
   agentId: string | null;

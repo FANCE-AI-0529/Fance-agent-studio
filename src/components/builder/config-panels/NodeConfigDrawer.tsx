@@ -1,19 +1,19 @@
 import React, { useCallback } from "react";
 import { Node } from "@xyflow/react";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import LLMConfigPanel from "./LLMConfigPanel";
-import CodeConfigPanel from "./CodeConfigPanel";
-import HTTPConfigPanel from "./HTTPConfigPanel";
-import ConditionConfigPanel from "./ConditionConfigPanel";
-import TemplateConfigPanel from "./TemplateConfigPanel";
-import ExtractorConfigPanel from "./ExtractorConfigPanel";
-import IteratorConfigPanel from "./IteratorConfigPanel";
-import KnowledgeConfigPanel from "./KnowledgeConfigPanel";
-import AggregatorConfigPanel from "./AggregatorConfigPanel";
-import TriggerConfigPanel from "./TriggerConfigPanel";
+import { Button } from "../../ui/button.tsx";
+import { ScrollArea } from "../../ui/scroll-area.tsx";
+import { cn } from "../../../lib/utils.ts";
+import LLMConfigPanel from "./LLMConfigPanel.tsx";
+import CodeConfigPanel from "./CodeConfigPanel.tsx";
+import HTTPConfigPanel from "./HTTPConfigPanel.tsx";
+import ConditionConfigPanel from "./ConditionConfigPanel.tsx";
+import TemplateConfigPanel from "./TemplateConfigPanel.tsx";
+import ExtractorConfigPanel from "./ExtractorConfigPanel.tsx";
+import IteratorConfigPanel from "./IteratorConfigPanel.tsx";
+import KnowledgeConfigPanel from "./KnowledgeConfigPanel.tsx";
+import AggregatorConfigPanel from "./AggregatorConfigPanel.tsx";
+import TriggerConfigPanel from "./TriggerConfigPanel.tsx";
 
 interface NodeConfigDrawerProps {
   selectedNode: Node | null;

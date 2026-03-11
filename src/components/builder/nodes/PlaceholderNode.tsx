@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Position, Handle } from "@xyflow/react";
 import { AlertCircle, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils.ts";
 
 export interface PlaceholderNodeData {
   id: string;

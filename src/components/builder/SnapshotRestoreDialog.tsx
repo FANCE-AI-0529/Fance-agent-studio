@@ -9,14 +9,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { useAgentSnapshots } from "@/hooks/useAgentSnapshots";
+} from "../ui/alert-dialog.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
+import { Label } from "../ui/label.tsx";
+import { useAgentSnapshots } from "../../hooks/useAgentSnapshots.ts";
 import { format, parseISO } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import type { AgentSnapshot } from "@/types/gitops";
+import type { AgentSnapshot } from "../../types/gitops.ts";
 
 interface SnapshotRestoreDialogProps {
   open: boolean;

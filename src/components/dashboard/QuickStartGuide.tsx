@@ -8,7 +8,7 @@ import {
   Play,
   Bot,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 
 interface QuickStartGuideProps {
   hasAgents?: boolean;

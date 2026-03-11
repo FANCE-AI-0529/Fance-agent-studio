@@ -14,11 +14,11 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet.tsx";
+import { cn } from "../../lib/utils.ts";
 import { toast } from "sonner";
 
 export interface MCPResource {
@@ -295,7 +295,7 @@ export function MCPResourceBrowser({
         const content = await onReadResource(server.id, selectedResource.uri);
         setResourceContent(content);
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("读取资源失败");
     } finally {
       setIsReadingResource(false);

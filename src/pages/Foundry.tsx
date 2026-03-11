@@ -22,66 +22,66 @@ import {
   Server,
   Plug,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { toast } from "../hooks/use-toast.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+} from "../components/ui/tooltip.tsx";
+import { Switch } from "../components/ui/switch.tsx";
+import { Label } from "../components/ui/label.tsx";
 
-import { SkillEditor } from "@/components/foundry/SkillEditor";
-import { FoundrySidebar, FileItem } from "@/components/foundry/FoundrySidebar";
+import { SkillEditor } from "../components/foundry/SkillEditor.tsx";
+import { FoundrySidebar, FileItem } from "../components/foundry/FoundrySidebar.tsx";
 import {
   parseSkillMd,
   ValidationPanel,
   MetadataDisplay,
   ValidationResult,
-} from "@/components/foundry/SkillValidator";
-import { SkillTemplatesDialog, SkillTemplate } from "@/components/foundry/SkillTemplates";
-import { DependencyManager } from "@/components/foundry/DependencyManager";
-import { SkillTestSandbox } from "@/components/foundry/SkillTestSandbox";
-import { SkillImportExport } from "@/components/foundry/SkillImportExport";
-import { SkillMetadataEditor } from "@/components/foundry/SkillMetadataEditor";
-import { SkillVersionHistory } from "@/components/foundry/SkillVersionHistory";
-import { AISkillGenerator } from "@/components/foundry/AISkillGenerator";
-import { SkillStore } from "@/components/foundry/SkillStore";
-import { NaturalLanguageCreator } from "@/components/foundry/NaturalLanguageCreator";
-import { LowCodeConfigurator } from "@/components/foundry/LowCodeConfigurator";
-import { CreatorDashboard } from "@/components/foundry/CreatorDashboard";
-import { SkillBundleCard } from "@/components/foundry/SkillBundleCard";
-import { CreateBundleDialog } from "@/components/foundry/CreateBundleDialog";
-import { BundleDetailDialog } from "@/components/foundry/BundleDetailDialog";
-import { EditBundleDialog } from "@/components/foundry/EditBundleDialog";
-import { MyBundlesPanel } from "@/components/foundry/MyBundlesPanel";
-import { BundleCategoryFilter, BundleCategory, BUNDLE_CATEGORIES } from "@/components/foundry/BundleCategoryFilter";
-import { SkillModeSwitch, SkillMode } from "@/components/foundry/SkillModeSwitch";
-import { MCPConfigEditor, MCPConfig } from "@/components/foundry/MCPConfigEditor";
-import { MCPInspector } from "@/components/foundry/MCPInspector";
-import { MCPSkillMdGenerator } from "@/components/foundry/MCPSkillMdGenerator";
-import { useMCPInspect, MCPInspectResult } from "@/hooks/useMCPInspect";
-import { useFeaturedBundles, SkillBundle } from "@/hooks/useSkillBundles";
-import { KnowledgeManager } from "@/components/knowledge/KnowledgeManager";
-import { useBundlesByCategory } from "@/hooks/useBundlesByCategory";
-import { AgentPlazaDetail, AgentPlazaEmpty } from "@/components/foundry/AgentPlazaDetail";
-import { AgentPlazaSidebar } from "@/components/foundry/AgentPlazaSidebar";
-import { AgentPlazaGrid } from "@/components/foundry/AgentPlazaCard";
-import { AwesomeLLMAgent, awesomeLLMAgents, AGENT_CATEGORIES, getAgentsByCategory, searchAgents } from "@/data/awesomeLLMAgents";
-import { useInstallBundle } from "@/hooks/useSkillBundleInstall";
+} from "../components/foundry/SkillValidator.tsx";
+import { SkillTemplatesDialog, SkillTemplate } from "../components/foundry/SkillTemplates.tsx";
+import { DependencyManager } from "../components/foundry/DependencyManager.tsx";
+import { SkillTestSandbox } from "../components/foundry/SkillTestSandbox.tsx";
+import { SkillImportExport } from "../components/foundry/SkillImportExport.tsx";
+import { SkillMetadataEditor } from "../components/foundry/SkillMetadataEditor.tsx";
+import { SkillVersionHistory } from "../components/foundry/SkillVersionHistory.tsx";
+import { AISkillGenerator } from "../components/foundry/AISkillGenerator.tsx";
+import { SkillStore } from "../components/foundry/SkillStore.tsx";
+import { NaturalLanguageCreator } from "../components/foundry/NaturalLanguageCreator.tsx";
+import { LowCodeConfigurator } from "../components/foundry/LowCodeConfigurator.tsx";
+import { CreatorDashboard } from "../components/foundry/CreatorDashboard.tsx";
+import { SkillBundleCard } from "../components/foundry/SkillBundleCard.tsx";
+import { CreateBundleDialog } from "../components/foundry/CreateBundleDialog.tsx";
+import { BundleDetailDialog } from "../components/foundry/BundleDetailDialog.tsx";
+import { EditBundleDialog } from "../components/foundry/EditBundleDialog.tsx";
+import { MyBundlesPanel } from "../components/foundry/MyBundlesPanel.tsx";
+import { BundleCategoryFilter, BundleCategory, BUNDLE_CATEGORIES } from "../components/foundry/BundleCategoryFilter.tsx";
+import { SkillModeSwitch, SkillMode } from "../components/foundry/SkillModeSwitch.tsx";
+import { MCPConfigEditor, MCPConfig } from "../components/foundry/MCPConfigEditor.tsx";
+import { MCPInspector } from "../components/foundry/MCPInspector.tsx";
+import { MCPSkillMdGenerator } from "../components/foundry/MCPSkillMdGenerator.tsx";
+import { useMCPInspect, MCPInspectResult } from "../hooks/useMCPInspect.ts";
+import { useFeaturedBundles, SkillBundle } from "../hooks/useSkillBundles.ts";
+import { KnowledgeManager } from "../components/knowledge/KnowledgeManager.tsx";
+import { useBundlesByCategory } from "../hooks/useBundlesByCategory.ts";
+import { AgentPlazaDetail, AgentPlazaEmpty } from "../components/foundry/AgentPlazaDetail.tsx";
+import { AgentPlazaSidebar } from "../components/foundry/AgentPlazaSidebar.tsx";
+import { AgentPlazaGrid } from "../components/foundry/AgentPlazaCard.tsx";
+import { AwesomeLLMAgent, awesomeLLMAgents, AGENT_CATEGORIES, getAgentsByCategory, searchAgents } from "../data/awesomeLLMAgents.ts";
+import { useInstallBundle } from "../hooks/useSkillBundleInstall.ts";
 import {
   useMySkills,
   useCreateSkill,
   useUpdateSkill,
   usePublishSkill,
   useDeleteSkill,
-} from "@/hooks/useSkills";
-import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
+} from "../hooks/useSkills.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { cn } from "../lib/utils.ts";
 
 // Anthropic Skills Filesystem 标准模板
 const anthropicSkillTemplate = `---

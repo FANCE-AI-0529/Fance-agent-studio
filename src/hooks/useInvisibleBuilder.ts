@@ -4,16 +4,16 @@
 // =====================================================
 
 import { useState, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import { useQueryClient } from "@tanstack/react-query";
-import type { MagicStep } from "@/components/consumer/MagicLoader";
-import type { Json } from "@/integrations/supabase/types";
-import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecision } from "@/hooks/useKnowledgeMatching";
-import { useGlobalAgentStore } from "@/stores/globalAgentStore";
+import type { MagicStep } from "../components/consumer/MagicLoader.tsx";
+import type { Json } from "../integrations/supabase/types.ts";
+import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecision } from "./useKnowledgeMatching.ts";
+import { useGlobalAgentStore } from "../stores/globalAgentStore.ts";
 import { toast } from "sonner";
-import { type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
-import { generateSmartAvatar } from "@/utils/avatarGenerator";
+import { type AgentAvatar } from "../components/builder/AgentAvatarPicker.tsx";
+import { generateSmartAvatar } from "../utils/avatarGenerator.ts";
 
 export interface InvisibleBuildResult {
   agentId: string;

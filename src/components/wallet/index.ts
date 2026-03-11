@@ -1,2 +1,2 @@
-export { WalletPanel } from "./WalletPanel";
-export { TopupDialog } from "./TopupDialog";
+export { WalletPanel } from "./WalletPanel.tsx";
+export { TopupDialog } from "./TopupDialog.tsx";

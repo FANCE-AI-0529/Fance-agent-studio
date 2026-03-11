@@ -8,8 +8,8 @@
  */
 
 import { useState, useCallback, useRef } from "react";
-import { useIntentDrift } from "./useIntentDrift";
-import { supabase } from "@/integrations/supabase/client";
+import { useIntentDrift } from "./useIntentDrift.ts";
+import { supabase } from "../integrations/supabase/client.ts";
 
 /**
  * 智能体对话 Edge Function 端点地址

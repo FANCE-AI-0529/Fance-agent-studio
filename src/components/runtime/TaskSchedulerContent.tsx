@@ -1,4 +1,4 @@
-import { TaskSchedulerPanel } from "./TaskSchedulerPanel";
+import { TaskSchedulerPanel } from "./TaskSchedulerPanel.tsx";
 
 /**
  * 任务调度器内容包装器

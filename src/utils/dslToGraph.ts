@@ -13,7 +13,7 @@ import {
   GeneratedNode,
   GeneratedEdge,
   GeneratedVariableMapping,
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 
 // ========== 布局配置 ==========
 

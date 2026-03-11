@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MousePointer2, ArrowDown, Sparkles, Grid3X3 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface DragDropHintProps {
   className?: string;

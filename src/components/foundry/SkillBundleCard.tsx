@@ -1,9 +1,9 @@
 import { Package, Download, ChevronRight, Edit2, ShoppingCart, Check, Star } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { SkillBundle } from "@/hooks/useSkillBundles";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
+import type { SkillBundle } from "../../hooks/useSkillBundles.ts";
 
 // Category gradient backgrounds using design tokens
 const categoryGradients: Record<string, string> = {

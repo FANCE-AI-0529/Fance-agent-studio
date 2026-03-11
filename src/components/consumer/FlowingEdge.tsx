@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { EdgeProps, getBezierPath } from '@xyflow/react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils.ts';
 
 interface FlowingEdgeData {
   isActive?: boolean;

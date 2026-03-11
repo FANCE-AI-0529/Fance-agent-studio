@@ -13,15 +13,15 @@ import {
   RotateCcw,
   Sliders,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Label } from '../ui/label.tsx';
+import { Slider } from '../ui/slider.tsx';
+import { Switch } from '../ui/switch.tsx';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group.tsx';
 import { useTheme } from 'next-themes';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils.ts';
 
 interface ThemeCustomizerProps {
   onClose?: () => void;

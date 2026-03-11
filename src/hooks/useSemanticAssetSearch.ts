@@ -4,13 +4,13 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { 
   SemanticAsset, 
   AssetSearchQuery, 
   AssetSearchResult 
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 
 interface UseSemanticAssetSearchReturn {
   searchAssets: (query: AssetSearchQuery) => Promise<AssetSearchResult>;

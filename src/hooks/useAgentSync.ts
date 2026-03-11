@@ -8,8 +8,8 @@
  */
 
 import { useEffect, useCallback, useMemo, useRef } from 'react';
-import { useGlobalAgentStore, selectRemoteEvents } from '@/stores/globalAgentStore';
-import type { SyncEvent } from '@/stores/globalAgentStore';
+import { useGlobalAgentStore, selectRemoteEvents } from '../stores/globalAgentStore.ts';
+import type { SyncEvent } from '../stores/globalAgentStore.ts';
 import type { Node, Edge } from '@xyflow/react';
 
 /**

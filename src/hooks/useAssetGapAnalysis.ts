@@ -4,14 +4,14 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { 
   AssetGapAnalysis, 
   SemanticAsset,
   SkillGenerationSuggestion,
   KnowledgeBaseSuggestion 
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 
 interface UseAssetGapAnalysisReturn {
   analyzeGaps: (description: string, existingAssets?: SemanticAsset[]) => Promise<AssetGapAnalysis>;

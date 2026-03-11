@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { AgentSnapshot, TimelineSnapshot, ChangeStats, SnapshotTriggerSource, GraphData, SnapshotSkillRef } from '@/types/gitops';
+import { supabase } from '../integrations/supabase/client.ts';
+import type { AgentSnapshot, TimelineSnapshot, ChangeStats, SnapshotTriggerSource, GraphData, SnapshotSkillRef } from '../types/gitops.ts';
 
 export function useTimeTravel(agentId: string | null) {
   const [previewSnapshot, setPreviewSnapshot] = useState<AgentSnapshot | null>(null);

@@ -1,13 +1,13 @@
 import { FileText, MapPin, Target, Network, X, Copy, Check } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Separator } from "../ui/separator.tsx";
+import { cn } from "../../lib/utils.ts";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Citation } from "./CitationCard";
+import type { Citation } from "./CitationCard.tsx";
 
 interface CitationDetailDialogProps {
   citation: Citation | null;

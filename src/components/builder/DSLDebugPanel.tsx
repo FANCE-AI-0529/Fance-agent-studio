@@ -20,18 +20,18 @@ import {
   AlertTriangle,
   Info,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Input } from '../ui/input.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+} from '../ui/collapsible.tsx';
+import { toast } from '../../hooks/use-toast.ts';
+import { cn } from '../../lib/utils.ts';
 import type {
   WorkflowDSL,
   ComplianceReport,
@@ -39,7 +39,7 @@ import type {
   NodeSpec,
   InjectedIntervention,
   GenerationWarning,
-} from '@/types/workflowDSL';
+} from '../../types/workflowDSL.ts';
 
 // ========== 类型定义 ==========
 

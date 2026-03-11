@@ -1,14 +1,14 @@
 import { Bot, ChevronDown, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Agent } from "@/hooks/useAgents";
-import { AgentAvatarDisplay, AgentAvatar, getAvatarIcon, getAvatarColor } from "@/components/builder/AgentAvatarPicker";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Agent } from "../../hooks/useAgents.ts";
+import { AgentAvatarDisplay, AgentAvatar, getAvatarIcon, getAvatarColor } from "../builder/AgentAvatarPicker.tsx";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../ui/popover.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import { useState } from "react";
 
 interface AgentSelectorProps {

@@ -4,8 +4,8 @@
  * With automatic retry on failure (Vibe Loop)
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import type { SkillPackage } from './skillCrafter';
+import { supabase } from '../integrations/supabase/client.ts';
+import type { SkillPackage } from './skillCrafter.ts';
 
 // ── Pipeline Stage Types ──
 

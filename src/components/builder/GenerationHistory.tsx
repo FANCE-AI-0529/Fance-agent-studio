@@ -21,16 +21,16 @@ import {
   X,
   MoreVertical,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu.tsx';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,13 +40,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+} from '../ui/alert-dialog.tsx';
+import { toast } from '../../hooks/use-toast.ts';
+import { cn } from '../../lib/utils.ts';
 import {
   useGenerationHistoryStore,
   GenerationRecord,
-} from '@/stores/generationHistoryStore';
+} from '../../stores/generationHistoryStore.ts';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 

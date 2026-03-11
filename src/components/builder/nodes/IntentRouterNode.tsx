@@ -1,11 +1,11 @@
 import { memo, useMemo } from "react";
 import { Position } from "@xyflow/react";
 import { Route, Settings, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import MultiPortHandle from "@/components/builder/ports/MultiPortHandle";
-import { standardPorts, PortConfig } from "@/components/builder/ports/portTypes";
+import { cn } from "../../../lib/utils.ts";
+import { Button } from "../../ui/button.tsx";
+import { Badge } from "../../ui/badge.tsx";
+import MultiPortHandle from "../ports/MultiPortHandle.tsx";
+import { standardPorts, PortConfig } from "../ports/portTypes.ts";
 
 export interface IntentRoute {
   id: string;

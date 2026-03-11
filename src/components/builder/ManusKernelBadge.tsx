@@ -1,14 +1,14 @@
 import React from 'react';
 import { Brain, Sparkles } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { MANUS_KERNEL } from '@/data/manusKernel';
+} from '../ui/tooltip.tsx';
+import { cn } from '../../lib/utils.ts';
+import { MANUS_KERNEL } from '../../data/manusKernel.ts';
 
 interface ManusKernelBadgeProps {
   className?: string;

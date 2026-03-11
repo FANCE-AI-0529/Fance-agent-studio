@@ -6,22 +6,22 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import { Mail, Lock, User, ArrowRight, Loader2, Sparkles, Ticket, CheckCircle2, XCircle } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { Button } from "../components/ui/button.tsx";
+import { Input } from "../components/ui/input.tsx";
+import { Label } from "../components/ui/label.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { toast } from "../hooks/use-toast.ts";
 import { z } from "zod";
-import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
-import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
-import { useInviteValidation, acceptInvitationOnSignup } from "@/hooks/useInviteValidation";
-import { supabase } from "@/integrations/supabase/client";
-import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/auth/PasswordStrengthIndicator";
-import { MathCaptcha } from "@/components/auth/MathCaptcha";
-import { useSecurityAudit } from "@/hooks/useSecurityAudit";
+import { ForgotPasswordForm } from "../components/auth/ForgotPasswordForm.tsx";
+import { ResetPasswordForm } from "../components/auth/ResetPasswordForm.tsx";
+import { useInviteValidation, acceptInvitationOnSignup } from "../hooks/useInviteValidation.ts";
+import { supabase } from "../integrations/supabase/client.ts";
+import { PasswordStrengthIndicator, usePasswordStrength } from "../components/auth/PasswordStrengthIndicator.tsx";
+import { MathCaptcha } from "../components/auth/MathCaptcha.tsx";
+import { useSecurityAudit } from "../hooks/useSecurityAudit.ts";
 
 const emailSchema = z.string().email("请输入有效的邮箱地址");
 // 强密码验证：至少8位，包含大小写字母、数字和特殊字符

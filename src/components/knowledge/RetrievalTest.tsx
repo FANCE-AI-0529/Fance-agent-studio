@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Search, Loader2, FileText, Hash } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { Label } from "@/components/ui/label";
-import { useRAGQuery, type RAGChunk } from "@/hooks/useRAGQuery";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Label } from "../ui/label.tsx";
+import { useRAGQuery, type RAGChunk } from "../../hooks/useRAGQuery.ts";
+import { cn } from "../../lib/utils.ts";
 
 interface RetrievalTestProps {
   knowledgeBaseId: string;

@@ -5,15 +5,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "../ui/dialog.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
 import { Package, Search, X, ImageIcon } from "lucide-react";
 import {
   Select,
@@ -21,11 +21,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useMySkills } from "@/hooks/useSkills";
-import { useCreateBundle } from "@/hooks/useSkillBundles";
-import { toast } from "@/hooks/use-toast";
-import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter";
+} from "../ui/select.tsx";
+import { useMySkills } from "../../hooks/useSkills.ts";
+import { useCreateBundle } from "../../hooks/useSkillBundles.ts";
+import { toast } from "../../hooks/use-toast.ts";
+import { BUNDLE_CATEGORIES, BundleCategory } from "./BundleCategoryFilter.tsx";
 
 interface CreateBundleDialogProps {
   open: boolean;

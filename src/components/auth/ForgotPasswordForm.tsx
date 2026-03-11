@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
 import { Mail, ArrowRight, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "../../hooks/use-toast.ts";
+import { supabase } from "../../integrations/supabase/client.ts";
 import { z } from "zod";
 
 const emailSchema = z.string().email("请输入有效的邮箱地址");
@@ -37,7 +37,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
+        redirectTo: `${globalThis.location.origin}/auth?reset=true`,
       });
 
       if (error) throw error;

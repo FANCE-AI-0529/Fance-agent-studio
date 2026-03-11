@@ -24,7 +24,7 @@ export function usePWA(): UsePWAReturn {
   // Check if app is installed (standalone mode)
   useEffect(() => {
     const checkInstalled = () => {
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+      const isStandalone = globalThis.matchMedia("(display-mode: standalone)").matches;
       const isInWebAppiOS = (navigator as any).standalone === true;
       setIsInstalled(isStandalone || isInWebAppiOS);
     };
@@ -32,7 +32,7 @@ export function usePWA(): UsePWAReturn {
     checkInstalled();
 
     // Listen for display mode changes
-    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const mediaQuery = globalThis.matchMedia("(display-mode: standalone)");
     mediaQuery.addEventListener("change", checkInstalled);
 
     return () => mediaQuery.removeEventListener("change", checkInstalled);
@@ -45,16 +45,16 @@ export function usePWA(): UsePWAReturn {
       setInstallPrompt(e as BeforeInstallPromptEvent);
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    globalThis.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // Check if already installed
-    window.addEventListener("appinstalled", () => {
+    globalThis.addEventListener("appinstalled", () => {
       setIsInstalled(true);
       setInstallPrompt(null);
     });
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      globalThis.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
 
@@ -63,12 +63,12 @@ export function usePWA(): UsePWAReturn {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    globalThis.addEventListener("online", handleOnline);
+    globalThis.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      globalThis.removeEventListener("online", handleOnline);
+      globalThis.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -115,7 +115,7 @@ export function usePWA(): UsePWAReturn {
   const updateApp = useCallback(() => {
     if (registration?.waiting) {
       registration.waiting.postMessage({ type: "SKIP_WAITING" });
-      window.location.reload();
+      globalThis.location.reload();
     }
   }, [registration]);
 

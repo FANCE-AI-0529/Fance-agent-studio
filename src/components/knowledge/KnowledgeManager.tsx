@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Database, Plus, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,14 +11,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "@/hooks/useKnowledgeBases";
-import { useKnowledgeStore } from "@/stores/knowledgeStore";
-import { KnowledgeBaseList } from "./KnowledgeBaseList";
-import { KnowledgeBaseDetail } from "./KnowledgeBaseDetail";
-import { CreateKnowledgeBaseDialog } from "./CreateKnowledgeBaseDialog";
-import { EditKnowledgeBaseDialog } from "./EditKnowledgeBaseDialog";
-import { EmptyState } from "@/components/ui/empty-state";
+} from "../ui/alert-dialog.tsx";
+import { useKnowledgeBases, useDeleteKnowledgeBase, type KnowledgeBase } from "../../hooks/useKnowledgeBases.ts";
+import { useKnowledgeStore } from "../../stores/knowledgeStore.ts";
+import { KnowledgeBaseList } from "./KnowledgeBaseList.tsx";
+import { KnowledgeBaseDetail } from "./KnowledgeBaseDetail.tsx";
+import { CreateKnowledgeBaseDialog } from "./CreateKnowledgeBaseDialog.tsx";
+import { EditKnowledgeBaseDialog } from "./EditKnowledgeBaseDialog.tsx";
+import { EmptyState } from "../ui/empty-state.tsx";
 
 export function KnowledgeManager() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
-import { useAppModeStore } from "@/stores/appModeStore";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
 import { motion } from "framer-motion";
 import { Terminal, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { MainLayout } from "./MainLayout";
+import { Button } from "../ui/button.tsx";
+import { MainLayout } from "./MainLayout.tsx";
 
 interface StudioOnlyRouteProps {
   children: ReactNode;
@@ -54,7 +54,7 @@ export function StudioOnlyRoute({ children }: StudioOnlyRouteProps) {
 
             <Button
               variant="ghost"
-              onClick={() => window.history.back()}
+              onClick={() => globalThis.history.back()}
               className="text-muted-foreground"
             >
               返回上一页

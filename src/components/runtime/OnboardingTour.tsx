@@ -14,8 +14,8 @@ import {
   Lightbulb,
   Settings2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { cn } from "../../lib/utils.ts";
 
 interface TourStep {
   id: string;

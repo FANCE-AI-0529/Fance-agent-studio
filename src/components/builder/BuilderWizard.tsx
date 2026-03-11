@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "../ui/sheet.tsx";
 import {
   Bot,
   Sparkles,
@@ -11,14 +11,14 @@ import {
   ArrowLeft,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import AgentTemplates, { AgentTemplate } from "./AgentTemplates";
-import { Skill } from "./SkillMarketplace";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import AgentTemplates, { AgentTemplate } from "./AgentTemplates.tsx";
+import { Skill } from "./SkillMarketplace.tsx";
+import { cn } from "../../lib/utils.ts";
 
 interface WizardStep {
   id: string;

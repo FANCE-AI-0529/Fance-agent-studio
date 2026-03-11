@@ -1,30 +1,30 @@
 import { useState } from "react";
 import { FileText, Trash2, RefreshCw, Eye, Loader2, AlertCircle, FileSearch } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 import {
   Dialog,
   DialogContent,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   useKnowledgeDocuments,
   useDeleteDocument,
   useIngestDocument,
   useDocumentRealtimeUpdates,
-} from "@/hooks/useKnowledgeDocuments";
-import { useKnowledgeStore } from "@/stores/knowledgeStore";
-import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
-import { DocumentProcessingProgress } from "./DocumentProcessingProgress";
-import { DocumentPreview } from "./DocumentPreview";
+} from "../../hooks/useKnowledgeDocuments.ts";
+import { useKnowledgeStore } from "../../stores/knowledgeStore.ts";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { cn } from "../../lib/utils.ts";
+import { DocumentProcessingProgress } from "./DocumentProcessingProgress.tsx";
+import { DocumentPreview } from "./DocumentPreview.tsx";
 import { toast } from "sonner";
 
 interface DocumentListProps {

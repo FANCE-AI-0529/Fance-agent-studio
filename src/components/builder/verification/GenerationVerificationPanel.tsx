@@ -5,13 +5,13 @@ import {
   Database, Search, GitBranch, Shield, Loader2,
   ChevronDown, ChevronRight, Zap, AlertTriangle
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '../../ui/button.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../ui/card.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../ui/collapsible.tsx';
+import { supabase } from '../../../integrations/supabase/client.ts';
+import { useAuth } from '../../../contexts/AuthContext.tsx';
 
 interface TestResult {
   name: string;
@@ -107,7 +107,7 @@ export function GenerationVerificationPanel() {
 
     try {
       // Check asset_semantic_index table
-      const { data: indexData, error: indexError } = await supabase
+      const { error: indexError } = await supabase
         .from('asset_semantic_index')
         .select('id')
         .limit(1);
@@ -133,7 +133,7 @@ export function GenerationVerificationPanel() {
         ]
       });
       return true;
-    } catch (error: any) {
+    } catch (error: Error) {
       updatePhaseResult('infrastructure', { 
         status: 'failed', 
         duration: Date.now() - startTime,
@@ -178,7 +178,7 @@ export function GenerationVerificationPanel() {
         subTests
       });
       return allPassed;
-    } catch (error: any) {
+    } catch (error: Error) {
       updatePhaseResult('semantic-search', { 
         status: 'failed', 
         duration: Date.now() - startTime,
@@ -260,7 +260,7 @@ export function GenerationVerificationPanel() {
         subTests
       });
       return passedCount === subTests.length;
-    } catch (error: any) {
+    } catch (error: Error) {
       updatePhaseResult('workflow-generator', { 
         status: 'failed', 
         duration: Date.now() - startTime,
@@ -325,7 +325,7 @@ export function GenerationVerificationPanel() {
         subTests
       });
       return passedCount >= 1;
-    } catch (error: any) {
+    } catch (error: Error) {
       updatePhaseResult('mplp-compliance', { 
         status: 'failed', 
         duration: Date.now() - startTime,

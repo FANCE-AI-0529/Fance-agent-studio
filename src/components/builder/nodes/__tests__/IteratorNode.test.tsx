@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@/test/utils/renderWithProviders";
-import IteratorNode from "@/components/builder/nodes/IteratorNode";
-import { createMockIteratorNodeData } from "@/test/utils/mockNodeData";
-import { createNodeProps } from "@/test/utils/nodePropsHelper";
+import { render, screen, fireEvent } from "../../../../test/utils/renderWithProviders.tsx";
+import IteratorNode from "../IteratorNode.tsx";
+import { createMockIteratorNodeData } from "../../../../test/utils/mockNodeData.ts";
+import { createNodeProps } from "../../../../test/utils/nodePropsHelper.ts";
 
 describe("IteratorNode", () => {
   describe("Rendering", () => {

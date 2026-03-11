@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, RefreshCw, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { useRemoteSyncEvents } from '@/hooks/useAgentSync';
-import type { SyncEvent } from '@/stores/globalAgentStore';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button.tsx';
+import { useRemoteSyncEvents } from '../../hooks/useAgentSync.ts';
+import type { SyncEvent } from '../../stores/globalAgentStore.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface RemoteChangeAnimationProps {
   onScrollToNode?: (nodeId: string) => void;

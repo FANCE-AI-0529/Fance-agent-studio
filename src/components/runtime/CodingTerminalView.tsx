@@ -15,10 +15,10 @@ import {
   Loader2,
   Trash2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import type { TerminalCommand } from '@/types/openCode';
+import { Button } from '../ui/button.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { TerminalCommand } from '../../types/openCode.ts';
 
 interface CodingTerminalViewProps {
   commands: TerminalCommand[];

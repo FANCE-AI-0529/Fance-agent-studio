@@ -4,8 +4,8 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { checkOpenCodeStyle } from '@/utils/openCodeStyleChecker';
+import { supabase } from '../integrations/supabase/client.ts';
+import { checkOpenCodeStyle } from '../utils/openCodeStyleChecker.ts';
 import type { 
   OpenCodeMode, 
   OpenCodeSession, 
@@ -13,7 +13,7 @@ import type {
   OpenCodeResponse, 
   StyleViolation,
   OpenCodePlan 
-} from '@/types/openCode';
+} from '../types/openCode.ts';
 
 interface UseOpenCodeOptions {
   agentId?: string;

@@ -4,9 +4,9 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { mapToGatewayModel } from '@/utils/modelMapping';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { mapToGatewayModel } from '../utils/modelMapping.ts';
 
 // 验证结果类型
 export interface TestRun {

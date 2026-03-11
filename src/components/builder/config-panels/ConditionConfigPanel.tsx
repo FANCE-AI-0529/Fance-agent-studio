@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { GitBranch, Plus, Trash2 } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import VariableInput from "../variables/VariableInput";
+import { Label } from "../../ui/label.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Textarea } from "../../ui/textarea.tsx";
+import { Button } from "../../ui/button.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select.tsx";
+import { Separator } from "../../ui/separator.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs.tsx";
+import VariableInput from "../variables/VariableInput.tsx";
 
 interface ConditionRule {
   id: string;

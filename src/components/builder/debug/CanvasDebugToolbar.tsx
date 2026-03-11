@@ -8,22 +8,22 @@ import {
   Gauge,
   Circle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../../ui/button.tsx";
+import { Badge } from "../../ui/badge.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../../ui/select.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import type { SimulationSpeed } from "@/stores/canvasDebugStore";
+} from "../../ui/tooltip.tsx";
+import { cn } from "../../../lib/utils.ts";
+import type { SimulationSpeed } from "../../../stores/canvasDebugStore.ts";
 
 interface CanvasDebugToolbarProps {
   isRunning: boolean;

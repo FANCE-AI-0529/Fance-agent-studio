@@ -7,15 +7,15 @@ import {
   AlertCircle,
   Activity
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { useManusMemoryStore } from '@/stores/manusMemoryStore';
+} from '../ui/tooltip.tsx';
+import { cn } from '../../lib/utils.ts';
+import { useManusMemoryStore } from '../../stores/manusMemoryStore.ts';
 
 interface ManusStatusIndicatorProps {
   className?: string;

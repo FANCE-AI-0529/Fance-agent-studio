@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { History, GitCommit, Tag, RotateCcw, Eye, Calendar, ChevronDown, ChevronRight, Clock, Layers, ArrowRight, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useAgentSnapshots } from "@/hooks/useAgentSnapshots";
-import { useTimeTravel } from "@/hooks/useTimeTravel";
-import type { TimelineSnapshot, SnapshotTriggerSource } from "@/types/gitops";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible.tsx";
+import { useAgentSnapshots } from "../../hooks/useAgentSnapshots.ts";
+import { useTimeTravel } from "../../hooks/useTimeTravel.ts";
+import type { TimelineSnapshot, SnapshotTriggerSource } from "../../types/gitops.ts";
 import { format, parseISO, isToday, isYesterday, startOfDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { SnapshotCalendarPicker } from "./SnapshotCalendarPicker";
-import { SnapshotDiffViewer } from "./SnapshotDiffViewer";
-import { SnapshotRestoreDialog } from "./SnapshotRestoreDialog";
+import { cn } from "../../lib/utils.ts";
+import { SnapshotCalendarPicker } from "./SnapshotCalendarPicker.tsx";
+import { SnapshotDiffViewer } from "./SnapshotDiffViewer.tsx";
+import { SnapshotRestoreDialog } from "./SnapshotRestoreDialog.tsx";
 
 interface SnapshotTimelinePanelProps {
   agentId: string | null;

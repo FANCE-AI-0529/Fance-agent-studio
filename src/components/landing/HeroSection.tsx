@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { WaitingListForm } from "./WaitingListForm";
+import { WaitingListForm } from "./WaitingListForm.tsx";
 
 const stagger = {
   hidden: {},

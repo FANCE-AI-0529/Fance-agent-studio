@@ -1,10 +1,10 @@
 // 网络策略管理 Hook (Network Policy Hook)
 
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import type { NetworkPolicy, DomainRule, MPLPNetworkBinding } from '@/types/sandbox';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useToast } from './use-toast.ts';
+import type { NetworkPolicy, DomainRule, MPLPNetworkBinding } from '../types/sandbox.ts';
 import { 
   MPLP_NETWORK_MAPPINGS, 
   SECURITY_PRESETS, 
@@ -12,7 +12,7 @@ import {
   matchDomain,
   getDomainsForPermissions,
   checkNetworkAccess,
-} from '@/types/networkPolicy';
+} from '../types/networkPolicy.ts';
 
 interface StoredNetworkPolicy {
   id: string;

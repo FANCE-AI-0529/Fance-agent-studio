@@ -6,17 +6,17 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ParticleField } from "@/components/landing/ParticleField";
-import { GlassNavbar } from "@/components/landing/GlassNavbar";
-import { HeroSection } from "@/components/landing/HeroSection";
-import { WaitingListForm } from "@/components/landing/WaitingListForm";
-import { BentoFeatures } from "@/components/landing/BentoFeatures";
-import { DetailedFeatures } from "@/components/landing/DetailedFeatures";
-import { PricingSection } from "@/components/landing/PricingSection";
-import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
-import { FAQSection } from "@/components/landing/FAQSection";
-import { InviteModal } from "@/components/landing/InviteModal";
-import { Footer } from "@/components/landing/Footer";
+import { ParticleField } from "../components/landing/ParticleField.tsx";
+import { GlassNavbar } from "../components/landing/GlassNavbar.tsx";
+import { HeroSection } from "../components/landing/HeroSection.tsx";
+import { WaitingListForm } from "../components/landing/WaitingListForm.tsx";
+import { BentoFeatures } from "../components/landing/BentoFeatures.tsx";
+import { DetailedFeatures } from "../components/landing/DetailedFeatures.tsx";
+import { PricingSection } from "../components/landing/PricingSection.tsx";
+import { TestimonialsSection } from "../components/landing/TestimonialsSection.tsx";
+import { FAQSection } from "../components/landing/FAQSection.tsx";
+import { InviteModal } from "../components/landing/InviteModal.tsx";
+import { Footer } from "../components/landing/Footer.tsx";
 
 export default function Landing() {
   const navigate = useNavigate();

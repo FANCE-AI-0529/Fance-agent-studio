@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { History, Play, CheckCircle, XCircle, Clock, ChevronRight, Trash2, Eye } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useChainExecutions, useDeleteExecution, executionStatusColors, executionStatusLabels, type ChainExecution } from "@/hooks/useChainExecutions";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { useChainExecutions, useDeleteExecution, executionStatusColors, executionStatusLabels, type ChainExecution } from "../../hooks/useChainExecutions.ts";
 import { format, parseISO } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { ExecutionStepTimeline } from "./ExecutionStepTimeline";
+import { cn } from "../../lib/utils.ts";
+import { ExecutionStepTimeline } from "./ExecutionStepTimeline.tsx";
 
 interface ChainExecutionHistoryProps {
   chainId?: string | null;

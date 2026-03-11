@@ -1,19 +1,19 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Label } from "../ui/label.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "../ui/table.tsx";
 import {
   useBatchGenerateInviteCodes,
   useAllInviteCodes,
@@ -37,10 +37,10 @@ import {
   useAdminInviteStats,
   useInviteTrends,
   useUserSourceStats,
-} from "@/hooks/useAdminInvite";
-import { InviteTrendChart } from "./InviteTrendChart";
-import { UserSourceTable } from "./UserSourceTable";
-import { BulkEmailSender } from "./BulkEmailSender";
+} from "../../hooks/useAdminInvite.ts";
+import { InviteTrendChart } from "./InviteTrendChart.tsx";
+import { UserSourceTable } from "./UserSourceTable.tsx";
+import { BulkEmailSender } from "./BulkEmailSender.tsx";
 import { 
   Shield, 
   Plus, 
@@ -58,7 +58,7 @@ import {
   Mail,
   ListChecks
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "../../hooks/use-toast.ts";
 
 function isExpired(expiresAt: string | null): boolean {
   if (!expiresAt) return false;

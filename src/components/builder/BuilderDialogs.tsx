@@ -1,6 +1,6 @@
 import { Node, Edge } from "@xyflow/react";
 import { CheckCircle, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,14 +18,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ApiStatsDashboard } from "@/components/builder/ApiStatsDashboard";
-import { GenerationVerificationPanel } from "@/components/builder/verification";
-import { AgentMonitoringDashboard } from "@/components/builder/AgentMonitoringDashboard";
-import { EvaluationCenter } from "@/components/builder/evaluation/EvaluationCenter";
-import { WorkflowRunDialog } from "@/components/builder/WorkflowRunDialog";
-import { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
+} from "../ui/alert-dialog.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { ApiStatsDashboard } from "./ApiStatsDashboard.tsx";
+import { GenerationVerificationPanel } from "./verification/index.ts";
+import { AgentMonitoringDashboard } from "./AgentMonitoringDashboard.tsx";
+import { EvaluationCenter } from "./evaluation/EvaluationCenter.tsx";
+import { WorkflowRunDialog } from "./WorkflowRunDialog.tsx";
+import { SimpleAgentConfig } from "./SimplifiedConfigPanel.tsx";
 
 interface BuilderDialogsProps {
   agentConfig: SimpleAgentConfig;

@@ -1,10 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { FollowButton } from "./FollowButton";
+import { Card, CardContent } from "../ui/card.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { FollowButton } from "./FollowButton.tsx";
 import { CheckCircle, Users, Bot, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 interface CreatorCardProps {
   userId: string;

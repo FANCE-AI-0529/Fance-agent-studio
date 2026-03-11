@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { FileText, ChevronDown, ChevronUp, ExternalLink, Network } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { cn } from "../../lib/utils.ts";
 import { motion, AnimatePresence } from "framer-motion";
-import { CitationDetailDialog } from "./CitationDetailDialog";
+import { CitationDetailDialog } from "./CitationDetailDialog.tsx";
 
 export interface Citation {
   id: string;

@@ -1,8 +1,8 @@
-import { useAppModeStore } from "@/stores/appModeStore";
-import { HackerTransition } from "@/components/consumer/HackerTransition";
-import ConsumerHome from "@/pages/ConsumerHome";
-import Index from "@/pages/Index";
-import { MainLayout } from "./MainLayout";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
+import { HackerTransition } from "../consumer/HackerTransition.tsx";
+import ConsumerHome from "../../pages/ConsumerHome.tsx";
+import Index from "../../pages/Index.tsx";
+import { MainLayout } from "./MainLayout.tsx";
 
 export function ModeAwareLayout() {
   const { mode, isTransitioning } = useAppModeStore();

@@ -3,10 +3,10 @@
  * Quick reference for OpenCode coding standards
  */
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { getStyleRulesConfig } from '@/utils/openCodeStyleChecker';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { getStyleRulesConfig } from '../../utils/openCodeStyleChecker.ts';
 import { CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
 
 interface OpenCodeStyleGuideProps {

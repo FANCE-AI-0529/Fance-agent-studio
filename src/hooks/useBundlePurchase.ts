@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { toast } from "./use-toast.ts";
 
 // Check if user has purchased a bundle
 export function useIsBundlePurchased(bundleId: string | undefined) {
@@ -86,7 +86,7 @@ export function useBundleCheckout() {
     onSuccess: (data) => {
       if (data?.url) {
         // Open Stripe checkout in new tab
-        window.open(data.url, "_blank");
+        globalThis.open(data.url, "_blank");
       }
     },
     onError: (error) => {

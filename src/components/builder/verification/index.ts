@@ -1,1 +1,1 @@
-export { GenerationVerificationPanel } from './GenerationVerificationPanel';
+export { GenerationVerificationPanel } from './GenerationVerificationPanel.tsx';

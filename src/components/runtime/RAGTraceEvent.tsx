@@ -1,7 +1,7 @@
 import { Database, GitBranch, Layers, Target, FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { TraceEvent, TraceEventType } from "./trace/traceTypes";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
+import type { TraceEvent, TraceEventType } from "./trace/traceTypes.ts";
 
 // RAG-specific event configuration
 const ragEventConfig: Record<string, {

@@ -4,9 +4,9 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import type { Json } from '@/integrations/supabase/types';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useToast } from './use-toast.ts';
+import type { Json } from '../integrations/supabase/types.ts';
 import {
   TestCase,
   TestRunResult,
@@ -23,7 +23,7 @@ import {
   PASS_THRESHOLDS,
   RED_TEAM_ATTACK_TEMPLATES,
   SpeedGrade,
-} from '@/types/agentEvals';
+} from '../types/agentEvals.ts';
 
 // =====================================================
 // 评分引擎

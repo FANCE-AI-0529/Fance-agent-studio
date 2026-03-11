@@ -4,7 +4,7 @@
 // =====================================================
 
 import { useState, useCallback, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client.ts';
 import {
   WiringConnection,
   AdapterNodeSpec,
@@ -13,14 +13,14 @@ import {
   IntelligentWiringOptions,
   WiringStatistics,
   IOPort,
-} from '@/types/wiringTypes';
-import { NodeSpec } from '@/types/workflowDSL';
-import { inferAllNodeIOPorts } from '@/utils/ioTypeInference';
-import { needsTypeAdapter, createAdapterNode } from '@/utils/typeAdapterInjector';
+} from '../types/wiringTypes.ts';
+import { NodeSpec } from '../types/workflowDSL.ts';
+import { inferAllNodeIOPorts } from '../utils/ioTypeInference.ts';
+import { needsTypeAdapter, createAdapterNode } from '../utils/typeAdapterInjector.ts';
 import {
   injectManusConnections,
   validateManusCompliance,
-} from '@/utils/manusWiringIntegration';
+} from '../utils/manusWiringIntegration.ts';
 
 // ========== 状态类型 ==========
 

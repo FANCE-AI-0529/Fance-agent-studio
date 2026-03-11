@@ -16,15 +16,15 @@ import {
   Clock,
   Database,
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { useManusMemoryStore } from '@/stores/manusMemoryStore';
-import { MANUS_FILE_PATHS } from '@/data/manusKernel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Textarea } from '../ui/textarea.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { cn } from '../../lib/utils.ts';
+import { useManusMemoryStore } from '../../stores/manusMemoryStore.ts';
+import { MANUS_FILE_PATHS } from '../../data/manusKernel.ts';
 import { format } from 'date-fns';
 
 interface ManusMemoryPanelProps {

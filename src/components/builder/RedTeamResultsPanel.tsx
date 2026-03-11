@@ -15,12 +15,12 @@ import {
   AlertTriangle,
   Shield,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
-import { RedTeamResults, RedTeamAttackResult, RedTeamAttackType } from '@/types/agentEvals';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible.tsx';
+import { cn } from '../../lib/utils.ts';
+import { RedTeamResults, RedTeamAttackResult, RedTeamAttackType } from '../../types/agentEvals.ts';
 
 interface RedTeamResultsPanelProps {
   results: RedTeamResults;

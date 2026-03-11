@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Play, ArrowRight, Loader2, MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../components/ui/dropdown-menu.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,22 +20,22 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useMyAgents, useDeleteAgent, Agent } from "@/hooks/useAgents";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserStats } from "@/hooks/useUserStats";
-import { useLogActivity } from "@/hooks/useAchievements";
-import { toast } from "@/hooks/use-toast";
-import { ScenarioCards } from "@/components/dashboard/ScenarioCards";
-import { UserStatsCards } from "@/components/dashboard/UserStatsCards";
-import { QuickStartGuide } from "@/components/dashboard/QuickStartGuide";
-import { DailyInspiration } from "@/components/dashboard/DailyInspiration";
-import { TrendingAgents } from "@/components/dashboard/TrendingAgents";
-import { AchievementShowcase } from "@/components/dashboard/AchievementShowcase";
-import { CommunityStats } from "@/components/dashboard/CommunityStats";
-import { WorkflowCapabilitiesCard } from "@/components/dashboard/WorkflowCapabilitiesCard";
-import { AgentAvatarDisplay, type AgentAvatar } from "@/components/builder/AgentAvatarPicker";
-import { parseManifest } from "@/types/agent";
+} from "../components/ui/alert-dialog.tsx";
+import { useMyAgents, useDeleteAgent, Agent } from "../hooks/useAgents.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { useUserStats } from "../hooks/useUserStats.ts";
+import { useLogActivity } from "../hooks/useAchievements.ts";
+import { toast } from "../hooks/use-toast.ts";
+import { ScenarioCards } from "../components/dashboard/ScenarioCards.tsx";
+import { UserStatsCards } from "../components/dashboard/UserStatsCards.tsx";
+import { QuickStartGuide } from "../components/dashboard/QuickStartGuide.tsx";
+import { DailyInspiration } from "../components/dashboard/DailyInspiration.tsx";
+import { TrendingAgents } from "../components/dashboard/TrendingAgents.tsx";
+import { AchievementShowcase } from "../components/dashboard/AchievementShowcase.tsx";
+import { CommunityStats } from "../components/dashboard/CommunityStats.tsx";
+import { WorkflowCapabilitiesCard } from "../components/dashboard/WorkflowCapabilitiesCard.tsx";
+import { AgentAvatarDisplay, type AgentAvatar } from "../components/builder/AgentAvatarPicker.tsx";
+import { parseManifest } from "../types/agent.ts";
 
 const Index = () => {
   const navigate = useNavigate();

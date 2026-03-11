@@ -8,8 +8,8 @@ import type {
   NetworkLog,
   ResourceLimits,
   NetworkPolicy,
-} from '@/types/sandbox';
-import { SECURITY_PRESETS, SecurityPresetKey } from '@/types/networkPolicy';
+} from '../types/sandbox.ts';
+import { SECURITY_PRESETS, SecurityPresetKey } from '../types/networkPolicy.ts';
 
 interface ExecutionHistoryItem {
   id: string;

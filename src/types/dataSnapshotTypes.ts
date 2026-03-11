@@ -2,7 +2,7 @@
 // 数据快照类型定义 - Data Snapshot Type Definitions
 // =====================================================
 
-import type { VariableType } from '@/components/builder/variables/variableTypes';
+import type { VariableType } from '../components/builder/variables/variableTypes.ts';
 
 /**
  * 数据字段快照

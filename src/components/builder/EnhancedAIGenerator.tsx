@@ -21,45 +21,45 @@ import {
   FileCheck,
   Wrench,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Label } from "../ui/label.tsx";
+import { Switch } from "../ui/switch.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+} from "../ui/select.tsx";
+import { Slider } from "../ui/slider.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useWorkflowGenerator } from "@/hooks/useWorkflowGenerator";
-import { WorkflowPreview } from "./WorkflowPreview";
-import { BuildPlanViewer } from "./BuildPlanViewer";
-import { ValidationProgressPanel, ValidationPhase } from "./ValidationProgressPanel";
-import AgentScorecard from "./AgentScorecard";
-import EvalProgressPanel from "./EvalProgressPanel";
-import { useBuildPlanStore } from "@/stores/buildPlanStore";
-import { useSandboxValidation } from "@/hooks/useSandboxValidation";
-import { useSelfHealing } from "@/hooks/useSelfHealing";
-import { useAgentEvals } from "@/hooks/useAgentEvals";
-import { useEvalDiagnosis } from "@/hooks/useEvalDiagnosis";
-import { aiAgentScenarios, AIAgentScenario } from "@/data/aiAgentScenarios";
+} from "../ui/collapsible.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { cn } from "../../lib/utils.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { useWorkflowGenerator } from "../../hooks/useWorkflowGenerator.ts";
+import { WorkflowPreview } from "./WorkflowPreview.tsx";
+import { BuildPlanViewer } from "./BuildPlanViewer.tsx";
+import { ValidationProgressPanel, ValidationPhase } from "./ValidationProgressPanel.tsx";
+import AgentScorecard from "./AgentScorecard.tsx";
+import EvalProgressPanel from "./EvalProgressPanel.tsx";
+import { useBuildPlanStore } from "../../stores/buildPlanStore.ts";
+import { useSandboxValidation } from "../../hooks/useSandboxValidation.ts";
+import { useSelfHealing } from "../../hooks/useSelfHealing.ts";
+import { useAgentEvals } from "../../hooks/useAgentEvals.ts";
+import { useEvalDiagnosis } from "../../hooks/useEvalDiagnosis.ts";
+import { aiAgentScenarios, AIAgentScenario } from "../../data/aiAgentScenarios.ts";
 import type { Node, Edge } from "@xyflow/react";
-import type { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
-import type { MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
-import type { MPLPPolicy, InjectedIntervention, GenerationWarning, RiskLevel, ComplianceReport } from "@/types/workflowDSL";
-import type { GenerationResult } from "@/hooks/useWorkflowGenerator";
+import type { SimpleAgentConfig } from "./SimplifiedConfigPanel.tsx";
+import type { MountedKnowledgeBase } from "../../hooks/useBuilderKnowledge.ts";
+import type { MPLPPolicy, InjectedIntervention, GenerationWarning, RiskLevel, ComplianceReport } from "../../types/workflowDSL.ts";
+import type { GenerationResult } from "../../hooks/useWorkflowGenerator.ts";
 
 // ========== 类型定义 ==========
 
@@ -829,7 +829,7 @@ export function EnhancedAIGenerator({
                   </TabsContent>
 
                   <TabsContent value="buildPlan" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                    <BuildPlanViewer showEvents={true} />
+                    <BuildPlanViewer showEvents />
                   </TabsContent>
 
                   <TabsContent value="validation" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">

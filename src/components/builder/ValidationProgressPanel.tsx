@@ -16,12 +16,12 @@ import {
   Clock,
   Wrench,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import type { SandboxValidationResult, TestRun } from '@/hooks/useSandboxValidation';
+import { cn } from '../../lib/utils.ts';
+import { Badge } from '../ui/badge.tsx';
+import { Button } from '../ui/button.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import type { SandboxValidationResult, TestRun } from '../../hooks/useSandboxValidation.ts';
 
 export type ValidationPhase = 'idle' | 'building' | 'validating' | 'healing' | 'complete' | 'failed';
 

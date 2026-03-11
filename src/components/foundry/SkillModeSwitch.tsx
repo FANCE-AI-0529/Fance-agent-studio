@@ -1,5 +1,5 @@
 import { Layers, Plug } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export type SkillMode = "native" | "mcp";
 

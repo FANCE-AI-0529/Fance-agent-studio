@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
 import {
   Repeat,
   Trash2,
@@ -13,7 +13,7 @@ import {
   List,
   Layers,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 export interface LoopNodeData {
   id?: string;

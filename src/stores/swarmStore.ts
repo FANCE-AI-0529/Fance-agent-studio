@@ -9,7 +9,7 @@ import type {
   SwarmExecutionState,
   SwarmMessage,
   SwarmResult,
-} from '@/types/swarms';
+} from '../types/swarms.ts';
 
 interface SwarmStoreState {
   // 活跃 Swarm 列表

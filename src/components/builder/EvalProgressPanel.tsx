@@ -11,9 +11,9 @@ import {
   Circle,
   AlertCircle,
 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { EvalPipelineEvent, EvalPipelineStep } from '@/types/agentEvals';
+import { Progress } from '../ui/progress.tsx';
+import { cn } from '../../lib/utils.ts';
+import { EvalPipelineEvent, EvalPipelineStep } from '../../types/agentEvals.ts';
 
 interface EvalProgressPanelProps {
   events: EvalPipelineEvent[];

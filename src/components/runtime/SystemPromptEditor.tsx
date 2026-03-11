@@ -7,13 +7,13 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
+} from "../ui/sheet.tsx";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Input } from "../ui/input.tsx";
 import { 
   FileText, 
   RotateCcw, 
@@ -36,10 +36,10 @@ import {
   X
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, useSharePrompt, useUnsharePrompt, UserPrompt } from "@/hooks/useUserPrompts";
-import { useVariablePresets, useSaveVariablePreset, useDeleteVariablePreset, VariablePreset } from "@/hooks/useVariablePresets";
-import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "../../lib/utils.ts";
+import { useDefaultPrompt, useSavePrompt, useUserPrompts, useDeletePrompt, useSharePrompt, useUnsharePrompt, UserPrompt } from "../../hooks/useUserPrompts.ts";
+import { useVariablePresets, useSaveVariablePreset, useDeleteVariablePreset, VariablePreset } from "../../hooks/useVariablePresets.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 
 // Extract variables from prompt using {{variable}} syntax
 const extractVariables = (prompt: string): string[] => {
@@ -393,7 +393,7 @@ export function SystemPromptEditor({
     e.stopPropagation();
     try {
       const token = await sharePromptMutation.mutateAsync(promptId);
-      const link = `${window.location.origin}/share/${token}`;
+      const link = `${globalThis.location.origin}/share/${token}`;
       setShareLink(link);
       await navigator.clipboard.writeText(link);
       setShareLinkCopied(true);

@@ -10,7 +10,7 @@ import {
   createMockTemplateNodeData,
   createMockIteratorNodeData,
   createMockVariableAggregatorNodeData,
-} from "@/test/utils/mockNodeData";
+} from "../utils/mockNodeData.ts";
 
 describe("Workflow Node Integration", () => {
   describe("Node Data Factory", () => {
@@ -136,7 +136,7 @@ describe("Workflow Execution Context", () => {
       expect(results).toEqual([2, 4, 6, 8, 10]);
     });
 
-    it("handles error strategies correctly", async () => {
+    it("handles error strategies correctly", () => {
       const items = [1, 2, "error", 4, 5];
       const processedItems: (number | string)[] = [];
       const errors: string[] = [];

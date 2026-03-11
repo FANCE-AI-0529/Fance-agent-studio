@@ -27,24 +27,24 @@ import {
   Target,
   History as HistoryLucide,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
-import { MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
-import { Skill } from "@/components/builder/SkillMarketplace";
+} from "../ui/dropdown-menu.tsx";
+import { cn } from "../../lib/utils.ts";
+import { SimpleAgentConfig } from "./SimplifiedConfigPanel.tsx";
+import { MountedKnowledgeBase } from "../../hooks/useBuilderKnowledge.ts";
+import { Skill } from "./SkillMarketplace.tsx";
 
 interface BuilderToolbarProps {
   agentConfig: SimpleAgentConfig;

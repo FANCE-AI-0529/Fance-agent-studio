@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { File, X, Check, AlertCircle, Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Progress } from "./progress.tsx";
+import { Button } from "./button.tsx";
+import { cn } from "../../lib/utils.ts";
 
 export type UploadStatus = "pending" | "uploading" | "processing" | "complete" | "error";
 

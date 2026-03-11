@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { MessageCircle, Plus, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMyAgents } from "@/hooks/useAgents";
-import { AgentAvatarDisplay, type AgentAvatar, getAvatarColor } from "@/components/builder/AgentAvatarPicker";
-import { cn } from "@/lib/utils";
+import { useMyAgents } from "../../hooks/useAgents.ts";
+import { AgentAvatarDisplay, type AgentAvatar, getAvatarColor } from "../builder/AgentAvatarPicker.tsx";
+import { cn } from "../../lib/utils.ts";
 
 interface AgentGridListProps {
   onCreateNew?: () => void;

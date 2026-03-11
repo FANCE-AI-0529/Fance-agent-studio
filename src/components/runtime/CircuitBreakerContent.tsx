@@ -11,19 +11,19 @@ import {
   ShieldOff,
   AlertTriangle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   useCircuitBreakerState,
   useResetCircuit,
   useRecordFailure,
   useRecordSuccess,
-} from "@/hooks/useCircuitBreaker";
+} from "../../hooks/useCircuitBreaker.ts";
 
 interface CircuitBreakerContentProps {
   agentId?: string;

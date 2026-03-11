@@ -10,12 +10,12 @@ import {
   Square,
   Check,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Label } from '../ui/label.tsx';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group.tsx';
+import { Slider } from '../ui/slider.tsx';
+import { cn } from '../../lib/utils.ts';
 
 // 密度类型
 export type DensityLevel = 'compact' | 'standard' | 'comfortable';

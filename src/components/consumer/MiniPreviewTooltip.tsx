@@ -5,7 +5,7 @@ import {
   MessageSquare, GitBranch, UserCheck, Puzzle,
   ArrowRight
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils.ts';
 
 interface MiniPreviewTooltipProps {
   nodeType: string;

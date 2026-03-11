@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 import { Terminal, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAppModeStore } from "@/stores/appModeStore";
+import { Button } from "../ui/button.tsx";
+import { useAppModeStore } from "../../stores/appModeStore.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 
 export function ModeFloatingToggle() {
   const { mode, toggleMode } = useAppModeStore();

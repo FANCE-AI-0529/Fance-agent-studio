@@ -6,17 +6,17 @@
 import React, { memo } from "react";
 import { Position } from "@xyflow/react";
 import { Sparkles, Save, X, Settings, Wand2, Clock, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import MultiPortHandle from "../ports/MultiPortHandle";
-import { standardPorts, PortConfig } from "../ports/portTypes";
+import { Badge } from "../../ui/badge.tsx";
+import { Button } from "../../ui/button.tsx";
+import { cn } from "../../../lib/utils.ts";
+import MultiPortHandle from "../ports/MultiPortHandle.tsx";
+import { standardPorts, PortConfig } from "../ports/portTypes.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../../ui/tooltip.tsx";
 
 export interface GeneratedSkillNodeData {
   [key: string]: unknown;

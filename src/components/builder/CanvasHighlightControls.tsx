@@ -17,25 +17,25 @@ import {
   Zap,
   Database,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '../ui/button.tsx';
+import { Card, CardContent } from '../ui/card.tsx';
+import { Progress } from '../ui/progress.tsx';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../ui/select.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { useCanvasHighlight } from '@/hooks/useCanvasHighlight';
+} from '../ui/tooltip.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { cn } from '../../lib/utils.ts';
+import { useCanvasHighlight } from '../../hooks/useCanvasHighlight.ts';
 
 export function CanvasHighlightControls() {
   const {

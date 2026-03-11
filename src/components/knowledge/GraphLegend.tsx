@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
 import { User, Building2, Lightbulb, MapPin, Calendar, Package, Cpu } from "lucide-react";
-import { nodeTypeStyles } from "@/hooks/useKnowledgeGraph";
-import { cn } from "@/lib/utils";
+import { nodeTypeStyles } from "../../hooks/useKnowledgeGraph.ts";
+import { cn } from "../../lib/utils.ts";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   person: User,

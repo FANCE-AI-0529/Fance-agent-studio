@@ -1,14 +1,14 @@
 import { ReactNode, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HelpCircle, X, Lightbulb, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./button.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+} from "./tooltip.tsx";
+import { cn } from "../../lib/utils.ts";
 
 interface TooltipHintProps {
   content: string;

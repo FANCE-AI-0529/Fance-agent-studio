@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { AgentSnapshot, SnapshotDiff, JsonDiffItem, NodeDiffItem, EdgeDiffItem, SkillDiffItem, DiffSummary, SnapshotTriggerSource, ChangeStats, GraphData, SnapshotSkillRef } from '@/types/gitops';
+import { supabase } from '../integrations/supabase/client.ts';
+import type { AgentSnapshot, SnapshotDiff, JsonDiffItem, NodeDiffItem, EdgeDiffItem, SkillDiffItem, DiffSummary, SnapshotTriggerSource, ChangeStats, GraphData, SnapshotSkillRef } from '../types/gitops.ts';
 
 export function useSnapshotDiff() {
   const [diff, setDiff] = useState<SnapshotDiff | null>(null);

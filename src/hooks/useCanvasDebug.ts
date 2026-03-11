@@ -1,7 +1,7 @@
 import { useCallback, useRef, useEffect } from "react";
 import { Node, Edge } from "@xyflow/react";
-import { useCanvasDebugStore, ExecutionLogEntry, SimulationSpeed } from "@/stores/canvasDebugStore";
-import { useVariableStore } from "@/stores/variableStore";
+import { useCanvasDebugStore, ExecutionLogEntry, SimulationSpeed } from "../stores/canvasDebugStore.ts";
+import { useVariableStore } from "../stores/variableStore.ts";
 
 interface UseCanvasDebugOptions {
   nodes: Node[];
@@ -357,8 +357,8 @@ export function useCanvasDebug({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [
     store.isDebugMode,
     store.isPaused,

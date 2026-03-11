@@ -3,7 +3,7 @@
 // 智能体元数据解析工具
 // =====================================================
 
-import { type AgentMeta, type AgentRole, ROLE_THEMES } from '@/constants/agentRoleThemes';
+import { type AgentMeta, type AgentRole, ROLE_THEMES } from '../constants/agentRoleThemes.ts';
 
 /**
  * Extract agent meta from streaming content

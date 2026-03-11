@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { Zap, Plus, Trash2 } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "../../ui/label.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Button } from "../../ui/button.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select.tsx";
+import { Separator } from "../../ui/separator.tsx";
 
 interface InputField { name: string; type: string; required: boolean; description: string }
 

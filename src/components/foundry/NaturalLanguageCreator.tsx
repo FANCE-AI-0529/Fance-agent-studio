@@ -9,13 +9,13 @@ import {
   Wand2,
   MessageSquare,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent } from "../ui/card.tsx";
+import { cn } from "../../lib/utils.ts";
+import { toast } from "../../hooks/use-toast.ts";
+import { supabase } from "../../integrations/supabase/client.ts";
 
 interface NaturalLanguageCreatorProps {
   onGenerated: (files: {

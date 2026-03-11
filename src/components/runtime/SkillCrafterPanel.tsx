@@ -16,10 +16,10 @@ import {
   ChevronUp,
   Sparkles,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { craftSkill, type CraftingProgress, type CraftingPhase, type SkillPackage } from '@/services/skillCrafter';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { cn } from '../../lib/utils.ts';
+import { craftSkill, type CraftingProgress, type CraftingPhase, type SkillPackage } from '../../services/skillCrafter.ts';
 
 interface SkillCrafterPanelProps {
   nanoclawEndpoint: string;

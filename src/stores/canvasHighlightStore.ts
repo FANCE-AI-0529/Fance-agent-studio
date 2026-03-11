@@ -4,8 +4,8 @@
 // =====================================================
 
 import { create } from 'zustand';
-import type { DataFlowPath } from '@/types/verificationTypes';
-import type { PathDataSnapshots, NodeDataSnapshot } from '@/types/dataSnapshotTypes';
+import type { DataFlowPath } from '../types/verificationTypes.ts';
+import type { PathDataSnapshots, NodeDataSnapshot } from '../types/dataSnapshotTypes.ts';
 
 export interface CanvasHighlightState {
   // 路径数据

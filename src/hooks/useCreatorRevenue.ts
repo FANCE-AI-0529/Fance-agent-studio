@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import type { PayoutMethod } from "@/types/economy";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import type { PayoutMethod } from "../types/economy.ts";
 
 export function useCreatorRevenue() {
   const { user } = useAuth();

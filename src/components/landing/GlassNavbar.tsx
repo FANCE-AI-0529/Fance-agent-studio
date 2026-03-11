@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 
 interface GlassNavbarProps {
@@ -18,9 +18,9 @@ export function GlassNavbar({ onBookDemo, onLogin }: GlassNavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
+    const handler = () => setScrolled(globalThis.scrollY > 40);
+    globalThis.addEventListener("scroll", handler, { passive: true });
+    return () => globalThis.removeEventListener("scroll", handler);
   }, []);
 
   const Brand = () => (

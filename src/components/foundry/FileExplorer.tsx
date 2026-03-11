@@ -12,7 +12,7 @@ import {
   Folder,
   FolderOpen,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 
 export interface FileItem {
   id: string;

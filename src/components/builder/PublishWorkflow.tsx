@@ -18,17 +18,17 @@ import {
   Eye,
   GitBranch,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { PublishChecklist, type ChecklistItem } from './PublishChecklist';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card.tsx';
+import { Input } from '../ui/input.tsx';
+import { Textarea } from '../ui/textarea.tsx';
+import { Label } from '../ui/label.tsx';
+import { Switch } from '../ui/switch.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { PublishChecklist, type ChecklistItem } from './PublishChecklist.tsx';
+import { cn } from '../../lib/utils.ts';
 
 interface PublishWorkflowProps {
   agentId: string;

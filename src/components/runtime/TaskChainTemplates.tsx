@@ -1,11 +1,11 @@
 import { useState, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Textarea } from "../ui/textarea.tsx";
 import {
   Dialog,
   DialogContent,
@@ -13,14 +13,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,15 +30,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "../ui/alert-dialog.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu.tsx";
 import {
   FileText,
   Users,
@@ -73,17 +73,17 @@ import {
   Variable,
   History,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import { toast } from "sonner";
 import { 
   useCustomTemplates, 
   useCreateCustomTemplate, 
   useDeleteCustomTemplate,
   type CustomTemplate 
-} from "@/hooks/useCustomTemplates";
-import type { TaskChain } from "@/hooks/useTaskChains";
-import { TemplateVariableDialog } from "./TemplateVariableDialog";
-import { TemplateVersionHistory } from "./TemplateVersionHistory";
+} from "../../hooks/useCustomTemplates.ts";
+import type { TaskChain } from "../../hooks/useTaskChains.ts";
+import { TemplateVariableDialog } from "./TemplateVariableDialog.tsx";
+import { TemplateVersionHistory } from "./TemplateVersionHistory.tsx";
 
 export interface TemplateVariable {
   name: string;

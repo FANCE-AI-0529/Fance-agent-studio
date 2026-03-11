@@ -9,14 +9,14 @@ import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Maximize2, Minimize2, Building2, Zap, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useAgentSync } from '@/hooks/useAgentSync';
-import { useMiniPreviewHighlight } from '@/hooks/useMiniPreviewHighlight';
-import { useAppModeStore } from '@/stores/appModeStore';
-import { miniNodeTypes } from './MiniNodes';
-import { flowingEdgeTypes } from './FlowingEdge';
-import { MiniPreviewTooltip } from './MiniPreviewTooltip';
+import { Button } from '../ui/button.tsx';
+import { cn } from '../../lib/utils.ts';
+import { useAgentSync } from '../../hooks/useAgentSync.ts';
+import { useMiniPreviewHighlight } from '../../hooks/useMiniPreviewHighlight.ts';
+import { useAppModeStore } from '../../stores/appModeStore.ts';
+import { miniNodeTypes } from './MiniNodes.tsx';
+import { flowingEdgeTypes } from './FlowingEdge.tsx';
+import { MiniPreviewTooltip } from './MiniPreviewTooltip.tsx';
 
 interface MiniStudioPreviewProps {
   agentId: string | null;

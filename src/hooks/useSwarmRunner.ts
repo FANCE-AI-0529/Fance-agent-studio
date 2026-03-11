@@ -4,16 +4,16 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSwarmStore } from '@/stores/swarmStore';
-import { useRuntimeStore } from '@/stores/runtimeStore';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useSwarmStore } from '../stores/swarmStore.ts';
+import { useRuntimeStore } from '../stores/runtimeStore.ts';
 import type {
   SwarmDefinition,
   SwarmMember,
   SwarmMessage,
   SwarmResult,
   SwarmMemberContribution,
-} from '@/types/swarms';
+} from '../types/swarms.ts';
 
 interface SwarmRunnerReturn {
   startSwarm: (definition: SwarmDefinition) => Promise<string>;

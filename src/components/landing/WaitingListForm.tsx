@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { toast } from "../../hooks/use-toast.ts";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface WaitingListFormProps {

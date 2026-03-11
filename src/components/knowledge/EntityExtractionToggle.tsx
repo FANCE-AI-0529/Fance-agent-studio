@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Network, Info } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Switch } from "../ui/switch.tsx";
+import { Label } from "../ui/label.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useUpdateKnowledgeBase, useKnowledgeBase } from "@/hooks/useKnowledgeBases";
+} from "../ui/tooltip.tsx";
+import { useUpdateKnowledgeBase, useKnowledgeBase } from "../../hooks/useKnowledgeBases.ts";
 
 interface EntityExtractionToggleProps {
   knowledgeBaseId: string;

@@ -11,20 +11,20 @@ import {
   Layers,
   Coins,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useMySkills, usePublishSkill, useUpdateSkill } from "@/hooks/useSkills";
-import { useEarningsStats, useCreatorSkillStats } from "@/hooks/useCreatorEarnings";
-import { useMyBundles } from "@/hooks/useSkillBundles";
-import { useAuth } from "@/contexts/AuthContext";
-import { DownloadTrendChart } from "./DownloadTrendChart";
-import { EarningsDetailList } from "./EarningsDetailList";
-import { MyBundlesPanel } from "./MyBundlesPanel";
-import { SkillMeteringStats } from "./SkillMeteringStats";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
+import { useMySkills, usePublishSkill, useUpdateSkill } from "../../hooks/useSkills.ts";
+import { useEarningsStats, useCreatorSkillStats } from "../../hooks/useCreatorEarnings.ts";
+import { useMyBundles } from "../../hooks/useSkillBundles.ts";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { DownloadTrendChart } from "./DownloadTrendChart.tsx";
+import { EarningsDetailList } from "./EarningsDetailList.tsx";
+import { MyBundlesPanel } from "./MyBundlesPanel.tsx";
+import { SkillMeteringStats } from "./SkillMeteringStats.tsx";
 
 interface CreatorDashboardProps {
   onCreateNew?: () => void;

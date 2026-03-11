@@ -13,12 +13,12 @@ import {
   BarChart,
   Save,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import type { EvalPipelineStep, EvalPipelineEvent } from '@/types/agentEvals';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '../../ui/card.tsx';
+import { Progress } from '../../ui/progress.tsx';
+import { Badge } from '../../ui/badge.tsx';
+import { ScrollArea } from '../../ui/scroll-area.tsx';
+import type { EvalPipelineStep, EvalPipelineEvent } from '../../../types/agentEvals.ts';
+import { cn } from '../../../lib/utils.ts';
 
 interface EvaluationRunnerProps {
   isRunning: boolean;

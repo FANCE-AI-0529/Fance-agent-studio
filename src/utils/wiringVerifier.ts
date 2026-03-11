@@ -8,8 +8,8 @@ import type {
   WiringCheckResult,
   NodeSpec,
   WorkflowDSL,
-} from '@/types/verificationTypes';
-import type { WiringConnection } from '@/types/wiringTypes';
+} from '../types/verificationTypes.ts';
+import type { WiringConnection } from '../types/wiringTypes.ts';
 
 /**
  * 验证工作流连线

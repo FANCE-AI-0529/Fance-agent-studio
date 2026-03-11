@@ -14,10 +14,10 @@ import {
   BookOpen,
   ExternalLink,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Card, CardContent } from '../ui/card.tsx';
+import { cn } from '../../lib/utils.ts';
 
 // 引导提示类型
 interface GuideTip {

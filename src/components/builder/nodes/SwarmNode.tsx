@@ -3,10 +3,10 @@
 import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Users, ChevronDown, ChevronUp, Settings } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import type { SwarmCommunicationMode, SwarmMemberRole } from '@/types/swarms';
+import { cn } from '../../../lib/utils.ts';
+import { Badge } from '../../ui/badge.tsx';
+import { Button } from '../../ui/button.tsx';
+import type { SwarmCommunicationMode, SwarmMemberRole } from '../../../types/swarms.ts';
 
 interface SwarmNodeData {
   label: string;

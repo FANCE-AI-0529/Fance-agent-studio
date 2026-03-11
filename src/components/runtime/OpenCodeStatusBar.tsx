@@ -14,15 +14,15 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '../ui/badge.tsx';
+import { Button } from '../ui/button.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import type { OpenCodeMode } from '@/types/openCode';
+} from '../ui/tooltip.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { OpenCodeMode } from '../../types/openCode.ts';
 
 interface OpenCodeStatusBarProps {
   mode: OpenCodeMode;

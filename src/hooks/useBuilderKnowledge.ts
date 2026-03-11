@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecisionState } from "./useKnowledgeMatching";
+import { useKnowledgeMatching, type KnowledgeMatchResult, type RAGDecisionState } from "./useKnowledgeMatching.ts";
 
 export interface KnowledgeConfig {
   retrieval_mode: 'vector' | 'graph' | 'hybrid';

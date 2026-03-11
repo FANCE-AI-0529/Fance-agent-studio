@@ -16,18 +16,18 @@ import {
   Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Slider } from "../ui/slider.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip.tsx";
 import {
   Search,
   RefreshCw,
@@ -54,10 +54,10 @@ import {
   nodeTypeStyles,
   relationTypeLabels,
   type KnowledgeNode,
-} from "@/hooks/useKnowledgeGraph";
-import { GraphNodeComponent } from "./GraphNode";
-import { GraphLegend } from "./GraphLegend";
-import { cn } from "@/lib/utils";
+} from "../../hooks/useKnowledgeGraph.ts";
+import { GraphNodeComponent } from "./GraphNode.tsx";
+import { GraphLegend } from "./GraphLegend.tsx";
+import { cn } from "../../lib/utils.ts";
 
 interface InteractiveKnowledgeGraphProps {
   knowledgeBaseId: string;

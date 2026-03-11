@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { Layers } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "../../ui/label.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select.tsx";
+import { Separator } from "../../ui/separator.tsx";
 
 interface Props {
   node: Node;

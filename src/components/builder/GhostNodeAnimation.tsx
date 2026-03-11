@@ -1,9 +1,9 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReactFlow, Node } from "@xyflow/react";
-import { useRemoteSyncEvents } from "@/hooks/useAgentSync";
-import type { SyncEvent } from "@/stores/globalAgentStore";
-import { cn } from "@/lib/utils";
+import { useRemoteSyncEvents } from "../../hooks/useAgentSync.ts";
+import type { SyncEvent } from "../../stores/globalAgentStore.ts";
+import { cn } from "../../lib/utils.ts";
 import { Plus, Trash2, Move, Settings, Link as LinkIcon } from "lucide-react";
 
 interface GhostNodeAnimationProps {

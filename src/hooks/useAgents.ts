@@ -8,10 +8,10 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert, TablesUpdate, Json } from "@/integrations/supabase/types";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { toast } from "./use-toast.ts";
+import type { Tables, TablesInsert, TablesUpdate, Json } from "../integrations/supabase/types.ts";
 
 /**
  * 智能体数据表类型定义

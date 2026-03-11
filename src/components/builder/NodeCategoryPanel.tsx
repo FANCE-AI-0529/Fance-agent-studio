@@ -1,8 +1,8 @@
 import { useState, DragEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, GripVertical } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
 
 export interface NodeCategoryItem {
   id: string;

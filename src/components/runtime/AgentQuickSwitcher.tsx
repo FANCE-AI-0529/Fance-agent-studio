@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Bot, ChevronDown, Check, Plus, Sparkles, Zap, Settings, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+} from "../ui/dropdown-menu.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar.tsx";
+import { cn } from "../../lib/utils.ts";
 
 export interface QuickAgent {
   id: string;

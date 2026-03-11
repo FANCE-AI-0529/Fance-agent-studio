@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client.ts";
 
 /**
  * 意图漂移检测结果接口

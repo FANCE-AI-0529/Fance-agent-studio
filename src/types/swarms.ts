@@ -1,6 +1,6 @@
 // Agent Swarms 类型定义 (Agent Swarms Types)
 
-import type { ContainerConfig, IPCMessage } from './runtime';
+import type { ContainerConfig, IPCMessage } from './runtime.ts';
 
 /**
  * Swarm 协作模式

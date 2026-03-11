@@ -19,18 +19,18 @@ import {
   CheckCircle,
   Info,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button.tsx";
+import { Input } from "../ui/input.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,25 +48,25 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "../ui/alert-dialog.tsx";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+} from "../ui/card.tsx";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { cn } from "../../lib/utils.ts";
 import {
   useGlobalLLMProviders,
   useCreateGlobalProvider,
   useUpdateGlobalProvider,
   useDeleteGlobalProvider,
   PROVIDER_TEMPLATES,
-} from "@/hooks/useGlobalModelConfig";
-import { LLMProvider } from "@/hooks/useLLMProviders";
+} from "../../hooks/useGlobalModelConfig.ts";
+import { LLMProvider } from "../../hooks/useLLMProviders.ts";
 
 export function GlobalModelSettings() {
   const [showAddProvider, setShowAddProvider] = useState(false);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAppModeStore, EjectContext } from '@/stores/appModeStore';
+import { useAppModeStore, EjectContext } from '../../stores/appModeStore.ts';
 import { Cog, Code2, Cpu, Zap } from 'lucide-react';
 
 interface EjectTransitionProps {

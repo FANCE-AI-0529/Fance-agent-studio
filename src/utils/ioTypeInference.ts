@@ -9,7 +9,7 @@ import {
   IOSpec,
   SchemaDefinition,
   NodeWithIO,
-} from '@/types/wiringTypes';
+} from '../types/wiringTypes.ts';
 
 // ========== 节点 IO Schema 库 ==========
 // 标准化不同类型节点的输入输出

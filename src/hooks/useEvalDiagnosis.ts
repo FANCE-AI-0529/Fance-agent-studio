@@ -4,8 +4,8 @@
 // =====================================================
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { EvaluationResult } from '@/types/agentEvals';
+import { supabase } from '../integrations/supabase/client.ts';
+import type { EvaluationResult } from '../types/agentEvals.ts';
 
 // 诊断问题
 export interface DiagnosisIssue {

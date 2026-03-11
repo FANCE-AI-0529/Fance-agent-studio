@@ -18,21 +18,21 @@ import {
   ArrowLeft,
   Eye,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { useGlobalAgentStore, SyncEvent } from '@/stores/globalAgentStore';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Separator } from '../ui/separator.tsx';
+import { useGlobalAgentStore, SyncEvent } from '../../stores/globalAgentStore.ts';
 import { 
   SYNC_TEST_CASES, 
   SyncTestCase, 
   SyncTestResult,
   formatSyncEventForTest,
   calculateSyncLatency,
-} from '@/tests/syncTests';
-import { cn } from '@/lib/utils';
+} from '../../tests/syncTests.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface SyncTestPanelProps {
   agentId: string | null;

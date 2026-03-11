@@ -18,20 +18,20 @@ import {
   Filter,
   SortAsc,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Input } from '../ui/input.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Checkbox } from '../ui/checkbox.tsx';
+import { Progress } from '../ui/progress.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import type { SemanticAsset, AssetSearchResult } from '@/types/workflowDSL';
+} from '../ui/tooltip.tsx';
+import { cn } from '../../lib/utils.ts';
+import type { SemanticAsset, AssetSearchResult } from '../../types/workflowDSL.ts';
 
 // ========== 类型定义 ==========
 

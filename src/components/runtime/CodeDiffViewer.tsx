@@ -19,17 +19,17 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import type { FileDiff } from '@/types/openCode';
+} from '../ui/dialog.tsx';
+import { cn } from '../../lib/utils.ts';
+import { useToast } from '../../hooks/use-toast.ts';
+import type { FileDiff } from '../../types/openCode.ts';
 
 interface CodeDiffViewerProps {
   diff: FileDiff;

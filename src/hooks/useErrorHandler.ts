@@ -11,7 +11,7 @@ import {
   isAppError,
   ERROR_CODES,
   createAppError 
-} from '@/lib/errorTypes';
+} from '../lib/errorTypes.ts';
 
 interface ErrorHandlerOptions {
   /** 是否显示 toast */

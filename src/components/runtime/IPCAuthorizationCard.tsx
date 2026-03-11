@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, AlertTriangle, Terminal, Clock, Check, X, ShieldCheck } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { IPCAuthRequestPayload } from '@/types/runtime';
-import type { RiskLevel } from '@/constants/dangerousPatterns';
+import { cn } from '../../lib/utils.ts';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import type { IPCAuthRequestPayload } from '../../types/runtime.ts';
+import type { RiskLevel } from '../../constants/dangerousPatterns.ts';
 
 interface IPCAuthorizationCardProps {
   request: IPCAuthRequestPayload;

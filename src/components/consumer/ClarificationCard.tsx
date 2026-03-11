@@ -6,10 +6,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Database, FileText, Sparkles, Brain } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import type { KnowledgeMatchResult } from "@/hooks/useKnowledgeMatching";
+import { cn } from "../../lib/utils.ts";
+import { Button } from "../ui/button.tsx";
+import { Progress } from "../ui/progress.tsx";
+import type { KnowledgeMatchResult } from "../../hooks/useKnowledgeMatching.ts";
 
 interface ClarificationCardProps {
   question: string;

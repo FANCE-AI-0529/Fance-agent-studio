@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { format, formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "./tooltip.tsx";
 
 interface MessageTimestampProps {
   timestamp: Date;

@@ -9,34 +9,34 @@ import {
   Code,
   Eye,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../../ui/button.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Label } from "../../ui/label.tsx";
+import { Switch } from "../../ui/switch.tsx";
+import { Badge } from "../../ui/badge.tsx";
+import { ScrollArea } from "../../ui/scroll-area.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../../ui/select.tsx";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../../ui/collapsible.tsx";
 import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useVariableStore } from "@/stores/variableStore";
+import { cn } from "../../../lib/utils.ts";
+import { useVariableStore } from "../../../stores/variableStore.ts";
 import { 
   nodeOutputSchemas, 
   getSchemaPathsWithTypes,
   createVariableReference,
-} from "./variableTypes";
-import { getMockDataForNodeType } from "./mockDataPresets";
-import type { VariableMapping, EdgeMapping } from "./variableTypes";
+} from "./variableTypes.ts";
+import { getMockDataForNodeType } from "./mockDataPresets.ts";
+import type { VariableMapping, EdgeMapping } from "./variableTypes.ts";
 
 interface EdgeMappingPanelProps {
   edge: Edge;

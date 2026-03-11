@@ -2,18 +2,18 @@
 
 import { useState } from 'react';
 import { Server, Cloud, Wifi, WifiOff, RefreshCw, Settings, CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useRuntimeStore } from '@/stores/runtimeStore';
-import type { RuntimeMode } from '@/types/runtime';
+import { supabase } from '../../integrations/supabase/client.ts';
+import { cn } from '../../lib/utils.ts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Input } from '../ui/input.tsx';
+import { Label } from '../ui/label.tsx';
+import { Switch } from '../ui/switch.tsx';
+import { Separator } from '../ui/separator.tsx';
+import { useToast } from '../../hooks/use-toast.ts';
+import { useRuntimeStore } from '../../stores/runtimeStore.ts';
+import type { RuntimeMode } from '../../types/runtime.ts';
 
 export function RuntimeSettings() {
   const { toast } = useToast();

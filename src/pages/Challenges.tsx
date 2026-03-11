@@ -1,10 +1,10 @@
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useChallenges, useActiveChallenges } from "@/hooks/useChallenges";
+import { MainLayout } from "../components/layout/MainLayout.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
+import { useChallenges, useActiveChallenges } from "../hooks/useChallenges.ts";
 import { Trophy, Clock, Users, ArrowRight, Flame, Calendar, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow, format, isPast, isFuture } from "date-fns";

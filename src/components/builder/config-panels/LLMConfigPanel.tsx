@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { Brain, Sparkles, Thermometer, Hash, MessageSquare, FileText, Zap } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import VariableInput from "../variables/VariableInput";
+import { Label } from "../../ui/label.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Textarea } from "../../ui/textarea.tsx";
+import { Switch } from "../../ui/switch.tsx";
+import { Slider } from "../../ui/slider.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select.tsx";
+import { Badge } from "../../ui/badge.tsx";
+import { Separator } from "../../ui/separator.tsx";
+import VariableInput from "../variables/VariableInput.tsx";
 
 const models = [
   { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", speed: "快" },

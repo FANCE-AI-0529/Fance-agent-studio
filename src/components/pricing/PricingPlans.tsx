@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Switch } from "../ui/switch.tsx";
 import { Check, Sparkles, Zap, Users, Crown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "@/hooks/use-toast";
+import { cn } from "../../lib/utils.ts";
+import { toast } from "../../hooks/use-toast.ts";
 
 interface PricingPlan {
   id: string;

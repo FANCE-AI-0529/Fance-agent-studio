@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button.tsx";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "../../integrations/supabase/client.ts";
+import { toast } from "../../hooks/use-toast.ts";
 
 // 社交登录图标
 const GoogleIcon = () => (
@@ -51,7 +51,7 @@ export function SocialLoginButtons({ onGuestMode }: SocialLoginButtonsProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${globalThis.location.origin}/`,
         },
       });
       if (error) throw error;
@@ -71,7 +71,7 @@ export function SocialLoginButtons({ onGuestMode }: SocialLoginButtonsProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "apple",
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${globalThis.location.origin}/`,
         },
       });
       if (error) throw error;

@@ -2,8 +2,8 @@
 // 模拟数据生成器 - Mock Data Generator
 // =====================================================
 
-import type { DataFieldSnapshot, NodeDataSnapshot } from '@/types/dataSnapshotTypes';
-import type { VariableType } from '@/components/builder/variables/variableTypes';
+import type { DataFieldSnapshot, NodeDataSnapshot } from '../types/dataSnapshotTypes.ts';
+import type { VariableType } from '../components/builder/variables/variableTypes.ts';
 
 /**
  * 根据测试场景预定义的模拟数据

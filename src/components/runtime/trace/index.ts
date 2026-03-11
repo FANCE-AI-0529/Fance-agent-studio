@@ -2,6 +2,6 @@
  * Trace module exports
  */
 
-export * from "./traceTypes";
-export * from "./traceReducer";
-export * from "./useTrace";
+export * from "./traceTypes.ts";
+export * from "./traceReducer.ts";
+export * from "./useTrace.ts";

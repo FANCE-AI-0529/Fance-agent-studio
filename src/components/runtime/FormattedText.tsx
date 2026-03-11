@@ -1,7 +1,7 @@
 import React from "react";
-import { cn } from "@/lib/utils";
-import { TERMINAL_CLASSES } from "@/constants/terminalStyleGuide";
-import { type AgentRole, ROLE_THEMES } from "@/constants/agentRoleThemes";
+import { cn } from "../../lib/utils.ts";
+import { TERMINAL_CLASSES } from "../../constants/terminalStyleGuide.ts";
+import { type AgentRole, ROLE_THEMES } from "../../constants/agentRoleThemes.ts";
 import { AlertCircle } from "lucide-react";
 
 interface FormattedTextProps {

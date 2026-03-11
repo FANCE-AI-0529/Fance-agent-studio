@@ -48,15 +48,15 @@ import {
   MessageCircle,
   History as HistoryIcon,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { Badge } from "../components/ui/badge.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { toast } from "../hooks/use-toast.ts";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../components/ui/tooltip.tsx";
 import {
   Dialog,
   DialogContent,
@@ -64,76 +64,76 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../components/ui/dialog.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { ScrollArea } from "../components/ui/scroll-area.tsx";
 
-import SkillNode, { SkillNodeData } from "@/components/builder/SkillNode";
-import AgentNode, { AgentNodeData } from "@/components/builder/AgentNode";
-import KnowledgeBaseNode, { KnowledgeBaseNodeData } from "@/components/builder/KnowledgeBaseNode";
-import TriggerNode from "@/components/builder/nodes/TriggerNode";
-import OutputNode from "@/components/builder/nodes/OutputNode";
-import IntentRouterNode, { IntentRouterNodeData } from "@/components/builder/nodes/IntentRouterNode";
-import ConditionNode, { ConditionNodeData } from "@/components/builder/nodes/ConditionNode";
-import ParallelNode, { ParallelNodeData } from "@/components/builder/nodes/ParallelNode";
-import MCPActionNode, { MCPActionNodeData } from "@/components/builder/nodes/MCPActionNode";
-import InterventionNode, { InterventionNodeData } from "@/components/builder/nodes/InterventionNode";
-import ManusKernelNode from "@/components/builder/nodes/ManusKernelNode";
-import GeneratedSkillNode from "@/components/builder/nodes/GeneratedSkillNode";
-import PlaceholderNode from "@/components/builder/nodes/PlaceholderNode";
+import SkillNode, { SkillNodeData } from "../components/builder/SkillNode.tsx";
+import AgentNode, { AgentNodeData } from "../components/builder/AgentNode.tsx";
+import KnowledgeBaseNode, { KnowledgeBaseNodeData } from "../components/builder/KnowledgeBaseNode.tsx";
+import TriggerNode from "../components/builder/nodes/TriggerNode.tsx";
+import OutputNode from "../components/builder/nodes/OutputNode.tsx";
+import IntentRouterNode, { IntentRouterNodeData } from "../components/builder/nodes/IntentRouterNode.tsx";
+import ConditionNode, { ConditionNodeData } from "../components/builder/nodes/ConditionNode.tsx";
+import ParallelNode, { ParallelNodeData } from "../components/builder/nodes/ParallelNode.tsx";
+import MCPActionNode, { MCPActionNodeData } from "../components/builder/nodes/MCPActionNode.tsx";
+import InterventionNode, { InterventionNodeData } from "../components/builder/nodes/InterventionNode.tsx";
+import ManusKernelNode from "../components/builder/nodes/ManusKernelNode.tsx";
+import GeneratedSkillNode from "../components/builder/nodes/GeneratedSkillNode.tsx";
+import PlaceholderNode from "../components/builder/nodes/PlaceholderNode.tsx";
 // Phase 1: Dify-inspired core nodes
-import LLMNode from "@/components/builder/nodes/LLMNode";
-import HTTPRequestNode from "@/components/builder/nodes/HTTPRequestNode";
-import CodeNode from "@/components/builder/nodes/CodeNode";
-import ParameterExtractorNode from "@/components/builder/nodes/ParameterExtractorNode";
+import LLMNode from "../components/builder/nodes/LLMNode.tsx";
+import HTTPRequestNode from "../components/builder/nodes/HTTPRequestNode.tsx";
+import CodeNode from "../components/builder/nodes/CodeNode.tsx";
+import ParameterExtractorNode from "../components/builder/nodes/ParameterExtractorNode.tsx";
 // Phase 2: Dify-inspired auxiliary nodes
-import TemplateNode from "@/components/builder/nodes/TemplateNode";
-import VariableAggregatorNode from "@/components/builder/nodes/VariableAggregatorNode";
-import VariableAssignerNode from "@/components/builder/nodes/VariableAssignerNode";
-import DocExtractorNode from "@/components/builder/nodes/DocExtractorNode";
-import IteratorNode from "@/components/builder/nodes/IteratorNode";
-import LoopNode from "@/components/builder/nodes/LoopNode";
-import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "@/components/builder/edges/AnimatedFlowEdge";
-import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "@/components/builder/edges/ManusLifecycleEdge";
-import { SkillMarketplace, Skill, KnowledgeBaseItem } from "@/components/builder/SkillMarketplace";
-import { MCPActionDragItem, InterventionDragItem } from "@/components/builder/MCPActionsPanel";
-import { SimplifiedConfigPanel, SimpleAgentConfig } from "@/components/builder/SimplifiedConfigPanel";
-import { ManifestPreview } from "@/components/builder/ManifestPreview";
-import { BuilderWizard } from "@/components/builder/BuilderWizard";
-import { BuilderToolbar } from "@/components/builder/BuilderToolbar";
-import { BuilderDialogs } from "@/components/builder/BuilderDialogs";
-import { ConversationalCreator } from "@/components/builder/ConversationalCreator";
-import { AgentApiPanel } from "@/components/builder/AgentApiPanel";
-import { WebhookPanel } from "@/components/builder/WebhookPanel";
-import { ApiAlertPanel } from "@/components/builder/ApiAlertPanel";
-import { LLMConfigPanel } from "@/components/builder/LLMConfigPanel";
-import { ApiStatsDashboard } from "@/components/builder/ApiStatsDashboard";
-import CreationModeSelector, { CreationMode } from "@/components/builder/CreationModeSelector";
-import LiveTestPanel from "@/components/builder/LiveTestPanel";
-import PersonalityConfigurator from "@/components/builder/PersonalityConfigurator";
-import RAGConfigPanel, { RAGConfig } from "@/components/builder/RAGConfigPanel";
-import { VariablePoolPanel } from "@/components/builder/variables/VariablePoolPanel";
-import { EdgeMappingPanel } from "@/components/builder/variables/EdgeMappingPanel";
-import { useVariableStore } from "@/stores/variableStore";
-import { useCanvasDebug } from "@/hooks/useCanvasDebug";
-import CanvasDebugToolbar from "@/components/builder/debug/CanvasDebugToolbar";
-import { CanvasHighlightControls } from "@/components/builder/CanvasHighlightControls";
-import { NodeDataSnapshotPanel } from "@/components/builder/snapshot/NodeDataSnapshotPanel";
-import { useCanvasHighlight } from "@/hooks/useCanvasHighlight";
-import NodeConfigDrawer from "@/components/builder/config-panels/NodeConfigDrawer";
-import CanvasDebugPanel from "@/components/builder/debug/CanvasDebugPanel";
-import { useWorkflowExecution } from "@/hooks/useWorkflowExecution";
-import { RunHistoryPanel } from "@/components/builder/RunHistoryPanel";
-import { WorkflowRunDialog } from "@/components/builder/WorkflowRunDialog";
-import { AIAgentGenerator } from "@/components/builder/AIAgentGenerator";
-import { EnhancedAIGenerator } from "@/components/builder/EnhancedAIGenerator";
-import { GenerationVerificationPanel } from "@/components/builder/verification";
-import { AgentMonitoringDashboard } from "@/components/builder/AgentMonitoringDashboard";
-import { EvaluationCenter } from "@/components/builder/evaluation/EvaluationCenter";
-import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "@/hooks/useAgents";
-import { syncBuilderGraphToDatabase } from "@/hooks/useGraphSync";
-import { useAgentBuildReplay } from "@/hooks/useAgentBuildReplay";
-import { BuildReplayOverlay } from "@/components/builder/BuildReplayOverlay";
+import TemplateNode from "../components/builder/nodes/TemplateNode.tsx";
+import VariableAggregatorNode from "../components/builder/nodes/VariableAggregatorNode.tsx";
+import VariableAssignerNode from "../components/builder/nodes/VariableAssignerNode.tsx";
+import DocExtractorNode from "../components/builder/nodes/DocExtractorNode.tsx";
+import IteratorNode from "../components/builder/nodes/IteratorNode.tsx";
+import LoopNode from "../components/builder/nodes/LoopNode.tsx";
+import AnimatedFlowEdge, { ANIMATED_FLOW_EDGE } from "../components/builder/edges/AnimatedFlowEdge.tsx";
+import ManusLifecycleEdge, { MANUS_LIFECYCLE_EDGE } from "../components/builder/edges/ManusLifecycleEdge.tsx";
+import { SkillMarketplace, Skill, KnowledgeBaseItem } from "../components/builder/SkillMarketplace.tsx";
+import { MCPActionDragItem, InterventionDragItem } from "../components/builder/MCPActionsPanel.tsx";
+import { SimplifiedConfigPanel, SimpleAgentConfig } from "../components/builder/SimplifiedConfigPanel.tsx";
+import { ManifestPreview } from "../components/builder/ManifestPreview.tsx";
+import { BuilderWizard } from "../components/builder/BuilderWizard.tsx";
+import { BuilderToolbar } from "../components/builder/BuilderToolbar.tsx";
+import { BuilderDialogs } from "../components/builder/BuilderDialogs.tsx";
+import { ConversationalCreator } from "../components/builder/ConversationalCreator.tsx";
+import { AgentApiPanel } from "../components/builder/AgentApiPanel.tsx";
+import { WebhookPanel } from "../components/builder/WebhookPanel.tsx";
+import { ApiAlertPanel } from "../components/builder/ApiAlertPanel.tsx";
+import { LLMConfigPanel } from "../components/builder/LLMConfigPanel.tsx";
+import { ApiStatsDashboard } from "../components/builder/ApiStatsDashboard.tsx";
+import CreationModeSelector, { CreationMode } from "../components/builder/CreationModeSelector.tsx";
+import LiveTestPanel from "../components/builder/LiveTestPanel.tsx";
+import PersonalityConfigurator from "../components/builder/PersonalityConfigurator.tsx";
+import RAGConfigPanel, { RAGConfig } from "../components/builder/RAGConfigPanel.tsx";
+import { VariablePoolPanel } from "../components/builder/variables/VariablePoolPanel.tsx";
+import { EdgeMappingPanel } from "../components/builder/variables/EdgeMappingPanel.tsx";
+import { useVariableStore } from "../stores/variableStore.ts";
+import { useCanvasDebug } from "../hooks/useCanvasDebug.ts";
+import CanvasDebugToolbar from "../components/builder/debug/CanvasDebugToolbar.tsx";
+import { CanvasHighlightControls } from "../components/builder/CanvasHighlightControls.tsx";
+import { NodeDataSnapshotPanel } from "../components/builder/snapshot/NodeDataSnapshotPanel.tsx";
+import { useCanvasHighlight } from "../hooks/useCanvasHighlight.ts";
+import NodeConfigDrawer from "../components/builder/config-panels/NodeConfigDrawer.tsx";
+import CanvasDebugPanel from "../components/builder/debug/CanvasDebugPanel.tsx";
+import { useWorkflowExecution } from "../hooks/useWorkflowExecution.ts";
+import { RunHistoryPanel } from "../components/builder/RunHistoryPanel.tsx";
+import { WorkflowRunDialog } from "../components/builder/WorkflowRunDialog.tsx";
+import { AIAgentGenerator } from "../components/builder/AIAgentGenerator.tsx";
+import { EnhancedAIGenerator } from "../components/builder/EnhancedAIGenerator.tsx";
+import { GenerationVerificationPanel } from "../components/builder/verification/index.ts";
+import { AgentMonitoringDashboard } from "../components/builder/AgentMonitoringDashboard.tsx";
+import { EvaluationCenter } from "../components/builder/evaluation/EvaluationCenter.tsx";
+import { useSaveAgentWithSkills, useDeployAgent, useAgent, useDeleteAgent } from "../hooks/useAgents.ts";
+import { syncBuilderGraphToDatabase } from "../hooks/useGraphSync.ts";
+import { useAgentBuildReplay } from "../hooks/useAgentBuildReplay.ts";
+import { BuildReplayOverlay } from "../components/builder/BuildReplayOverlay.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -143,15 +143,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { usePublishedSkills } from "@/hooks/useSkills";
-import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import { findTemplateById } from "@/data/agentTemplates";
-import { PersonalityConfig, getDefaultPersonalityConfig, mergePersonalityWithPrompt } from "@/utils/personalityToPrompt";
-import { useConfigAdjustment } from "@/hooks/useConfigAdjustment";
-import { useBuilderKnowledge, MountedKnowledgeBase } from "@/hooks/useBuilderKnowledge";
-import { useAppModeStore } from "@/stores/appModeStore";
+} from "../components/ui/alert-dialog.tsx";
+import { usePublishedSkills } from "../hooks/useSkills.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
+import { cn } from "../lib/utils.ts";
+import { findTemplateById } from "../data/agentTemplates.ts";
+import { PersonalityConfig, getDefaultPersonalityConfig, mergePersonalityWithPrompt } from "../utils/personalityToPrompt.ts";
+import { useConfigAdjustment } from "../hooks/useConfigAdjustment.ts";
+import { useBuilderKnowledge, MountedKnowledgeBase } from "../hooks/useBuilderKnowledge.ts";
+import { useAppModeStore } from "../stores/appModeStore.ts";
 import { NodeTypes, EdgeTypes } from "@xyflow/react";
 
 // Custom node types - including Manus Kernel, Generated Skills, and Dify-inspired nodes
@@ -1564,7 +1564,7 @@ const Builder = () => {
           isOpen={showVoiceCreator}
           onClose={() => setShowVoiceCreator(false)}
           onComplete={handleWizardComplete}
-          useVoice={true}
+          useVoice
         />
 
         {showLiveTest && (

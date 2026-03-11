@@ -1,15 +1,15 @@
 import { useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useTieredMemoryStore } from '@/stores/tieredMemoryStore';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useTieredMemoryStore } from '../stores/tieredMemoryStore.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import type { 
   CoreMemory, 
   RecallMemory, 
   RecallQueryOptions,
   TieredMemoryContext,
   CoreMemoryCategory,
-} from '@/types/tieredMemory';
-import type { Json } from '@/integrations/supabase/types';
+} from '../types/tieredMemory.ts';
+import type { Json } from '../integrations/supabase/types.ts';
 
 // 估算 token 数量
 const estimateTokens = (text: string): number => Math.ceil(text.length / 4);

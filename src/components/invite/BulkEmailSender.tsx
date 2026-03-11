@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Label } from "../ui/label.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Switch } from "../ui/switch.tsx";
+import { Input } from "../ui/input.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Alert, AlertDescription } from "../ui/alert.tsx";
 import { 
   Mail, 
   Send, 
@@ -17,8 +17,8 @@ import {
   AlertCircle,
   Sparkles
 } from "lucide-react";
-import { useSendInviteEmails, useAllInviteCodes } from "@/hooks/useAdminInvite";
-import { toast } from "@/hooks/use-toast";
+import { useSendInviteEmails, useAllInviteCodes } from "../../hooks/useAdminInvite.ts";
+import { toast } from "../../hooks/use-toast.ts";
 
 interface EmailResult {
   email: string;

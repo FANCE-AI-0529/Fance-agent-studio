@@ -14,21 +14,21 @@ import {
   XCircle,
   AlertTriangle,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Input } from '../ui/input.tsx';
+import { Label } from '../ui/label.tsx';
+import { Textarea } from '../ui/textarea.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Separator } from '../ui/separator.tsx';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../ui/select.tsx';
 import {
   Dialog,
   DialogContent,
@@ -37,17 +37,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '../ui/dialog.tsx';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useNetworkPolicy } from '@/hooks/useNetworkPolicy';
-import { SECURITY_PRESETS, SecurityPresetKey, COMMON_DOMAIN_RULES } from '@/types/networkPolicy';
-import type { DomainRule, NetworkPolicy } from '@/types/sandbox';
-import { cn } from '@/lib/utils';
+} from '../ui/alert.tsx';
+import { Checkbox } from '../ui/checkbox.tsx';
+import { useNetworkPolicy } from '../../hooks/useNetworkPolicy.ts';
+import { SECURITY_PRESETS, SecurityPresetKey, COMMON_DOMAIN_RULES } from '../../types/networkPolicy.ts';
+import type { DomainRule, NetworkPolicy } from '../../types/sandbox.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface NetworkPolicyEditorProps {
   onSave?: (policy: NetworkPolicy) => void;

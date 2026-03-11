@@ -3,7 +3,7 @@
 // Smart Avatar Generator - Auto-match icon & color by description
 // =====================================================
 
-import type { AgentAvatar } from "@/components/builder/AgentAvatarPicker";
+import type { AgentAvatar } from "../components/builder/AgentAvatarPicker.tsx";
 
 // 图标关键词映射表
 const ICON_KEYWORD_MAP: Array<{ iconId: string; keywords: string[] }> = [

@@ -11,7 +11,7 @@ import {
   MPLPPolicy,
   InjectedIntervention,
   GenerationWarning,
-} from '@/types/workflowDSL';
+} from '../types/workflowDSL.ts';
 
 // ========== 风险规则类型 ==========
 

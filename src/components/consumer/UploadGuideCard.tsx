@@ -15,9 +15,9 @@ import {
   File,
   RefreshCw
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { cn } from "../../lib/utils.ts";
+import { Button } from "../ui/button.tsx";
+import { Progress } from "../ui/progress.tsx";
 
 interface UploadGuideCardProps {
   onUpload: (files: FileList) => Promise<any>;

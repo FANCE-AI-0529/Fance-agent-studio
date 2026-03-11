@@ -8,7 +8,7 @@ import type {
   ContainerInfo,
   IPCMessage,
   DEFAULT_RUNTIME_CONFIG,
-} from '@/types/runtime';
+} from '../types/runtime.ts';
 
 interface RuntimeState {
   // 运行时模式

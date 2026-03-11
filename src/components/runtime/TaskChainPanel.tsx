@@ -5,36 +5,36 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+} from "../ui/sheet.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Button } from "../ui/button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Input } from "../ui/input.tsx";
+import { Textarea } from "../ui/textarea.tsx";
+import { Label } from "../ui/label.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Progress } from "../ui/progress.tsx";
+import { Separator } from "../ui/separator.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../ui/dialog.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select.tsx";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "../ui/accordion.tsx";
 import {
   Link2,
   Play,
@@ -56,8 +56,8 @@ import {
   Sparkles,
   Save,
 } from "lucide-react";
-import { TaskChainVisualEditor } from "./TaskChainVisualEditor";
-import { TaskChainTemplates, type TaskChainTemplate } from "./TaskChainTemplates";
+import { TaskChainVisualEditor } from "./TaskChainVisualEditor.tsx";
+import { TaskChainTemplates, type TaskChainTemplate } from "./TaskChainTemplates.tsx";
 import {
   useTaskChains,
   useTaskChain,
@@ -73,9 +73,9 @@ import {
   executionModeLabels,
   type TaskChain,
   type ChainStep,
-} from "@/hooks/useTaskChains";
-import { useDeployedAgents } from "@/hooks/useAgents";
-import { taskTypeLabels } from "@/hooks/useTaskDelegation";
+} from "../../hooks/useTaskChains.ts";
+import { useDeployedAgents } from "../../hooks/useAgents.ts";
+import { taskTypeLabels } from "../../hooks/useTaskDelegation.ts";
 
 interface TaskChainPanelProps {
   currentAgentId?: string;

@@ -17,24 +17,24 @@ import {
   Loader2,
   ChevronDown,
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Textarea } from '../ui/textarea.tsx';
+import { Input } from '../ui/input.tsx';
+import { Label } from '../ui/label.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { PromptTemplates } from './PromptTemplates';
-import { PromptABTest } from './PromptABTest';
-import { cn } from '@/lib/utils';
+} from '../ui/select.tsx';
+import { PromptTemplates } from './PromptTemplates.tsx';
+import { PromptABTest } from './PromptABTest.tsx';
+import { cn } from '../../lib/utils.ts';
 
 interface PromptWorkbenchProps {
   currentPrompt: string;

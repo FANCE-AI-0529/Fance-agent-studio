@@ -1,6 +1,6 @@
 import { TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Skeleton } from "../ui/skeleton.tsx";
 import {
   LineChart,
   Line,
@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useDownloadTrends } from "@/hooks/useDownloadTrends";
+import { useDownloadTrends } from "../../hooks/useDownloadTrends.ts";
 import { format, parseISO } from "date-fns";
 import { zhCN } from "date-fns/locale";
 

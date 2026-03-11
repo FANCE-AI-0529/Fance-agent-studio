@@ -6,9 +6,9 @@ import {
   FileCode,
   Key,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Agent } from "@/hooks/useAgents";
+import { Badge } from "../ui/badge.tsx";
+import { cn } from "../../lib/utils.ts";
+import { Agent } from "../../hooks/useAgents.ts";
 
 interface MemoryItem {
   key: string;

@@ -11,14 +11,14 @@ import {
   Loader2,
   Zap,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '../../lib/utils.ts';
+import { Progress } from '../ui/progress.tsx';
+import { Badge } from '../ui/badge.tsx';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '../ui/tooltip.tsx';
 
 export type ProcessingStage = 'queued' | 'parsing' | 'chunking' | 'embedding' | 'storing' | 'complete' | 'error';
 

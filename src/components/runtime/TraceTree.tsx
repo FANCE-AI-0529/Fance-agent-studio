@@ -21,18 +21,18 @@ import {
   FileText,
   HelpCircle,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "../ui/badge.tsx";
+import { Button } from "../ui/button.tsx";
+import { ScrollArea } from "../ui/scroll-area.tsx";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import type { TraceSession, TraceEvent, TraceEventType } from "./trace/traceTypes";
+} from "../ui/dropdown-menu.tsx";
+import { cn } from "../../lib/utils.ts";
+import type { TraceSession, TraceEvent, TraceEventType } from "./trace/traceTypes.ts";
 
 // Re-export types for backward compatibility
 export type { TraceSession, TraceEvent, TraceEventType };

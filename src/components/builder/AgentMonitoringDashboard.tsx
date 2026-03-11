@@ -16,12 +16,12 @@ import {
   BarChart3,
   Coins,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Button } from '../ui/button.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { Skeleton } from '../ui/skeleton.tsx';
 import { 
   LineChart, 
   Line, 
@@ -32,8 +32,8 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-import { useAgentMetrics, AgentHealthStatus } from '@/hooks/useAgentMetrics';
-import { cn } from '@/lib/utils';
+import { useAgentMetrics, AgentHealthStatus } from '../../hooks/useAgentMetrics.ts';
+import { cn } from '../../lib/utils.ts';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 

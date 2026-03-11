@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback, KeyboardEvent } from "react";
 import { Node } from "@xyflow/react";
 import { Variable } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import VariableSelector from "./VariableSelector";
+import { cn } from "../../../lib/utils.ts";
+import { Button } from "../../ui/button.tsx";
+import VariableSelector from "./VariableSelector.tsx";
 
 interface VariableInputProps {
   value: string;

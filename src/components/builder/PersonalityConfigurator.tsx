@@ -1,17 +1,17 @@
 import React from "react";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "../ui/slider.tsx";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
 import { Briefcase, FileText, Smile, Lightbulb, RotateCcw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 import {
   PersonalityConfig,
   personalityPresets,
   personalityDimensions,
   getDefaultPersonalityConfig
-} from "@/utils/personalityToPrompt";
+} from "../../utils/personalityToPrompt.ts";
 
 interface PersonalityConfiguratorProps {
   config: PersonalityConfig;

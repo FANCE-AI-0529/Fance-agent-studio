@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTieredMemoryStore } from '@/stores/tieredMemoryStore';
-import { useManusMemoryStore } from '@/stores/manusMemoryStore';
-import type { DreamingTask, DreamingTriggerCondition, ConsolidationResult } from '@/types/tieredMemory';
-import type { Json } from '@/integrations/supabase/types';
+import { supabase } from '../integrations/supabase/client.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useTieredMemoryStore } from '../stores/tieredMemoryStore.ts';
+import { useManusMemoryStore } from '../stores/manusMemoryStore.ts';
+import type { DreamingTask, DreamingTriggerCondition, ConsolidationResult } from '../types/tieredMemory.ts';
+import type { Json } from '../integrations/supabase/types.ts';
 
 export function useDreaming(agentId?: string) {
   const { user } = useAuth();

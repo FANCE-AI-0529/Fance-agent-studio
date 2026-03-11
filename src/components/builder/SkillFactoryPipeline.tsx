@@ -3,12 +3,12 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '../ui/button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Separator } from '../ui/separator.tsx';
+import { Textarea } from '../ui/textarea.tsx';
 import {
   Hammer,
   ShieldCheck,
@@ -22,7 +22,7 @@ import {
   Sparkles,
   Play,
 } from 'lucide-react';
-import { runSkillEvalLoop, type EvalLoopProgress, type EvalStage, type StageResult } from '@/services/skillEvalLoop';
+import { runSkillEvalLoop, type EvalLoopProgress, type EvalStage, type StageResult } from '../../services/skillEvalLoop.ts';
 
 const STAGE_META: Record<string, { icon: React.ElementType; label: string; color: string }> = {
   building:   { icon: Hammer,      label: 'Builder 构建',         color: 'text-blue-400' },

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
+import { MainLayout } from "../components/layout/MainLayout.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Input } from "../components/ui/input.tsx";
+import { Badge } from "../components/ui/badge.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { Avatar, AvatarFallback } from "../components/ui/avatar.tsx";
+import { Skeleton } from "../components/ui/skeleton.tsx";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import { 
   useMyInviteCode, 
   useSentInvitations, 
@@ -15,9 +15,9 @@ import {
   usePointsHistory,
   useInvitationStats,
   useAcceptInvitation 
-} from "@/hooks/useInvite";
-import { useIsAdmin } from "@/hooks/useAdminInvite";
-import { AdminInvitePanel } from "@/components/invite/AdminInvitePanel";
+} from "../hooks/useInvite.ts";
+import { useIsAdmin } from "../hooks/useAdminInvite.ts";
+import { AdminInvitePanel } from "../components/invite/AdminInvitePanel.tsx";
 import { 
   Gift, 
   Copy, 
@@ -30,7 +30,7 @@ import {
   Crown,
   Sparkles
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "../hooks/use-toast.ts";
 import { Link } from "react-router-dom";
 
 export default function Invite() {
@@ -58,7 +58,7 @@ export default function Invite() {
   const handleCopyLink = async () => {
     if (!inviteCode) return;
     
-    const link = `${window.location.origin}/auth?invite=${inviteCode}`;
+    const link = `${globalThis.location.origin}/auth?invite=${inviteCode}`;
     await navigator.clipboard.writeText(link);
     toast({ title: "已复制邀请链接" });
   };

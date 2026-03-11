@@ -270,11 +270,11 @@ function ParallaxCamera() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      target.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
-      target.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
+      target.current.x = (e.clientX / globalThis.innerWidth - 0.5) * 2;
+      target.current.y = (e.clientY / globalThis.innerHeight - 0.5) * 2;
     };
-    window.addEventListener("mousemove", handler, { passive: true });
-    return () => window.removeEventListener("mousemove", handler);
+    globalThis.addEventListener("mousemove", handler, { passive: true });
+    return () => globalThis.removeEventListener("mousemove", handler);
   }, []);
 
   useFrame(() => {
@@ -301,7 +301,7 @@ function SceneFog() {
 
 /* ── Main Export ── */
 export function ParticleField() {
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const isMobile = typeof window !== "undefined" && globalThis.innerWidth < 640;
 
   return (
     <div className="fixed inset-0" style={{ zIndex: -1 }}>

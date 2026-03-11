@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../integrations/supabase/client.ts";
+import { useAuth } from "../contexts/AuthContext.tsx";
 import { toast } from "sonner";
-import { useIsAdmin } from "./useAdminInvite";
-import { LLMProvider, PROVIDER_TEMPLATES } from "./useLLMProviders";
+import { useIsAdmin } from "./useAdminInvite.ts";
+import { LLMProvider, PROVIDER_TEMPLATES } from "./useLLMProviders.ts";
 
 // Hook to fetch global (admin) providers
 export function useGlobalLLMProviders() {

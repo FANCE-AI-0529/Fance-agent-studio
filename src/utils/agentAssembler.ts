@@ -5,8 +5,8 @@
 
 import { Node, Edge } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
-import type { BuildPlan, GeneratedSkillSpec, KnowledgeBaseSuggestion, AssetMatch } from '@/types/buildPlan';
-import type { MPLPPolicy } from '@/types/workflowDSL';
+import type { BuildPlan, GeneratedSkillSpec, KnowledgeBaseSuggestion, AssetMatch } from '../types/buildPlan.ts';
+import type { MPLPPolicy } from '../types/workflowDSL.ts';
 import { 
   extractConditions, 
   needsConditionNode, 
@@ -14,16 +14,16 @@ import {
   getBranchActions,
   inferMCPFromAction,
   type ExtractedCondition 
-} from './intentConditionExtractor';
-import { generateSecureSystemPrompt, inferSecurityLevel, injectSecurityBoundaries } from './securityPromptTemplate';
-import { generateSmartAvatar } from './avatarGenerator';
+} from './intentConditionExtractor.ts';
+import { generateSecureSystemPrompt, inferSecurityLevel, injectSecurityBoundaries } from './securityPromptTemplate.ts';
+import { generateSmartAvatar } from './avatarGenerator.ts';
 import { 
   selectLogicNode, 
   selectMultipleLogicNodes,
   needsLogicNode,
   type LogicNodeCandidate,
   type LogicNodeType
-} from './logicNodeSelector';
+} from './logicNodeSelector.ts';
 
 // 组装输入
 export interface AssemblyInput {

@@ -8,7 +8,7 @@ import type {
   ManusComplianceResult,
   NodeSpec,
   WorkflowDSL,
-} from '@/types/verificationTypes';
+} from '../types/verificationTypes.ts';
 
 // MCP 操作类型检测关键词
 const OPERATION_KEYWORDS = {

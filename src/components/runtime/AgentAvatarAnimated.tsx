@@ -10,7 +10,7 @@ import {
   Landmark, Car, Plane, ShoppingCart, Wallet, Calculator,
   Lightbulb, Microscope, Palette, Music, Camera, Home, Leaf,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils.ts";
 
 // Avatar icon options (synced with AgentAvatarPicker for consistency)
 const avatarIcons: Record<string, React.ComponentType<{ className?: string }>> = {

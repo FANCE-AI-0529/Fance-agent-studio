@@ -1,7 +1,7 @@
 import { Loader2, Clock, CheckCircle, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+import { cn } from "../../lib/utils.ts";
 
 interface BackgroundTaskIndicatorProps {
   pendingCount: number;

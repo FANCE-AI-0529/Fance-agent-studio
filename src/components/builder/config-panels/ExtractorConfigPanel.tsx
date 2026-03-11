@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { ScanSearch, Plus, Trash2 } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "../../ui/label.tsx";
+import { Input } from "../../ui/input.tsx";
+import { Textarea } from "../../ui/textarea.tsx";
+import { Button } from "../../ui/button.tsx";
+import { Switch } from "../../ui/switch.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select.tsx";
+import { Separator } from "../../ui/separator.tsx";
+import { Checkbox } from "../../ui/checkbox.tsx";
 
 interface ParamSchema { name: string; type: string; required: boolean; description: string; enumValues?: string[] }
 

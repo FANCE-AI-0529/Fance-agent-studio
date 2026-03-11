@@ -9,13 +9,13 @@ import {
   ArrowRight,
   Sparkles
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Alert, AlertDescription } from "../ui/alert.tsx";
+import { cn } from "../../lib/utils.ts";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePWA } from "@/hooks/usePWA";
+import { usePWA } from "../../hooks/usePWA.ts";
 
 interface PWAInstallPromptProps {
   variant?: "banner" | "card" | "inline";

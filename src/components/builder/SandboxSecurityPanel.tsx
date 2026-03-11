@@ -17,17 +17,17 @@ import {
   XCircle,
   Trash2,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Progress } from '../ui/progress.tsx';
+import { Slider } from '../ui/slider.tsx';
+import { Switch } from '../ui/switch.tsx';
+import { Label } from '../ui/label.tsx';
+import { Input } from '../ui/input.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
+import { ScrollArea } from '../ui/scroll-area.tsx';
+import { Separator } from '../ui/separator.tsx';
 import {
   Dialog,
   DialogContent,
@@ -36,18 +36,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '../ui/dialog.tsx';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useSandboxStore } from '@/stores/sandboxStore';
-import { SECURITY_PRESETS, SecurityPresetKey, MPLP_NETWORK_MAPPINGS } from '@/types/networkPolicy';
-import type { DomainRule } from '@/types/sandbox';
-import { cn } from '@/lib/utils';
+} from '../ui/select.tsx';
+import { useSandboxStore } from '../../stores/sandboxStore.ts';
+import { SECURITY_PRESETS, SecurityPresetKey, MPLP_NETWORK_MAPPINGS } from '../../types/networkPolicy.ts';
+import type { DomainRule } from '../../types/sandbox.ts';
+import { cn } from '../../lib/utils.ts';
 
 interface SandboxSecurityPanelProps {
   agentId?: string;
